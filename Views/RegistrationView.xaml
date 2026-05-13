@@ -30,7 +30,7 @@
                      BorderBrush="#374151"
                      TextChanged="PersonSearchTextBox_TextChanged"/>
 
-            <!-- KİŞİ LİSTESİ -->
+            <!-- KİŞİLER -->
 
             <DataGrid x:Name="PersonsDataGrid"
                       Height="220"
@@ -48,31 +48,65 @@
 
                 <StackPanel>
 
-                    <!-- TUR TÜRÜ -->
+                    <!-- TUR -->
 
                     <TextBlock Text="Tur Türü"
                                Foreground="White"/>
 
                     <ComboBox x:Name="TourTypeComboBox"
                               Height="35"
-                              Margin="0,5,0,15">
+                              Margin="0,5,0,15"/>
 
-                        <ComboBoxItem Content="Umre"/>
-                        <ComboBoxItem Content="Hac"/>
-                        <ComboBoxItem Content="Özbekistan"/>
-                        <ComboBoxItem Content="Kudüs"/>
-                        <ComboBoxItem Content="Balkanlar"/>
+                    <!-- YIL -->
+
+                    <TextBlock Text="Yıl"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="YearComboBox"
+                              Height="35"
+                              Margin="0,5,0,15"/>
+
+                    <!-- AY -->
+
+                    <TextBlock Text="Ay"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="MonthComboBox"
+                              Height="35"
+                              Margin="0,5,0,15"
+                              SelectionChanged="MonthComboBox_SelectionChanged">
+
+                        <ComboBoxItem Content="Ocak"/>
+                        <ComboBoxItem Content="Şubat"/>
+                        <ComboBoxItem Content="Mart"/>
+                        <ComboBoxItem Content="Nisan"/>
+                        <ComboBoxItem Content="Mayıs"/>
+                        <ComboBoxItem Content="Haziran"/>
+                        <ComboBoxItem Content="Temmuz"/>
+                        <ComboBoxItem Content="Ağustos"/>
+                        <ComboBoxItem Content="Eylül"/>
+                        <ComboBoxItem Content="Ekim"/>
+                        <ComboBoxItem Content="Kasım"/>
+                        <ComboBoxItem Content="Aralık"/>
 
                     </ComboBox>
 
-                    <!-- DÖNEM -->
+                    <!-- ÖZEL DÖNEM -->
 
-                    <TextBlock Text="Dönem"
+                    <TextBlock Text="Özel Dönem"
                                Foreground="White"/>
 
-                    <TextBox x:Name="PeriodTextBox"
-                             Height="35"
-                             Margin="0,5,0,15"/>
+                    <ComboBox x:Name="SpecialPeriodComboBox"
+                              Height="35"
+                              Margin="0,5,0,15"
+                              SelectionChanged="SpecialPeriodComboBox_SelectionChanged">
+
+                        <ComboBoxItem Content="Ramazan Umresi"/>
+                        <ComboBoxItem Content="Şevval Umresi"/>
+                        <ComboBoxItem Content="Sömestr"/>
+                        <ComboBoxItem Content="Yaz Dönemi"/>
+
+                    </ComboBox>
 
                     <!-- GRUP -->
 
@@ -81,13 +115,7 @@
 
                     <ComboBox x:Name="GroupTypeComboBox"
                               Height="35"
-                              Margin="0,5,0,15">
-
-                        <ComboBoxItem Content="Servisli"/>
-                        <ComboBoxItem Content="Yürüme Mesafesi"/>
-                        <ComboBoxItem Content="Diğer"/>
-
-                    </ComboBox>
+                              Margin="0,5,0,15"/>
 
                     <!-- GÜN -->
 
@@ -116,8 +144,7 @@
                               Height="35"
                               Margin="0,5,0,15">
 
-                        <ComboBoxItem Content="Vizesi Alınacak"/>
-                        <ComboBoxItem Content="Vizeyi Kendisi Alacak"/>
+                        
 
                     </ComboBox>
 
@@ -130,8 +157,7 @@
                               Height="35"
                               Margin="0,5,0,15">
 
-                        <ComboBoxItem Content="Bileti Alınacak"/>
-                        <ComboBoxItem Content="Bileti Kendisi Alacak"/>
+                        
 
                     </ComboBox>
 
@@ -144,10 +170,7 @@
                               Height="35"
                               Margin="0,5,0,15">
 
-                        <ComboBoxItem Content="Kargo Gönderilecek"/>
-                        <ComboBoxItem Content="Kendisi Teslim Alacak"/>
-                        <ComboBoxItem Content="Kargo İstemiyor"/>
-
+                       
                     </ComboBox>
 
                     <!-- ODA -->
@@ -157,17 +180,7 @@
 
                     <ComboBox x:Name="RoomComboBox"
                               Height="35"
-                              Margin="0,5,0,15">
-
-                        <ComboBoxItem Content="SNGL"/>
-                        <ComboBoxItem Content="DBL"/>
-                        <ComboBoxItem Content="TWİN"/>
-                        <ComboBoxItem Content="TRPL"/>
-                        <ComboBoxItem Content="QUADR"/>
-                        <ComboBoxItem Content="QUINT"/>
-                        <ComboBoxItem Content="CONNECTİON"/>
-
-                    </ComboBox>
+                              Margin="0,5,0,15"/>
 
                     <!-- FİYAT -->
 
@@ -177,6 +190,12 @@
                     <TextBox x:Name="PriceTextBox"
                              Height="35"
                              Margin="0,5,0,15"/>
+                    <TextBlock Text="Para Birimi"
+           Foreground="White"/>
+
+                    <ComboBox x:Name="CurrencyComboBox"
+          Height="35"
+          Margin="0,5,0,15"/>
 
                     <!-- ÖDENEN -->
 
@@ -200,15 +219,16 @@
                 </StackPanel>
 
             </Border>
-            <!-- KAYIT LİSTESİ -->
+
+            <!-- KAYITLAR -->
 
             <DataGrid x:Name="RegistrationsDataGrid"
-          Margin="0,20,0,0"
-          Height="300"
-          AutoGenerateColumns="True"
-          Background="#1F2937"
-          Foreground="White"
-          SelectionChanged="RegistrationsDataGrid_SelectionChanged"/>
+                      Margin="0,20,0,0"
+                      Height="300"
+                      AutoGenerateColumns="True"
+                      Background="#1F2937"
+                      Foreground="White"
+                      SelectionChanged="RegistrationsDataGrid_SelectionChanged"/>
 
         </StackPanel>
 

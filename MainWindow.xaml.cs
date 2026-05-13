@@ -59,6 +59,10 @@ namespace TurizmOperasyonSistemi
 
             MainFrame.Navigate(new HotelView());
         }
+        private void RoomAssignmentButton_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new RoomAssignmentView());
+        }
 
         private void ListsButton_Click(object sender, RoutedEventArgs e)
         {
@@ -76,6 +80,7 @@ namespace TurizmOperasyonSistemi
             SettingsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EC4899"));
 
             MainFrame.Navigate(new SettingsView());
+
         }
     }
 }

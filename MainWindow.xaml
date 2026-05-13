@@ -141,6 +141,16 @@
                         BorderThickness="0"
                         FontSize="16"
                         Click="HotelButton_Click"/>
+                <Button x:Name="RoomAssignmentButton"
+        Style="{StaticResource MenuButtonStyle}"
+        Content="Odalama Modülü"
+        Height="50"
+        Margin="15,10"
+        Background="#1F2937"
+        Foreground="White"
+        BorderThickness="0"
+        FontSize="16"
+        Click="RoomAssignmentButton_Click"/>
 
                 <Button x:Name="ListsButton"
                         Style="{StaticResource MenuButtonStyle}"

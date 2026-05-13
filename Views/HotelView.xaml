@@ -1,17 +1,122 @@
 ﻿<Page x:Class="TurizmOperasyonSistemi.Views.HotelView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="#1E293B">
+      Title="HotelView"
+      Background="#111827">
 
-    <Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
 
-        <TextBlock Text="OTEL VE ODALAMA"
-                   Foreground="White"
-                   FontSize="40"
-                   FontWeight="Bold"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"/>
+        <StackPanel Margin="25">
 
-    </Grid>
+            <!-- BAŞLIK -->
+
+            <TextBlock Text="Otel Yönetimi"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       Margin="0,0,0,20"/>
+
+            <!-- ARAMA -->
+
+            <TextBox x:Name="SearchTextBox"
+                     Height="40"
+                     FontSize="16"
+                     Margin="0,0,0,20"
+                     Background="#1F2937"
+                     Foreground="White"
+                     BorderBrush="#374151"
+                     TextChanged="SearchTextBox_TextChanged"/>
+
+            <!-- PASİF GÖSTER -->
+
+            <CheckBox x:Name="ShowPassiveCheckBox"
+                      Content="Pasif Otelleri Göster"
+                      Foreground="White"
+                      Margin="0,0,0,15"
+                      Checked="ShowPassiveCheckBox_Checked"
+                      Unchecked="ShowPassiveCheckBox_Checked"/>
+
+            <!-- FORM -->
+
+            <Border Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="20">
+
+                <StackPanel>
+
+                    <TextBlock Text="Otel Adı"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="HotelNameTextBox"
+                             Height="35"
+                             Margin="0,5,0,15"/>
+
+                    <TextBlock Text="Şehir"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="CityTextBox"
+                             Height="35"
+                             Margin="0,5,0,15"/>
+
+                    <TextBlock Text="Ülke"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="CountryTextBox"
+                             Height="35"
+                             Margin="0,5,0,15"/>
+
+                    <TextBlock Text="Kapasite"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="CapacityTextBox"
+                             Height="35"
+                             Margin="0,5,0,15"/>
+
+                    <TextBlock Text="Notlar"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="NotesTextBox"
+                             Height="80"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             Margin="0,5,0,20"/>
+
+                    <Button Content="Kaydet"
+                            Height="45"
+                            Background="#06B6D4"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Click="SaveButton_Click"/>
+
+                    <Button x:Name="PassiveButton"
+                            Content="Pasif Yap"
+                            Height="45"
+                            Margin="0,10,0,0"
+                            Background="#EF4444"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Click="PassiveButton_Click"/>
+
+                </StackPanel>
+
+            </Border>
+
+            <!-- DATA GRID -->
+
+            <DataGrid x:Name="HotelsDataGrid"
+                      Margin="0,20,0,0"
+                      AutoGenerateColumns="True"
+                      Height="350"
+                      Background="#1F2937"
+                      Foreground="White"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      RowBackground="#1F2937"
+                      AlternatingRowBackground="#111827"
+                      SelectionChanged="HotelsDataGrid_SelectionChanged"/>
+
+        </StackPanel>
+
+    </ScrollViewer>
 
 </Page>

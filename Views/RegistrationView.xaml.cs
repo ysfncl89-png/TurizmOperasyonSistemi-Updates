@@ -16,9 +16,36 @@ namespace TurizmOperasyonSistemi.Views
         {
             InitializeComponent();
 
-            LoadPersons();
+            LoadComboBox(TourTypeComboBox, "TourType");
+            LoadComboBox(GroupTypeComboBox, "GroupType");
+            LoadComboBox(RoomComboBox, "RoomType");
+            LoadComboBox(VisaComboBox, "VisaType");
 
+            LoadComboBox(TicketComboBox, "TicketType");
+
+            LoadComboBox(CargoComboBox, "CargoType");
+            LoadComboBox(CurrencyComboBox, "CurrencyType");
+
+            for (int year = 2026; year <= 2126; year++)
+            {
+                YearComboBox.Items.Add(year.ToString());
+            }
+
+            LoadPersons();
             LoadRegistrations();
+        }
+
+        private void LoadComboBox(ComboBox comboBox, string type)
+        {
+            using (var db = new AppDbContext())
+            {
+                var values = db.AppSettings
+                    .Where(x => x.Type == type && x.IsActive)
+                    .Select(x => x.Value)
+                    .ToList();
+
+                comboBox.ItemsSource = values;
+            }
         }
 
         private void LoadPersons()
@@ -36,6 +63,7 @@ namespace TurizmOperasyonSistemi.Views
             using (var db = new AppDbContext())
             {
                 var registrations = db.Registrations
+                    .Include(x => x.Person)
                     .Select(x => new
                     {
                         x.Id,
@@ -52,6 +80,7 @@ namespace TurizmOperasyonSistemi.Views
                         x.TicketStatus,
                         x.CargoStatus,
                         x.RoomType,
+                        x.CurrencyType,
                         x.TourPrice,
                         x.PaidAmount,
                         x.RemainingDebt,
@@ -101,30 +130,48 @@ namespace TurizmOperasyonSistemi.Views
 
             using (var db = new AppDbContext())
             {
+                string selectedTourType =
+                    TourTypeComboBox.SelectedItem?.ToString() ?? "";
+
+                string selectedGroupType =
+                    GroupTypeComboBox.SelectedItem?.ToString() ?? "";
+
+                int selectedDayCount =
+                    int.Parse((DayCountComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "0");
+
+                string year =
+                    YearComboBox.SelectedItem?.ToString() ?? "";
+
+                string month =
+                    (MonthComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+
+                string special =
+                    (SpecialPeriodComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+
+                string period = "";
+
+                if (!string.IsNullOrEmpty(month))
+                {
+                    period = month + " " + year;
+                }
+                else
+                {
+                    period = special + " " + year;
+                }
+
                 if (selectedRegistrationId == 0)
                 {
-                    string selectedTourType =
-                        (TourTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-
-                    string selectedGroupType =
-                        (GroupTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-
-                    int selectedDayCount =
-                        int.Parse((DayCountComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "0");
-
                     bool exists = db.Registrations.Any(x =>
                         x.PersonId == selectedPerson.Id &&
                         x.TourType == selectedTourType &&
-                        x.Period == PeriodTextBox.Text &&
+                        x.Period == period &&
                         x.GroupType == selectedGroupType &&
                         x.DayCount == selectedDayCount &&
-                        x.IsActive &&
-                        x.Id != selectedRegistrationId);
+                        x.IsActive);
 
                     if (exists)
                     {
                         MessageBox.Show("Bu kişi zaten aynı tur grubuna kayıtlı.");
-
                         return;
                     }
                 }
@@ -147,16 +194,20 @@ namespace TurizmOperasyonSistemi.Views
                     db.Registrations.Add(registration);
                 }
 
-                registration.TourType =
-                    (TourTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+                registration.TourType = selectedTourType;
 
-                registration.Period = PeriodTextBox.Text;
+                if (!string.IsNullOrEmpty(month))
+                {
+                    registration.Period = month + " " + year;
+                }
+                else
+                {
+                    registration.Period = special + " " + year;
+                }
 
-                registration.GroupType =
-                    (GroupTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+                registration.GroupType = selectedGroupType;
 
-                registration.DayCount =
-                    int.Parse((DayCountComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "0");
+                registration.DayCount = selectedDayCount;
 
                 registration.VisaStatus =
                     (VisaComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
@@ -168,13 +219,18 @@ namespace TurizmOperasyonSistemi.Views
                     (CargoComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
 
                 registration.RoomType =
-                    (RoomComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-
+                    RoomComboBox.SelectedItem?.ToString() ?? "";
+                registration.CurrencyType =
+                    CurrencyComboBox.SelectedItem?.ToString() ?? "";
                 registration.TourPrice =
-                    decimal.TryParse(PriceTextBox.Text, out decimal price) ? price : 0;
+                    decimal.TryParse(PriceTextBox.Text, out decimal price)
+                    ? price
+                    : 0;
 
                 registration.PaidAmount =
-                    decimal.TryParse(PaidTextBox.Text, out decimal paid) ? paid : 0;
+                    decimal.TryParse(PaidTextBox.Text, out decimal paid)
+                    ? paid
+                    : 0;
 
                 registration.RemainingDebt =
                     registration.TourPrice - registration.PaidAmount;
@@ -203,7 +259,6 @@ namespace TurizmOperasyonSistemi.Views
 
             selectedRegistrationId = selected.Id;
 
-            PeriodTextBox.Text = selected.Period;
             PriceTextBox.Text = selected.TourPrice.ToString();
             PaidTextBox.Text = selected.PaidAmount.ToString();
 
@@ -214,17 +269,34 @@ namespace TurizmOperasyonSistemi.Views
             SetComboBox(TicketComboBox, selected.TicketStatus);
             SetComboBox(CargoComboBox, selected.CargoStatus);
             SetComboBox(RoomComboBox, selected.RoomType);
+            SetComboBox(CurrencyComboBox, selected.CurrencyType);
         }
 
         private void SetComboBox(ComboBox comboBox, string value)
         {
-            foreach (ComboBoxItem item in comboBox.Items)
+            comboBox.SelectedItem = value;
+        }
+        private void MonthComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (MonthComboBox.SelectedItem != null)
             {
-                if (item.Content.ToString() == value)
-                {
-                    comboBox.SelectedItem = item;
-                    break;
-                }
+                SpecialPeriodComboBox.IsEnabled = false;
+            }
+            else
+            {
+                SpecialPeriodComboBox.IsEnabled = true;
+            }
+        }
+
+        private void SpecialPeriodComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (SpecialPeriodComboBox.SelectedItem != null)
+            {
+                MonthComboBox.IsEnabled = false;
+            }
+            else
+            {
+                MonthComboBox.IsEnabled = true;
             }
         }
     }

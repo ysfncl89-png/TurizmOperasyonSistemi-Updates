@@ -39,8 +39,10 @@ namespace TurizmOperasyonSistemi.Models
         public decimal PaidAmount { get; set; }
         public decimal RemainingDebt { get; set; }
 
+
         // PARA BİRİMİ
         public string CurrencyType { get; set; } = "";
+
 
         // TARİH
         public DateTime RegistrationDate { get; set; } = DateTime.Now;

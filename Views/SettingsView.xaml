@@ -1,17 +1,77 @@
 ﻿<Page x:Class="TurizmOperasyonSistemi.Views.SettingsView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="#1E293B">
+      Title="SettingsView"
+      Background="#111827">
 
-    <Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
 
-        <TextBlock Text="AYARLAR MODÜLÜ"
-                   Foreground="White"
-                   FontSize="40"
-                   FontWeight="Bold"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"/>
+        <StackPanel Margin="25">
 
-    </Grid>
+            <TextBlock Text="Ayarlar Modülü"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       Margin="0,0,0,20"/>
+
+            <!-- FORM -->
+
+            <Border Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="20">
+
+                <StackPanel>
+
+                    <TextBlock Text="Ayar Türü"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="TypeComboBox"
+                              Height="35"
+                              Margin="0,5,0,15">
+
+                        <ComboBoxItem Content="TourType"/>
+                        <ComboBoxItem Content="RoomType"/>
+                        <ComboBoxItem Content="GroupType"/>
+                        <ComboBoxItem Content="CurrencyType"/>
+                        <ComboBoxItem Content="VisaStatus"/>
+                        <ComboBoxItem Content="CargoStatus"/>
+                        <ComboBoxItem Content="TicketStatus"/>
+
+                    </ComboBox>
+
+                    <TextBlock Text="Değer"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="ValueTextBox"
+                             Height="35"
+                             Margin="0,5,0,20"/>
+
+                    <Button Content="Kaydet"
+                            Height="45"
+                            Background="#06B6D4"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Click="SaveButton_Click"/>
+
+                </StackPanel>
+
+            </Border>
+
+            <!-- TABLO -->
+
+            <DataGrid x:Name="SettingsDataGrid"
+                      Margin="0,20,0,0"
+                      AutoGenerateColumns="True"
+                      Height="400"
+                      Background="#1F2937"
+                      Foreground="White"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      RowBackground="#1F2937"
+                      AlternatingRowBackground="#111827"/>
+
+        </StackPanel>
+
+    </ScrollViewer>
 
 </Page>
