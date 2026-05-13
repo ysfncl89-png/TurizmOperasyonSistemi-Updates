@@ -1,0 +1,217 @@
+﻿<Page x:Class="TurizmOperasyonSistemi.Views.RegistrationView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="RegistrationView"
+      Background="#111827">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+        <StackPanel Margin="25">
+
+            <!-- BAŞLIK -->
+
+            <TextBlock Text="Kayıt Modülü"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       Margin="0,0,0,20"/>
+
+            <!-- KİŞİ ARAMA -->
+
+            <TextBlock Text="Kişi Ara"
+                       Foreground="White"/>
+
+            <TextBox x:Name="PersonSearchTextBox"
+                     Height="40"
+                     Margin="0,5,0,15"
+                     FontSize="16"
+                     Background="#1F2937"
+                     Foreground="White"
+                     BorderBrush="#374151"
+                     TextChanged="PersonSearchTextBox_TextChanged"/>
+
+            <!-- KİŞİ LİSTESİ -->
+
+            <DataGrid x:Name="PersonsDataGrid"
+                      Height="220"
+                      Margin="0,0,0,20"
+                      AutoGenerateColumns="True"
+                      Background="#1F2937"
+                      Foreground="White"
+                      SelectionChanged="PersonsDataGrid_SelectionChanged"/>
+
+            <!-- FORM -->
+
+            <Border Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="20">
+
+                <StackPanel>
+
+                    <!-- TUR TÜRÜ -->
+
+                    <TextBlock Text="Tur Türü"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="TourTypeComboBox"
+                              Height="35"
+                              Margin="0,5,0,15">
+
+                        <ComboBoxItem Content="Umre"/>
+                        <ComboBoxItem Content="Hac"/>
+                        <ComboBoxItem Content="Özbekistan"/>
+                        <ComboBoxItem Content="Kudüs"/>
+                        <ComboBoxItem Content="Balkanlar"/>
+
+                    </ComboBox>
+
+                    <!-- DÖNEM -->
+
+                    <TextBlock Text="Dönem"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="PeriodTextBox"
+                             Height="35"
+                             Margin="0,5,0,15"/>
+
+                    <!-- GRUP -->
+
+                    <TextBlock Text="Grup Türü"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="GroupTypeComboBox"
+                              Height="35"
+                              Margin="0,5,0,15">
+
+                        <ComboBoxItem Content="Servisli"/>
+                        <ComboBoxItem Content="Yürüme Mesafesi"/>
+                        <ComboBoxItem Content="Diğer"/>
+
+                    </ComboBox>
+
+                    <!-- GÜN -->
+
+                    <TextBlock Text="Kaç Gün"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="DayCountComboBox"
+                              Height="35"
+                              Margin="0,5,0,15">
+
+                        <ComboBoxItem Content="7"/>
+                        <ComboBoxItem Content="10"/>
+                        <ComboBoxItem Content="14"/>
+                        <ComboBoxItem Content="15"/>
+                        <ComboBoxItem Content="20"/>
+                        <ComboBoxItem Content="30"/>
+
+                    </ComboBox>
+
+                    <!-- VİZE -->
+
+                    <TextBlock Text="Vize Durumu"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="VisaComboBox"
+                              Height="35"
+                              Margin="0,5,0,15">
+
+                        <ComboBoxItem Content="Vizesi Alınacak"/>
+                        <ComboBoxItem Content="Vizeyi Kendisi Alacak"/>
+
+                    </ComboBox>
+
+                    <!-- BİLET -->
+
+                    <TextBlock Text="Bilet Durumu"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="TicketComboBox"
+                              Height="35"
+                              Margin="0,5,0,15">
+
+                        <ComboBoxItem Content="Bileti Alınacak"/>
+                        <ComboBoxItem Content="Bileti Kendisi Alacak"/>
+
+                    </ComboBox>
+
+                    <!-- KARGO -->
+
+                    <TextBlock Text="Kargo Durumu"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="CargoComboBox"
+                              Height="35"
+                              Margin="0,5,0,15">
+
+                        <ComboBoxItem Content="Kargo Gönderilecek"/>
+                        <ComboBoxItem Content="Kendisi Teslim Alacak"/>
+                        <ComboBoxItem Content="Kargo İstemiyor"/>
+
+                    </ComboBox>
+
+                    <!-- ODA -->
+
+                    <TextBlock Text="Oda Tipi"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="RoomComboBox"
+                              Height="35"
+                              Margin="0,5,0,15">
+
+                        <ComboBoxItem Content="SNGL"/>
+                        <ComboBoxItem Content="DBL"/>
+                        <ComboBoxItem Content="TWİN"/>
+                        <ComboBoxItem Content="TRPL"/>
+                        <ComboBoxItem Content="QUADR"/>
+                        <ComboBoxItem Content="QUINT"/>
+                        <ComboBoxItem Content="CONNECTİON"/>
+
+                    </ComboBox>
+
+                    <!-- FİYAT -->
+
+                    <TextBlock Text="Tur Fiyatı"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="PriceTextBox"
+                             Height="35"
+                             Margin="0,5,0,15"/>
+
+                    <!-- ÖDENEN -->
+
+                    <TextBlock Text="Ödenen Tutar"
+                               Foreground="White"/>
+
+                    <TextBox x:Name="PaidTextBox"
+                             Height="35"
+                             Margin="0,5,0,15"/>
+
+                    <!-- KAYDET -->
+
+                    <Button Content="Kaydı Oluştur"
+                            Height="45"
+                            Margin="0,20,0,0"
+                            Background="#06B6D4"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Click="SaveRegistrationButton_Click"/>
+
+                </StackPanel>
+
+            </Border>
+            <!-- KAYIT LİSTESİ -->
+
+            <DataGrid x:Name="RegistrationsDataGrid"
+          Margin="0,20,0,0"
+          Height="300"
+          AutoGenerateColumns="True"
+          Background="#1F2937"
+          Foreground="White"
+          SelectionChanged="RegistrationsDataGrid_SelectionChanged"/>
+
+        </StackPanel>
+
+    </ScrollViewer>
+
+</Page>
