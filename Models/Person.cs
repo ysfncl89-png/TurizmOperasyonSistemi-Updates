@@ -36,6 +36,6 @@ namespace TurizmOperasyonSistemi.Models
 
         public bool IsActive { get; set; } = true;
 
-        
+        public string AgeRange { get; set; }
     }
 }

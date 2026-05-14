@@ -26,10 +26,15 @@ namespace TurizmOperasyonSistemi.Views
         {
             using (var db = new AppDbContext())
             {
-                comboBox.ItemsSource = db.AppSettings
+                var values = db.AppSettings
                     .Where(x => x.Type == type && x.IsActive)
+                    .OrderBy(x => x.SortOrder)
                     .Select(x => x.Value)
                     .ToList();
+
+                values.Insert(0, "Seçiniz");
+
+                comboBox.ItemsSource = values;
             }
         }
 

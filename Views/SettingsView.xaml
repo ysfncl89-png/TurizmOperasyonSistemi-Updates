@@ -68,23 +68,35 @@
             </Setter>
 
         </Style>
+        
 
     </Page.Resources>
+    
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
+        
 
         <StackPanel Margin="25">
+            
 
             <TextBlock Text="Ayarlar Modülü"
                        FontSize="30"
                        FontWeight="Bold"
                        Foreground="White"
                        Margin="0,0,0,25"/>
+            <TextBlock Text="Programla ilgili ayarlamalar yapmak için bu kartları kullanabilirsiniz. "
+           FontSize="15"
+           FontWeight="Bold"
+           Foreground="White"
+           Margin="0,0,0,25"/>
+            
 
             <WrapPanel ItemWidth="220"
                        ItemHeight="120">
+                
 
                 <!-- CARD -->
+                
 
                 <Button Content="Cinsiyet"
                         Style="{StaticResource SettingCardStyle}"

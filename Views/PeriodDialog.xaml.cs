@@ -143,5 +143,20 @@ namespace TurizmOperasyonSistemi.Views
                     .ToList();
             }
         }
+        private void LoadComboBox(ComboBox comboBox, string type)
+        {
+            using (var db = new AppDbContext())
+            {
+                var values = db.AppSettings
+                    .Where(x => x.Type == type && x.IsActive)
+                    .OrderBy(x => x.SortOrder)
+                    .Select(x => x.Value)
+                    .ToList();
+
+                values.Insert(0, "Seçiniz");
+
+                comboBox.ItemsSource = values;
+            }
+        }
     }
 }

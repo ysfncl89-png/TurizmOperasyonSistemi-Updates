@@ -85,6 +85,10 @@ namespace TurizmOperasyonSistemi.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("AgeRange")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("BirthDate")
                         .HasColumnType("TEXT");
 

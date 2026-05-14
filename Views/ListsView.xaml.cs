@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using TurizmOperasyonSistemi.Data;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -23,6 +24,21 @@ namespace TurizmOperasyonSistemi.Views
         public ListsView()
         {
             InitializeComponent();
+        }
+        private void LoadComboBox(ComboBox comboBox, string type)
+        {
+            using (var db = new AppDbContext())
+            {
+                var values = db.AppSettings
+                    .Where(x => x.Type == type && x.IsActive)
+                    .OrderBy(x => x.SortOrder)
+                    .Select(x => x.Value)
+                    .ToList();
+
+                values.Insert(0, "Seçiniz");
+
+                comboBox.ItemsSource = values;
+            }
         }
     }
 }

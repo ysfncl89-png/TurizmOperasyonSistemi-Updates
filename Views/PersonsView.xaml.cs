@@ -14,8 +14,12 @@ namespace TurizmOperasyonSistemi.Views
         public PersonsView()
         {
             InitializeComponent();
+
             LoadPersons();
+
             LoadComboBox(GenderComboBox, "Cinsiyet");
+
+            LoadComboBox(AgeRangeComboBox, "Yaş Aralığı");
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -89,8 +93,11 @@ namespace TurizmOperasyonSistemi.Views
                     }
 
                     person.FirstName = FirstNameTextBox.Text;
+
                     person.LastName = LastNameTextBox.Text;
+
                     person.TcKimlikNo = TcTextBox.Text;
+
                     person.PhoneNumber = PhoneTextBox.Text;
 
                     person.Gender =
@@ -118,6 +125,9 @@ namespace TurizmOperasyonSistemi.Views
                     person.HealthStatus = HealthTextBox.Text;
 
                     person.VaccineStatus = VaccineTextBox.Text;
+
+                    person.AgeRange =
+                        AgeRangeComboBox.SelectedItem?.ToString() ?? "";
 
                     db.SaveChanges();
 
@@ -154,17 +164,18 @@ namespace TurizmOperasyonSistemi.Views
                 }
             }
         }
+
         private void LoadComboBox(ComboBox comboBox, string type)
         {
             using (var db = new AppDbContext())
             {
                 var values = db.AppSettings
-                    .Where(x =>
-                        x.Type == type &&
-                        x.IsActive)
+                    .Where(x => x.Type == type && x.IsActive)
                     .OrderBy(x => x.SortOrder)
                     .Select(x => x.Value)
                     .ToList();
+
+                values.Insert(0, "Seçiniz");
 
                 comboBox.ItemsSource = values;
             }
@@ -173,18 +184,33 @@ namespace TurizmOperasyonSistemi.Views
         private void ClearForm()
         {
             FirstNameTextBox.Clear();
+
             LastNameTextBox.Clear();
+
             TcTextBox.Clear();
+
             PhoneTextBox.Clear();
+
             PassportTextBox.Clear();
+
             AddressTextBox.Clear();
+
             HealthTextBox.Clear();
+
             VaccineTextBox.Clear();
+
             GenderComboBox.SelectedIndex = -1;
+
             BloodComboBox.SelectedIndex = -1;
+
             PassportTypeComboBox.SelectedIndex = -1;
+
+            AgeRangeComboBox.SelectedIndex = -1;
+
             BirthDatePicker.SelectedDate = null;
+
             PassportStartPicker.SelectedDate = null;
+
             PassportEndPicker.SelectedDate = null;
         }
 
@@ -239,6 +265,8 @@ namespace TurizmOperasyonSistemi.Views
                 SelectComboBoxItem(BloodComboBox, selectedPerson.BloodType);
 
                 SelectComboBoxItem(PassportTypeComboBox, selectedPerson.PassportType);
+
+                SetComboBox(AgeRangeComboBox, selectedPerson.AgeRange);
             }
         }
 
@@ -247,6 +275,19 @@ namespace TurizmOperasyonSistemi.Views
             foreach (ComboBoxItem item in comboBox.Items)
             {
                 if (item.Content.ToString() == value)
+                {
+                    comboBox.SelectedItem = item;
+
+                    break;
+                }
+            }
+        }
+
+        private void SetComboBox(ComboBox comboBox, string value)
+        {
+            foreach (var item in comboBox.Items)
+            {
+                if (item.ToString() == value)
                 {
                     comboBox.SelectedItem = item;
 
