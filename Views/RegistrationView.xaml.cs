@@ -15,6 +15,14 @@ namespace TurizmOperasyonSistemi.Views
         public RegistrationView()
         {
             InitializeComponent();
+            LoadComboBox(VisaComboBox, "VisaType");
+            LoadComboBox(TicketComboBox, "TicketType");
+            LoadComboBox(CargoComboBox, "CargoType");
+            LoadComboBox(RoomComboBox, "RoomType");
+            LoadComboBox(CurrencyComboBox, "CurrencyType");
+            LoadComboBox(TourTypeComboBox, "TourType");
+            LoadComboBox(GroupTypeComboBox, "GroupType");
+            LoadComboBox(TransferCityComboBox, "Aktarma Şehri");
 
             LoadComboBox(TourTypeComboBox, "TourType");
             LoadComboBox(GroupTypeComboBox, "GroupType");
@@ -34,19 +42,19 @@ namespace TurizmOperasyonSistemi.Views
             LoadPersons();
             LoadRegistrations();
         }
-
         private void LoadComboBox(ComboBox comboBox, string type)
         {
             using (var db = new AppDbContext())
             {
-                var values = db.AppSettings
+                comboBox.ItemsSource = db.AppSettings
                     .Where(x => x.Type == type && x.IsActive)
+                    .OrderBy(x => x.SortOrder)
                     .Select(x => x.Value)
                     .ToList();
-
-                comboBox.ItemsSource = values;
             }
         }
+
+        
 
         private void LoadPersons()
         {
@@ -57,6 +65,7 @@ namespace TurizmOperasyonSistemi.Views
                     .ToList();
             }
         }
+
 
         private void LoadRegistrations()
         {

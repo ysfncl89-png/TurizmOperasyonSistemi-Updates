@@ -71,8 +71,7 @@
                               Height="35"
                               Margin="0,5,0,15">
 
-                        <ComboBoxItem Content="Erkek"/>
-                        <ComboBoxItem Content="Kadın"/>
+                       
 
                     </ComboBox>
 

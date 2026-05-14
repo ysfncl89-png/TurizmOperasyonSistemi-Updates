@@ -1,74 +1,156 @@
 ﻿<Page x:Class="TurizmOperasyonSistemi.Views.SettingsView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Title="SettingsView"
       Background="#111827">
+
+    <Page.Resources>
+
+        <Style x:Key="SettingCardStyle" TargetType="Button">
+
+            <Setter Property="Width" Value="200"/>
+            <Setter Property="Height" Value="100"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Background" Value="#1F2937"/>
+            <Setter Property="BorderBrush" Value="#38BDF8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+
+            <Setter Property="Template">
+
+                <Setter.Value>
+
+                    <ControlTemplate TargetType="Button">
+
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="18">
+
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
+
+                                <Setter TargetName="border"
+                                        Property="Effect">
+
+                                    <Setter.Value>
+
+                                        <DropShadowEffect BlurRadius="25"
+                                                          ShadowDepth="0"
+                                                          Color="#38BDF8"
+                                                          Opacity="0.8"/>
+
+                                    </Setter.Value>
+
+                                </Setter>
+
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="#67E8F9"/>
+
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+
+                </Setter.Value>
+
+            </Setter>
+
+        </Style>
+
+    </Page.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
 
         <StackPanel Margin="25">
 
             <TextBlock Text="Ayarlar Modülü"
-                       FontSize="28"
+                       FontSize="30"
                        FontWeight="Bold"
                        Foreground="White"
-                       Margin="0,0,0,20"/>
+                       Margin="0,0,0,25"/>
 
-            <!-- FORM -->
+            <WrapPanel ItemWidth="220"
+                       ItemHeight="120">
 
-            <Border Background="#1F2937"
-                    CornerRadius="15"
-                    Padding="20">
+                <!-- CARD -->
 
-                <StackPanel>
+                <Button Content="Cinsiyet"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-                    <TextBlock Text="Ayar Türü"
-                               Foreground="White"/>
+                <Button Content="Yaş Aralığı"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-                    <ComboBox x:Name="TypeComboBox"
-                              Height="35"
-                              Margin="0,5,0,15">
+                <Button Content="Kan Grubu"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-                        <ComboBoxItem Content="TourType"/>
-                        <ComboBoxItem Content="RoomType"/>
-                        <ComboBoxItem Content="GroupType"/>
-                        <ComboBoxItem Content="CurrencyType"/>
-                        <ComboBoxItem Content="VisaStatus"/>
-                        <ComboBoxItem Content="CargoStatus"/>
-                        <ComboBoxItem Content="TicketStatus"/>
+                <Button Content="Pasaport Türü"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-                    </ComboBox>
+                <Button Content="Tur Türü"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-                    <TextBlock Text="Değer"
-                               Foreground="White"/>
+                <Button Content="Dönem"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-                    <TextBox x:Name="ValueTextBox"
-                             Height="35"
-                             Margin="0,5,0,20"/>
+                <Button Content="Grup Türü"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-                    <Button Content="Kaydet"
-                            Height="45"
-                            Background="#06B6D4"
-                            Foreground="White"
-                            FontWeight="Bold"
-                            Click="SaveButton_Click"/>
+                <Button Content="Vize Talebi"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-                </StackPanel>
+                <Button Content="Kargo Talebi"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-            </Border>
+                <Button Content="Bilet Talebi"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-            <!-- TABLO -->
+                <Button Content="Aktarma Var mı?"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
 
-            <DataGrid x:Name="SettingsDataGrid"
-                      Margin="0,20,0,0"
-                      AutoGenerateColumns="True"
-                      Height="400"
-                      Background="#1F2937"
-                      Foreground="White"
-                      HeadersVisibility="Column"
-                      GridLinesVisibility="None"
-                      RowBackground="#1F2937"
-                      AlternatingRowBackground="#111827"/>
+                <Button Content="Aktarma Şehri"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
+                <Button Content="Para Birimi"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
+                <Button Content="Oda Türü"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
+                <Button Content="Otel Ekle"
+                        Style="{StaticResource SettingCardStyle}"
+                        FontWeight="Bold"
+                        
+                        Click="SettingButton_Click"/>
+
+               
+
+            </WrapPanel>
 
         </StackPanel>
 

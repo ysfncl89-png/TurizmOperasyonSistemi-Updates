@@ -1,0 +1,163 @@
+﻿<Window x:Class="TurizmOperasyonSistemi.Views.SettingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Yeni Ayar"
+        Height="550"
+        Width="400"
+        WindowStartupLocation="CenterScreen"
+        Background="#111827"
+        ResizeMode="NoResize">
+
+    <Grid Margin="25">
+
+        <StackPanel>
+
+            <TextBlock x:Name="TitleText"
+                       Text="Yeni Ayar"
+                       Foreground="White"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Margin="0,0,0,25"/>
+
+            <TextBlock Text="Değer"
+                       Foreground="White"
+                       Margin="0,0,0,5"/>
+
+            <TextBox x:Name="ValueTextBox"
+                     Height="40"
+                     FontSize="16"
+                     Margin="0,0,0,20"/>
+
+            <TextBlock Text="Sıra"
+                       Foreground="White"
+                       Margin="0,10,0,5"/>
+
+            <TextBox x:Name="SortOrderTextBox"
+                     Height="40"
+                     Margin="0,0,0,20"/>
+
+            <Button Content="Kaydet"
+                    Height="45"
+                    Background="#06B6D4"
+                    Foreground="White"
+                    FontWeight="Bold"
+                    Click="SaveButton_Click"/>
+
+            <DataGrid x:Name="SettingsDataGrid"
+                      Height="220"
+                      Margin="0,20,0,0"
+                      AutoGenerateColumns="False">
+
+                <DataGrid.RowStyle>
+
+                    <Style TargetType="DataGridRow">
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding IsActive}"
+                                         Value="False">
+
+                                <Setter Property="Background"
+                                        Value="#374151"/>
+
+                                <Setter Property="Foreground"
+                                        Value="#9CA3AF"/>
+
+                            </DataTrigger>
+
+                        </Style.Triggers>
+
+                    </Style>
+
+                </DataGrid.RowStyle>
+
+                <DataGrid.Columns>
+
+                    <DataGridTextColumn Header="Sıra"
+                                        Binding="{Binding SortOrder}"
+                                        Width="40"/>
+
+                    <DataGridTextColumn Header="Durum"
+                                        Binding="{Binding IsActive}"
+                                        Width="50"/>
+
+                    <DataGridTextColumn Header="Değer"
+                                        Binding="{Binding Value}"
+                                        Width="50"/>
+
+                    <DataGridTemplateColumn Header="Düzenle"
+                                            Width="70">
+
+                        <DataGridTemplateColumn.CellTemplate>
+
+                            <DataTemplate>
+
+                                <Button Content="Düzenle"
+                                        Tag="{Binding Id}"
+                                        Background="#3B82F6"
+                                        Foreground="White"
+                                        Click="EditButton_Click"/>
+
+                            </DataTemplate>
+
+                        </DataGridTemplateColumn.CellTemplate>
+
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="Durum"
+                                            Width="120">
+
+                        <DataGridTemplateColumn.CellTemplate>
+
+                            <DataTemplate>
+
+                                <Button Tag="{Binding Id}"
+                                        Foreground="White"
+                                        Click="ToggleActiveButton_Click">
+
+                                    <Button.Style>
+
+                                        <Style TargetType="Button">
+
+                                            <Setter Property="Content"
+                                                    Value="Pasif Yap"/>
+
+                                            <Setter Property="Background"
+                                                    Value="#EF4444"/>
+
+                                            <Style.Triggers>
+
+                                                <DataTrigger Binding="{Binding IsActive}"
+                                                             Value="False">
+
+                                                    <Setter Property="Content"
+                                                            Value="Aktif Yap"/>
+
+                                                    <Setter Property="Background"
+                                                            Value="#22C55E"/>
+
+                                                </DataTrigger>
+
+                                            </Style.Triggers>
+
+                                        </Style>
+
+                                    </Button.Style>
+
+                                </Button>
+
+                            </DataTemplate>
+
+                        </DataGridTemplateColumn.CellTemplate>
+
+                    </DataGridTemplateColumn>
+
+                </DataGrid.Columns>
+
+            </DataGrid>
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>

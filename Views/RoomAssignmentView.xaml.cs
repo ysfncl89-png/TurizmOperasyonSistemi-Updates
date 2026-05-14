@@ -54,27 +54,55 @@ namespace TurizmOperasyonSistemi.Views
         {
             using (var db = new AppDbContext())
             {
-                string tourType =
-                    TourTypeComboBox.SelectedItem?.ToString() ?? "";
+                var query = db.Registrations
+                    .Where(x => x.IsActive)
+                    .AsQueryable();
 
-                string period =
-                    PeriodComboBox.SelectedItem?.ToString() ?? "";
+                // TOUR TYPE
 
-                string groupType =
-                    GroupTypeComboBox.SelectedItem?.ToString() ?? "";
+                if (TourTypeComboBox.SelectedItem != null)
+                {
+                    string selectedTourType =
+                        TourTypeComboBox.SelectedItem.ToString();
 
-                int dayCount =
-                    DayCountComboBox.SelectedItem != null
-                    ? (int)DayCountComboBox.SelectedItem
-                    : 0;
+                    query = query.Where(x =>
+                        x.TourType == selectedTourType);
+                }
 
-                var registrations = db.Registrations
-                    .Where(x =>
-                        x.IsActive &&
-                        x.TourType == tourType &&
-                        x.Period == period &&
-                        x.GroupType == groupType &&
-                        x.DayCount == dayCount)
+                // PERIOD
+
+                if (PeriodComboBox.SelectedItem != null)
+                {
+                    string selectedPeriod =
+                        PeriodComboBox.SelectedItem.ToString();
+
+                    query = query.Where(x =>
+                        x.Period == selectedPeriod);
+                }
+
+                // GROUP TYPE
+
+                if (GroupTypeComboBox.SelectedItem != null)
+                {
+                    string selectedGroupType =
+                        GroupTypeComboBox.SelectedItem.ToString();
+
+                    query = query.Where(x =>
+                        x.GroupType == selectedGroupType);
+                }
+
+                // DAY COUNT
+
+                if (DayCountComboBox.SelectedItem != null)
+                {
+                    int selectedDayCount =
+                        (int)DayCountComboBox.SelectedItem;
+
+                    query = query.Where(x =>
+                        x.DayCount == selectedDayCount);
+                }
+
+                var registrations = query
                     .Select(x => new
                     {
                         x.Id,

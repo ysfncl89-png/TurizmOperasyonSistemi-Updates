@@ -5,6 +5,7 @@ using TurizmOperasyonSistemi.Views;
 
 namespace TurizmOperasyonSistemi
 {
+
     public partial class MainWindow : Window
     {
         public MainWindow()
@@ -13,6 +14,7 @@ namespace TurizmOperasyonSistemi
 
             MainFrame.Navigate(new HomeView());
         }
+
 
         private void ResetMenuColors()
         {
@@ -82,5 +84,7 @@ namespace TurizmOperasyonSistemi
             MainFrame.Navigate(new SettingsView());
 
         }
+
     }
+
 }

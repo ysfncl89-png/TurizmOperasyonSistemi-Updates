@@ -15,6 +15,7 @@ namespace TurizmOperasyonSistemi.Views
         {
             InitializeComponent();
             LoadPersons();
+            LoadComboBox(GenderComboBox, "Cinsiyet");
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -151,6 +152,21 @@ namespace TurizmOperasyonSistemi.Views
                         .Where(x => x.IsActive)
                         .ToList();
                 }
+            }
+        }
+        private void LoadComboBox(ComboBox comboBox, string type)
+        {
+            using (var db = new AppDbContext())
+            {
+                var values = db.AppSettings
+                    .Where(x =>
+                        x.Type == type &&
+                        x.IsActive)
+                    .OrderBy(x => x.SortOrder)
+                    .Select(x => x.Value)
+                    .ToList();
+
+                comboBox.ItemsSource = values;
             }
         }
 

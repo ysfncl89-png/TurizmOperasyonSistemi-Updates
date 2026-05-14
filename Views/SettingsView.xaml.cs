@@ -1,8 +1,5 @@
-﻿using System.Linq;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using TurizmOperasyonSistemi.Data;
-using TurizmOperasyonSistemi.Models;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -11,57 +8,65 @@ namespace TurizmOperasyonSistemi.Views
         public SettingsView()
         {
             InitializeComponent();
-            LoadSettings();
         }
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void SettingButton_Click(object sender, RoutedEventArgs e)
         {
-            if (TypeComboBox.SelectedItem == null ||
-                string.IsNullOrWhiteSpace(ValueTextBox.Text))
+            Button button = sender as Button;
+
+            string settingName = button.Content.ToString();
+            string settingType = "";
+
+            switch (settingName)
             {
-                MessageBox.Show("Lütfen alanları doldurun.");
-                return;
+                case "Tur Türü":
+                    settingType = "TourType";
+                    break;
+
+                case "Grup Türü":
+                    settingType = "GroupType";
+                    break;
+
+                case "Oda Türü":
+                    settingType = "RoomType";
+                    break;
+
+                case "Vize Talebi":
+                    settingType = "VisaType";
+                    break;
+
+                case "Bilet Talebi":
+                    settingType = "TicketType";
+                    break;
+
+                case "Kargo Talebi":
+                    settingType = "CargoType";
+                    break;
+
+                case "Para Birimi":
+                    settingType = "CurrencyType";
+                    break;
+
+                case "Dönem":
+                    settingType = "Dönem";
+                    break;
+
+                default:
+                    settingType = settingName;
+                    break;
             }
 
-            string selectedType =
-                (TypeComboBox.SelectedItem as ComboBoxItem)
-                ?.Content?.ToString();
-
-            using (var db = new AppDbContext())
+            if (settingType == "Dönem")
             {
-                bool exists = db.AppSettings.Any(x =>
-                    x.Type == selectedType &&
-                    x.Value == ValueTextBox.Text);
+                PeriodDialog dialog = new PeriodDialog();
 
-                if (exists)
-                {
-                    MessageBox.Show("Bu kayıt zaten موجود.");
-                    return;
-                }
-
-                AppSetting setting = new AppSetting()
-                {
-                    Type = selectedType,
-                    Value = ValueTextBox.Text
-                };
-
-                db.AppSettings.Add(setting);
-                db.SaveChanges();
+                dialog.ShowDialog();
             }
-
-            MessageBox.Show("Ayar kaydedildi.");
-
-            ValueTextBox.Clear();
-
-            LoadSettings();
-        }
-
-        private void LoadSettings()
-        {
-            using (var db = new AppDbContext())
+            else
             {
-                SettingsDataGrid.ItemsSource =
-                    db.AppSettings.ToList();
+                SettingDialog dialog = new SettingDialog(settingType);
+
+                dialog.ShowDialog();
             }
         }
     }

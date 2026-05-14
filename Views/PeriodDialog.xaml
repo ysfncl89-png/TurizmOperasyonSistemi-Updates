@@ -1,0 +1,171 @@
+﻿<Window x:Class="TurizmOperasyonSistemi.Views.PeriodDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dönem Ekle"
+        Height="650"
+        Width="450"
+        WindowStartupLocation="CenterScreen"
+        Background="#111827">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+        <Grid Margin="25">
+
+            <StackPanel>
+
+                <TextBlock Text="Dönem Ekle"
+                           FontSize="26"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           Margin="0,0,0,25"/>
+
+                <TextBlock Text="Ay"
+                           Foreground="White"/>
+
+                <ComboBox x:Name="MonthComboBox"
+                          Height="40"
+                          Margin="0,5,0,20">
+
+                    <ComboBoxItem Content="Ocak"/>
+                    <ComboBoxItem Content="Şubat"/>
+                    <ComboBoxItem Content="Mart"/>
+                    <ComboBoxItem Content="Nisan"/>
+                    <ComboBoxItem Content="Mayıs"/>
+                    <ComboBoxItem Content="Haziran"/>
+                    <ComboBoxItem Content="Temmuz"/>
+                    <ComboBoxItem Content="Ağustos"/>
+                    <ComboBoxItem Content="Eylül"/>
+                    <ComboBoxItem Content="Ekim"/>
+                    <ComboBoxItem Content="Kasım"/>
+                    <ComboBoxItem Content="Aralık"/>
+
+                </ComboBox>
+
+                <TextBlock Text="Yıl"
+                           Foreground="White"/>
+
+                <ComboBox x:Name="YearComboBox"
+                          Height="40"
+                          Margin="0,5,0,25">
+
+                </ComboBox>
+
+                <Button Content="Kaydet"
+                        Height="45"
+                        Background="#06B6D4"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Click="SaveButton_Click"/>
+
+                <DataGrid x:Name="PeriodsDataGrid"
+          Height="180"
+          Margin="0,20,0,0"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False">
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="Dönem"
+                        Binding="{Binding Value}"
+                        Width="*"/>
+
+                        <DataGridTemplateColumn Header="Düzenle"
+                        Width="100">
+
+                            <DataGridTemplateColumn.CellTemplate>
+
+                                <DataTemplate>
+
+                                    <Button Content="Düzenle"
+                    Tag="{Binding Id}"
+                    Background="#3B82F6"
+                    Foreground="White"
+                    Click="EditButton_Click"/>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellTemplate>
+
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="Durum"
+                        Width="120">
+
+                            <DataGridTemplateColumn.CellTemplate>
+
+                                <DataTemplate>
+
+                                    <Button Tag="{Binding Id}"
+                    Foreground="White"
+                    Click="ToggleActiveButton_Click">
+
+                                        <Button.Style>
+
+                                            <Style TargetType="Button">
+
+                                                <Setter Property="Content"
+                                Value="Pasif Yap"/>
+
+                                                <Setter Property="Background"
+                                Value="#EF4444"/>
+
+                                                <Style.Triggers>
+
+                                                    <DataTrigger Binding="{Binding IsActive}"
+                                         Value="False">
+
+                                                        <Setter Property="Content"
+                                        Value="Aktif Yap"/>
+
+                                                        <Setter Property="Background"
+                                        Value="#22C55E"/>
+
+                                                    </DataTrigger>
+
+                                                </Style.Triggers>
+
+                                            </Style>
+
+                                        </Button.Style>
+
+                                    </Button>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellTemplate>
+
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+                    <DataGrid.RowStyle>
+
+                        <Style TargetType="DataGridRow">
+
+                            <Style.Triggers>
+
+                                <DataTrigger Binding="{Binding IsActive}"
+                         Value="False">
+
+                                    <Setter Property="Background"
+                        Value="#374151"/>
+
+                                    <Setter Property="Foreground"
+                        Value="#9CA3AF"/>
+
+                                </DataTrigger>
+
+                            </Style.Triggers>
+
+                        </Style>
+
+                    </DataGrid.RowStyle>
+
+                </DataGrid>
+
+            </StackPanel>
+
+        </Grid>
+
+    </ScrollViewer>
+
+</Window>
