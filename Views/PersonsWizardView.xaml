@@ -8,7 +8,7 @@
 
         <Grid Margin="25">
 
-            <!-- ✅ FIX: Auto layout (650 kaldırıldı) -->
+            <!-- ROW DEFINITIONS -->
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -190,9 +190,9 @@
                                        Margin="0,0,0,20"/>
 
                             <Border Background="#111827"
-        CornerRadius="15"
-        Padding="20"
-        MinHeight="300">
+                                    CornerRadius="15"
+                                    Padding="20"
+                                    MinHeight="300">
 
                                 <TextBlock x:Name="PreviewTextBlock"
                                            Foreground="White"
@@ -243,7 +243,7 @@
                         Click="NextButton_Click"/>
             </Grid>
 
-            <!-- DATA GRID -->
+            <!-- PROFESYONEL DATAGRID -->
             <DataGrid x:Name="PersonsDataGrid"
                       Grid.Row="3"
                       Margin="0,30,0,0"
@@ -251,11 +251,62 @@
                       Height="340"
                       Background="#1F2937"
                       Foreground="White"
+                      BorderBrush="#374151"
+                      BorderThickness="1"
                       HeadersVisibility="Column"
                       GridLinesVisibility="None"
                       RowBackground="#1F2937"
                       AlternatingRowBackground="#111827"
-                      SelectionChanged="PersonsDataGrid_SelectionChanged"/>
+                      SelectionMode="Single"
+                      CanUserAddRows="False"
+                      CanUserResizeRows="False"
+                      IsReadOnly="True"
+                      SelectionChanged="PersonsDataGrid_SelectionChanged">
+
+                <!-- HEADER STYLE -->
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#111827"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Padding" Value="12,8"/>
+                        <Setter Property="BorderBrush" Value="#374151"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+
+                <!-- ROW STYLE -->
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="#1F2937"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="FontSize" Value="13"/>
+
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#374151"/>
+                            </Trigger>
+
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#06B6D4"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+
+                <!-- CELL STYLE -->
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Padding" Value="10,5"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                    </Style>
+                </DataGrid.CellStyle>
+
+            </DataGrid>
 
         </Grid>
 
