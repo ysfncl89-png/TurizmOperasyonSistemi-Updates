@@ -2,6 +2,9 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.ComponentModel;
+using System.Globalization;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 
@@ -11,6 +14,8 @@ namespace TurizmOperasyonSistemi.Views
     {
         private int currentStep = 1;
         private int selectedPersonId = 0;
+
+        private ICollectionView _personsView;
 
         public PersonsWizardView()
         {
@@ -22,6 +27,7 @@ namespace TurizmOperasyonSistemi.Views
             LoadComboBox(PassportTypeComboBox, "Pasaport Türü");
 
             LoadPersons();
+
             UpdateSteps();
         }
 
@@ -123,16 +129,67 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        // PERSON LİSTESİ
+        // PERSON LİSTESİ + FILTER SETUP
         private void LoadPersons()
         {
             using (var db = new AppDbContext())
             {
-                // TÜM KİŞİLER YÜKLENİR
-                PersonsDataGrid.ItemsSource = db.Persons
+                var list = db.Persons
                     .OrderByDescending(x => x.Id)
                     .ToList();
+
+                PersonsDataGrid.ItemsSource = list;
+
+                _personsView = CollectionViewSource.GetDefaultView(PersonsDataGrid.ItemsSource);
+                _personsView.Filter = FilterPersons;
             }
+        }
+
+        // 🔥 SMART SEARCH (case-insensitive + space tolerant + full name + TC)
+        private bool FilterPersons(object obj)
+        {
+            if (obj == null) return false;
+
+            var person = obj as Person;
+            if (person == null) return false;
+
+            var rawText = SearchTextBox.Text ?? "";
+
+            var text = Normalize(rawText);
+
+            if (string.IsNullOrWhiteSpace(text))
+                return true;
+
+            var firstName = Normalize(person.FirstName);
+            var lastName = Normalize(person.LastName);
+            var fullName = $"{firstName} {lastName}".Trim();
+            var fullNameReversed = $"{lastName} {firstName}".Trim();
+            var tc = Normalize(person.TcKimlikNo);
+
+            return fullName.Contains(text)
+                || fullNameReversed.Contains(text)
+                || firstName.Contains(text)
+                || lastName.Contains(text)
+                || tc.Contains(text);
+        }
+
+        // 🔧 NORMALIZER (case + space + culture safe)
+        private string Normalize(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return "";
+
+            return string.Join(" ",
+                input
+                    .Trim()
+                    .ToLowerInvariant()
+                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            );
+        }
+
+        private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _personsView?.Refresh();
         }
 
         // COMBOBOX DOLDUR
@@ -204,14 +261,13 @@ namespace TurizmOperasyonSistemi.Views
             ToggleActiveButton.Content = "Pasif Yap";
         }
 
-        // DATAGRID SATIR SEÇİMİ
+        // DATAGRID SEÇİM
         private void PersonsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (PersonsDataGrid.SelectedItem is Person person)
             {
                 selectedPersonId = person.Id;
 
-                // FORM DOLDUR
                 FirstNameTextBox.Text = person.FirstName;
                 LastNameTextBox.Text = person.LastName;
                 TcTextBox.Text = person.TcKimlikNo;
@@ -232,12 +288,9 @@ namespace TurizmOperasyonSistemi.Views
 
                 SaveButton.Content = "Güncelle";
 
-                // AKTİF / PASİF BUTONU
                 ToggleActiveButton.Visibility = Visibility.Visible;
                 ToggleActiveButton.Content =
-                    person.IsActive
-                        ? "Pasif Yap"
-                        : "Aktif Yap";
+                    person.IsActive ? "Pasif Yap" : "Aktif Yap";
             }
             else
             {
@@ -246,7 +299,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        // KAYDET / GÜNCELLE
+        // SAVE
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -267,19 +320,10 @@ namespace TurizmOperasyonSistemi.Views
 
                 using (var db = new AppDbContext())
                 {
-                    bool exists;
-
-                    if (selectedPersonId > 0)
-                    {
-                        exists = db.Persons.Any(x =>
-                            x.TcKimlikNo == TcTextBox.Text &&
-                            x.Id != selectedPersonId);
-                    }
-                    else
-                    {
-                        exists = db.Persons.Any(x =>
-                            x.TcKimlikNo == TcTextBox.Text);
-                    }
+                    bool exists =
+                        selectedPersonId > 0
+                            ? db.Persons.Any(x => x.TcKimlikNo == TcTextBox.Text && x.Id != selectedPersonId)
+                            : db.Persons.Any(x => x.TcKimlikNo == TcTextBox.Text);
 
                     if (exists)
                     {
@@ -291,8 +335,7 @@ namespace TurizmOperasyonSistemi.Views
 
                     if (selectedPersonId > 0)
                     {
-                        person = db.Persons
-                            .FirstOrDefault(x => x.Id == selectedPersonId);
+                        person = db.Persons.FirstOrDefault(x => x.Id == selectedPersonId);
 
                         if (person == null)
                         {
@@ -302,10 +345,10 @@ namespace TurizmOperasyonSistemi.Views
                     }
                     else
                     {
-                        person = new Person();
-
-                        // YENİ KAYIT AKTİF GELİR
-                        person.IsActive = true;
+                        person = new Person
+                        {
+                            IsActive = true
+                        };
 
                         db.Persons.Add(person);
                     }
@@ -328,18 +371,10 @@ namespace TurizmOperasyonSistemi.Views
 
                     db.SaveChanges();
 
-                    MessageBox.Show(
-                        selectedPersonId > 0
-                            ? "Kişi başarıyla güncellendi."
-                            : "Kişi başarıyla kaydedildi.");
+                    MessageBox.Show(selectedPersonId > 0 ? "Güncellendi" : "Kaydedildi");
 
                     LoadPersons();
-
                     ClearForm();
-
-                    selectedPersonId = 0;
-
-                    SaveButton.Content = "Kaydet";
 
                     currentStep = 1;
                     UpdateSteps();
@@ -351,7 +386,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        // AKTİF / PASİF YAP
+        // ACTIVE/PASSIVE
         private void ToggleActiveButton_Click(object sender, RoutedEventArgs e)
         {
             if (selectedPersonId == 0)
@@ -362,29 +397,48 @@ namespace TurizmOperasyonSistemi.Views
 
             using (var db = new AppDbContext())
             {
-                var person = db.Persons
-                    .FirstOrDefault(p => p.Id == selectedPersonId);
+                var person = db.Persons.FirstOrDefault(p => p.Id == selectedPersonId);
 
                 if (person != null)
                 {
-                    // DURUMU DEĞİŞTİR
                     person.IsActive = !person.IsActive;
-
                     db.SaveChanges();
 
-                    // BUTON YAZISI GÜNCELLE
                     ToggleActiveButton.Content =
-                        person.IsActive
-                            ? "Pasif Yap"
-                            : "Aktif Yap";
+                        person.IsActive ? "Pasif Yap" : "Aktif Yap";
 
-                    // DATAGRID YENİLE
                     LoadPersons();
 
-                    MessageBox.Show(
-                        person.IsActive
-                            ? "Kişi aktif yapıldı."
-                            : "Kişi pasif yapıldı.");
+                    MessageBox.Show(person.IsActive ? "Aktif" : "Pasif");
+                }
+            }
+        }
+
+        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            string query = Normalize(SearchTextBox.Text);
+
+            using (var db = new AppDbContext())
+            {
+                var filtered = db.Persons
+                    .ToList()
+                    .Where(p =>
+                    {
+                        var full = Normalize($"{p.FirstName} {p.LastName}");
+                        var fullReverse = Normalize($"{p.LastName} {p.FirstName}");
+                        var tc = Normalize(p.TcKimlikNo);
+
+                        return full.Contains(query)
+                            || fullReverse.Contains(query)
+                            || tc.Contains(query);
+                    })
+                    .ToList();
+
+                PersonsDataGrid.ItemsSource = filtered;
+
+                if (filtered.Count == 0)
+                {
+                    MessageBox.Show("Aramanızla eşleşen kayıt bulunamadı.");
                 }
             }
         }

@@ -278,16 +278,34 @@
 
             </Grid>
 
-            <!-- AKTİF / PASİF BUTONU -->
+            <!-- AKTİF / PASİF BUTONU + ARAMA -->
             <StackPanel Grid.Row="3"
                         Orientation="Horizontal"
                         Margin="0,10,0,10">
+
+                <!-- ARAMA KUTUSU -->
+
+                <!-- ARAMA KUTUSU -->
+                <TextBox x:Name="SearchTextBox"
+                         Width="300"
+                         Height="35"
+                         Background="#1F2937"
+                         Foreground="White"
+                         BorderBrush="AntiqueWhite"
+                         Padding="10,5"
+                         VerticalContentAlignment="Center"
+                         TextChanged="SearchTextBox_TextChanged"/>
+
+                <TextBlock Text="Ad, Soyad veya TC ile Kişi ara..."
+                           Foreground="yELLOW"
+                           Margin="10,8,20,0"
+                           IsHitTestVisible="False"/>
 
                 <Button x:Name="ToggleActiveButton"
                         Content="Pasif Yap"
                         Height="35"
                         Width="120"
-                        Background="#F59E0B"
+                        Background="Red"
                         Foreground="White"
                         FontWeight="Bold"
                         Visibility="Collapsed"
@@ -315,10 +333,8 @@
                       IsReadOnly="True"
                       SelectionChanged="PersonsDataGrid_SelectionChanged">
 
-                <!-- HEADER STYLE -->
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">
-
                         <Setter Property="Background" Value="#111827"/>
                         <Setter Property="Foreground" Value="White"/>
                         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -326,33 +342,27 @@
                         <Setter Property="BorderBrush" Value="#374151"/>
                         <Setter Property="BorderThickness" Value="0,0,0,1"/>
                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
-
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
 
-                <!-- ROW STYLE -->
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
-
                         <Setter Property="Background" Value="#1F2937"/>
                         <Setter Property="Foreground" Value="White"/>
                         <Setter Property="FontSize" Value="13"/>
 
                         <Style.Triggers>
 
-                            <!-- Hover -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#374151"/>
                             </Trigger>
 
-                            <!-- Selected -->
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Background" Value="#06B6D4"/>
                                 <Setter Property="Foreground" Value="Black"/>
                                 <Setter Property="FontWeight" Value="Bold"/>
                             </Trigger>
 
-                            <!-- Pasif kişi -->
                             <DataTrigger Binding="{Binding IsActive}" Value="False">
                                 <Setter Property="Foreground" Value="Gray"/>
                                 <Setter Property="Background" Value="#2D2D2D"/>
@@ -363,14 +373,11 @@
                     </Style>
                 </DataGrid.RowStyle>
 
-                <!-- CELL STYLE -->
                 <DataGrid.CellStyle>
                     <Style TargetType="DataGridCell">
-
                         <Setter Property="BorderThickness" Value="0"/>
                         <Setter Property="Padding" Value="10,5"/>
                         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-
                     </Style>
                 </DataGrid.CellStyle>
 
