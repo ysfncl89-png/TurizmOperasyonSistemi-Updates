@@ -145,13 +145,17 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        // 🔥 SMART SEARCH (case-insensitive + space tolerant + full name + TC)
+        // 🔥 SMART SEARCH + PASİF FİLTRESİ
         private bool FilterPersons(object obj)
         {
             if (obj == null) return false;
 
             var person = obj as Person;
             if (person == null) return false;
+
+            // 🔹 Pasifleri gizle/göster kontrolü
+            if (person.IsActive == false && ShowPassiveCheckBox.IsChecked != true)
+                return false;
 
             var rawText = SearchTextBox.Text ?? "";
 
@@ -188,6 +192,12 @@ namespace TurizmOperasyonSistemi.Views
         }
 
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _personsView?.Refresh();
+        }
+
+        // 🔹 CHECKBOX FILTER REFRESH
+        private void ShowPassiveCheckBox_Changed(object sender, RoutedEventArgs e)
         {
             _personsView?.Refresh();
         }
@@ -408,6 +418,8 @@ namespace TurizmOperasyonSistemi.Views
                         person.IsActive ? "Pasif Yap" : "Aktif Yap";
 
                     LoadPersons();
+
+                    _personsView?.Refresh();
 
                     MessageBox.Show(person.IsActive ? "Aktif" : "Pasif");
                 }
