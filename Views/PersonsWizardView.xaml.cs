@@ -148,8 +148,19 @@ namespace TurizmOperasyonSistemi.Views
 
                 using (var db = new AppDbContext())
                 {
-                    bool exists = db.Persons.Any(x =>
-                        x.TcKimlikNo == TcTextBox.Text);
+                    bool exists;
+
+                    if (selectedPersonId > 0)
+                    {
+                        exists = db.Persons.Any(x =>
+                            x.TcKimlikNo == TcTextBox.Text &&
+                            x.Id != selectedPersonId);
+                    }
+                    else
+                    {
+                        exists = db.Persons.Any(x =>
+                            x.TcKimlikNo == TcTextBox.Text);
+                    }
 
                     if (exists)
                     {
@@ -157,7 +168,24 @@ namespace TurizmOperasyonSistemi.Views
                         return;
                     }
 
-                    Person person = new Person();
+                    Person person;
+
+                    if (selectedPersonId > 0)
+                    {
+                        person = db.Persons
+                            .FirstOrDefault(x => x.Id == selectedPersonId);
+
+                        if (person == null)
+                        {
+                            MessageBox.Show("Kişi bulunamadı.");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        person = new Person();
+                        db.Persons.Add(person);
+                    }
 
                     person.FirstName = FirstNameTextBox.Text;
                     person.LastName = LastNameTextBox.Text;
@@ -184,13 +212,22 @@ namespace TurizmOperasyonSistemi.Views
 
                     person.IsActive = true;
 
-                    db.Persons.Add(person);
                     db.SaveChanges();
 
-                    MessageBox.Show("Kişi başarıyla kaydedildi.");
+                    if (selectedPersonId > 0)
+                    {
+                        MessageBox.Show("Kişi başarıyla güncellendi.");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Kişi başarıyla kaydedildi.");
+                    }
 
                     LoadPersons();
                     ClearForm();
+
+                    selectedPersonId = 0;
+                    SaveButton.Content = "Kaydet";
 
                     currentStep = 1;
                     UpdateSteps();
@@ -273,6 +310,9 @@ namespace TurizmOperasyonSistemi.Views
             BirthDatePicker.SelectedDate = null;
             PassportStartPicker.SelectedDate = null;
             PassportEndPicker.SelectedDate = null;
+
+            selectedPersonId = 0;
+            SaveButton.Content = "Kaydet";
         }
 
         private void PersonsDataGrid_SelectionChanged(
@@ -300,6 +340,8 @@ namespace TurizmOperasyonSistemi.Views
                 AgeRangeComboBox.Text = person.AgeRange;
                 BloodComboBox.Text = person.BloodType;
                 PassportTypeComboBox.Text = person.PassportType;
+
+                SaveButton.Content = "Güncelle";
             }
         }
     }
