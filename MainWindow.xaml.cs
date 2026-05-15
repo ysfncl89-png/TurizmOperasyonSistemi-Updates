@@ -61,10 +61,7 @@ namespace TurizmOperasyonSistemi
 
             MainFrame.Navigate(new HotelView());
         }
-        private void RoomAssignmentButton_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(new RoomAssignmentView());
-        }
+       
 
         private void ListsButton_Click(object sender, RoutedEventArgs e)
         {
