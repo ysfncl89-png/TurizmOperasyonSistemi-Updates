@@ -13,6 +13,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="70"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="350"/>
             </Grid.RowDefinitions>
 
@@ -102,17 +103,26 @@
                     <!-- STEP 1 -->
                     <Grid x:Name="Step1Grid">
                         <StackPanel>
+
                             <TextBlock Text="Ad" Foreground="White"/>
-                            <TextBox x:Name="FirstNameTextBox" Height="35" Margin="0,5,0,15"/>
+                            <TextBox x:Name="FirstNameTextBox"
+                                     Height="35"
+                                     Margin="0,5,0,15"/>
 
                             <TextBlock Text="Soyad" Foreground="White"/>
-                            <TextBox x:Name="LastNameTextBox" Height="35" Margin="0,5,0,15"/>
+                            <TextBox x:Name="LastNameTextBox"
+                                     Height="35"
+                                     Margin="0,5,0,15"/>
 
                             <TextBlock Text="TC Kimlik No" Foreground="White"/>
-                            <TextBox x:Name="TcTextBox" Height="35" Margin="0,5,0,15"/>
+                            <TextBox x:Name="TcTextBox"
+                                     Height="35"
+                                     Margin="0,5,0,15"/>
 
                             <TextBlock Text="Cinsiyet" Foreground="White"/>
-                            <ComboBox x:Name="GenderComboBox" Height="35" Margin="0,5,0,15"/>
+                            <ComboBox x:Name="GenderComboBox"
+                                      Height="35"
+                                      Margin="0,5,0,15"/>
 
                             <TextBlock Text="Doğum Tarihi" Foreground="White"/>
                             <DatePicker x:Name="BirthDatePicker"
@@ -130,14 +140,18 @@
                             <ComboBox x:Name="AgeRangeComboBox"
                                       Height="35"
                                       Margin="0,5,0,15"/>
+
                         </StackPanel>
                     </Grid>
 
                     <!-- STEP 2 -->
                     <Grid x:Name="Step2Grid" Visibility="Collapsed">
                         <StackPanel>
+
                             <TextBlock Text="Telefon" Foreground="White"/>
-                            <TextBox x:Name="PhoneTextBox" Height="35" Margin="0,5,0,15"/>
+                            <TextBox x:Name="PhoneTextBox"
+                                     Height="35"
+                                     Margin="0,5,0,15"/>
 
                             <TextBlock Text="Adres" Foreground="White"/>
                             <TextBox x:Name="AddressTextBox"
@@ -145,37 +159,56 @@
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      Margin="0,5,0,15"/>
+
                         </StackPanel>
                     </Grid>
 
                     <!-- STEP 3 -->
                     <Grid x:Name="Step3Grid" Visibility="Collapsed">
                         <StackPanel>
+
                             <TextBlock Text="Kan Grubu" Foreground="White"/>
-                            <ComboBox x:Name="BloodComboBox" Height="35" Margin="0,5,0,15"/>
+                            <ComboBox x:Name="BloodComboBox"
+                                      Height="35"
+                                      Margin="0,5,0,15"/>
 
                             <TextBlock Text="Hastalık Durumu" Foreground="White"/>
-                            <TextBox x:Name="HealthTextBox" Height="35" Margin="0,5,0,15"/>
+                            <TextBox x:Name="HealthTextBox"
+                                     Height="35"
+                                     Margin="0,5,0,15"/>
 
                             <TextBlock Text="Aşı Durumu" Foreground="White"/>
-                            <TextBox x:Name="VaccineTextBox" Height="35" Margin="0,5,0,15"/>
+                            <TextBox x:Name="VaccineTextBox"
+                                     Height="35"
+                                     Margin="0,5,0,15"/>
+
                         </StackPanel>
                     </Grid>
 
                     <!-- STEP 4 -->
                     <Grid x:Name="Step4Grid" Visibility="Collapsed">
                         <StackPanel>
+
                             <TextBlock Text="Pasaport Türü" Foreground="White"/>
-                            <ComboBox x:Name="PassportTypeComboBox" Height="35" Margin="0,5,0,15"/>
+                            <ComboBox x:Name="PassportTypeComboBox"
+                                      Height="35"
+                                      Margin="0,5,0,15"/>
 
                             <TextBlock Text="Pasaport No" Foreground="White"/>
-                            <TextBox x:Name="PassportTextBox" Height="35" Margin="0,5,0,15"/>
+                            <TextBox x:Name="PassportTextBox"
+                                     Height="35"
+                                     Margin="0,5,0,15"/>
 
                             <TextBlock Text="Pasaport Başlangıç" Foreground="White"/>
-                            <DatePicker x:Name="PassportStartPicker" Height="35" Margin="0,5,0,15"/>
+                            <DatePicker x:Name="PassportStartPicker"
+                                        Height="35"
+                                        Margin="0,5,0,15"/>
 
                             <TextBlock Text="Pasaport Bitiş" Foreground="White"/>
-                            <DatePicker x:Name="PassportEndPicker" Height="35" Margin="0,5,0,15"/>
+                            <DatePicker x:Name="PassportEndPicker"
+                                        Height="35"
+                                        Margin="0,5,0,15"/>
+
                         </StackPanel>
                     </Grid>
 
@@ -208,6 +241,7 @@
                                     Foreground="White"
                                     FontWeight="Bold"
                                     Click="SaveButton_Click"/>
+
                         </StackPanel>
                     </Grid>
 
@@ -241,12 +275,30 @@
                         Foreground="White"
                         FontWeight="Bold"
                         Click="NextButton_Click"/>
+
             </Grid>
+
+            <!-- AKTİF / PASİF BUTONU -->
+            <StackPanel Grid.Row="3"
+                        Orientation="Horizontal"
+                        Margin="0,10,0,10">
+
+                <Button x:Name="ToggleActiveButton"
+                        Content="Pasif Yap"
+                        Height="35"
+                        Width="120"
+                        Background="#F59E0B"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Visibility="Collapsed"
+                        Click="ToggleActiveButton_Click"/>
+
+            </StackPanel>
 
             <!-- PROFESYONEL DATAGRID -->
             <DataGrid x:Name="PersonsDataGrid"
-                      Grid.Row="3"
-                      Margin="0,30,0,0"
+                      Grid.Row="4"
+                      Margin="0,10,0,0"
                       AutoGenerateColumns="True"
                       Height="340"
                       Background="#1F2937"
@@ -266,6 +318,7 @@
                 <!-- HEADER STYLE -->
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">
+
                         <Setter Property="Background" Value="#111827"/>
                         <Setter Property="Foreground" Value="White"/>
                         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -273,36 +326,51 @@
                         <Setter Property="BorderBrush" Value="#374151"/>
                         <Setter Property="BorderThickness" Value="0,0,0,1"/>
                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
+
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
 
                 <!-- ROW STYLE -->
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
+
                         <Setter Property="Background" Value="#1F2937"/>
                         <Setter Property="Foreground" Value="White"/>
                         <Setter Property="FontSize" Value="13"/>
 
                         <Style.Triggers>
+
+                            <!-- Hover -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#374151"/>
                             </Trigger>
 
+                            <!-- Selected -->
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Background" Value="#06B6D4"/>
                                 <Setter Property="Foreground" Value="Black"/>
                                 <Setter Property="FontWeight" Value="Bold"/>
                             </Trigger>
+
+                            <!-- Pasif kişi -->
+                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                <Setter Property="Foreground" Value="Gray"/>
+                                <Setter Property="Background" Value="#2D2D2D"/>
+                            </DataTrigger>
+
                         </Style.Triggers>
+
                     </Style>
                 </DataGrid.RowStyle>
 
                 <!-- CELL STYLE -->
                 <DataGrid.CellStyle>
                     <Style TargetType="DataGridCell">
+
                         <Setter Property="BorderThickness" Value="0"/>
                         <Setter Property="Padding" Value="10,5"/>
                         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+
                     </Style>
                 </DataGrid.CellStyle>
 

@@ -47,7 +47,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        // 🔥 FIXED & CLEAN VERSION
+        // STEP YÖNETİMİ
         private void UpdateSteps()
         {
             Step1Grid.Visibility = Visibility.Collapsed;
@@ -104,11 +104,14 @@ namespace TurizmOperasyonSistemi.Views
                     : Visibility.Visible;
         }
 
+        // YAŞ HESAPLAMA
         private void BirthDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
             if (BirthDatePicker.SelectedDate != null)
             {
-                int age = DateTime.Now.Year - BirthDatePicker.SelectedDate.Value.Year;
+                int age =
+                    DateTime.Now.Year -
+                    BirthDatePicker.SelectedDate.Value.Year;
 
                 if (DateTime.Now.DayOfYear <
                     BirthDatePicker.SelectedDate.Value.DayOfYear)
@@ -120,16 +123,19 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        // PERSON LİSTESİ
         private void LoadPersons()
         {
             using (var db = new AppDbContext())
             {
+                // TÜM KİŞİLER YÜKLENİR
                 PersonsDataGrid.ItemsSource = db.Persons
-                    .Where(x => x.IsActive)
+                    .OrderByDescending(x => x.Id)
                     .ToList();
             }
         }
 
+        // COMBOBOX DOLDUR
         private void LoadComboBox(ComboBox comboBox, string type)
         {
             using (var db = new AppDbContext())
@@ -147,6 +153,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        // ÖNİZLEME
         private void LoadPreview()
         {
             PreviewTextBlock.Text =
@@ -167,6 +174,7 @@ namespace TurizmOperasyonSistemi.Views
                 "\nPASAPORT BİTİŞ : " + PassportEndPicker.SelectedDate?.ToShortDateString();
         }
 
+        // FORM TEMİZLE
         private void ClearForm()
         {
             FirstNameTextBox.Clear();
@@ -189,15 +197,21 @@ namespace TurizmOperasyonSistemi.Views
             PassportEndPicker.SelectedDate = null;
 
             selectedPersonId = 0;
+
             SaveButton.Content = "Kaydet";
+
+            ToggleActiveButton.Visibility = Visibility.Collapsed;
+            ToggleActiveButton.Content = "Pasif Yap";
         }
 
+        // DATAGRID SATIR SEÇİMİ
         private void PersonsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (PersonsDataGrid.SelectedItem is Person person)
             {
                 selectedPersonId = person.Id;
 
+                // FORM DOLDUR
                 FirstNameTextBox.Text = person.FirstName;
                 LastNameTextBox.Text = person.LastName;
                 TcTextBox.Text = person.TcKimlikNo;
@@ -217,8 +231,22 @@ namespace TurizmOperasyonSistemi.Views
                 PassportTypeComboBox.Text = person.PassportType;
 
                 SaveButton.Content = "Güncelle";
+
+                // AKTİF / PASİF BUTONU
+                ToggleActiveButton.Visibility = Visibility.Visible;
+                ToggleActiveButton.Content =
+                    person.IsActive
+                        ? "Pasif Yap"
+                        : "Aktif Yap";
+            }
+            else
+            {
+                selectedPersonId = 0;
+                ToggleActiveButton.Visibility = Visibility.Collapsed;
             }
         }
+
+        // KAYDET / GÜNCELLE
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -263,7 +291,8 @@ namespace TurizmOperasyonSistemi.Views
 
                     if (selectedPersonId > 0)
                     {
-                        person = db.Persons.FirstOrDefault(x => x.Id == selectedPersonId);
+                        person = db.Persons
+                            .FirstOrDefault(x => x.Id == selectedPersonId);
 
                         if (person == null)
                         {
@@ -274,6 +303,10 @@ namespace TurizmOperasyonSistemi.Views
                     else
                     {
                         person = new Person();
+
+                        // YENİ KAYIT AKTİF GELİR
+                        person.IsActive = true;
+
                         db.Persons.Add(person);
                     }
 
@@ -293,18 +326,19 @@ namespace TurizmOperasyonSistemi.Views
                     person.PassportStartDate = PassportStartPicker.SelectedDate;
                     person.PassportEndDate = PassportEndPicker.SelectedDate;
 
-                    person.IsActive = true;
-
                     db.SaveChanges();
 
-                    MessageBox.Show(selectedPersonId > 0
-                        ? "Kişi başarıyla güncellendi."
-                        : "Kişi başarıyla kaydedildi.");
+                    MessageBox.Show(
+                        selectedPersonId > 0
+                            ? "Kişi başarıyla güncellendi."
+                            : "Kişi başarıyla kaydedildi.");
 
                     LoadPersons();
+
                     ClearForm();
 
                     selectedPersonId = 0;
+
                     SaveButton.Content = "Kaydet";
 
                     currentStep = 1;
@@ -314,6 +348,44 @@ namespace TurizmOperasyonSistemi.Views
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+            }
+        }
+
+        // AKTİF / PASİF YAP
+        private void ToggleActiveButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedPersonId == 0)
+            {
+                MessageBox.Show("Lütfen bir kişi seçin.");
+                return;
+            }
+
+            using (var db = new AppDbContext())
+            {
+                var person = db.Persons
+                    .FirstOrDefault(p => p.Id == selectedPersonId);
+
+                if (person != null)
+                {
+                    // DURUMU DEĞİŞTİR
+                    person.IsActive = !person.IsActive;
+
+                    db.SaveChanges();
+
+                    // BUTON YAZISI GÜNCELLE
+                    ToggleActiveButton.Content =
+                        person.IsActive
+                            ? "Pasif Yap"
+                            : "Aktif Yap";
+
+                    // DATAGRID YENİLE
+                    LoadPersons();
+
+                    MessageBox.Show(
+                        person.IsActive
+                            ? "Kişi aktif yapıldı."
+                            : "Kişi pasif yapıldı.");
+                }
             }
         }
     }
