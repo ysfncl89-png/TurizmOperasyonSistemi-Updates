@@ -178,16 +178,29 @@
             <!-- TABLO -->
 
             <DataGrid x:Name="PersonsDataGrid"
-                      Margin="0,20,0,0"
-                      AutoGenerateColumns="True"
-                      Height="350"
-                      Background="#1F2937"
-                      Foreground="White"
-                      HeadersVisibility="Column"
-                      GridLinesVisibility="None"
-                      RowBackground="#1F2937"
-                      AlternatingRowBackground="#111827"
-                      SelectionChanged="PersonsDataGrid_SelectionChanged"/>
+          Margin="0,20,0,0"
+          AutoGenerateColumns="True"
+          Height="350"
+          Background="#1F2937"
+          Foreground="White"
+          HeadersVisibility="Column"
+          GridLinesVisibility="None"
+          RowBackground="#1F2937"
+          AlternatingRowBackground="#111827"
+          SelectionChanged="PersonsDataGrid_SelectionChanged">
+
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#374151"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="BorderBrush" Value="#4B5563"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                        <Setter Property="Padding" Value="10,5"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+
+            </DataGrid>
 
         </StackPanel>
 

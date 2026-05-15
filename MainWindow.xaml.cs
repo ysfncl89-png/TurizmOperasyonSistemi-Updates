@@ -41,7 +41,7 @@ namespace TurizmOperasyonSistemi
 
             PersonsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
 
-            MainFrame.Navigate(new PersonsView());
+            MainFrame.Navigate(new PersonsWizardView());
         }
 
         private void RegistrationButton_Click(object sender, RoutedEventArgs e)
