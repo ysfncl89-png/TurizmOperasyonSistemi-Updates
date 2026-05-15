@@ -22,7 +22,6 @@ namespace TurizmOperasyonSistemi.Views
             LoadComboBox(PassportTypeComboBox, "Pasaport Türü");
 
             LoadPersons();
-
             UpdateSteps();
         }
 
@@ -33,9 +32,7 @@ namespace TurizmOperasyonSistemi.Views
                 currentStep++;
 
                 if (currentStep == 5)
-                {
                     LoadPreview();
-                }
 
                 UpdateSteps();
             }
@@ -50,6 +47,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        // 🔥 FIXED & CLEAN VERSION
         private void UpdateSteps()
         {
             Step1Grid.Visibility = Visibility.Collapsed;
@@ -58,15 +56,13 @@ namespace TurizmOperasyonSistemi.Views
             Step4Grid.Visibility = Visibility.Collapsed;
             Step5Grid.Visibility = Visibility.Collapsed;
 
-            var passiveColor =
-                new System.Windows.Media.SolidColorBrush(
-                    (System.Windows.Media.Color)
-                    System.Windows.Media.ColorConverter.ConvertFromString("#1F2937"));
+            var passiveColor = new System.Windows.Media.SolidColorBrush(
+                (System.Windows.Media.Color)
+                System.Windows.Media.ColorConverter.ConvertFromString("#1F2937"));
 
-            var activeColor =
-                new System.Windows.Media.SolidColorBrush(
-                    (System.Windows.Media.Color)
-                    System.Windows.Media.ColorConverter.ConvertFromString("#06B6D4"));
+            var activeColor = new System.Windows.Media.SolidColorBrush(
+                (System.Windows.Media.Color)
+                System.Windows.Media.ColorConverter.ConvertFromString("#06B6D4"));
 
             Step1Border.Background = passiveColor;
             Step2Border.Background = passiveColor;
@@ -104,19 +100,15 @@ namespace TurizmOperasyonSistemi.Views
 
             NextButton.Visibility =
                 currentStep == 5
-                ? Visibility.Collapsed
-                : Visibility.Visible;
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
         }
 
-        private void BirthDatePicker_SelectedDateChanged(
-            object sender,
-            SelectionChangedEventArgs e)
+        private void BirthDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
             if (BirthDatePicker.SelectedDate != null)
             {
-                int age =
-                    DateTime.Now.Year -
-                    BirthDatePicker.SelectedDate.Value.Year;
+                int age = DateTime.Now.Year - BirthDatePicker.SelectedDate.Value.Year;
 
                 if (DateTime.Now.DayOfYear <
                     BirthDatePicker.SelectedDate.Value.DayOfYear)
@@ -128,6 +120,105 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        private void LoadPersons()
+        {
+            using (var db = new AppDbContext())
+            {
+                PersonsDataGrid.ItemsSource = db.Persons
+                    .Where(x => x.IsActive)
+                    .ToList();
+            }
+        }
+
+        private void LoadComboBox(ComboBox comboBox, string type)
+        {
+            using (var db = new AppDbContext())
+            {
+                var values = db.AppSettings
+                    .Where(x => x.Type == type && x.IsActive)
+                    .OrderBy(x => x.SortOrder)
+                    .Select(x => x.Value)
+                    .ToList();
+
+                values.Insert(0, "Seçiniz");
+
+                comboBox.ItemsSource = values;
+                comboBox.SelectedIndex = 0;
+            }
+        }
+
+        private void LoadPreview()
+        {
+            PreviewTextBlock.Text =
+                "AD SOYAD : " + FirstNameTextBox.Text + " " + LastNameTextBox.Text +
+                "\nTC : " + TcTextBox.Text +
+                "\nCİNSİYET : " + GenderComboBox.Text +
+                "\nDOĞUM TARİHİ : " + BirthDatePicker.SelectedDate?.ToShortDateString() +
+                "\nYAŞ : " + AgeTextBox.Text +
+                "\nYAŞ ARALIĞI : " + AgeRangeComboBox.Text +
+                "\nTELEFON : " + PhoneTextBox.Text +
+                "\nADRES : " + AddressTextBox.Text +
+                "\nKAN GRUBU : " + BloodComboBox.Text +
+                "\nHASTALIK DURUMU : " + HealthTextBox.Text +
+                "\nAŞI DURUMU : " + VaccineTextBox.Text +
+                "\nPASAPORT TÜRÜ : " + PassportTypeComboBox.Text +
+                "\nPASAPORT NO : " + PassportTextBox.Text +
+                "\nPASAPORT BAŞLANGIÇ : " + PassportStartPicker.SelectedDate?.ToShortDateString() +
+                "\nPASAPORT BİTİŞ : " + PassportEndPicker.SelectedDate?.ToShortDateString();
+        }
+
+        private void ClearForm()
+        {
+            FirstNameTextBox.Clear();
+            LastNameTextBox.Clear();
+            TcTextBox.Clear();
+            PhoneTextBox.Clear();
+            AddressTextBox.Clear();
+            HealthTextBox.Clear();
+            VaccineTextBox.Clear();
+            PassportTextBox.Clear();
+            AgeTextBox.Clear();
+
+            GenderComboBox.SelectedIndex = 0;
+            AgeRangeComboBox.SelectedIndex = 0;
+            BloodComboBox.SelectedIndex = 0;
+            PassportTypeComboBox.SelectedIndex = 0;
+
+            BirthDatePicker.SelectedDate = null;
+            PassportStartPicker.SelectedDate = null;
+            PassportEndPicker.SelectedDate = null;
+
+            selectedPersonId = 0;
+            SaveButton.Content = "Kaydet";
+        }
+
+        private void PersonsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (PersonsDataGrid.SelectedItem is Person person)
+            {
+                selectedPersonId = person.Id;
+
+                FirstNameTextBox.Text = person.FirstName;
+                LastNameTextBox.Text = person.LastName;
+                TcTextBox.Text = person.TcKimlikNo;
+                PhoneTextBox.Text = person.PhoneNumber;
+                AddressTextBox.Text = person.Address;
+                HealthTextBox.Text = person.HealthStatus;
+                VaccineTextBox.Text = person.VaccineStatus;
+                PassportTextBox.Text = person.PassportNumber;
+
+                BirthDatePicker.SelectedDate = person.BirthDate;
+                PassportStartPicker.SelectedDate = person.PassportStartDate;
+                PassportEndPicker.SelectedDate = person.PassportEndDate;
+
+                GenderComboBox.Text = person.Gender;
+                AgeRangeComboBox.Text = person.AgeRange;
+                BloodComboBox.Text = person.BloodType;
+                PassportTypeComboBox.Text = person.PassportType;
+
+                SaveButton.Content = "Güncelle";
+            }
+        }
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -172,8 +263,7 @@ namespace TurizmOperasyonSistemi.Views
 
                     if (selectedPersonId > 0)
                     {
-                        person = db.Persons
-                            .FirstOrDefault(x => x.Id == selectedPersonId);
+                        person = db.Persons.FirstOrDefault(x => x.Id == selectedPersonId);
 
                         if (person == null)
                         {
@@ -191,10 +281,7 @@ namespace TurizmOperasyonSistemi.Views
                     person.LastName = LastNameTextBox.Text;
                     person.TcKimlikNo = TcTextBox.Text;
                     person.Gender = GenderComboBox.Text;
-
-                    person.BirthDate =
-                        BirthDatePicker.SelectedDate ?? DateTime.Now;
-
+                    person.BirthDate = BirthDatePicker.SelectedDate ?? DateTime.Now;
                     person.AgeRange = AgeRangeComboBox.Text;
                     person.PhoneNumber = PhoneTextBox.Text;
                     person.Address = AddressTextBox.Text;
@@ -203,25 +290,16 @@ namespace TurizmOperasyonSistemi.Views
                     person.VaccineStatus = VaccineTextBox.Text;
                     person.PassportType = PassportTypeComboBox.Text;
                     person.PassportNumber = PassportTextBox.Text;
-
-                    person.PassportStartDate =
-                        PassportStartPicker.SelectedDate;
-
-                    person.PassportEndDate =
-                        PassportEndPicker.SelectedDate;
+                    person.PassportStartDate = PassportStartPicker.SelectedDate;
+                    person.PassportEndDate = PassportEndPicker.SelectedDate;
 
                     person.IsActive = true;
 
                     db.SaveChanges();
 
-                    if (selectedPersonId > 0)
-                    {
-                        MessageBox.Show("Kişi başarıyla güncellendi.");
-                    }
-                    else
-                    {
-                        MessageBox.Show("Kişi başarıyla kaydedildi.");
-                    }
+                    MessageBox.Show(selectedPersonId > 0
+                        ? "Kişi başarıyla güncellendi."
+                        : "Kişi başarıyla kaydedildi.");
 
                     LoadPersons();
                     ClearForm();
@@ -236,112 +314,6 @@ namespace TurizmOperasyonSistemi.Views
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
-            }
-        }
-
-        private void LoadComboBox(ComboBox comboBox, string type)
-        {
-            using (var db = new AppDbContext())
-            {
-                var values = db.AppSettings
-                    .Where(x => x.Type == type && x.IsActive)
-                    .OrderBy(x => x.SortOrder)
-                    .Select(x => x.Value)
-                    .ToList();
-
-                values.Insert(0, "Seçiniz");
-
-                comboBox.ItemsSource = values;
-                comboBox.SelectedIndex = 0;
-            }
-        }
-
-        private void LoadPersons()
-        {
-            using (var db = new AppDbContext())
-            {
-                PersonsDataGrid.ItemsSource =
-                    db.Persons
-                    .Where(x => x.IsActive)
-                    .ToList();
-            }
-        }
-
-        private void LoadPreview()
-        {
-            PreviewTextBlock.Text =
-                "AD SOYAD : " + FirstNameTextBox.Text + " " + LastNameTextBox.Text +
-                "\n\nTC KİMLİK : " + TcTextBox.Text +
-                "\n\nCİNSİYET : " + GenderComboBox.Text +
-                "\n\nDOĞUM TARİHİ : " +
-                BirthDatePicker.SelectedDate?.ToShortDateString() +
-                "\n\nYAŞ : " + AgeTextBox.Text +
-                "\n\nYAŞ ARALIĞI : " + AgeRangeComboBox.Text +
-                "\n\nTELEFON : " + PhoneTextBox.Text +
-                "\n\nADRES : " + AddressTextBox.Text +
-                "\n\nKAN GRUBU : " + BloodComboBox.Text +
-                "\n\nHASTALIK : " + HealthTextBox.Text +
-                "\n\nAŞI DURUMU : " + VaccineTextBox.Text +
-                "\n\nPASAPORT TÜRÜ : " + PassportTypeComboBox.Text +
-                "\n\nPASAPORT NO : " + PassportTextBox.Text +
-                "\n\nPASAPORT BAŞLANGIÇ : " +
-                PassportStartPicker.SelectedDate?.ToShortDateString() +
-                "\n\nPASAPORT BİTİŞ : " +
-                PassportEndPicker.SelectedDate?.ToShortDateString();
-        }
-
-        private void ClearForm()
-        {
-            FirstNameTextBox.Clear();
-            LastNameTextBox.Clear();
-            TcTextBox.Clear();
-            PhoneTextBox.Clear();
-            AddressTextBox.Clear();
-            HealthTextBox.Clear();
-            VaccineTextBox.Clear();
-            PassportTextBox.Clear();
-            AgeTextBox.Clear();
-
-            GenderComboBox.SelectedIndex = 0;
-            AgeRangeComboBox.SelectedIndex = 0;
-            BloodComboBox.SelectedIndex = 0;
-            PassportTypeComboBox.SelectedIndex = 0;
-
-            BirthDatePicker.SelectedDate = null;
-            PassportStartPicker.SelectedDate = null;
-            PassportEndPicker.SelectedDate = null;
-
-            selectedPersonId = 0;
-            SaveButton.Content = "Kaydet";
-        }
-
-        private void PersonsDataGrid_SelectionChanged(
-            object sender,
-            SelectionChangedEventArgs e)
-        {
-            if (PersonsDataGrid.SelectedItem is Person person)
-            {
-                selectedPersonId = person.Id;
-
-                FirstNameTextBox.Text = person.FirstName;
-                LastNameTextBox.Text = person.LastName;
-                TcTextBox.Text = person.TcKimlikNo;
-                PhoneTextBox.Text = person.PhoneNumber;
-                AddressTextBox.Text = person.Address;
-                HealthTextBox.Text = person.HealthStatus;
-                VaccineTextBox.Text = person.VaccineStatus;
-                PassportTextBox.Text = person.PassportNumber;
-
-                BirthDatePicker.SelectedDate = person.BirthDate;
-                PassportStartPicker.SelectedDate = person.PassportStartDate;
-                PassportEndPicker.SelectedDate = person.PassportEndDate;
-
-                GenderComboBox.Text = person.Gender;
-                AgeRangeComboBox.Text = person.AgeRange;
-                BloodComboBox.Text = person.BloodType;
-                PassportTypeComboBox.Text = person.PassportType;
-
-                SaveButton.Content = "Güncelle";
             }
         }
     }

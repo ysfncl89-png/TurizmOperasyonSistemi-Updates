@@ -8,6 +8,7 @@
 
         <Grid Margin="25">
 
+            <!-- ✅ FIX: Auto layout (650 kaldırıldı) -->
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -16,7 +17,6 @@
             </Grid.RowDefinitions>
 
             <!-- HEADER -->
-
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,25">
 
@@ -26,7 +26,6 @@
                         CornerRadius="12"
                         Background="#06B6D4"
                         Margin="0,0,10,0">
-
                     <TextBlock Text="1 • Kimlik"
                                Foreground="White"
                                VerticalAlignment="Center"
@@ -41,7 +40,6 @@
                         CornerRadius="12"
                         Background="#1F2937"
                         Margin="0,0,10,0">
-
                     <TextBlock Text="2 • İletişim"
                                Foreground="White"
                                VerticalAlignment="Center"
@@ -56,7 +54,6 @@
                         CornerRadius="12"
                         Background="#1F2937"
                         Margin="0,0,10,0">
-
                     <TextBlock Text="3 • Sağlık"
                                Foreground="White"
                                VerticalAlignment="Center"
@@ -71,7 +68,6 @@
                         CornerRadius="12"
                         Background="#1F2937"
                         Margin="0,0,10,0">
-
                     <TextBlock Text="4 • Pasaport"
                                Foreground="White"
                                VerticalAlignment="Center"
@@ -85,7 +81,6 @@
                         Height="50"
                         CornerRadius="12"
                         Background="#1F2937">
-
                     <TextBlock Text="5 • Önizleme"
                                Foreground="White"
                                VerticalAlignment="Center"
@@ -97,7 +92,6 @@
             </StackPanel>
 
             <!-- CONTENT -->
-
             <Border Grid.Row="1"
                     Background="#1F2937"
                     CornerRadius="20"
@@ -121,14 +115,21 @@
                             <ComboBox x:Name="GenderComboBox" Height="35" Margin="0,5,0,15"/>
 
                             <TextBlock Text="Doğum Tarihi" Foreground="White"/>
-                            <DatePicker x:Name="BirthDatePicker" Height="35" Margin="0,5,0,15"
+                            <DatePicker x:Name="BirthDatePicker"
+                                        Height="35"
+                                        Margin="0,5,0,15"
                                         SelectedDateChanged="BirthDatePicker_SelectedDateChanged"/>
 
                             <TextBlock Text="Yaş" Foreground="White"/>
-                            <TextBox x:Name="AgeTextBox" Height="35" IsReadOnly="True" Margin="0,5,0,15"/>
+                            <TextBox x:Name="AgeTextBox"
+                                     Height="35"
+                                     IsReadOnly="True"
+                                     Margin="0,5,0,15"/>
 
                             <TextBlock Text="Yaş Aralığı" Foreground="White"/>
-                            <ComboBox x:Name="AgeRangeComboBox" Height="35" Margin="0,5,0,15"/>
+                            <ComboBox x:Name="AgeRangeComboBox"
+                                      Height="35"
+                                      Margin="0,5,0,15"/>
                         </StackPanel>
                     </Grid>
 
@@ -139,7 +140,8 @@
                             <TextBox x:Name="PhoneTextBox" Height="35" Margin="0,5,0,15"/>
 
                             <TextBlock Text="Adres" Foreground="White"/>
-                            <TextBox x:Name="AddressTextBox" Height="120"
+                            <TextBox x:Name="AddressTextBox"
+                                     Height="120"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      Margin="0,5,0,15"/>
@@ -177,7 +179,7 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- STEP 5 (ÖNİZLEME) -->
+                    <!-- STEP 5 -->
                     <Grid x:Name="Step5Grid" Visibility="Collapsed">
                         <StackPanel>
 
@@ -190,7 +192,7 @@
                             <Border Background="#111827"
         CornerRadius="15"
         Padding="20"
-        MinHeight="400">
+        MinHeight="300">
 
                                 <TextBlock x:Name="PreviewTextBlock"
                                            Foreground="White"
@@ -206,7 +208,6 @@
                                     Foreground="White"
                                     FontWeight="Bold"
                                     Click="SaveButton_Click"/>
-
                         </StackPanel>
                     </Grid>
 
@@ -215,7 +216,6 @@
             </Border>
 
             <!-- FOOTER -->
-
             <Grid Grid.Row="2">
 
                 <Grid.ColumnDefinitions>
@@ -241,11 +241,9 @@
                         Foreground="White"
                         FontWeight="Bold"
                         Click="NextButton_Click"/>
-
             </Grid>
 
             <!-- DATA GRID -->
-
             <DataGrid x:Name="PersonsDataGrid"
                       Grid.Row="3"
                       Margin="0,30,0,0"
