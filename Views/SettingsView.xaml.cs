@@ -69,5 +69,6 @@ namespace TurizmOperasyonSistemi.Views
                 dialog.ShowDialog();
             }
         }
+
     }
 }

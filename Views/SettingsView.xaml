@@ -126,6 +126,10 @@
                         Style="{StaticResource SettingCardStyle}"
                         Click="SettingButton_Click"/>
 
+                <Button Content="Kaç Günlük Grup"
+        Style="{StaticResource SettingCardStyle}"
+        Click="SettingButton_Click"/>
+
                 <Button Content="Vize Talebi"
                         Style="{StaticResource SettingCardStyle}"
                         Click="SettingButton_Click"/>
