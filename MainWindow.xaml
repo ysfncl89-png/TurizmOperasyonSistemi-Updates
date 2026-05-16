@@ -120,9 +120,11 @@
                         FontSize="16"
                         Click="PersonsButton_Click"/>
 
+
+
                 <Button x:Name="RegistrationButton"
                         Style="{StaticResource MenuButtonStyle}"
-                        Content="Kayıt"
+                        Content="Kayıt Modülü"
                         Height="50"
                         Margin="15,10"
                         Background="#1F2937"
@@ -131,17 +133,9 @@
                         FontSize="16"
                         Click="RegistrationButton_Click"/>
 
-                <Button x:Name="HotelButton"
-                        Style="{StaticResource MenuButtonStyle}"
-                        Content="Otel ve Odalama"
-                        Height="50"
-                        Margin="15,10"
-                        Background="#1F2937"
-                        Foreground="White"
-                        BorderThickness="0"
-                        FontSize="16"
-                        Click="HotelButton_Click"/>
-                
+
+
+
                 <Button x:Name="ListsButton"
                         Style="{StaticResource MenuButtonStyle}"
                         Content="Listeler"

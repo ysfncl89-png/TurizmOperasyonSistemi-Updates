@@ -1,0 +1,27 @@
+﻿<Window x:Class="TurizmOperasyonSistemi.Views.SettingDialogCities"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Katılım Yapılacak Şehirler"
+        Height="600"
+        Width="400">
+
+    <Grid Margin="10">
+        <DataGrid x:Name="CitiesDataGrid"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  SelectionMode="Extended">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="İl" Binding="{Binding Name}" Width="*"/>
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+        <Button Content="Kaydet"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Width="100"
+                Margin="0,0,10,10"
+                Click="SaveButton_Click"/>
+    </Grid>
+</Window>
