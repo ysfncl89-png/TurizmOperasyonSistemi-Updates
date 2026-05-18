@@ -372,19 +372,44 @@ namespace TurizmOperasyonSistemi.Views
         {
             currentStep = step;
 
+            // Tasarımındaki renk kodlarını WPF fırçalarına dönüştürüyoruz
+            var aktifArkaplan = (Brush)new BrushConverter().ConvertFromString("#06B6D4"); // Canlı Mavi
+            var pasifArkaplan = (Brush)new BrushConverter().ConvertFromString("#1F2937"); // Koyu Gri
+
+            var aktifYazi = Brushes.White;
+            var pasifYazi = (Brush)new BrushConverter().ConvertFromString("#9CA3AF");    // Soluk Gri
+
             if (step == 2)
             {
                 Step1Grid.Visibility = Visibility.Collapsed;
                 Step2Grid.Visibility = Visibility.Visible;
                 BackButton.Visibility = Visibility.Visible;
                 NextButton.IsEnabled = false;
+
+                // 2. Adım Aktif, 1. Adım Pasif Yapılıyor
+                Step1Border.Background = pasifArkaplan;
+                Step1Text.Foreground = pasifYazi;
+                Step1Text.FontWeight = FontWeights.Normal;
+
+                Step2Border.Background = aktifArkaplan;
+                Step2Text.Foreground = aktifYazi;
+                Step2Text.FontWeight = FontWeights.Bold;
             }
-            else
+            else // step == 1 durumu
             {
                 Step1Grid.Visibility = Visibility.Visible;
                 Step2Grid.Visibility = Visibility.Collapsed;
                 BackButton.Visibility = Visibility.Collapsed;
                 NextButton.IsEnabled = true;
+
+                // 1. Adım Aktif, 2. Adım Pasif Yapılıyor (Geri dönüldüğünde)
+                Step1Border.Background = aktifArkaplan;
+                Step1Text.Foreground = aktifYazi;
+                Step1Text.FontWeight = FontWeights.Bold;
+
+                Step2Border.Background = pasifArkaplan;
+                Step2Text.Foreground = pasifYazi;
+                Step2Text.FontWeight = FontWeights.Normal;
             }
         }
 

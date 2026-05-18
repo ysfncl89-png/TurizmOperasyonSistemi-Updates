@@ -17,11 +17,11 @@
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,20">
             <Border x:Name="Step1Border" Background="#06B6D4" CornerRadius="15" Padding="15,8" Margin="5">
-                <TextBlock Text="1. Kişi Seçimi" Foreground="White" FontWeight="Bold"/>
+                <TextBlock x:Name="Step1Text" Text="1. Kişi Seçimi" Foreground="White" FontWeight="Bold"/>
             </Border>
 
             <Border x:Name="Step2Border" Background="#1F2937" CornerRadius="15" Padding="15,8" Margin="5">
-                <TextBlock Text="2. Tur" Foreground="#9CA3AF"/>
+                <TextBlock x:Name="Step2Text" Text="2. Tur" Foreground="#9CA3AF"/>
             </Border>
 
             <Border Background="#1F2937" CornerRadius="15" Padding="15,8" Margin="5">
