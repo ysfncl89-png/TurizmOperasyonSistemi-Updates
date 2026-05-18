@@ -101,10 +101,27 @@
                               SelectionChanged="PersonsDataGrid_SelectionChanged">
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="TC Kimlik No" Binding="{Binding TcKimlikNo}" Width="120"/>
-                            <DataGridTextColumn Header="Adı" Binding="{Binding FirstName}" Width="*"/>
-                            <DataGridTextColumn Header="Soyadı" Binding="{Binding LastName}" Width="*"/>
-                            <DataGridTextColumn Header="Telefon" Binding="{Binding PhoneNumber}" Width="120"/>
+                            <DataGridTextColumn Header="Adı" Binding="{Binding FirstName}" Width="120"/>
+                            <DataGridTextColumn Header="Soyadı" Binding="{Binding LastName}" Width="120"/>
+                            <DataGridTextColumn Header="TC Kimlik No" Binding="{Binding TcNo}" Width="110"/>
+                            <DataGridTextColumn Header="Cinsiyet" Binding="{Binding Gender}" Width="80"/>
+                            <DataGridTextColumn Header="Doğum Tarihi" Binding="{Binding BirthDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="100"/>
+                            <DataGridTextColumn Header="Yaş" Binding="{Binding Age}" Width="60"/>
+                            <DataGridTextColumn Header="Yaş Aralığı" Binding="{Binding AgeRange}" Width="95"/>
+
+                            <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="110"/>
+                            <DataGridTextColumn Header="Adres" Binding="{Binding Address}" Width="180"/>
+
+                            <DataGridTextColumn Header="Kan Grubu" Binding="{Binding BloodType}" Width="85"/>
+                            <DataGridTextColumn Header="Hastalık Durumu" Binding="{Binding HealthStatus}" Width="140"/>
+                            <DataGridTextColumn Header="Aşı Durumu" Binding="{Binding VaccineStatus}" Width="110"/>
+
+                            <DataGridTextColumn Header="Pasaport Türü" Binding="{Binding PassportType}" Width="110"/>
+                            <DataGridTextColumn Header="Pasaport No" Binding="{Binding PassportNo}" Width="100"/>
+                            <DataGridTextColumn Header="Pasp. Başlangıç" Binding="{Binding PassportStartDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
+                            <DataGridTextColumn Header="Pasp. Bitiş" Binding="{Binding PassportEndDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
+
+                            <DataGridTextColumn Header="Durum" Binding="{Binding IsActive}" Width="70"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -128,7 +145,6 @@
                                 Click="ShowQuickAddButton_Click"/>
                     </StackPanel>
 
-                    <!-- QUICK ADD FORM (UPDATED) -->
                     <Border x:Name="QuickAddFormPanel"
                             Grid.Row="1"
                             Background="#1F2937"
