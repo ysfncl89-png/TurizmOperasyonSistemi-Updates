@@ -190,7 +190,6 @@ namespace TurizmOperasyonSistemi.Views
             // 🚨 1. ADIM: ZORUNLU ALAN KONTROLLERİ
             // ==========================================
 
-            // Metin alanlarının boşluk kontrolü
             if (string.IsNullOrWhiteSpace(QuickFirstNameTextBox.Text))
             {
                 MessageBox.Show("Lütfen kişinin 'Adı' alanını boş bırakmayınız.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -212,7 +211,6 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
-            // Doğum Tarihi seçilmiş mi kontrolü
             if (QuickBirthDatePicker.SelectedDate == null)
             {
                 MessageBox.Show("Lütfen 'Doğum Tarihi' alanını seçiniz.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -220,7 +218,6 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
-            // Cinsiyet ComboBox'ı seçilmiş mi kontrolü
             if (QuickGenderComboBox.SelectedValue == null)
             {
                 MessageBox.Show("Lütfen 'Cinsiyet' alanını seçiniz.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -233,7 +230,6 @@ namespace TurizmOperasyonSistemi.Views
             // ==========================================
             string tcNo = QuickTcTextBox.Text.Trim();
 
-            // Kural A: Tam olarak 11 hane olmak zorunda
             if (tcNo.Length != 11)
             {
                 MessageBox.Show("TC Kimlik Numarası tam olarak 11 haneden oluşmalıdır.", "Hatalı TC Kimlik", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -241,8 +237,6 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
-            // Kural B: Sadece rakamlardan oluşmak zorunda (Harf veya sembol içeremez)
-            // Linq kullanarak her bir karakterin rakam olup olmadığını check ediyoruz
             if (!tcNo.All(char.IsDigit))
             {
                 MessageBox.Show("TC Kimlik Numarası sadece rakamlardan oluşabilir. Lütfen harf veya özel karakter girmeyiniz.", "Hatalı TC Kimlik", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -251,11 +245,38 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             // ==========================================
+            // 🚨 2B. ADIM: MÜKERRER KAYIT (TC KONTROLÜ) - 🔥 YENİ EKLENEN KONTROL
+            // ==========================================
+            using (var db = new AppDbContext())
+            {
+                bool tcZatenVarMi = db.Persons.Any(x => x.TcKimlikNo == tcNo && x.IsActive == true);
+
+                if (tcZatenVarMi)
+                {
+                    MessageBox.Show($"'{tcNo}' TC numaralı kişi sistemde zaten kayıtlıdır!\nOtomatik olarak arama listesine yönlendiriliyorsunuz.",
+                                    "Mükerrer Kayıt Hatası",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error);
+
+                    // 1. Formu temizle ve paneli gizle (Zaten senin yazdığın metot)
+                    ClearQuickAddForm();
+
+                    // 2. Girilen TC'yi ana arama kutusuna aktar ki listede direkt önümüze çıksın
+                    SearchTextBox.Text = tcNo;
+
+                    // 3. Arama kutusuna odaklan ki kullanıcı direkt seçebilsin
+                    SearchTextBox.Focus();
+
+                    return; // İşlemi bitir, sonraki kodlara geçme
+                }
+            }
+
+            // ==========================================
             // 🔓 TÜM KONTROLLERİ GEÇTİ, ŞİMDİ İŞLEME DEVAM ET
             // ==========================================
 
             string passportType = QuickPassportTypeComboBox.SelectedValue?.ToString() ?? "Belirtilmedi";
-            string gender = QuickGenderComboBox.SelectedValue.ToString(); // Yukarıda null kontrolü yapıldığı için güvenli
+            string gender = QuickGenderComboBox.SelectedValue.ToString();
             string ageRange = QuickAgeRangeComboBox.SelectedValue?.ToString() ?? "Yetişkin";
             string bloodType = QuickBloodTypeComboBox.SelectedValue?.ToString() ?? "Belirtilmedi";
 
@@ -306,6 +327,10 @@ namespace TurizmOperasyonSistemi.Views
                     MessageBox.Show($"{newPerson.FirstName} {newPerson.LastName} başarıyla kaydedildi. Tur Bilgileri adımına geçiliyor.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
 
                     ClearQuickAddForm();
+
+                    // Veritabanına yeni eklenen kişinin DataGrid'e yansıması için listeyi yeniliyoruz
+                    LoadPersons();
+
                     SwitchToStep(2);
                 }
             }

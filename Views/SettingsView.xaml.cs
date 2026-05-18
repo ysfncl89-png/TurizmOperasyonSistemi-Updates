@@ -51,6 +51,11 @@ namespace TurizmOperasyonSistemi.Views
                     settingType = "Dönem";
                     break;
 
+                case "Kaç Günlük Grup":
+                    settingType = "CountOfDays";
+                    break;
+
+
                 default:
                     settingType = settingName;
                     break;
