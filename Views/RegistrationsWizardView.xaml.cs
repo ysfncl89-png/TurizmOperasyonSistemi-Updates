@@ -20,7 +20,12 @@ namespace TurizmOperasyonSistemi.Views
         {
             InitializeComponent();
             LoadPersons();
+ 
+
+            // Veritabanından ComboBox'ları dolduran metodu tam burada tetikliyoruz:
+            LoadSettingsToComboBoxes();
         }
+        
 
         private void LoadPersons()
         {
@@ -436,8 +441,24 @@ namespace TurizmOperasyonSistemi.Views
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
         {
+            // 1. Adım: Kişi seçimi kontrolü (Senin mevcut kodun)
             if (currentStep == 1 && selectedPersonId != 0)
+            {
                 SwitchToStep(2);
+                NextButton.IsEnabled = false; // 2. adıma ilk geçildiğinde buton kapansın
+            }
+            // 2. Adım: Tur detayları kontrolü (Yeni eklenen kısım)
+            else if (currentStep == 2)
+            {
+                // 4 ComboBox da seçildiyse 3. adıma geç
+                if (TourTypeComboBox.SelectedItem != null &&
+                    PeriodComboBox.SelectedItem != null &&
+                    GroupTypeComboBox.SelectedItem != null &&
+                    DaysCountComboBox.SelectedItem != null)
+                {
+                    SwitchToStep(3);
+                }
+            }
         }
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
@@ -448,6 +469,59 @@ namespace TurizmOperasyonSistemi.Views
 
         private void TourDetails_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (currentStep == 2)
+            {
+                // 4 alanın da seçili olup olmadığını kontrol et
+                bool isStep2Valid = TourTypeComboBox.SelectedItem != null &&
+                                    PeriodComboBox.SelectedItem != null &&
+                                    GroupTypeComboBox.SelectedItem != null &&
+                                    DaysCountComboBox.SelectedItem != null;
+
+                // Hepsi seçildiyse İleri butonu aktif olur
+                NextButton.IsEnabled = isStep2Valid;
+            }
         }
+        private void LoadSettingsToComboBoxes()
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    // 1. TUR TÜRLERİ (Sadece aktif olanlar ve SortOrder'a göre sıralı)
+                    TourTypeComboBox.ItemsSource = db.AppSettings
+                        .Where(s => s.Type == "TourType" && s.IsActive)
+                        .OrderBy(s => s.SortOrder)
+                        .Select(s => s.Value)
+                        .ToList();
+
+                    // 2. GRUP TÜRLERİ
+                    GroupTypeComboBox.ItemsSource = db.AppSettings
+                        .Where(s => s.Type == "GroupType" && s.IsActive)
+                        .OrderBy(s => s.SortOrder)
+                        .Select(s => s.Value)
+                        .ToList();
+
+                    // 3. KAÇ GÜNLÜK GRUP
+                    DaysCountComboBox.ItemsSource = db.AppSettings
+                        .Where(s => s.Type == "CountOfDays" && s.IsActive)
+                        .OrderBy(s => s.SortOrder)
+                        .Select(s => s.Value)
+                        .ToList();
+
+                    // 4. DÖNEM SEÇİMİ (SettingsView'daki switch bloğunda "Dönem" olarak geçtiği için)
+                    PeriodComboBox.ItemsSource = db.AppSettings
+                        .Where(s => s.Type == "Dönem" && s.IsActive)
+                        .OrderBy(s => s.SortOrder)
+                        .Select(s => s.Value)
+                        .ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ayarlar tablosundan veriler yüklenirken bir hata oluştu: {ex.Message}",
+                                "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
     }
 }
