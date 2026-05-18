@@ -141,6 +141,12 @@
                 <Button Content="Bilet Talebi"
                         Style="{StaticResource SettingCardStyle}"
                         Click="SettingButton_Click"/>
+                
+                <Button Content="Aktarma Şehri"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
+
 
                 <Button Content="Aktarma Var mı?"
                         Style="{StaticResource SettingCardStyle}"

@@ -47,6 +47,10 @@ namespace TurizmOperasyonSistemi.Views
                     settingType = "CurrencyType";
                     break;
 
+                case "Aktarma Şehri":
+                    settingType = "TransferCity";
+                    break;
+
                 case "Dönem":
                     settingType = "Dönem";
                     break;

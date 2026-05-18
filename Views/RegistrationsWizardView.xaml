@@ -15,18 +15,102 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,20">
-            <Border x:Name="Step1Border" Background="#06B6D4" CornerRadius="15" Padding="15,8" Margin="5">
-                <TextBlock x:Name="Step1Text" Text="1. Kişi Seçimi" Foreground="White" FontWeight="Bold"/>
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0,20,0,20">
+
+            <Border x:Name="Step1Border"
+                    Background="#06B6D4"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step1Text"
+                           Text="1. Kişi Seçimi"
+                           Foreground="White"
+                           FontWeight="Bold"/>
             </Border>
 
-            <Border x:Name="Step2Border" Background="#1F2937" CornerRadius="15" Padding="15,8" Margin="5">
-                <TextBlock x:Name="Step2Text" Text="2. Tur" Foreground="#9CA3AF"/>
+            <Border x:Name="Step2Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step2Text"
+                           Text="2. Tur"
+                           Foreground="#9CA3AF"/>
             </Border>
 
-            <Border Background="#1F2937" CornerRadius="15" Padding="15,8" Margin="5">
-                <TextBlock Text="..." Foreground="#9CA3AF"/>
+            <Border x:Name="Step3Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step3Text"
+                           Text="3. Vize Bilet"
+                           Foreground="#9CA3AF"/>
             </Border>
+
+            <Border x:Name="Step4Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step4Text"
+                           Text="4. Kargo"
+                           Foreground="#9CA3AF"/>
+            </Border>
+
+            <Border x:Name="Step5Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step5Text"
+                           Text="5. Oda Türü"
+                           Foreground="#9CA3AF"/>
+            </Border>
+
+            <Border x:Name="Step6Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step6Text"
+                           Text="6. Katılım Şehri"
+                           Foreground="#9CA3AF"/>
+            </Border>
+
+            <Border x:Name="Step7Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step7Text"
+                           Text="7. Fiyat  Ödeme"
+                           Foreground="#9CA3AF"/>
+            </Border>
+
+            <Border x:Name="Step8Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step8Text"
+                           Text="8. Referans"
+                           Foreground="#9CA3AF"/>
+            </Border>
+
+            <Border x:Name="Step9Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step9Text"
+                           Text="9. Önizleme"
+                           Foreground="#9CA3AF"/>
+            </Border>
+
         </StackPanel>
 
         <Grid Grid.Row="1" Margin="20,0,20,20">
@@ -37,10 +121,20 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="#1F2937" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                <Border Grid.Row="0"
+                        Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="15"
+                        Margin="0,0,0,15">
+
                     <StackPanel>
+
                         <TextBlock Text="🔍 Tur kaydını yapacağınız kişinin veritabanında kayıtlı olup olmadığını arama kutusunda arama yaparak kontrol edin. Varsa kişiyi seçerek ilerleyin. Yoksa Kişiyi kaydederek ilerleyin"
-                                   Foreground="#06B6D4" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                                   Foreground="#06B6D4"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,10"
+                                   TextWrapping="Wrap"/>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -108,19 +202,15 @@
                             <DataGridTextColumn Header="Doğum Tarihi" Binding="{Binding BirthDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="100"/>
                             <DataGridTextColumn Header="Yaş" Binding="{Binding Age}" Width="60"/>
                             <DataGridTextColumn Header="Yaş Aralığı" Binding="{Binding AgeRange}" Width="95"/>
-
                             <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="110"/>
                             <DataGridTextColumn Header="Adres" Binding="{Binding Address}" Width="180"/>
-
                             <DataGridTextColumn Header="Kan Grubu" Binding="{Binding BloodType}" Width="85"/>
                             <DataGridTextColumn Header="Hastalık Durumu" Binding="{Binding HealthStatus}" Width="140"/>
                             <DataGridTextColumn Header="Aşı Durumu" Binding="{Binding VaccineStatus}" Width="110"/>
-
                             <DataGridTextColumn Header="Pasaport Türü" Binding="{Binding PassportType}" Width="110"/>
                             <DataGridTextColumn Header="Pasaport No" Binding="{Binding PassportNo}" Width="100"/>
                             <DataGridTextColumn Header="Pasp. Başlangıç" Binding="{Binding PassportStartDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
                             <DataGridTextColumn Header="Pasp. Bitiş" Binding="{Binding PassportEndDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
-
                             <DataGridTextColumn Header="Durum" Binding="{Binding IsActive}" Width="70"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -156,6 +246,7 @@
                             Visibility="Collapsed">
 
                         <StackPanel>
+
                             <TextBlock Text="👤 Yeni Kişi Detaylı Kayıt Formu"
                                        Foreground="#10B981"
                                        FontSize="16"
@@ -164,6 +255,7 @@
                                        HorizontalAlignment="Center"/>
 
                             <Grid>
+
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="15"/>
@@ -173,19 +265,61 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="TC Kimlik No" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="QuickTcTextBox" Background="#111827" Foreground="White" BorderBrush="#374151" Padding="5" Margin="0,0,0,10" MaxLength="11"/>
 
-                                    <TextBlock Text="Adı" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="QuickFirstNameTextBox" Background="#111827" Foreground="White" BorderBrush="#374151" Padding="5" Margin="0,0,0,10"/>
+                                    <TextBlock Text="TC Kimlik No"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
 
-                                    <TextBlock Text="Soyadı" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="QuickLastNameTextBox" Background="#111827" Foreground="White" BorderBrush="#374151" Padding="5" Margin="0,0,0,10"/>
+                                    <TextBox x:Name="QuickTcTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="5"
+                                             Margin="0,0,0,10"
+                                             MaxLength="11"/>
 
-                                    <TextBlock Text="Telefon Numarası" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="QuickPhoneTextBox" Background="#111827" Foreground="White" BorderBrush="#374151" Padding="5" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Adı"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
 
-                                    <TextBlock Text="Doğum Tarihi" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
+                                    <TextBox x:Name="QuickFirstNameTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="5"
+                                             Margin="0,0,0,10"/>
+
+                                    <TextBlock Text="Soyadı"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
+                                    <TextBox x:Name="QuickLastNameTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="5"
+                                             Margin="0,0,0,10"/>
+
+                                    <TextBlock Text="Telefon Numarası"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
+                                    <TextBox x:Name="QuickPhoneTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="5"
+                                             Margin="0,0,0,10"/>
+
+                                    <TextBlock Text="Doğum Tarihi"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
                                     <DatePicker x:Name="QuickBirthDatePicker"
                                                 Background="#111827"
                                                 BorderBrush="#374151"
@@ -195,10 +329,24 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Pasaport Numarası" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="QuickPassportNumberTextBox" Background="#111827" Foreground="White" BorderBrush="#374151" Padding="5" Margin="0,0,0,10"/>
 
-                                    <TextBlock Text="Pasaport Türü" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Pasaport Numarası"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
+                                    <TextBox x:Name="QuickPassportNumberTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="5"
+                                             Margin="0,0,0,10"/>
+
+                                    <TextBlock Text="Pasaport Türü"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
                                     <ComboBox x:Name="QuickPassportTypeComboBox"
                                               Background="#111827"
                                               Foreground="White"
@@ -208,18 +356,48 @@
                                               DisplayMemberPath="Value"
                                               SelectedValuePath="Value"/>
 
-                                    <TextBlock Text="Pasaport Başlangıç Tarihi" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <DatePicker x:Name="QuickPassportStartDatePicker" Background="#111827" BorderBrush="#374151" Margin="0,0,0,10" Padding="3"/>
+                                    <TextBlock Text="Pasaport Başlangıç Tarihi"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
 
-                                    <TextBlock Text="Pasaport Bitiş Tarihi" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <DatePicker x:Name="QuickPassportEndDatePicker" Background="#111827" BorderBrush="#374151" Margin="0,0,0,10" Padding="3"/>
+                                    <DatePicker x:Name="QuickPassportStartDatePicker"
+                                                Background="#111827"
+                                                BorderBrush="#374151"
+                                                Margin="0,0,0,10"
+                                                Padding="3"/>
 
-                                    <TextBlock Text="Adres" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="QuickAddressTextBox" Background="#111827" Foreground="White" BorderBrush="#374151" Padding="5" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Pasaport Bitiş Tarihi"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
+                                    <DatePicker x:Name="QuickPassportEndDatePicker"
+                                                Background="#111827"
+                                                BorderBrush="#374151"
+                                                Margin="0,0,0,10"
+                                                Padding="3"/>
+
+                                    <TextBlock Text="Adres"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
+                                    <TextBox x:Name="QuickAddressTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="5"
+                                             Margin="0,0,0,10"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Cinsiyet" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
+
+                                    <TextBlock Text="Cinsiyet"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
                                     <ComboBox x:Name="QuickGenderComboBox"
                                               Background="#111827"
                                               Foreground="White"
@@ -229,7 +407,11 @@
                                               DisplayMemberPath="Value"
                                               SelectedValuePath="Value"/>
 
-                                    <TextBlock Text="Yaş Aralığı" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Yaş Aralığı"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
                                     <ComboBox x:Name="QuickAgeRangeComboBox"
                                               Background="#111827"
                                               Foreground="White"
@@ -239,7 +421,11 @@
                                               DisplayMemberPath="Value"
                                               SelectedValuePath="Value"/>
 
-                                    <TextBlock Text="Kan Grubu" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Kan Grubu"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
                                     <ComboBox x:Name="QuickBloodTypeComboBox"
                                               Background="#111827"
                                               Foreground="White"
@@ -249,12 +435,31 @@
                                               DisplayMemberPath="Value"
                                               SelectedValuePath="Value"/>
 
-                                    <TextBlock Text="Sağlık Durumu" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="QuickHealthStatusTextBox" Background="#111827" Foreground="White" BorderBrush="#374151" Padding="5" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Sağlık Durumu"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
 
-                                    <TextBlock Text="Aşı Durumu" Foreground="#9CA3AF" Margin="0,0,0,3" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="QuickVaccineStatusTextBox" Background="#111827" Foreground="White" BorderBrush="#374151" Padding="5" Margin="0,0,0,10"/>
+                                    <TextBox x:Name="QuickHealthStatusTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="5"
+                                             Margin="0,0,0,10"/>
+
+                                    <TextBlock Text="Aşı Durumu"
+                                               Foreground="#9CA3AF"
+                                               Margin="0,0,0,3"
+                                               FontWeight="SemiBold"/>
+
+                                    <TextBox x:Name="QuickVaccineStatusTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="5"
+                                             Margin="0,0,0,10"/>
                                 </StackPanel>
+
                             </Grid>
 
                             <Button x:Name="SaveQuickPersonButton"
@@ -271,6 +476,7 @@
             </Grid>
 
             <Grid x:Name="Step2Grid" Visibility="Collapsed">
+
                 <Border Background="#1F2937"
                         CornerRadius="8"
                         Padding="25"
@@ -280,6 +486,7 @@
                         Margin="0,10,0,0">
 
                     <StackPanel>
+
                         <TextBlock Text="🗺️ Tur ve Grup Bilgileri"
                                    Foreground="#06B6D4"
                                    FontSize="18"
@@ -344,13 +551,318 @@
                                    FontSize="11"
                                    Margin="0,5,0,0"
                                    HorizontalAlignment="Center"/>
+
                     </StackPanel>
+
                 </Border>
+
+            </Grid>
+
+            <Grid x:Name="Step3Grid" Visibility="Collapsed">
+
+                <Border Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="25"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Center"
+                        Width="500">
+
+                    <StackPanel>
+
+                        <TextBlock Text="🛂 Vize ve Bilet Bilgileri"
+                                   Foreground="#06B6D4"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Vize Talebi"
+                                   Foreground="#9CA3AF"/>
+
+                        <ComboBox x:Name="VisaRequestComboBox"
+                                  Background="#111827"
+                                  Foreground="White"
+                                  BorderBrush="#374151"
+                                  Padding="8"
+                                  Margin="0,5,0,15"/>
+
+                        <TextBlock Text="Bilet Talebi"
+                                   Foreground="#9CA3AF"/>
+
+                        <ComboBox x:Name="TicketRequestComboBox"
+                                  Background="#111827"
+                                  Foreground="White"
+                                  BorderBrush="#374151"
+                                  Padding="8"/>
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+            <Grid x:Name="Step4Grid" Visibility="Collapsed">
+
+                <Border Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="25"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Center"
+                        Width="500">
+
+                    <StackPanel>
+
+                        <TextBlock Text="📦 Kargo Talebi"
+                                   Foreground="#06B6D4"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Kargo Talebi"
+                                   Foreground="#9CA3AF"/>
+
+                        <ComboBox x:Name="CargoRequestComboBox"
+                                  Background="#111827"
+                                  Foreground="White"
+                                  BorderBrush="#374151"
+                                  Padding="8"/>
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+            <Grid x:Name="Step5Grid" Visibility="Collapsed">
+
+                <Border Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="25"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Center"
+                        Width="500">
+
+                    <StackPanel>
+
+                        <TextBlock Text="🛏️ Oda Türü"
+                                   Foreground="#06B6D4"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Oda Türü"
+                                   Foreground="#9CA3AF"/>
+
+                        <ComboBox x:Name="RoomTypeComboBox"
+                                  Background="#111827"
+                                  Foreground="White"
+                                  BorderBrush="#374151"
+                                  Padding="8"/>
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+            <Grid x:Name="Step6Grid" Visibility="Collapsed">
+
+                <Border Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="25"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Center"
+                        Width="500">
+
+                    <StackPanel>
+
+                        <TextBlock Text="🏙️ Katılım Bilgileri"
+                                   Foreground="#06B6D4"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Katılım Yapılacak Şehir"
+                                   Foreground="#9CA3AF"/>
+
+                        
+
+                        <TextBlock Text="Aktarma Var mı?"
+                                   Foreground="#9CA3AF"/>
+
+                        <ComboBox x:Name="TransferComboBox"
+                                  SelectionChanged="TransferComboBox_SelectionChanged"
+                                  Background="#111827"
+                                  Foreground="White"
+                                  BorderBrush="#374151"
+                                  Padding="8"
+                                  Margin="0,5,0,15"/>
+
+                        <StackPanel x:Name="TransferPanel"
+                                    Visibility="Collapsed">
+
+                            <TextBlock Text="Aktarma Şehri"
+                                       Foreground="#9CA3AF"/>
+
+                            <ComboBox x:Name="TransferCityComboBox"
+                                      Background="#111827"
+                                      Foreground="White"
+                                      BorderBrush="#374151"
+                                      Padding="8"
+                                      Margin="0,5,0,15"/>
+
+                            <TextBlock Text="İlçe"
+                                       Foreground="#9CA3AF"/>
+
+                            <TextBox x:Name="TransferDistrictTextBox"
+                                     Background="#111827"
+                                     Foreground="White"
+                                     BorderBrush="#374151"
+                                     Padding="8"/>
+
+                        </StackPanel>
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+            <Grid x:Name="Step7Grid" Visibility="Collapsed">
+
+                <Border Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="25"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Center"
+                        Width="500">
+
+                    <StackPanel>
+
+                        <TextBlock Text="💰 Fiyat ve Ödeme"
+                                   Foreground="#06B6D4"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Toplam Fiyat"
+                                   Foreground="#9CA3AF"/>
+
+                        <TextBox x:Name="PriceTextBox"
+                                 TextChanged="PaymentFields_TextChanged"
+                                 Background="#111827"
+                                 Foreground="White"
+                                 BorderBrush="#374151"
+                                 Padding="8"
+                                 Margin="0,5,0,15"/>
+
+                        <TextBlock Text="Para Birimi"
+                                   Foreground="#9CA3AF"/>
+
+                        <ComboBox x:Name="CurrencyComboBox"
+                                  Background="#111827"
+                                  Foreground="White"
+                                  BorderBrush="#374151"
+                                  Padding="8"
+                                  Margin="0,5,0,15"/>
+
+                        <TextBlock Text="Ödenen"
+                                   Foreground="#9CA3AF"/>
+
+                        <TextBox x:Name="PaidTextBox"
+                                 TextChanged="PaymentFields_TextChanged"
+                                 Background="#111827"
+                                 Foreground="White"
+                                 BorderBrush="#374151"
+                                 Padding="8"
+                                 Margin="0,5,0,15"/>
+
+                        <TextBlock Text="Kalan Borç"
+                                   Foreground="#9CA3AF"/>
+
+                        <TextBox x:Name="RemainingDebtTextBox"
+                                 IsReadOnly="True"
+                                 Background="#374151"
+                                 Foreground="White"
+                                 BorderBrush="#374151"
+                                 Padding="8"/>
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+            <Grid x:Name="Step8Grid" Visibility="Collapsed">
+
+                <Border Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="25"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Center"
+                        Width="500">
+
+                    <StackPanel>
+
+                        <TextBlock Text="👥 Referans Bilgisi"
+                                   Foreground="#06B6D4"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Referans"
+                                   Foreground="#9CA3AF"/>
+
+                        <TextBox x:Name="ReferenceTextBox"
+                                 Background="#111827"
+                                 Foreground="White"
+                                 BorderBrush="#374151"
+                                 Padding="8"/>
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+            <Grid x:Name="Step9Grid" Visibility="Collapsed">
+
+                <Border Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="25"
+                        Margin="20">
+
+                    <StackPanel>
+
+                        <TextBlock Text="📋 Kayıt Önizleme"
+                                   Foreground="#06B6D4"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock x:Name="PreviewTextBlock"
+                                   Foreground="White"
+                                   FontSize="14"
+                                   TextWrapping="Wrap"/>
+
+                    </StackPanel>
+
+                </Border>
+
             </Grid>
 
         </Grid>
 
-        <Border Grid.Row="2" Background="#1F2937" Padding="15">
+        <Border Grid.Row="2"
+                Background="#1F2937"
+                Padding="15">
+
             <Grid>
 
                 <Button x:Name="BackButton"
@@ -382,8 +894,11 @@
                         FontWeight="Bold"
                         Click="NextButton_Click"
                         IsEnabled="False"/>
+
             </Grid>
+
         </Border>
 
     </Grid>
+
 </Page>

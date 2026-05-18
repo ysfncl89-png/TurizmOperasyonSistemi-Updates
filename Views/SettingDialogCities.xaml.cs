@@ -7,6 +7,7 @@ namespace TurizmOperasyonSistemi.Views
     public partial class SettingDialogCities : Window
     {
         public List<string> SelectedCities { get; set; } = new List<string>();
+        public string SelectedCity { get; internal set; }
 
         public SettingDialogCities()
         {

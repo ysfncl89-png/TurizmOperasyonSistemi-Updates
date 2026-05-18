@@ -16,16 +16,19 @@ namespace TurizmOperasyonSistemi.Views
         private int selectedPersonId = 0;
         private ICollectionView _personsView;
 
+
+        private string selectedJoinCity = "";
         public RegistrationsWizardView()
         {
             InitializeComponent();
             LoadPersons();
- 
-
-            // Veritabanından ComboBox'ları dolduran metodu tam burada tetikliyoruz:
             LoadSettingsToComboBoxes();
+
         }
-        
+
+        private const int MaxStep = 9;
+
+        public object JoinCityComboBox { get; private set; }
 
         private void LoadPersons()
         {
@@ -138,15 +141,12 @@ namespace TurizmOperasyonSistemi.Views
             NoPersonPanel.Visibility = Visibility.Collapsed;
             QuickAddFormPanel.Visibility = Visibility.Visible;
 
-            LoadSettingsToWizardForm(); // 🔥 İSTENEN EKLENTİ
+            LoadSettingsToWizardForm();
 
             QuickFirstNameTextBox.Text = SearchTextBox.Text;
             QuickFirstNameTextBox.Focus();
         }
 
-        // =====================================================
-        // ⚡ 1. SETTINGS LOAD (DINAMIK COMBOBOX DOLDURMA)
-        // =====================================================
         private void LoadSettingsToWizardForm()
         {
             using (var db = new AppDbContext())
@@ -163,9 +163,6 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        // =====================================================
-        // ⚡ 2. DOĞUM TARİHİ -> YAŞ ARALIĞI OTOMATİK SEÇİM
-        // =====================================================
         private void QuickBirthDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
             if (QuickBirthDatePicker.SelectedDate != null)
@@ -186,121 +183,64 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        // =====================================================
-        // 👁️ 3. KAYIT + ÖNİZLEME + DB INSERT
-        // =====================================================
         private void SaveQuickPersonButton_Click(object sender, RoutedEventArgs e)
         {
-            // ==========================================
-            // 🚨 1. ADIM: ZORUNLU ALAN KONTROLLERİ
-            // ==========================================
-
             if (string.IsNullOrWhiteSpace(QuickFirstNameTextBox.Text))
             {
-                MessageBox.Show("Lütfen kişinin 'Adı' alanını boş bırakmayınız.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                QuickFirstNameTextBox.Focus();
+                MessageBox.Show("Lütfen kişinin 'Adı' alanını boş bırakmayınız.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(QuickLastNameTextBox.Text))
             {
-                MessageBox.Show("Lütfen kişinin 'Soyadı' alanını boş bırakmayınız.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                QuickLastNameTextBox.Focus();
+                MessageBox.Show("Lütfen kişinin 'Soyadı' alanını boş bırakmayınız.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(QuickTcTextBox.Text))
             {
-                MessageBox.Show("Lütfen 'TC Kimlik No' alanını boş bırakmayınız.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                QuickTcTextBox.Focus();
+                MessageBox.Show("Lütfen 'TC Kimlik No' alanını boş bırakmayınız.");
                 return;
             }
 
             if (QuickBirthDatePicker.SelectedDate == null)
             {
-                MessageBox.Show("Lütfen 'Doğum Tarihi' alanını seçiniz.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                QuickBirthDatePicker.Focus();
+                MessageBox.Show("Lütfen doğum tarihi seçiniz.");
                 return;
             }
 
             if (QuickGenderComboBox.SelectedValue == null)
             {
-                MessageBox.Show("Lütfen 'Cinsiyet' alanını seçiniz.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                QuickGenderComboBox.Focus();
+                MessageBox.Show("Lütfen cinsiyet seçiniz.");
                 return;
             }
 
-            // ==========================================
-            // 🔢 2. ADIM: TC KİMLİK NO ÖZEL VALİDASYONLARI
-            // ==========================================
             string tcNo = QuickTcTextBox.Text.Trim();
 
-            if (tcNo.Length != 11)
+            if (tcNo.Length != 11 || !tcNo.All(char.IsDigit))
             {
-                MessageBox.Show("TC Kimlik Numarası tam olarak 11 haneden oluşmalıdır.", "Hatalı TC Kimlik", MessageBoxButton.OK, MessageBoxImage.Error);
-                QuickTcTextBox.Focus();
+                MessageBox.Show("TC Kimlik No hatalı.");
                 return;
             }
 
-            if (!tcNo.All(char.IsDigit))
-            {
-                MessageBox.Show("TC Kimlik Numarası sadece rakamlardan oluşabilir. Lütfen harf veya özel karakter girmeyiniz.", "Hatalı TC Kimlik", MessageBoxButton.OK, MessageBoxImage.Error);
-                QuickTcTextBox.Focus();
-                return;
-            }
-
-            // ==========================================
-            // 🚨 2B. ADIM: MÜKERRER KAYIT (TC KONTROLÜ) - 🔥 YENİ EKLENEN KONTROL
-            // ==========================================
             using (var db = new AppDbContext())
             {
-                bool tcZatenVarMi = db.Persons.Any(x => x.TcKimlikNo == tcNo && x.IsActive == true);
-
-                if (tcZatenVarMi)
+                if (db.Persons.Any(x => x.TcKimlikNo == tcNo && x.IsActive))
                 {
-                    MessageBox.Show($"'{tcNo}' TC numaralı kişi sistemde zaten kayıtlıdır!\nOtomatik olarak arama listesine yönlendiriliyorsunuz.",
-                                    "Mükerrer Kayıt Hatası",
-                                    MessageBoxButton.OK,
-                                    MessageBoxImage.Error);
-
-                    // 1. Formu temizle ve paneli gizle (Zaten senin yazdığın metot)
+                    MessageBox.Show("Bu TC zaten kayıtlı.");
                     ClearQuickAddForm();
-
-                    // 2. Girilen TC'yi ana arama kutusuna aktar ki listede direkt önümüze çıksın
                     SearchTextBox.Text = tcNo;
-
-                    // 3. Arama kutusuna odaklan ki kullanıcı direkt seçebilsin
                     SearchTextBox.Focus();
-
-                    return; // İşlemi bitir, sonraki kodlara geçme
+                    return;
                 }
             }
-
-            // ==========================================
-            // 🔓 TÜM KONTROLLERİ GEÇTİ, ŞİMDİ İŞLEME DEVAM ET
-            // ==========================================
 
             string passportType = QuickPassportTypeComboBox.SelectedValue?.ToString() ?? "Belirtilmedi";
             string gender = QuickGenderComboBox.SelectedValue.ToString();
             string ageRange = QuickAgeRangeComboBox.SelectedValue?.ToString() ?? "Yetişkin";
             string bloodType = QuickBloodTypeComboBox.SelectedValue?.ToString() ?? "Belirtilmedi";
 
-            // 📜 Kayıt Önizleme Onay Ekranı
-            string previewMessage = $"👤 YENİ KİŞİ KAYIT ÖNİZLEME\n" +
-                                   $"----------------------------------------\n" +
-                                   $"TC Kimlik No: {tcNo}\n" +
-                                   $"Adı Soyadı: {QuickFirstNameTextBox.Text.Trim()} {QuickLastNameTextBox.Text.Trim()}\n" +
-                                   $"Telefon: {QuickPhoneTextBox.Text.Trim()}\n" +
-                                   $"Doğum Tarihi: {QuickBirthDatePicker.SelectedDate.Value.ToShortDateString()} ({ageRange})\n" +
-                                   $"Cinsiyet: {gender} | Kan Grubu: {bloodType}\n" +
-                                   $"Pasaport No & Türü: {QuickPassportNumberTextBox.Text.Trim()} ({passportType})\n" +
-                                   $"Sağlık / Aşı Durumu: {QuickHealthStatusTextBox.Text.Trim()} / {QuickVaccineStatusTextBox.Text.Trim()}\n" +
-                                   $"Adres: {QuickAddressTextBox.Text.Trim()}\n\n" +
-                                   $"Yukarıdaki bilgilerin doğruluğunu onaylıyor musunuz?";
-
-            MessageBoxResult result = MessageBox.Show(previewMessage, "Kayıt Önizleme ve Veritabanı Onayı", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
+            if (MessageBox.Show("Kaydı onaylıyor musunuz?", "Onay", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
                 using (var db = new AppDbContext())
                 {
@@ -315,12 +255,10 @@ namespace TurizmOperasyonSistemi.Views
                         BirthDate = QuickBirthDatePicker.SelectedDate.Value,
                         BloodType = bloodType,
                         Gender = gender,
-                        HealthStatus = QuickHealthStatusTextBox.Text.Trim(),
-                        VaccineStatus = QuickVaccineStatusTextBox.Text.Trim(),
-                        PassportNumber = QuickPassportNumberTextBox.Text.Trim(),
+                        PassportNumber = QuickPassportNumberTextBox.Text?.Trim() ?? "Yok",
+                        HealthStatus = QuickHealthStatusTextBox.Text?.Trim() ?? "Belirtilmedi",
+                        VaccineStatus = QuickVaccineStatusTextBox.Text?.Trim() ?? "Belirtilmedi",
                         PassportType = passportType,
-                        PassportStartDate = QuickPassportStartDatePicker.SelectedDate,
-                        PassportEndDate = QuickPassportEndDatePicker.SelectedDate,
                         IsActive = true
                     };
 
@@ -328,27 +266,13 @@ namespace TurizmOperasyonSistemi.Views
                     db.SaveChanges();
 
                     selectedPersonId = newPerson.Id;
-
-                    MessageBox.Show($"{newPerson.FirstName} {newPerson.LastName} başarıyla kaydedildi. Tur Bilgileri adımına geçiliyor.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                    ClearQuickAddForm();
-
-                    // Veritabanına yeni eklenen kişinin DataGrid'e yansıması için listeyi yeniliyoruz
                     LoadPersons();
-
+                    ClearQuickAddForm();
                     SwitchToStep(2);
                 }
             }
         }
-        private void TextBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
-        {
-            // Girilen karakter rakam değilse yazılmasını engeller
-            e.Handled = !e.Text.All(char.IsDigit);
-        }
 
-        // =====================================================
-        // 🧹 TEMİZLEME
-        // =====================================================
         private void ClearQuickAddForm()
         {
             QuickTcTextBox.Clear();
@@ -356,20 +280,6 @@ namespace TurizmOperasyonSistemi.Views
             QuickLastNameTextBox.Clear();
             QuickPhoneTextBox.Clear();
             QuickBirthDatePicker.SelectedDate = null;
-
-            QuickPassportNumberTextBox.Clear();
-            QuickAddressTextBox.Clear();
-            QuickHealthStatusTextBox.Clear();
-            QuickVaccineStatusTextBox.Clear();
-
-            QuickPassportTypeComboBox.SelectedIndex = -1;
-            QuickGenderComboBox.SelectedIndex = -1;
-            QuickAgeRangeComboBox.SelectedIndex = -1;
-            QuickBloodTypeComboBox.SelectedIndex = -1;
-
-            QuickPassportStartDatePicker.SelectedDate = null;
-            QuickPassportEndDatePicker.SelectedDate = null;
-
             QuickAddFormPanel.Visibility = Visibility.Collapsed;
         }
 
@@ -377,54 +287,229 @@ namespace TurizmOperasyonSistemi.Views
         {
             currentStep = step;
 
-            // Tasarımındaki renk kodlarını WPF fırçalarına dönüştürüyoruz
-            var aktifArkaplan = (Brush)new BrushConverter().ConvertFromString("#06B6D4"); // Canlı Mavi
-            var pasifArkaplan = (Brush)new BrushConverter().ConvertFromString("#1F2937"); // Koyu Gri
+            Step1Grid.Visibility = Visibility.Collapsed;
+            Step2Grid.Visibility = Visibility.Collapsed;
+            Step3Grid.Visibility = Visibility.Collapsed;
+            Step4Grid.Visibility = Visibility.Collapsed;
+            Step5Grid.Visibility = Visibility.Collapsed;
+            Step6Grid.Visibility = Visibility.Collapsed;
+            Step7Grid.Visibility = Visibility.Collapsed;
+            Step8Grid.Visibility = Visibility.Collapsed;
+            Step9Grid.Visibility = Visibility.Collapsed;
 
-            var aktifYazi = Brushes.White;
-            var pasifYazi = (Brush)new BrushConverter().ConvertFromString("#9CA3AF");    // Soluk Gri
-
-            if (step == 2)
+            switch (step)
             {
-                Step1Grid.Visibility = Visibility.Collapsed;
-                Step2Grid.Visibility = Visibility.Visible;
-                BackButton.Visibility = Visibility.Visible;
-                NextButton.IsEnabled = false;
-
-                // 2. Adım Aktif, 1. Adım Pasif Yapılıyor
-                Step1Border.Background = pasifArkaplan;
-                Step1Text.Foreground = pasifYazi;
-                Step1Text.FontWeight = FontWeights.Normal;
-
-                Step2Border.Background = aktifArkaplan;
-                Step2Text.Foreground = aktifYazi;
-                Step2Text.FontWeight = FontWeights.Bold;
+                case 1: Step1Grid.Visibility = Visibility.Visible; break;
+                case 2: Step2Grid.Visibility = Visibility.Visible; break;
+                case 3: Step3Grid.Visibility = Visibility.Visible; break;
+                case 4: Step4Grid.Visibility = Visibility.Visible; break;
+                case 5: Step5Grid.Visibility = Visibility.Visible; break;
+                case 6: Step6Grid.Visibility = Visibility.Visible; break;
+                case 7: Step7Grid.Visibility = Visibility.Visible; break;
+                case 8: Step8Grid.Visibility = Visibility.Visible; break;
+                case 9:
+                    Step9Grid.Visibility = Visibility.Visible;
+                    LoadPreviewData();
+                    break;
             }
-            else // step == 1 durumu
+
+            BackButton.Visibility = step > 1 ? Visibility.Visible : Visibility.Collapsed;
+
+            NextButton.Content = step == MaxStep ? "Kaydet" : "İleri";
+
+            UpdateNextButtonState();
+        }
+
+        private void UpdateNextButtonState()
+        {
+            switch (currentStep)
             {
-                Step1Grid.Visibility = Visibility.Visible;
-                Step2Grid.Visibility = Visibility.Collapsed;
-                BackButton.Visibility = Visibility.Collapsed;
-                NextButton.IsEnabled = true;
+                case 1:
+                    NextButton.IsEnabled = PersonsDataGrid.SelectedItem is Person p && p.IsActive;
+                    break;
 
-                // 1. Adım Aktif, 2. Adım Pasif Yapılıyor (Geri dönüldüğünde)
-                Step1Border.Background = aktifArkaplan;
-                Step1Text.Foreground = aktifYazi;
-                Step1Text.FontWeight = FontWeights.Bold;
+                case 2:
+                    NextButton.IsEnabled =
+                        TourTypeComboBox.SelectedItem != null &&
+                        PeriodComboBox.SelectedItem != null &&
+                        GroupTypeComboBox.SelectedItem != null &&
+                        DaysCountComboBox.SelectedItem != null;
+                    break;
 
-                Step2Border.Background = pasifArkaplan;
-                Step2Text.Foreground = pasifYazi;
-                Step2Text.FontWeight = FontWeights.Normal;
+                default:
+                    NextButton.IsEnabled = true;
+                    break;
             }
         }
 
+        private void NextButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentStep == 1 && selectedPersonId == 0)
+            {
+                MessageBox.Show("Lütfen bir kişi seçiniz.");
+                return;
+            }
+
+            if (currentStep == 2)
+            {
+                if (TourTypeComboBox.SelectedItem == null ||
+                    PeriodComboBox.SelectedItem == null ||
+                    GroupTypeComboBox.SelectedItem == null ||
+                    DaysCountComboBox.SelectedItem == null)
+                {
+                    MessageBox.Show("Lütfen tüm tur bilgilerini doldurunuz.");
+                    return;
+                }
+            }
+
+            if (currentStep == MaxStep)
+            {
+                MessageBox.Show("KAYIT VERİTABANINA YAZILACAK");
+                return;
+            }
+
+            SwitchToStep(currentStep + 1);
+        }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentStep > 1)
+            {
+                SwitchToStep(currentStep - 1);
+            }
+        }
+
+        private void LoadSettingsToComboBoxes()
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    TourTypeComboBox.ItemsSource = db.AppSettings
+                        .Where(s => s.Type == "TourType" && s.IsActive)
+                        .OrderBy(s => s.SortOrder)
+                        .Select(s => s.Value)
+                        .ToList();
+
+                    GroupTypeComboBox.ItemsSource = db.AppSettings
+                        .Where(s => s.Type == "GroupType" && s.IsActive)
+                        .OrderBy(s => s.SortOrder)
+                        .Select(s => s.Value)
+                        .ToList();
+
+                    DaysCountComboBox.ItemsSource = db.AppSettings
+                        .Where(s => s.Type == "CountOfDays" && s.IsActive)
+                        .OrderBy(s => s.SortOrder)
+                        .Select(s => s.Value)
+                        .ToList();
+
+                    PeriodComboBox.ItemsSource = db.AppSettings
+                        .Where(s => s.Type == "Dönem" && s.IsActive)
+                        .OrderBy(s => s.SortOrder)
+                        .Select(s => s.Value)
+                        .ToList();
+
+                    VisaRequestComboBox.ItemsSource = db.AppSettings
+                        .Where(x => x.Type == "VisaType" && x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .Select(x => x.Value)
+                        .ToList();
+
+                    TicketRequestComboBox.ItemsSource = db.AppSettings
+                        .Where(x => x.Type == "TicketType" && x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .Select(x => x.Value)
+                        .ToList();
+
+                    CargoRequestComboBox.ItemsSource = db.AppSettings
+                        .Where(x => x.Type == "CargoType" && x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .Select(x => x.Value)
+                        .ToList();
+
+                    RoomTypeComboBox.ItemsSource = db.AppSettings
+                        .Where(x => x.Type == "RoomType" && x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .Select(x => x.Value)
+                        .ToList();
+
+                    JoinCityComboBox = db.AppSettings
+                        .Where(x => x.Type == "Katılım Yapılacak Şehir" && x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .Select(x => x.Value)
+                        .ToList();
+
+                    TransferComboBox.ItemsSource = db.AppSettings
+                        .Where(x => x.Type == "Aktarma Durumu" && x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .Select(x => x.Value)
+                        .ToList();
+
+                    TransferCityComboBox.ItemsSource = db.AppSettings
+                        .Where(x => x.Type == "Aktarma Şehri" && x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .Select(x => x.Value)
+                        .ToList();
+
+                    CurrencyComboBox.ItemsSource = db.AppSettings
+                        .Where(x => x.Type == "CurrencyType" && x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .Select(x => x.Value)
+                        .ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void TransferComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (TransferComboBox.SelectedItem?.ToString() == "Var")
+                TransferPanel.Visibility = Visibility.Visible;
+            else
+                TransferPanel.Visibility = Visibility.Collapsed;
+        }
+
+        private void PaymentFields_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            decimal total = 0;
+            decimal paid = 0;
+
+            decimal.TryParse(PriceTextBox.Text, out total);
+            decimal.TryParse(PaidTextBox.Text, out paid);
+
+            RemainingDebtTextBox.Text = (total - paid).ToString("N2");
+        }
+
+        private void LoadPreviewData()
+        {
+            PreviewTextBlock.Text =
+                $"Kişi: {QuickFirstNameTextBox.Text} {QuickLastNameTextBox.Text}\n" +
+                $"Tur: {TourTypeComboBox.Text}\n";
+        }
+    
+    private void TourDetails_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (currentStep == 2)
+            {
+                bool isValid =
+                    TourTypeComboBox.SelectedItem != null &&
+                    PeriodComboBox.SelectedItem != null &&
+                    GroupTypeComboBox.SelectedItem != null &&
+                    DaysCountComboBox.SelectedItem != null;
+
+                NextButton.IsEnabled = isValid;
+            }
+        }
         private void ToggleActiveButton_Click(object sender, RoutedEventArgs e)
         {
             if (selectedPersonId == 0) return;
 
             using (var db = new AppDbContext())
             {
-                var person = db.Persons.FirstOrDefault(p => p.Id == selectedPersonId);
+                var person = db.Persons.FirstOrDefault(x => x.Id == selectedPersonId);
 
                 if (person != null)
                 {
@@ -436,90 +521,6 @@ namespace TurizmOperasyonSistemi.Views
                     ToggleActiveButton.Visibility = Visibility.Collapsed;
                     NextButton.IsEnabled = true;
                 }
-            }
-        }
-
-        private void NextButton_Click(object sender, RoutedEventArgs e)
-        {
-            // 1. Adım: Kişi seçimi kontrolü (Senin mevcut kodun)
-            if (currentStep == 1 && selectedPersonId != 0)
-            {
-                SwitchToStep(2);
-                NextButton.IsEnabled = false; // 2. adıma ilk geçildiğinde buton kapansın
-            }
-            // 2. Adım: Tur detayları kontrolü (Yeni eklenen kısım)
-            else if (currentStep == 2)
-            {
-                // 4 ComboBox da seçildiyse 3. adıma geç
-                if (TourTypeComboBox.SelectedItem != null &&
-                    PeriodComboBox.SelectedItem != null &&
-                    GroupTypeComboBox.SelectedItem != null &&
-                    DaysCountComboBox.SelectedItem != null)
-                {
-                    SwitchToStep(3);
-                }
-            }
-        }
-
-        private void BackButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (currentStep == 2)
-                SwitchToStep(1);
-        }
-
-        private void TourDetails_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (currentStep == 2)
-            {
-                // 4 alanın da seçili olup olmadığını kontrol et
-                bool isStep2Valid = TourTypeComboBox.SelectedItem != null &&
-                                    PeriodComboBox.SelectedItem != null &&
-                                    GroupTypeComboBox.SelectedItem != null &&
-                                    DaysCountComboBox.SelectedItem != null;
-
-                // Hepsi seçildiyse İleri butonu aktif olur
-                NextButton.IsEnabled = isStep2Valid;
-            }
-        }
-        private void LoadSettingsToComboBoxes()
-        {
-            try
-            {
-                using (var db = new AppDbContext())
-                {
-                    // 1. TUR TÜRLERİ (Sadece aktif olanlar ve SortOrder'a göre sıralı)
-                    TourTypeComboBox.ItemsSource = db.AppSettings
-                        .Where(s => s.Type == "TourType" && s.IsActive)
-                        .OrderBy(s => s.SortOrder)
-                        .Select(s => s.Value)
-                        .ToList();
-
-                    // 2. GRUP TÜRLERİ
-                    GroupTypeComboBox.ItemsSource = db.AppSettings
-                        .Where(s => s.Type == "GroupType" && s.IsActive)
-                        .OrderBy(s => s.SortOrder)
-                        .Select(s => s.Value)
-                        .ToList();
-
-                    // 3. KAÇ GÜNLÜK GRUP
-                    DaysCountComboBox.ItemsSource = db.AppSettings
-                        .Where(s => s.Type == "CountOfDays" && s.IsActive)
-                        .OrderBy(s => s.SortOrder)
-                        .Select(s => s.Value)
-                        .ToList();
-
-                    // 4. DÖNEM SEÇİMİ (SettingsView'daki switch bloğunda "Dönem" olarak geçtiği için)
-                    PeriodComboBox.ItemsSource = db.AppSettings
-                        .Where(s => s.Type == "Dönem" && s.IsActive)
-                        .OrderBy(s => s.SortOrder)
-                        .Select(s => s.Value)
-                        .ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ayarlar tablosundan veriler yüklenirken bir hata oluştu: {ex.Message}",
-                                "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
