@@ -13,7 +13,6 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="70"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="350"/>
             </Grid.RowDefinitions>
 
@@ -104,41 +103,211 @@
                     <Grid x:Name="Step1Grid">
                         <StackPanel>
 
-                            <TextBlock Text="Ad" Foreground="White"/>
+                            <!-- SEARCH AREA -->
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="0,0,0,15">
+
+                                <TextBox x:Name="SearchTextBox"
+                                         Width="300"
+                                         Height="38"
+                                         Background="#111827"
+                                         Foreground="White"
+                                         BorderBrush="#4B5563"
+                                         BorderThickness="1.5"
+                                         Padding="10,5"
+                                         FontSize="13"
+                                         VerticalContentAlignment="Center"
+                                         TextChanged="SearchTextBox_TextChanged"/>
+
+                                <TextBlock Text="Ad, Soyad veya TC ile kişi ara. Eğer listede yoksa aşağıdaki formu doldurarak kayıt oluşturabilirsiniz."
+                                           Foreground="#FCD34D"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"
+                                           Margin="12,4,15,0"
+                                           MaxWidth="480"
+                                           IsHitTestVisible="False"/>
+
+                                <Button x:Name="ToggleActiveButton"
+                                        Content="Pasif Yap"
+                                        Height="38"
+                                        Width="120"
+                                        Background="#DC2626"
+                                        Foreground="White"
+                                        FontWeight="Bold"
+                                        FontSize="13"
+                                        Visibility="Collapsed"
+                                        Margin="0,0,15,0"
+                                        Click="ToggleActiveButton_Click"/>
+
+                                <CheckBox x:Name="ShowPassiveCheckBox"
+                                          Content="Pasifleri Göster"
+                                          Foreground="#E5E7EB"
+                                          FontSize="13"
+                                          FontWeight="SemiBold"
+                                          VerticalAlignment="Center"
+                                          Margin="10,0,0,0"
+                                          Checked="ShowPassiveCheckBox_Changed"
+                                          Unchecked="ShowPassiveCheckBox_Changed"/>
+
+                            </StackPanel>
+
+                            <!-- INFO TEXT -->
+                            <TextBlock Text="Kayıt mevcutsa listeden kişiyi seçerek sekmeler arasında ilerleyebilir ve bilgileri güncelleyebilirsiniz. Aradığınız kişi pasif durumda olabilir; gerekirse 'Pasifleri Göster' kutucuğunu işaretleyin."
+                                       Foreground="#D1D5DB"
+                                       FontSize="12"
+                                       FontStyle="Italic"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,15"
+                                       LineHeight="18"
+                                       IsHitTestVisible="False"/>
+                            <TextBlock Text="Kişi Pasifse listede rengi silik gri renklidir ve aktif yapmanız gerekiyorsa o kişiye listeden tıklayıp Aktif Yap butonuna tıklayabilirsiniz."
+                                      Foreground="#D1D5DB"
+                                      FontSize="12"
+                                      FontStyle="Italic"
+                                      TextWrapping="Wrap"
+                                      Margin="0,0,0,15"
+                                      LineHeight="18"
+                                      IsHitTestVisible="False"/>
+
+
+                            <!-- DATAGRID -->
+                            <DataGrid x:Name="PersonsDataGrid"
+                                      Margin="0,0,0,25"
+                                      AutoGenerateColumns="True"
+                                      Height="340"
+                                      FontSize="13"
+                                      RowHeight="36"
+                                      Background="#1F2937"
+                                      Foreground="White"
+                                      BorderBrush="#374151"
+                                      BorderThickness="1"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="None"
+                                      RowBackground="#1F2937"
+                                      AlternatingRowBackground="#111827"
+                                      SelectionMode="Single"
+                                      CanUserAddRows="False"
+                                      CanUserResizeRows="False"
+                                      IsReadOnly="True"
+                                      SelectionChanged="PersonsDataGrid_SelectionChanged">
+
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#111827"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="FontSize" Value="13"/>
+                                        <Setter Property="Padding" Value="12,8"/>
+                                        <Setter Property="BorderBrush" Value="#374151"/>
+                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="#1F2937"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontSize" Value="13"/>
+
+                                        <Style.Triggers>
+
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#374151"/>
+                                            </Trigger>
+
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#06B6D4"/>
+                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                            </Trigger>
+
+                                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                <Setter Property="Background" Value="#2D2D2D"/>
+                                            </DataTrigger>
+
+                                        </Style.Triggers>
+
+                                    </Style>
+                                </DataGrid.RowStyle>
+
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Padding" Value="10,5"/>
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    </Style>
+                                </DataGrid.CellStyle>
+
+                            </DataGrid>
+
+                            <!-- FORM -->
+                            <TextBlock Text="Ad"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="FirstNameTextBox"
                                      Height="35"
+                                     FontSize="13"
                                      Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Soyad" Foreground="White"/>
+                            <TextBlock Text="Soyad"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="LastNameTextBox"
                                      Height="35"
+                                     FontSize="13"
                                      Margin="0,5,0,15"/>
 
-                            <TextBlock Text="TC Kimlik No" Foreground="White"/>
+                            <TextBlock Text="TC Kimlik No"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="TcTextBox"
                                      Height="35"
+                                     FontSize="13"
                                      Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Cinsiyet" Foreground="White"/>
+                            <TextBlock Text="Cinsiyet"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <ComboBox x:Name="GenderComboBox"
                                       Height="35"
+                                      FontSize="13"
                                       Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Doğum Tarihi" Foreground="White"/>
+                            <TextBlock Text="Doğum Tarihi"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <DatePicker x:Name="BirthDatePicker"
                                         Height="35"
+                                        FontSize="13"
                                         Margin="0,5,0,15"
                                         SelectedDateChanged="BirthDatePicker_SelectedDateChanged"/>
 
-                            <TextBlock Text="Yaş" Foreground="White"/>
+                            <TextBlock Text="Yaş"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="AgeTextBox"
                                      Height="35"
+                                     FontSize="13"
                                      IsReadOnly="True"
                                      Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Yaş Aralığı" Foreground="White"/>
+                            <TextBlock Text="Yaş Aralığı"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <ComboBox x:Name="AgeRangeComboBox"
                                       Height="35"
+                                      FontSize="13"
                                       Margin="0,5,0,15"/>
 
                         </StackPanel>
@@ -148,14 +317,22 @@
                     <Grid x:Name="Step2Grid" Visibility="Collapsed">
                         <StackPanel>
 
-                            <TextBlock Text="Telefon" Foreground="White"/>
+                            <TextBlock Text="Telefon"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="PhoneTextBox"
                                      Height="35"
+                                     FontSize="13"
                                      Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Adres" Foreground="White"/>
+                            <TextBlock Text="Adres"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="AddressTextBox"
                                      Height="120"
+                                     FontSize="13"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      Margin="0,5,0,15"/>
@@ -167,19 +344,31 @@
                     <Grid x:Name="Step3Grid" Visibility="Collapsed">
                         <StackPanel>
 
-                            <TextBlock Text="Kan Grubu" Foreground="White"/>
+                            <TextBlock Text="Kan Grubu"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <ComboBox x:Name="BloodComboBox"
                                       Height="35"
+                                      FontSize="13"
                                       Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Hastalık Durumu" Foreground="White"/>
+                            <TextBlock Text="Hastalık Durumu"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="HealthTextBox"
                                      Height="35"
+                                     FontSize="13"
                                      Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Aşı Durumu" Foreground="White"/>
+                            <TextBlock Text="Aşı Durumu"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="VaccineTextBox"
                                      Height="35"
+                                     FontSize="13"
                                      Margin="0,5,0,15"/>
 
                         </StackPanel>
@@ -189,24 +378,40 @@
                     <Grid x:Name="Step4Grid" Visibility="Collapsed">
                         <StackPanel>
 
-                            <TextBlock Text="Pasaport Türü" Foreground="White"/>
+                            <TextBlock Text="Pasaport Türü"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <ComboBox x:Name="PassportTypeComboBox"
                                       Height="35"
+                                      FontSize="13"
                                       Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Pasaport No" Foreground="White"/>
+                            <TextBlock Text="Pasaport No"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <TextBox x:Name="PassportTextBox"
                                      Height="35"
+                                     FontSize="13"
                                      Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Pasaport Başlangıç" Foreground="White"/>
+                            <TextBlock Text="Pasaport Başlangıç"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <DatePicker x:Name="PassportStartPicker"
                                         Height="35"
+                                        FontSize="13"
                                         Margin="0,5,0,15"/>
 
-                            <TextBlock Text="Pasaport Bitiş" Foreground="White"/>
+                            <TextBlock Text="Pasaport Bitiş"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"/>
                             <DatePicker x:Name="PassportEndPicker"
                                         Height="35"
+                                        FontSize="13"
                                         Margin="0,5,0,15"/>
 
                         </StackPanel>
@@ -277,118 +482,6 @@
                         Click="NextButton_Click"/>
 
             </Grid>
-
-            <!-- AKTİF / PASİF BUTONU + ARAMA -->
-            <StackPanel Grid.Row="3"
-                        Orientation="Horizontal"
-                        Margin="0,10,0,10">
-
-                <!-- ARAMA KUTUSU -->
-                <TextBox x:Name="SearchTextBox"
-                         Width="300"
-                         Height="35"
-                         Background="#1F2937"
-                         Foreground="White"
-                         BorderBrush="AntiqueWhite"
-                         Padding="10,5"
-                         VerticalContentAlignment="Center"
-                         TextChanged="SearchTextBox_TextChanged"/>
-
-                <TextBlock Text="Ad, Soyad veya TC ile Kişi ara..."
-                           Foreground="Yellow"
-                           Margin="10,8,20,0"
-                           IsHitTestVisible="False"/>
-
-                <Button x:Name="ToggleActiveButton"
-                        Content="Pasif Yap"
-                        Height="35"
-                        Width="120"
-                        Background="Red"
-                        Foreground="White"
-                        FontWeight="Bold"
-                        Visibility="Collapsed"
-                        Click="ToggleActiveButton_Click"/>
-
-                <!-- ✅ Pasifleri Göster Checkbox -->
-                <CheckBox x:Name="ShowPassiveCheckBox"
-                          Content="Pasifleri Göster"
-                          Foreground="White"
-                          VerticalAlignment="Center"
-                          Margin="15,0,0,0"
-                          Checked="ShowPassiveCheckBox_Changed"
-                          Unchecked="ShowPassiveCheckBox_Changed"/>
-
-            </StackPanel>
-
-            <!-- PROFESYONEL DATAGRID -->
-            <DataGrid x:Name="PersonsDataGrid"
-                      Grid.Row="4"
-                      Margin="0,10,0,0"
-                      AutoGenerateColumns="True"
-                      Height="340"
-                      Background="#1F2937"
-                      Foreground="White"
-                      BorderBrush="#374151"
-                      BorderThickness="1"
-                      HeadersVisibility="Column"
-                      GridLinesVisibility="None"
-                      RowBackground="#1F2937"
-                      AlternatingRowBackground="#111827"
-                      SelectionMode="Single"
-                      CanUserAddRows="False"
-                      CanUserResizeRows="False"
-                      IsReadOnly="True"
-                      SelectionChanged="PersonsDataGrid_SelectionChanged">
-
-                <DataGrid.ColumnHeaderStyle>
-                    <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="Background" Value="#111827"/>
-                        <Setter Property="Foreground" Value="White"/>
-                        <Setter Property="FontWeight" Value="SemiBold"/>
-                        <Setter Property="Padding" Value="12,8"/>
-                        <Setter Property="BorderBrush" Value="#374151"/>
-                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                    </Style>
-                </DataGrid.ColumnHeaderStyle>
-
-                <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
-                        <Setter Property="Background" Value="#1F2937"/>
-                        <Setter Property="Foreground" Value="White"/>
-                        <Setter Property="FontSize" Value="13"/>
-
-                        <Style.Triggers>
-
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#374151"/>
-                            </Trigger>
-
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="#06B6D4"/>
-                                <Setter Property="Foreground" Value="Black"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
-                            </Trigger>
-
-                            <DataTrigger Binding="{Binding IsActive}" Value="False">
-                                <Setter Property="Foreground" Value="Gray"/>
-                                <Setter Property="Background" Value="#2D2D2D"/>
-                            </DataTrigger>
-
-                        </Style.Triggers>
-
-                    </Style>
-                </DataGrid.RowStyle>
-
-                <DataGrid.CellStyle>
-                    <Style TargetType="DataGridCell">
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="Padding" Value="10,5"/>
-                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                    </Style>
-                </DataGrid.CellStyle>
-
-            </DataGrid>
 
         </Grid>
 
