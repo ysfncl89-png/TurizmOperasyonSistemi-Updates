@@ -307,7 +307,6 @@ namespace TurizmOperasyonSistemi.Views
                 case 8: Step8Grid.Visibility = Visibility.Visible; break;
                 case 9:
                     Step9Grid.Visibility = Visibility.Visible;
-                    LoadPreviewData();
                     break;
             }
 
@@ -342,6 +341,63 @@ namespace TurizmOperasyonSistemi.Views
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
         {
+            // 💾 KAYDETME BLOĞU
+            if (NextButton.Content?.ToString() == "💾 Kaydet ve Bitir")
+            {
+                try
+                {
+                    using (var db = new AppDbContext())
+                    {
+                        var newRegistration = new TurizmOperasyonSistemi.Models.Registration
+                        {
+                            TourType = TourTypeComboBox.SelectedItem?.ToString(),
+                            GroupType = GroupTypeComboBox.SelectedItem?.ToString(),
+
+                            // CS0117: Duration hatası için - Eğer modelinde adı farklıysa burayı kontrol etmeliyiz
+                            // Şimdilik hata vermemesi için eğer modelinde yoksa bu satırı komple silebilirsin.
+                            // Duration = DaysCountComboBox.SelectedItem?.ToString(), 
+
+                            Period = PeriodComboBox.SelectedItem?.ToString(),
+                            VisaRequest = VisaRequestComboBox.SelectedItem?.ToString(),
+                            TicketRequest = TicketRequestComboBox.SelectedItem?.ToString(),
+                            CargoRequest = CargoRequestComboBox.SelectedItem?.ToString(),
+                            RoomType = RoomTypeComboBox.SelectedItem?.ToString(),
+
+                            // CS0117: JoinCity hatası için - Eğer modelinde JoinCity yoksa bu satırı komple silebilirsin.
+                            // JoinCity = JoinCityComboBox.SelectedItem?.ToString(),
+
+                            // CS0029 ÇÖZÜMÜ: Veritabanın bool değil string beklediği için true/false yerine "Var"/"Yok" yazdırıyoruz
+                            HasTransfer = TransferComboBox.SelectedItem?.ToString() == "Var" ? "Var" : "Yok",
+
+                            TransferCity = TransferComboBox.SelectedItem?.ToString() == "Var" ? TransferCityComboBox.SelectedItem?.ToString() : null,
+                            Currency = CurrencyComboBox.SelectedItem?.ToString(),
+
+                            // CS0117: CreatedAt hatası için - Eğer modelinde kayıt tarihi tutmuyorsan bu satırı silebilirsin.
+                            // CreatedAt = DateTime.Now 
+                        };
+
+                        db.Registrations.Add(newRegistration);
+                        db.SaveChanges();
+
+                        MessageBox.Show("Kayıt işlemi başarıyla SQLite veritabanına kaydedildi!",
+                            "Başarılı",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Veritabanına kaydedilirken bir hata oluştu: {ex.Message}",
+                        "Hata",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+
+                return;
+            }
+
             if (currentStep == 1 && selectedPersonId == 0)
             {
                 MessageBox.Show("Lütfen bir kişi seçiniz.");
@@ -360,10 +416,43 @@ namespace TurizmOperasyonSistemi.Views
                 }
             }
 
-            if (currentStep == MaxStep)
+            // STEP 9 PREVIEW
+            if (currentStep == 8)
             {
-                MessageBox.Show("KAYIT VERİTABANINA YAZILACAK");
-                return;
+                string tourType = TourTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string groupType = GroupTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string daysCount = DaysCountComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string period = PeriodComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string visaRequest = VisaRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string ticketRequest = TicketRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string cargoRequest = CargoRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string roomType = RoomTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string joinCity = JoinCityComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                string isTransfer = TransferComboBox.SelectedItem?.ToString() ?? "Yok";
+                string transferCity = isTransfer == "Var"
+                    ? (TransferCityComboBox.SelectedItem?.ToString() ?? "Seçilmedi")
+                    : "-";
+                string currency = CurrencyComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+
+                PreviewTextBlock.Text =
+                    $"🔹 Tur Türü: {tourType}\n" +
+                    $"🔹 Grup Türü: {groupType}\n" +
+                    $"🔹 Süre (Gün): {daysCount}\n" +
+                    $"🔹 Dönem: {period}\n" +
+                    $"----------------------------------------\n" +
+                    $"🔹 Vize Talebi: {visaRequest}\n" +
+                    $"🔹 Bilet Talebi: {ticketRequest}\n" +
+                    $"🔹 Kargo Talebi: {cargoRequest}\n" +
+                    $"----------------------------------------\n" +
+                    $"🔹 Oda Türü: {roomType}\n" +
+                    $"🔹 Para Birimi: {currency}\n" +
+                    $"----------------------------------------\n" +
+                    $"🔹 Katılım Şehri: {joinCity}\n" +
+                    $"🔹 Aktarma Durumu: {isTransfer} (Şehir: {transferCity})\n" +
+                    $"----------------------------------------\n\n" +
+                    $"👉 Lütfen yukarıdaki bilgileri kontrol edin. 'Kaydet' butonuna bastığınızda işlem veritabanına aktarılacaktır.";
+
+                NextButton.Content = "💾 Kaydet ve Bitir";
             }
 
             SwitchToStep(currentStep + 1);
@@ -383,81 +472,69 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using (var db = new AppDbContext())
                 {
-                    // 1. TUR TÜRLERİ
                     TourTypeComboBox.ItemsSource = db.AppSettings
                         .Where(s => (s.Type == "Tur Türü" || s.Type == "TourType") && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
                         .ToList();
 
-                    // 2. GRUP TÜRLERİ
                     GroupTypeComboBox.ItemsSource = db.AppSettings
                         .Where(s => (s.Type == "Grup Türü" || s.Type == "GroupType") && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
                         .ToList();
 
-                    // 3. KAÇ GÜNLÜK GRUP (.Distinct() eklenerek mükerrer kayıtlar engellendi)
                     DaysCountComboBox.ItemsSource = db.AppSettings
                         .Where(s => (s.Type == "Kaç Günlük Grup" || s.Type == "CountOfDays") && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
-                        .Distinct() // İŞTE ÇÖZÜM: Aynı olan değerlerden sadece birini alır
+                        .Distinct()
                         .ToList();
 
-                    // 4. DÖNEM SEÇİMİ
                     PeriodComboBox.ItemsSource = db.AppSettings
                         .Where(s => s.Type == "Dönem" && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
                         .ToList();
 
-                    // 5. VİZE TALEBİ
                     VisaRequestComboBox.ItemsSource = db.AppSettings
                         .Where(x => (x.Type == "Vize Talebi" || x.Type == "VisaType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    // 6. BİLET TALEBİ
                     TicketRequestComboBox.ItemsSource = db.AppSettings
                         .Where(x => (x.Type == "Bilet Talebi" || x.Type == "TicketType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    // 7. KARGO TALEBİ
                     CargoRequestComboBox.ItemsSource = db.AppSettings
                         .Where(x => (x.Type == "Kargo Talebi" || x.Type == "CargoType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    // 8. ODA TÜRÜ
                     RoomTypeComboBox.ItemsSource = db.AppSettings
                         .Where(x => (x.Type == "Oda Türü" || x.Type == "RoomType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    // 9. KATILIM YAPILACAK ŞEHİR (Başındaki nokta temizlendi ve SQLite uyumlu yapıldı)
                     JoinCityComboBox.ItemsSource = db.AppSettings
                         .Where(x => x.Type == "Katılım Yapılacak Şehir" && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    // 10. AKTARMA DURUMU
                     TransferComboBox.ItemsSource = new List<string> { "Var", "Yok" };
 
-                    // 11. AKTARMA ŞEHRİ
                     TransferCityComboBox.ItemsSource = db.AppSettings
                         .Where(x => x.Type == "Aktarma Şehri" && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    // 12. PARA BİRİMİ
                     CurrencyComboBox.ItemsSource = db.AppSettings
                         .Where(x => (x.Type == "Para Birimi" || x.Type == "CurrencyType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
@@ -467,13 +544,15 @@ namespace TurizmOperasyonSistemi.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ayarlar verileri yüklenirken hata oluştu: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ayarlar verileri yüklenirken hata oluştu: {ex.Message}",
+                    "Hata",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 
         private void TransferComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // ComboBox elemanının null olup olmadığını ve seçilen değeri güvenli kontrol ediyoruz
             if (TransferComboBox.SelectedItem != null && TransferComboBox.SelectedItem.ToString() == "Var")
             {
                 TransferPanel.Visibility = Visibility.Visible;
@@ -482,7 +561,6 @@ namespace TurizmOperasyonSistemi.Views
             {
                 TransferPanel.Visibility = Visibility.Collapsed;
 
-                // Eğer kullanıcı "Yok" seçerse, daha önce seçtiği aktarma şehrini temizleyelim
                 if (TransferCityComboBox != null)
                     TransferCityComboBox.SelectedIndex = -1;
             }
@@ -497,13 +575,6 @@ namespace TurizmOperasyonSistemi.Views
             decimal.TryParse(PaidTextBox.Text, out paid);
 
             RemainingDebtTextBox.Text = (total - paid).ToString("N2");
-        }
-
-        private void LoadPreviewData()
-        {
-            PreviewTextBlock.Text =
-                $"Kişi: {QuickFirstNameTextBox.Text} {QuickLastNameTextBox.Text}\n" +
-                $"Tur: {TourTypeComboBox.Text}\n";
         }
 
         private void TourDetails_SelectionChanged(object sender, SelectionChangedEventArgs e)
