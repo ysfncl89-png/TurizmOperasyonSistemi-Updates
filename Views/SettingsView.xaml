@@ -152,7 +152,7 @@
                         Style="{StaticResource SettingCardStyle}"
                         Click="SettingButton_Click"/>
 
-                <Button Content="Aktarma Şehri"
+                <Button Content="Katılım Yapılacak Şehir"
                         Style="{StaticResource SettingCardStyle}"
                         Click="SettingButton_Click"/>
 
