@@ -87,8 +87,9 @@
                     Padding="15,8"
                     Margin="5">
                 <TextBlock x:Name="Step7Text"
-                           Text="7. Fiyat  Ödeme"
+                           Text="7. Fiyat Ödeme"
                            Foreground="#9CA3AF"/>
+               
             </Border>
 
             <Border x:Name="Step8Border"
@@ -854,7 +855,7 @@
 
                         <TextBlock x:Name="PreviewTextBlock"
                                    Foreground="White"
-                                   FontSize="14"
+                                   FontSize="10"
                                    TextWrapping="Wrap"/>
 
                     </StackPanel>

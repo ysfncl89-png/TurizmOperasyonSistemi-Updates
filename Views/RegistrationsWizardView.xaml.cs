@@ -11,13 +11,14 @@ using TurizmOperasyonSistemi.Models;
 
 namespace TurizmOperasyonSistemi.Views
 {
-    public partial class RegistrationsWizardView : Page
+    public partial class RegistrationsWizardView
     {
         private int currentStep = 1;
         private int selectedPersonId = 0;
         private ICollectionView _personsView;
 
         private string selectedJoinCity = "";
+
 
         public RegistrationsWizardView()
         {
@@ -352,34 +353,23 @@ namespace TurizmOperasyonSistemi.Views
                         {
                             TourType = TourTypeComboBox.SelectedItem?.ToString(),
                             GroupType = GroupTypeComboBox.SelectedItem?.ToString(),
-
-                            // CS0117: Duration hatası için - Eğer modelinde adı farklıysa burayı kontrol etmeliyiz
-                            // Şimdilik hata vermemesi için eğer modelinde yoksa bu satırı komple silebilirsin.
-                            // Duration = DaysCountComboBox.SelectedItem?.ToString(), 
-
                             Period = PeriodComboBox.SelectedItem?.ToString(),
                             VisaRequest = VisaRequestComboBox.SelectedItem?.ToString(),
                             TicketRequest = TicketRequestComboBox.SelectedItem?.ToString(),
                             CargoRequest = CargoRequestComboBox.SelectedItem?.ToString(),
                             RoomType = RoomTypeComboBox.SelectedItem?.ToString(),
-
-                            // CS0117: JoinCity hatası için - Eğer modelinde JoinCity yoksa bu satırı komple silebilirsin.
-                            // JoinCity = JoinCityComboBox.SelectedItem?.ToString(),
-
-                            // CS0029 ÇÖZÜMÜ: Veritabanın bool değil string beklediği için true/false yerine "Var"/"Yok" yazdırıyoruz
                             HasTransfer = TransferComboBox.SelectedItem?.ToString() == "Var" ? "Var" : "Yok",
-
-                            TransferCity = TransferComboBox.SelectedItem?.ToString() == "Var" ? TransferCityComboBox.SelectedItem?.ToString() : null,
+                            TransferCity = TransferComboBox.SelectedItem?.ToString() == "Var"
+                                ? TransferCityComboBox.SelectedItem?.ToString()
+                                : null,
                             Currency = CurrencyComboBox.SelectedItem?.ToString(),
-
-                            // CS0117: CreatedAt hatası için - Eğer modelinde kayıt tarihi tutmuyorsan bu satırı silebilirsin.
-                            // CreatedAt = DateTime.Now 
                         };
 
                         db.Registrations.Add(newRegistration);
                         db.SaveChanges();
 
-                        MessageBox.Show("Kayıt işlemi başarıyla SQLite veritabanına kaydedildi!",
+                        MessageBox.Show(
+                            "Kayıt işlemi başarıyla SQLite veritabanına kaydedildi!",
                             "Başarılı",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
@@ -389,7 +379,8 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Veritabanına kaydedilirken bir hata oluştu: {ex.Message}",
+                    MessageBox.Show(
+                        $"Veritabanına kaydedilirken bir hata oluştu: {ex.Message}",
                         "Hata",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
@@ -416,47 +407,82 @@ namespace TurizmOperasyonSistemi.Views
                 }
             }
 
-            // STEP 9 PREVIEW
+            // ✅ 8. adımdan 9. adıma geçerken önizleme oluştur
             if (currentStep == 8)
             {
-                string tourType = TourTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string groupType = GroupTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string daysCount = DaysCountComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string period = PeriodComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string visaRequest = VisaRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string ticketRequest = TicketRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string cargoRequest = CargoRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string roomType = RoomTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string joinCity = JoinCityComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
-                string isTransfer = TransferComboBox.SelectedItem?.ToString() ?? "Yok";
-                string transferCity = isTransfer == "Var"
-                    ? (TransferCityComboBox.SelectedItem?.ToString() ?? "Seçilmedi")
-                    : "-";
-                string currency = CurrencyComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                // Önce adımı değiştiriyoruz
+                SwitchToStep(9);
 
+                // ComboBox'lardan verileri güvenli bir şekilde çekiyoruz
+                string tourType = TourTypeComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string period = PeriodComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string groupType = GroupTypeComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string daysCount = DaysCountComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string visaRequest = VisaRequestComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string ticketRequest = TicketRequestComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string cargoRequest = CargoRequestComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string roomType = RoomTypeComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string joinCity = JoinCityComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string isTransfer = TransferComboBox?.SelectedItem?.ToString() ?? "Yok";
+
+                string transferCity =
+                    isTransfer == "Var"
+                        ? (TransferCityComboBox?.SelectedItem?.ToString() ?? "Seçilmedi")
+                        : "-";
+
+                string paraBirimi = CurrencyComboBox?.SelectedItem?.ToString() ?? "";
+
+                string yolcuBilgisi = "Kayıt Modülünde Seçilen / Eklenen Yolcu";
+                string finansalDurum =
+                    $"İlgili adımda girilen tutarlar geçerlidir. ({paraBirimi})";
+                string referansBilgisi = "İlgili adımda girildi";
+
+                // Önizleme metnini oluşturup ekrana basıyoruz
                 PreviewTextBlock.Text =
+                    $"👤 1. YOLCU BİLGİSİ:\n" +
+                    $"👉 {yolcuBilgisi}\n" +
+                    $"--------------------------------------------------\n" +
+                    $"📋 2. TUR VE GRUP DETAYLARI:\n" +
                     $"🔹 Tur Türü: {tourType}\n" +
-                    $"🔹 Grup Türü: {groupType}\n" +
-                    $"🔹 Süre (Gün): {daysCount}\n" +
                     $"🔹 Dönem: {period}\n" +
-                    $"----------------------------------------\n" +
+                    $"🔹 Grup Türü: {groupType}\n" +
+                    $"🔹 Süre: {daysCount}\n" +
+                    $"--------------------------------------------------\n" +
+                    $"🎫 3 & 4. TALEPLER:\n" +
                     $"🔹 Vize Talebi: {visaRequest}\n" +
                     $"🔹 Bilet Talebi: {ticketRequest}\n" +
                     $"🔹 Kargo Talebi: {cargoRequest}\n" +
-                    $"----------------------------------------\n" +
+                    $"--------------------------------------------------\n" +
+                    $"🛏️ 5. KONAKLAMA:\n" +
                     $"🔹 Oda Türü: {roomType}\n" +
-                    $"🔹 Para Birimi: {currency}\n" +
-                    $"----------------------------------------\n" +
+                    $"--------------------------------------------------\n" +
+                    $"✈️ 6. ULAŞIM VE TRANSFER:\n" +
                     $"🔹 Katılım Şehri: {joinCity}\n" +
-                    $"🔹 Aktarma Durumu: {isTransfer} (Şehir: {transferCity})\n" +
-                    $"----------------------------------------\n\n" +
-                    $"👉 Lütfen yukarıdaki bilgileri kontrol edin. 'Kaydet' butonuna bastığınızda işlem veritabanına aktarılacaktır.";
+                    $"🔹 Aktarma Durumu: {isTransfer} " +
+                    $"{(isTransfer == "Var" ? $"(Şehir: {transferCity})" : "")}\n" +
+                    $"--------------------------------------------------\n" +
+                    $"💰 7. FİNANSAL ÖZET:\n" +
+                    $"🔹 {finansalDurum}\n" +
+                    $"--------------------------------------------------\n" +
+                    $"🤝 8. REFERANS:\n" +
+                    $"🔹 {referansBilgisi}\n" +
+                    $"--------------------------------------------------\n\n" +
+                    $"👉 Lütfen bilgilerin doğruluğunu onaylayın. " +
+                    $"'Kaydet' butonuna bastığınızda bu operasyon listeye eklenecektir.";
 
+                // Buton yazısını değiştiriyoruz
                 NextButton.Content = "💾 Kaydet ve Bitir";
+
+                return;
             }
 
+            // Normal adım geçişleri
             SwitchToStep(currentStep + 1);
         }
+
+
+
+
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
