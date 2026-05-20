@@ -383,73 +383,82 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using (var db = new AppDbContext())
                 {
+                    // 1. TUR TÜRLERİ
                     TourTypeComboBox.ItemsSource = db.AppSettings
-                        .Where(s => s.Type == "TourType" && s.IsActive)
+                        .Where(s => (s.Type == "Tur Türü" || s.Type == "TourType") && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
                         .ToList();
 
+                    // 2. GRUP TÜRLERİ
                     GroupTypeComboBox.ItemsSource = db.AppSettings
-                        .Where(s => s.Type == "GroupType" && s.IsActive)
+                        .Where(s => (s.Type == "Grup Türü" || s.Type == "GroupType") && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
                         .ToList();
 
+                    // 3. KAÇ GÜNLÜK GRUP
                     DaysCountComboBox.ItemsSource = db.AppSettings
-                        .Where(s => s.Type == "CountOfDays" && s.IsActive)
+                        .Where(s => (s.Type == "Kaç Günlük Grup" || s.Type == "CountOfDays") && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
                         .ToList();
 
+                    // 4. DÖNEM SEÇİMİ
                     PeriodComboBox.ItemsSource = db.AppSettings
                         .Where(s => s.Type == "Dönem" && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
                         .ToList();
 
+                    // 5. VİZE TALEBİ
                     VisaRequestComboBox.ItemsSource = db.AppSettings
-                        .Where(x => x.Type == "VisaType" && x.IsActive)
+                        .Where(x => (x.Type == "Vize Talebi" || x.Type == "VisaType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
+                    // 6. BİLET TALEBİ
                     TicketRequestComboBox.ItemsSource = db.AppSettings
-                        .Where(x => x.Type == "TicketType" && x.IsActive)
+                        .Where(x => (x.Type == "Bilet Talebi" || x.Type == "TicketType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
+                    // 7. KARGO TALEBİ
                     CargoRequestComboBox.ItemsSource = db.AppSettings
-                        .Where(x => x.Type == "CargoType" && x.IsActive)
+                        .Where(x => (x.Type == "Kargo Talebi" || x.Type == "CargoType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
+                    // 8. ODA TÜRÜ
                     RoomTypeComboBox.ItemsSource = db.AppSettings
-                        .Where(x => x.Type == "RoomType" && x.IsActive)
+                        .Where(x => (x.Type == "Oda Türü" || x.Type == "RoomType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    // Katılım Yapılacak Şehir (Veritabanından çekiliyor)
+                    // 9. KATILIM YAPILACAK ŞEHİR (Başındaki nokta temizlendi ve SQLite uyumlu yapıldı)
                     JoinCityComboBox.ItemsSource = db.AppSettings
                         .Where(x => x.Type == "Katılım Yapılacak Şehir" && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    // Aktarma Durumu (Statik Var/Yok)
+                    // 10. AKTARMA DURUMU
                     TransferComboBox.ItemsSource = new List<string> { "Var", "Yok" };
 
-                    // Aktarma Şehri (Veritabanından çekiliyor)
+                    // 11. AKTARMA ŞEHRİ
                     TransferCityComboBox.ItemsSource = db.AppSettings
                         .Where(x => x.Type == "Aktarma Şehri" && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
+                    // 12. PARA BİRİMİ
                     CurrencyComboBox.ItemsSource = db.AppSettings
-                        .Where(x => x.Type == "CurrencyType" && x.IsActive)
+                        .Where(x => (x.Type == "Para Birimi" || x.Type == "CurrencyType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
@@ -457,7 +466,7 @@ namespace TurizmOperasyonSistemi.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show($"Ayarlar verileri yüklenirken hata oluştu: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

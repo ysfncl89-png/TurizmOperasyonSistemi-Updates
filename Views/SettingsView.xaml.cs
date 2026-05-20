@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using TurizmOperasyonSistemi.Data;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -90,23 +91,14 @@ namespace TurizmOperasyonSistemi.Views
             if (settingType == "Dönem")
             {
                 PeriodDialog dialog = new PeriodDialog();
-
                 dialog.ShowDialog();
             }
-            else if (settingType == "Katılım Yapılacak Şehir"
-                  || settingType == "Aktarma Şehri")
-            {
-                SettingDialogCities dialog = new SettingDialogCities(settingType);
-
-                dialog.ShowDialog();
-            }
+            // DÜZELTİLEN KISIM: Şehir pencerelerini iptal ettik, hepsini standart kutuya yönlendirdik!
             else
             {
                 SettingDialog dialog = new SettingDialog(settingType);
-
                 dialog.ShowDialog();
             }
         }
-
     }
 }
