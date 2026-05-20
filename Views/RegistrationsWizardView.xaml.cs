@@ -397,11 +397,12 @@ namespace TurizmOperasyonSistemi.Views
                         .Select(s => s.Value)
                         .ToList();
 
-                    // 3. KAÇ GÜNLÜK GRUP
+                    // 3. KAÇ GÜNLÜK GRUP (.Distinct() eklenerek mükerrer kayıtlar engellendi)
                     DaysCountComboBox.ItemsSource = db.AppSettings
                         .Where(s => (s.Type == "Kaç Günlük Grup" || s.Type == "CountOfDays") && s.IsActive)
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
+                        .Distinct() // İŞTE ÇÖZÜM: Aynı olan değerlerden sadece birini alır
                         .ToList();
 
                     // 4. DÖNEM SEÇİMİ
