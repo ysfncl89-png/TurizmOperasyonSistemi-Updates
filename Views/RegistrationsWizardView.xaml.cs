@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.ComponentModel;
 using System.Windows.Media;
+using System.Collections.Generic;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 
@@ -16,19 +17,16 @@ namespace TurizmOperasyonSistemi.Views
         private int selectedPersonId = 0;
         private ICollectionView _personsView;
 
-
         private string selectedJoinCity = "";
+
         public RegistrationsWizardView()
         {
             InitializeComponent();
             LoadPersons();
             LoadSettingsToComboBoxes();
-
         }
 
         private const int MaxStep = 9;
-
-        public object JoinCityComboBox { get; private set; }
 
         private void LoadPersons()
         {
@@ -433,18 +431,17 @@ namespace TurizmOperasyonSistemi.Views
                         .Select(x => x.Value)
                         .ToList();
 
-                    JoinCityComboBox = db.AppSettings
+                    // Katılım Yapılacak Şehir (Veritabanından çekiliyor)
+                    JoinCityComboBox.ItemsSource = db.AppSettings
                         .Where(x => x.Type == "Katılım Yapılacak Şehir" && x.IsActive)
                         .OrderBy(x => x.SortOrder)
                         .Select(x => x.Value)
                         .ToList();
 
-                    TransferComboBox.ItemsSource = db.AppSettings
-                        .Where(x => x.Type == "Aktarma Durumu" && x.IsActive)
-                        .OrderBy(x => x.SortOrder)
-                        .Select(x => x.Value)
-                        .ToList();
+                    // Aktarma Durumu (Statik Var/Yok)
+                    TransferComboBox.ItemsSource = new List<string> { "Var", "Yok" };
 
+                    // Aktarma Şehri (Veritabanından çekiliyor)
                     TransferCityComboBox.ItemsSource = db.AppSettings
                         .Where(x => x.Type == "Aktarma Şehri" && x.IsActive)
                         .OrderBy(x => x.SortOrder)
@@ -466,10 +463,19 @@ namespace TurizmOperasyonSistemi.Views
 
         private void TransferComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (TransferComboBox.SelectedItem?.ToString() == "Var")
+            // ComboBox elemanının null olup olmadığını ve seçilen değeri güvenli kontrol ediyoruz
+            if (TransferComboBox.SelectedItem != null && TransferComboBox.SelectedItem.ToString() == "Var")
+            {
                 TransferPanel.Visibility = Visibility.Visible;
+            }
             else
+            {
                 TransferPanel.Visibility = Visibility.Collapsed;
+
+                // Eğer kullanıcı "Yok" seçerse, daha önce seçtiği aktarma şehrini temizleyelim
+                if (TransferCityComboBox != null)
+                    TransferCityComboBox.SelectedIndex = -1;
+            }
         }
 
         private void PaymentFields_TextChanged(object sender, TextChangedEventArgs e)
@@ -489,8 +495,8 @@ namespace TurizmOperasyonSistemi.Views
                 $"Kişi: {QuickFirstNameTextBox.Text} {QuickLastNameTextBox.Text}\n" +
                 $"Tur: {TourTypeComboBox.Text}\n";
         }
-    
-    private void TourDetails_SelectionChanged(object sender, SelectionChangedEventArgs e)
+
+        private void TourDetails_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (currentStep == 2)
             {
@@ -503,6 +509,7 @@ namespace TurizmOperasyonSistemi.Views
                 NextButton.IsEnabled = isValid;
             }
         }
+
         private void ToggleActiveButton_Click(object sender, RoutedEventArgs e)
         {
             if (selectedPersonId == 0) return;
@@ -523,6 +530,5 @@ namespace TurizmOperasyonSistemi.Views
                 }
             }
         }
-
     }
 }

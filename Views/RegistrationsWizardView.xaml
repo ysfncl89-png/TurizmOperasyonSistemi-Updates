@@ -687,6 +687,12 @@
 
                         <TextBlock Text="Katılım Yapılacak Şehir"
                                    Foreground="#9CA3AF"/>
+                        <ComboBox x:Name="JoinCityComboBox"
+          Background="#111827"
+          Foreground="White"
+          BorderBrush="#374151"
+          Padding="8"
+          Margin="0,5,0,15"/>
 
                         
 
