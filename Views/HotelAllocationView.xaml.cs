@@ -130,35 +130,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        // 3. ODA NUMARASIZ, OTOMATİK SIRA NUMARALI ODA BLOĞU AÇMA METODU:
-        private void AddRoomButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (NewRoomCapacityComboBox.SelectedItem == null)
-            {
-                MessageBox.Show("Lütfen açılacak oda türünü seçin!", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            string selectedRoomType = NewRoomCapacityComboBox.SelectedItem.ToString();
-
-            // Seçilen oda türünün içindeki sayısal kapasiteyi tahmin et (Örn: "2 Kişilik" -> 2, "3 Kişilik" -> 3)
-            int capacity = 2;
-            if (selectedRoomType.Contains("3") || selectedRoomType.ToLower().Contains("triple")) capacity = 3;
-            else if (selectedRoomType.Contains("4") || selectedRoomType.ToLower().Contains("quad")) capacity = 4;
-            else if (selectedRoomType.Contains("1") || selectedRoomType.ToLower().Contains("tek")) capacity = 1;
-
-            // Aynı oda türünden kaç tane açılmış bul ve sıra numarası ver (Örn: Oda 2 Kişilik #1)
-            int existingCount = RoomsList.Count(r => r.StatusText != null) + 1;
-            string autoRoomNo = $"{existingCount}";
-
-            RoomsList.Add(new RoomViewModel
-            {
-                RoomNumber = autoRoomNo,
-                MaxCapacity = capacity
-            });
-        }
-
-        // 2. YOLCUYU ODAYA YERLEŞTİRME BUTONU
+        // 1. ODAYA YERLEŞTİRME BUTONU (ZORLAMA VE ÇOCUK EKLEME İZİNLİ)
         private void AllocatePassengerButton_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
@@ -166,23 +138,30 @@ namespace TurizmOperasyonSistemi.Views
 
             if (selectedPassenger == null) return;
 
-            // KONTROL ARTIK SENDE: Operatör sağ taraftan oda seçti mi?
             if (_selectedRoomForAllocation == null)
             {
-                MessageBox.Show("Lütfen önce sağ taraftaki oda kartlarından yerleşim yapacağınız odaya bir kez tıklayarak seçin!",
+                MessageBox.Show("Lütfen önce sağ taraftaki oda kartlarından yerleşim yapacağınız odaya tıklayın!",
                                 "Oda Seçilmedi", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // Seçilen oda dolmuş mu kontrolü
+            // ESNEKLİK BURADA: Oda kapasitesi dolmuşsa operatörü ENGELEME, sadece UYAR ve İZİN VER!
             if (_selectedRoomForAllocation.Occupants.Count >= _selectedRoomForAllocation.MaxCapacity)
             {
-                MessageBox.Show($"Bu oda ({_selectedRoomForAllocation.RoomNumberDisplay}) zaten tam dolu! Lütfen başka bir oda seçin.",
-                                "Oda Dolu", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                var result = MessageBox.Show(
+                    $"Bu oda resmi yatak kapasitesine ({_selectedRoomForAllocation.MaxCapacity} Yatak) ulaştı.\n\n" +
+                    $"Yanlarındaki yatak istemeyen çocukları veya ekstra kişileri odaya yerleştirmek istiyor musunuz?",
+                    "Kapasite Aşımı Onayı",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.No)
+                {
+                    return; // Operatör hayır derse işlemi iptal et
+                }
             }
 
-            // Yolcuyu bizzat SENİN seçtiğin odaya taşı, havuzdan sil
+            // Yolcuyu bizzat seçtiğin odaya ekle (Sistem artık seni engellemiyor, kontrol sende!)
             _selectedRoomForAllocation.Occupants.Add(selectedPassenger);
             PassengerPool.Remove(selectedPassenger);
             _selectedRoomForAllocation.UpdateStatus();
@@ -308,6 +287,37 @@ namespace TurizmOperasyonSistemi.Views
                 currentStep = 1;
             }
         }
+
+        // 2. ACENTA TERİMLERİNE UYGUN DİNAMİK ODA AÇMA METODU
+        private void AddRoomButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (NewRoomCapacityComboBox.SelectedItem == null)
+            {
+                MessageBox.Show("Lütfen açılacak oda türünü seçin!", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string selectedRoomType = NewRoomCapacityComboBox.SelectedItem.ToString().ToUpper();
+
+            // Senin verdiğin sektörel karşılıklara göre resmi yatak kapasitesini atıyoruz:
+            int capacity = 2; // varsayılan
+            if (selectedRoomType.Contains("SNGL") || selectedRoomType.Contains("SINGLE")) capacity = 1;
+            else if (selectedRoomType.Contains("DBL") || selectedRoomType.Contains("TWIN")) capacity = 2;
+            else if (selectedRoomType.Contains("TRPL") || selectedRoomType.Contains("TRİPLE")) capacity = 3;
+            else if (selectedRoomType.Contains("QUAD")) capacity = 4;
+            else if (selectedRoomType.Contains("QUINT")) capacity = 5;
+            else if (selectedRoomType.Contains("CONNECTION")) capacity = 4; // Connection için varsayılan 4, sonradan esnetilebilir.
+
+            int existingCount = RoomsList.Count + 1;
+            string autoRoomNo = $"{existingCount}";
+
+            RoomsList.Add(new RoomViewModel
+            {
+                RoomNumber = autoRoomNo,
+                RoomTypeName = selectedRoomType, // Odanın SNGL, DBL gibi adını tutuyoruz
+                MaxCapacity = capacity
+            });
+        }
     }
 
     // ================= 3. ADIM İÇİN GEREKLİ YARDIMCI GÖRÜNÜM MODELLERİ =================
@@ -323,12 +333,26 @@ namespace TurizmOperasyonSistemi.Views
     {
         private string _statusText = "Boş";
         private Brush _statusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+        private int _maxCapacity;
 
         public string RoomNumber { get; set; }
-        public int MaxCapacity { get; set; }
+        public string RoomTypeName { get; set; } // SNGL, DBL, TRPL, CONNECTION vb.
+
+        public int MaxCapacity
+        {
+            get => _maxCapacity;
+            set
+            {
+                _maxCapacity = value;
+                OnPropertyChanged(nameof(MaxCapacity));
+                OnPropertyChanged(nameof(RoomNumberDisplay));
+            }
+        }
+
         public ObservableCollection<PassengerUiModel> Occupants { get; set; } = new ObservableCollection<PassengerUiModel>();
 
-        public string RoomNumberDisplay => $"Oda {RoomNumber} ({MaxCapacity} Kişilik)";
+        // Ekranda görünecek başlık: Örn: "Oda 1 [DBL] (2 Yataklı)"
+        public string RoomNumberDisplay => $"Oda {RoomNumber} [{RoomTypeName}] ({MaxCapacity} Yatak)";
 
         public string StatusText
         {
@@ -351,13 +375,19 @@ namespace TurizmOperasyonSistemi.Views
             }
             else if (Occupants.Count < MaxCapacity)
             {
-                StatusText = $"{Occupants.Count}/{MaxCapacity} Dolu";
+                StatusText = $"{Occupants.Count}/{MaxCapacity} Yatak Dolu";
                 StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")); // Turuncu
+            }
+            else if (Occupants.Count == MaxCapacity)
+            {
+                StatusText = "Yataklar Dolu";
+                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444")); // Kırmızı
             }
             else
             {
-                StatusText = "TAM DOLU";
-                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444")); // Kırmızı
+                // Kapasite aşımı olduğunda (Çocuk eklendiğinde) ekranda tatlı bir mor renk gösterelim:
+                StatusText = $"+{Occupants.Count - MaxCapacity} Ekstra Kişi";
+                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A855F7")); // Mor (Kapasite Üstü)
             }
         }
 
