@@ -64,5 +64,11 @@ namespace TurizmOperasyonSistemi
             // Yeni oluşturduğumuz sihirbaz sayfasına yönlendiriyoruz
             MainFrame.Navigate(new RegistrationsWizardView());
         }
+        private void HotelAllocationButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Diğer modüllerde (Kişiler, Kayıt vb.) ana paneli nasıl değiştiriyorsan o ismi kullan.
+            // Örneğin ana panelinin adı MainContentControl ise:
+            MainFrame.Content = new HotelAllocationView();
+        }
     }
 }

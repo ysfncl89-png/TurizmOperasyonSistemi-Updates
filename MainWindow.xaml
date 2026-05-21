@@ -134,7 +134,14 @@
                         Click="RegistrationButton_Click"/>
 
 
-
+                <Button x:Name="HotelAllocationButton" 
+        Click="HotelAllocationButton_Click"
+        Style="{StaticResource MenuButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🛏️" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Otel Odalama" FontSize="14" VerticalAlignment="Center" Foreground="White"/>
+                    </StackPanel>
+                </Button>
 
                 <Button x:Name="ListsButton"
                         Style="{StaticResource MenuButtonStyle}"
