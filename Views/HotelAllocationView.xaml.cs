@@ -25,6 +25,17 @@ namespace TurizmOperasyonSistemi.Views
         // Bağlanacak ilk odayı tutar
         private RoomViewModel _firstRoomToConnect = null;
 
+        private int _connectionGroupCounter = 1; // Her gruba benzersiz numara vermek için
+
+        // Muhteşem Neon Renk Havuzumuz (Koyu temaya cuk oturan cinsten)
+        private readonly string[] NeonColors = new string[] {
+            "#A855F7", // Neon Mor
+            "#00E5FF", // Neon Turkuaz
+            "#39FF14", // Neon Yeşil
+            "#FF007F", // Neon Pembe
+            "#FFD700"  // Neon Altın Sarısı
+        };
+
         public HotelAllocationView()
         {
             InitializeComponent();
@@ -213,22 +224,16 @@ namespace TurizmOperasyonSistemi.Views
         {
             if (_selectedRoomForAllocation == null)
             {
-                MessageBox.Show("Lütfen önce bağlantı kurmak (araya kapı koymak) istediğiniz İLK odaya tıklayın.", "Seçim Eksik");
+                MessageBox.Show("Lütfen önce bağlantı kurmak istediğiniz İLK odaya tıklayın.", "Seçim Eksik");
                 return;
             }
 
             if (_firstRoomToConnect == null)
             {
                 _firstRoomToConnect = _selectedRoomForAllocation;
-
-                _firstRoomToConnect.ConnectionBorderBrush =
-                    new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A855F7"));
-
+                _firstRoomToConnect.ConnectionBorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A855F7"));
                 _firstRoomToConnect.ConnectionGroupText = "🔗 Bağlantı Bekliyor...";
-
-                MessageBox.Show(
-                    $"Oda {_firstRoomToConnect.RoomNumber} seçildi. Şimdi aradaki kapıyla bağlamak istediğiniz İKİNCİ odaya tıklayın ve tekrar bu butona basın.",
-                    "İkinci Odayı Seçin");
+                MessageBox.Show($"Oda {_firstRoomToConnect.RoomNumber} seçildi. Şimdi bağlamak istediğiniz İKİNCİ odaya tıklayıp tekrar butona basın.", "İkinci Oda");
             }
             else
             {
@@ -240,25 +245,38 @@ namespace TurizmOperasyonSistemi.Views
 
                 RoomViewModel secondRoom = _selectedRoomForAllocation;
 
-                string connectionName =
-                    $"🔗 KAPI İLE BAĞLI (Oda {_firstRoomToConnect.RoomNumber} + {_selectedRoomForAllocation.RoomNumber})";
+                // 1. Bu grup için havuzdan sıradaki neon rengi seçiyoruz
+                string selectedNeonHex = NeonColors[(_connectionGroupCounter - 1) % NeonColors.Length];
+                var neonBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(selectedNeonHex));
 
+                string gId = $"Group_{_connectionGroupCounter}";
+                string groupTitle = $"🔗 CONNECTION GRUBU #{_connectionGroupCounter} (Oda {_firstRoomToConnect.RoomNumber} + {secondRoom.RoomNumber})";
+
+                // 2. Odaları mühürle ve renklerini ata
                 _firstRoomToConnect.IsConnection = true;
-                _firstRoomToConnect.ConnectionId = secondRoom.RoomNumber;
-                _firstRoomToConnect.ConnectionGroupText = connectionName;
-                _firstRoomToConnect.ConnectionBorderBrush =
-                    new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A855F7"));
+                _firstRoomToConnect.ConnectionGroupId = gId;
+                _firstRoomToConnect.ConnectionGroupText = groupTitle;
+                _firstRoomToConnect.ConnectionBorderBrush = neonBrush;
+                _firstRoomToConnect.RoomMargin = new Thickness(5, 5, 0, 5); // Aradaki boşluğu daralt
 
                 secondRoom.IsConnection = true;
-                secondRoom.ConnectionId = _firstRoomToConnect.RoomNumber;
-                secondRoom.ConnectionGroupText = connectionName;
-                secondRoom.ConnectionBorderBrush =
-                    new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A855F7"));
+                secondRoom.ConnectionGroupId = gId;
+                secondRoom.ConnectionGroupText = groupTitle;
+                secondRoom.ConnectionBorderBrush = neonBrush;
+                secondRoom.RoomMargin = new Thickness(0, 5, 5, 5); // İlk odaya yapışık dursun
 
-                MessageBox.Show(
-                    $"Mükemmel! Oda {_firstRoomToConnect.RoomNumber} ve Oda {secondRoom.RoomNumber} aradaki kapı ile birbirine (Connection) bağlandı!",
-                    "Bağlantı Kuruldu");
+                // 3. EKRANDAKİ LİSTEYİ YENİDEN SIRALA
+                var sortedRooms = RoomsList.OrderBy(r => r.IsConnection ? r.ConnectionGroupId : "ZZZ_" + r.RoomNumber).ToList();
 
+                RoomsList.Clear();
+                foreach (var r in sortedRooms)
+                {
+                    RoomsList.Add(r);
+                }
+
+                MessageBox.Show($"Mükemmel! Oda {_firstRoomToConnect.RoomNumber} ve Oda {secondRoom.RoomNumber} yan yana getirildi ve mühürlendi!", "Bağlantı Tamam");
+
+                _connectionGroupCounter++;
                 _firstRoomToConnect = null;
             }
         }
@@ -393,6 +411,7 @@ namespace TurizmOperasyonSistemi.Views
             new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
 
         private string _connectionGroupText = "";
+        private Thickness _roomMargin = new Thickness(5);
 
         public string RoomNumber { get; set; }
         public string RoomTypeName { get; set; }
@@ -414,10 +433,10 @@ namespace TurizmOperasyonSistemi.Views
         public string RoomNumberDisplay =>
             $"Oda {RoomNumber} [{RoomTypeName}] ({MaxCapacity} Yatak)";
 
-        // CONNECTION ÖZELLİKLERİ
+        // NEON BAĞLANTI ÖZELLİKLERİ
         public bool IsConnection { get; set; } = false;
 
-        public string ConnectionId { get; set; } = "";
+        public string ConnectionGroupId { get; set; } = "";
 
         public string ConnectionGroupText
         {
@@ -436,6 +455,17 @@ namespace TurizmOperasyonSistemi.Views
             {
                 _connectionBorderBrush = value;
                 OnPropertyChanged(nameof(ConnectionBorderBrush));
+            }
+        }
+
+        // Odalar grup içinde yan yana gelirken dış çerçevenin marjını sıfırlamak için
+        public Thickness RoomMargin
+        {
+            get => _roomMargin;
+            set
+            {
+                _roomMargin = value;
+                OnPropertyChanged(nameof(RoomMargin));
             }
         }
 

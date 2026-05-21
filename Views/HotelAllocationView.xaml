@@ -307,15 +307,9 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
 
-                                        <Border Width="210"
-                                                Margin="5"
-                                                Background="#0F172A"
-                                                BorderBrush="{Binding ConnectionBorderBrush}"
-                                                BorderThickness="2"
-                                                CornerRadius="8"
-                                                Padding="10"
-                                                PreviewMouseDown="RoomCard_PreviewMouseDown"
-                                                Cursor="Hand">
+                                        <Border Width="210" Margin="{Binding RoomMargin}" Background="#0F172A" 
+        BorderBrush="{Binding ConnectionBorderBrush}" BorderThickness="2" CornerRadius="8" Padding="10"
+        PreviewMouseDown="RoomCard_PreviewMouseDown" Cursor="Hand">
 
                                             <StackPanel>
 
