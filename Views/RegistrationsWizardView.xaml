@@ -215,6 +215,7 @@
                             <DataGridTextColumn Header="Pasp. Bitiş" Binding="{Binding PassportEndDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
                             <DataGridTextColumn Header="Durum" Binding="{Binding IsActive}" Width="70"/>
                         </DataGrid.Columns>
+                        
                     </DataGrid>
 
                     <StackPanel x:Name="NoPersonPanel"
