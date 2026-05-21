@@ -311,6 +311,17 @@ namespace TurizmOperasyonSistemi.Views
                     break;
             }
 
+            var stepBorders = new[] { Step1Border, Step2Border, Step3Border, Step4Border, Step5Border, Step6Border, Step7Border, Step8Border, Step9Border };
+            var stepTexts = new[] { Step1Text, Step2Text, Step3Text, Step4Text, Step5Text, Step6Text, Step7Text, Step8Text, Step9Text };
+
+            for (int i = 0; i < stepBorders.Length; i++)
+            {
+                bool isActive = i == step - 1;
+                stepBorders[i].Background = (SolidColorBrush)new BrushConverter().ConvertFromString(isActive ? "#06B6D4" : "#1F2937");
+                stepTexts[i].Foreground = (SolidColorBrush)new BrushConverter().ConvertFromString(isActive ? "White" : "#9CA3AF");
+                stepTexts[i].FontWeight = isActive ? FontWeights.Bold : FontWeights.Normal;
+            }
+
             BackButton.Visibility = step > 1 ? Visibility.Visible : Visibility.Collapsed;
 
             NextButton.Content = step == MaxStep ? "Kaydet" : "İleri";
@@ -410,10 +421,24 @@ namespace TurizmOperasyonSistemi.Views
             // ✅ 8. adımdan 9. adıma geçerken önizleme oluştur
             if (currentStep == 8)
             {
-                // Önce adımı değiştiriyoruz
-                SwitchToStep(9);
+                string selectedPersonName = "Seçilmedi";
 
-                // ComboBox'lardan verileri güvenli bir şekilde çekiyoruz
+                if (PersonsDataGrid.SelectedItem is Person selectedPerson)
+                {
+                    selectedPersonName = $"{selectedPerson.FirstName} {selectedPerson.LastName}".Trim();
+                }
+                else if (selectedPersonId > 0)
+                {
+                    using (var db = new AppDbContext())
+                    {
+                        var person = db.Persons.FirstOrDefault(x => x.Id == selectedPersonId);
+                        if (person != null)
+                        {
+                            selectedPersonName = $"{person.FirstName} {person.LastName}".Trim();
+                        }
+                    }
+                }
+
                 string tourType = TourTypeComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
                 string period = PeriodComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
                 string groupType = GroupTypeComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
@@ -424,23 +449,24 @@ namespace TurizmOperasyonSistemi.Views
                 string roomType = RoomTypeComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
                 string joinCity = JoinCityComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
                 string isTransfer = TransferComboBox?.SelectedItem?.ToString() ?? "Yok";
+                string transferCity = isTransfer == "Var"
+                    ? (TransferCityComboBox?.SelectedItem?.ToString() ?? "Seçilmedi")
+                    : "-";
+                string district = TransferDistrictTextBox?.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(district))
+                {
+                    district = "Belirtilmedi";
+                }
 
-                string transferCity =
-                    isTransfer == "Var"
-                        ? (TransferCityComboBox?.SelectedItem?.ToString() ?? "Seçilmedi")
-                        : "-";
+                string totalPrice = string.IsNullOrWhiteSpace(PriceTextBox?.Text) ? "0" : PriceTextBox.Text.Trim();
+                string paidPrice = string.IsNullOrWhiteSpace(PaidTextBox?.Text) ? "0" : PaidTextBox.Text.Trim();
+                string remainingPrice = string.IsNullOrWhiteSpace(RemainingDebtTextBox?.Text) ? "0" : RemainingDebtTextBox.Text.Trim();
+                string currency = CurrencyComboBox?.SelectedItem?.ToString() ?? "Seçilmedi";
+                string reference = string.IsNullOrWhiteSpace(ReferenceTextBox?.Text) ? "Belirtilmedi" : ReferenceTextBox.Text.Trim();
 
-                string paraBirimi = CurrencyComboBox?.SelectedItem?.ToString() ?? "";
-
-                string yolcuBilgisi = "Kayıt Modülünde Seçilen / Eklenen Yolcu";
-                string finansalDurum =
-                    $"İlgili adımda girilen tutarlar geçerlidir. ({paraBirimi})";
-                string referansBilgisi = "İlgili adımda girildi";
-
-                // Önizleme metnini oluşturup ekrana basıyoruz
                 PreviewTextBlock.Text =
                     $"👤 1. YOLCU BİLGİSİ:\n" +
-                    $"👉 {yolcuBilgisi}\n" +
+                    $"👉 {selectedPersonName}\n" +
                     $"--------------------------------------------------\n" +
                     $"📋 2. TUR VE GRUP DETAYLARI:\n" +
                     $"🔹 Tur Türü: {tourType}\n" +
@@ -458,19 +484,23 @@ namespace TurizmOperasyonSistemi.Views
                     $"--------------------------------------------------\n" +
                     $"✈️ 6. ULAŞIM VE TRANSFER:\n" +
                     $"🔹 Katılım Şehri: {joinCity}\n" +
+                    $"🔹 İlçe: {district}\n" +
                     $"🔹 Aktarma Durumu: {isTransfer} " +
                     $"{(isTransfer == "Var" ? $"(Şehir: {transferCity})" : "")}\n" +
                     $"--------------------------------------------------\n" +
                     $"💰 7. FİNANSAL ÖZET:\n" +
-                    $"🔹 {finansalDurum}\n" +
+                    $"🔹 Toplam Fiyat: {totalPrice}\n" +
+                    $"🔹 Ödenen: {paidPrice}\n" +
+                    $"🔹 Kalan: {remainingPrice}\n" +
+                    $"🔹 Para Birimi: {currency}\n" +
                     $"--------------------------------------------------\n" +
                     $"🤝 8. REFERANS:\n" +
-                    $"🔹 {referansBilgisi}\n" +
+                    $"🔹 {reference}\n" +
                     $"--------------------------------------------------\n\n" +
                     $"👉 Lütfen bilgilerin doğruluğunu onaylayın. " +
                     $"'Kaydet' butonuna bastığınızda bu operasyon listeye eklenecektir.";
 
-                // Buton yazısını değiştiriyoruz
+                SwitchToStep(9);
                 NextButton.Content = "💾 Kaydet ve Bitir";
 
                 return;
