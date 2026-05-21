@@ -61,9 +61,23 @@ namespace TurizmOperasyonSistemi.Views
                             : $"Kişi #{x.PersonId}",
                         TourType = x.TourType ?? "",
                         Period = x.Period ?? "",
+                        GroupType = x.GroupType ?? "",
+                        DaysCount = x.DaysCount ?? "",
+                        VisaRequest = x.VisaRequest ?? "",
+                        TicketRequest = x.TicketRequest ?? "",
+                        CargoRequest = x.CargoRequest ?? "",
+                        RoomType = x.RoomType ?? "",
                         DepartureCity = x.DepartureCity ?? "",
+                        TransferStatus = x.HasTransfer ?? "",
+                        TransferCity = x.TransferCity ?? "",
+                        District = x.District ?? "",
                         TotalPrice = x.TotalPrice,
+                        PaidAmount = x.PaidAmount,
+                        RemainingDebt = x.RemainingDebt,
                         Currency = x.Currency ?? "",
+                        Reference = x.Reference ?? "",
+                        CreatedDate = x.CreatedDate,
+                        IsActive = x.IsActive,
                         Status = string.IsNullOrWhiteSpace(x.Status) ? "Aktif" : x.Status
                     })
                     .OrderByDescending(x => x.Id)
@@ -88,7 +102,18 @@ namespace TurizmOperasyonSistemi.Views
             return Normalize(item.PersonFullName).Contains(text)
                 || Normalize(item.TourType).Contains(text)
                 || Normalize(item.Period).Contains(text)
+                || Normalize(item.GroupType).Contains(text)
+                || Normalize(item.DaysCount).Contains(text)
+                || Normalize(item.VisaRequest).Contains(text)
+                || Normalize(item.TicketRequest).Contains(text)
+                || Normalize(item.CargoRequest).Contains(text)
+                || Normalize(item.RoomType).Contains(text)
                 || Normalize(item.DepartureCity).Contains(text)
+                || Normalize(item.TransferStatus).Contains(text)
+                || Normalize(item.TransferCity).Contains(text)
+                || Normalize(item.District).Contains(text)
+                || Normalize(item.Reference).Contains(text)
+                || Normalize(item.Currency).Contains(text)
                 || Normalize(item.Status).Contains(text);
         }
 
@@ -828,13 +853,37 @@ namespace TurizmOperasyonSistemi.Views
             public string PersonFullName { get; set; }
             public string TourType { get; set; }
             public string Period { get; set; }
+            public string GroupType { get; set; }
+            public string DaysCount { get; set; }
+            public string VisaRequest { get; set; }
+            public string TicketRequest { get; set; }
+            public string CargoRequest { get; set; }
+            public string RoomType { get; set; }
             public string DepartureCity { get; set; }
+            public string TransferStatus { get; set; }
+            public string TransferCity { get; set; }
+            public string District { get; set; }
             public decimal TotalPrice { get; set; }
+            public decimal PaidAmount { get; set; }
+            public decimal RemainingDebt { get; set; }
             public string Currency { get; set; }
+            public string Reference { get; set; }
+            public DateTime CreatedDate { get; set; }
+            public bool IsActive { get; set; }
             public string Status { get; set; }
             public string TotalPriceDisplay => string.IsNullOrWhiteSpace(Currency)
                 ? TotalPrice.ToString("N2")
                 : $"{TotalPrice:N2} {Currency}";
+            public string PaidAmountDisplay => string.IsNullOrWhiteSpace(Currency)
+                ? PaidAmount.ToString("N2")
+                : $"{PaidAmount:N2} {Currency}";
+            public string RemainingDebtDisplay => string.IsNullOrWhiteSpace(Currency)
+                ? RemainingDebt.ToString("N2")
+                : $"{RemainingDebt:N2} {Currency}";
+            public string CreatedDateDisplay => CreatedDate == default
+                ? ""
+                : CreatedDate.ToString("dd.MM.yyyy");
+            public string IsActiveDisplay => IsActive ? "Aktif" : "Pasif";
         }
     }
 }

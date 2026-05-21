@@ -179,9 +179,9 @@
 
                 <Grid Grid.Row="1">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="1.4*"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="1.3*"/>
+                        <RowDefinition Height="1.9*"/>
                     </Grid.RowDefinitions>
 
                     <DataGrid x:Name="PersonsDataGrid"
@@ -540,6 +540,7 @@
                                       Grid.Row="1"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
+                                      MinHeight="320"
                                       Background="#111827"
                                       RowBackground="#1F2937"
                                       AlternatingRowBackground="#111827"
@@ -547,6 +548,8 @@
                                       BorderBrush="#374151"
                                       GridLinesVisibility="Horizontal"
                                       HeadersVisibility="Column"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Auto"
                                       SelectionMode="Single"
                                       SelectionChanged="RegistrationsDataGrid_SelectionChanged">
                                 <DataGrid.Resources>
@@ -569,11 +572,28 @@
                                 </DataGrid.ContextMenu>
 
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="2*"/>
-                                    <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="1.4*"/>
-                                    <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="1.4*"/>
-                                    <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="1.2*"/>
-                                    <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="1.1*"/>
+                                    <DataGridTextColumn Header="Kayıt No" Binding="{Binding Id}" Width="90"/>
+                                    <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="180"/>
+                                    <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="130"/>
+                                    <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="130"/>
+                                    <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="120"/>
+                                    <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="100"/>
+                                    <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="110"/>
+                                    <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="110"/>
+                                    <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="110"/>
+                                    <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="110"/>
+                                    <DataGridTextColumn Header="Katılım Şehri" Binding="{Binding DepartureCity}" Width="120"/>
+                                    <DataGridTextColumn Header="Aktarma" Binding="{Binding TransferStatus}" Width="90"/>
+                                    <DataGridTextColumn Header="Aktarma Şehri" Binding="{Binding TransferCity}" Width="120"/>
+                                    <DataGridTextColumn Header="İlçe" Binding="{Binding District}" Width="110"/>
+                                    <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="130"/>
+                                    <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmountDisplay}" Width="120"/>
+                                    <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebtDisplay}" Width="120"/>
+                                    <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="100"/>
+                                    <DataGridTextColumn Header="Referans" Binding="{Binding Reference}" Width="140"/>
+                                    <DataGridTextColumn Header="Kayıt Tarihi" Binding="{Binding CreatedDateDisplay}" Width="130"/>
+                                    <DataGridTextColumn Header="Aktiflik" Binding="{Binding IsActiveDisplay}" Width="90"/>
+                                    <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="110"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
