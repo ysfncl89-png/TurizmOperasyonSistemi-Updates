@@ -17,6 +17,7 @@
 
         <Border Grid.Row="0" Background="#1E293B" Padding="15" Margin="10" CornerRadius="8">
             <UniformGrid Columns="3" x:Name="WizardTabs">
+
                 <Border x:Name="Tab1" Background="#06B6D4" CornerRadius="4" Margin="5" Padding="10">
                     <TextBlock Text="1. Otel Seçimi"
                                Foreground="White"
@@ -37,11 +38,13 @@
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
                 </Border>
+
             </UniformGrid>
         </Border>
 
         <Grid Grid.Row="1" Margin="15">
 
+            <!-- STEP 1 -->
             <Grid x:Name="Step1Grid" Visibility="Visible">
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
@@ -69,6 +72,7 @@
                 </StackPanel>
             </Grid>
 
+            <!-- STEP 2 -->
             <Grid x:Name="Step2Grid" Visibility="Collapsed">
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
@@ -139,13 +143,18 @@
                 </StackPanel>
             </Grid>
 
+            <!-- STEP 3 -->
             <Grid x:Name="Step3Grid" Visibility="Collapsed">
+
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2.5*"/>
                     <ColumnDefinition Width="3.5*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="#1E293B" CornerRadius="8" Margin="0,0,10,0" Padding="15" BorderBrush="#334155" BorderThickness="1">
+                <!-- SOL PANEL -->
+                <Border Grid.Column="0" Background="#1E293B" CornerRadius="8" Margin="0,0,10,0" Padding="15"
+                        BorderBrush="#334155" BorderThickness="1">
+
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -153,14 +162,28 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,15">
-                            <TextBlock Text="👥 Odalanacak Yolcu Havuzu" Foreground="#06B6D4" FontSize="16" FontWeight="Bold"/>
-                            <TextBlock x:Name="PassengerCountLabel" Text="Seçilen Kriterlere Uygun: 0 Yolcu Bulundu" Foreground="#94A3B8" FontSize="12" Margin="0,5,0,0"/>
+                            <TextBlock Text="👥 Odalanacak Yolcu Havuzu"
+                                       Foreground="#06B6D4"
+                                       FontSize="16"
+                                       FontWeight="Bold"/>
+                            <TextBlock x:Name="PassengerCountLabel"
+                                       Text="Seçilen Kriterlere Uygun: 0 Yolcu Bulundu"
+                                       Foreground="#94A3B8"
+                                       FontSize="12"
+                                       Margin="0,5,0,0"/>
                         </StackPanel>
 
-                        <DataGrid Grid.Row="1" x:Name="UnallocatedPassengersGrid" 
-          Background="Transparent" RowBackground="#0F172A" AlternatingRowBackground="#1E293B"
-          Foreground="White" BorderThickness="0" GridLinesVisibility="None"
-          AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+                        <DataGrid Grid.Row="1"
+                                  x:Name="UnallocatedPassengersGrid"
+                                  Background="Transparent"
+                                  RowBackground="#0F172A"
+                                  AlternatingRowBackground="#1E293B"
+                                  Foreground="White"
+                                  BorderThickness="0"
+                                  GridLinesVisibility="None"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column">
 
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridColumnHeader">
@@ -170,6 +193,7 @@
                                     <Setter Property="Padding" Value="10,8"/>
                                     <Setter Property="BorderThickness" Value="0"/>
                                 </Style>
+
                                 <Style TargetType="DataGridRow">
                                     <Setter Property="Margin" Value="0,2"/>
                                     <Setter Property="Padding" Value="5"/>
@@ -182,16 +206,26 @@
                                 <DataGridTemplateColumn Header="İşlem" Width="1*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="Odaya Ekle" Background="#06B6D4" Foreground="White" FontWeight="Bold" Padding="5,2" BorderThickness="0" Click="AllocatePassengerButton_Click"/>
+                                            <Button Content="Odaya Ekle"
+                                                    Background="#06B6D4"
+                                                    Foreground="White"
+                                                    FontWeight="Bold"
+                                                    Padding="5,2"
+                                                    BorderThickness="0"
+                                                    Click="AllocatePassengerButton_Click"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
+
                         </DataGrid>
                     </Grid>
                 </Border>
 
-                <Border Grid.Column="1" Background="#1E293B" CornerRadius="8" Margin="10,0,0,0" Padding="15" BorderBrush="#334155" BorderThickness="1">
+                <!-- SAĞ PANEL -->
+                <Border Grid.Column="1" Background="#1E293B" CornerRadius="8" Margin="10,0,0,0"
+                        Padding="15" BorderBrush="#334155" BorderThickness="1">
+
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -200,28 +234,70 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                            <TextBlock x:Name="SelectedHotelTitleLabel" Text="🏨 Seçilen Otel: Oda Yerleşim Düzeni" Foreground="#06B6D4" FontSize="16" FontWeight="Bold"/>
-                            <TextBlock Text="Yolcuları yerleştirmek için sol taraftan yolcu seçip odaya atayın." Foreground="#94A3B8" FontSize="12" Margin="0,5,0,0"/>
+                            <TextBlock x:Name="SelectedHotelTitleLabel"
+                                       Text="🏨 Seçilen Otel: Oda Yerleşim Düzeni"
+                                       Foreground="#06B6D4"
+                                       FontSize="16"
+                                       FontWeight="Bold"/>
+
+                            <TextBlock Text="Yolcuları yerleştirmek için sol taraftan yolcu seçip odaya atayın."
+                                       Foreground="#94A3B8"
+                                       FontSize="12"
+                                       Margin="0,5,0,0"/>
                         </StackPanel>
 
+                        <!-- ODA OLUŞTUR + CONNECTION PANEL -->
                         <Border Grid.Row="1" Background="#0F172A" Padding="10" CornerRadius="6" Margin="0,0,0,15">
+
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="4*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                    <ColumnDefinition Width="2*"/>
                                     <ColumnDefinition Width="2*"/>
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                    <TextBlock Text="Açılacak Oda Türü (Ayarlar Modülünden)" Foreground="#94A3B8" FontSize="11" Margin="0,0,0,4"/>
-                                    <ComboBox x:Name="NewRoomCapacityComboBox" Height="28" Background="#1E293B" Foreground="White" BorderBrush="#334155"/>
+                                    <TextBlock Text="Açılacak Oda Türü"
+                                               Foreground="#94A3B8"
+                                               FontSize="11"
+                                               Margin="0,0,0,4"/>
+
+                                    <ComboBox x:Name="NewRoomCapacityComboBox"
+                                              Height="28"
+                                              Background="#1E293B"
+                                              Foreground="White"
+                                              BorderBrush="#334155"/>
                                 </StackPanel>
 
-                                <Button Grid.Column="1" Content="➕ Oda Bloğu Oluştur" Background="#10B981" Foreground="White" FontWeight="Bold" Height="28" VerticalAlignment="Bottom" BorderThickness="0" Click="AddRoomButton_Click"/>
+                                <Button Grid.Column="1"
+                                        Content="➕ Oda Aç"
+                                        Background="#10B981"
+                                        Foreground="White"
+                                        FontWeight="Bold"
+                                        Height="28"
+                                        Margin="0,0,5,0"
+                                        VerticalAlignment="Bottom"
+                                        BorderThickness="0"
+                                        Click="AddRoomButton_Click"/>
+
+                                <Button Grid.Column="2"
+                                        Content="🔗 Connection Yap"
+                                        Background="#8B5CF6"
+                                        Foreground="White"
+                                        FontWeight="Bold"
+                                        Height="28"
+                                        VerticalAlignment="Bottom"
+                                        BorderThickness="0"
+                                        Click="ConnectRoomsButton_Click"/>
+
                             </Grid>
                         </Border>
 
+                        <!-- ROOMS LIST -->
                         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+
                             <ItemsControl x:Name="RoomsItemsControl">
+
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <WrapPanel Orientation="Horizontal"/>
@@ -230,38 +306,86 @@
 
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Width="210" Margin="5" Background="#0F172A" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="10"
-                                                PreviewMouseDown="RoomCard_PreviewMouseDown" Cursor="Hand">
+
+                                        <Border Width="210"
+                                                Margin="5"
+                                                Background="#0F172A"
+                                                BorderBrush="{Binding ConnectionBorderBrush}"
+                                                BorderThickness="2"
+                                                CornerRadius="8"
+                                                Padding="10"
+                                                PreviewMouseDown="RoomCard_PreviewMouseDown"
+                                                Cursor="Hand">
+
                                             <StackPanel>
+
+                                                <TextBlock Text="{Binding ConnectionGroupText}"
+                                                           Foreground="#A855F7"
+                                                           FontSize="10"
+                                                           FontWeight="Bold"
+                                                           Margin="0,0,0,4"/>
+
                                                 <Grid>
-                                                    <TextBlock Text="{Binding RoomNumberDisplay}" Foreground="White" FontWeight="Bold" FontSize="14"/>
-                                                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusColor}" HorizontalAlignment="Right" FontWeight="Bold" FontSize="12"/>
+                                                    <TextBlock Text="{Binding RoomNumberDisplay}"
+                                                               Foreground="White"
+                                                               FontWeight="Bold"
+                                                               FontSize="12"/>
+
+                                                    <TextBlock Text="{Binding StatusText}"
+                                                               Foreground="{Binding StatusColor}"
+                                                               FontWeight="Bold"
+                                                               FontSize="11"
+                                                               HorizontalAlignment="Right"/>
                                                 </Grid>
 
                                                 <Separator Background="#334155" Margin="0,8"/>
 
-                                                <ListBox ItemsSource="{Binding Occupants}" Background="Transparent" BorderThickness="0" Height="80">
+                                                <ListBox ItemsSource="{Binding Occupants}"
+                                                          Background="Transparent"
+                                                          BorderThickness="0"
+                                                          Height="80">
+
                                                     <ListBox.ItemTemplate>
                                                         <DataTemplate>
                                                             <Grid Width="180">
-                                                                <TextBlock Text="{Binding FullName}" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center"/>
-                                                                <Button Content="❌" Background="Transparent" Foreground="#EF4444" BorderThickness="0" HorizontalAlignment="Right" Padding="2,0" Click="RemovePassengerFromRoomButton_Click" Tag="{Binding PersonId}"/>
+                                                                <TextBlock Text="{Binding FullName}"
+                                                                           Foreground="#CBD5E1"
+                                                                           FontSize="12"
+                                                                           VerticalAlignment="Center"/>
+
+                                                                <Button Content="❌"
+                                                                        Background="Transparent"
+                                                                        Foreground="#EF4444"
+                                                                        BorderThickness="0"
+                                                                        HorizontalAlignment="Right"
+                                                                        Padding="2,0"
+                                                                        Click="RemovePassengerFromRoomButton_Click"
+                                                                        Tag="{Binding PersonId}"/>
                                                             </Grid>
                                                         </DataTemplate>
                                                     </ListBox.ItemTemplate>
+
                                                 </ListBox>
+
                                             </StackPanel>
+
                                         </Border>
+
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
+
                             </ItemsControl>
+
                         </ScrollViewer>
+
                     </Grid>
                 </Border>
+
             </Grid>
 
         </Grid>
 
+        <!-- FOOTER -->
         <Border Grid.Row="2"
                 Background="#1E293B"
                 Padding="15"
@@ -290,6 +414,7 @@
                         FontWeight="Bold"
                         BorderThickness="0"
                         Click="NextButton_Click"/>
+
             </Grid>
 
         </Border>
