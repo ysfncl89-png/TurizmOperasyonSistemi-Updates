@@ -179,8 +179,9 @@
 
                 <Grid Grid.Row="1">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="2*"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1.3*"/>
                     </Grid.RowDefinitions>
 
                     <DataGrid x:Name="PersonsDataGrid"
@@ -237,14 +238,14 @@
                     </StackPanel>
 
                     <Border x:Name="QuickAddFormPanel"
-                            Grid.Row="1"
+                             Grid.Row="1"
                             Background="#1F2937"
                             CornerRadius="8"
                             Padding="20"
                             Margin="0,15,0,0"
                             Width="780"
                             HorizontalAlignment="Center"
-                            Visibility="Collapsed">
+                             Visibility="Collapsed">
 
                         <StackPanel>
 
@@ -472,6 +473,110 @@
                                     Margin="0,15,0,0"
                                     Click="SaveQuickPersonButton_Click"/>
                         </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2"
+                            Margin="0,15,0,0"
+                            Background="#1F2937"
+                            BorderBrush="#374151"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="5">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="📋 Kaydedilen Operasyonlar"
+                                               Foreground="#06B6D4"
+                                               FontSize="16"
+                                               FontWeight="Bold"/>
+                                    <TextBlock Text="Yolcu adı, tur türü, dönem veya şehir bilgisi ile arama yapabilirsiniz."
+                                               Foreground="#9CA3AF"
+                                               Margin="0,4,0,10"/>
+                                    <TextBox x:Name="RegistrationSearchTextBox"
+                                             Background="#111827"
+                                             Foreground="White"
+                                             BorderBrush="#374151"
+                                             Padding="8"
+                                             FontSize="14"
+                                             VerticalContentAlignment="Center"
+                                             TextChanged="RegistrationSearchTextBox_TextChanged"/>
+                                </StackPanel>
+
+                                <Button x:Name="SetRegistrationPassiveButton"
+                                        Grid.Column="1"
+                                        Content="Pasif Yap"
+                                        Margin="15,24,10,0"
+                                        Background="#F59E0B"
+                                        Foreground="White"
+                                        Padding="16,10"
+                                        FontWeight="Bold"
+                                        Click="SetRegistrationPassiveButton_Click"
+                                        IsEnabled="False"/>
+
+                                <Button x:Name="CancelRegistrationButton"
+                                        Grid.Column="2"
+                                        Content="Kaydı İptal Et"
+                                        Margin="0,24,0,0"
+                                        Background="#DC2626"
+                                        Foreground="White"
+                                        Padding="16,10"
+                                        FontWeight="Bold"
+                                        Click="CancelRegistrationButton_Click"
+                                        IsEnabled="False"/>
+                            </Grid>
+
+                            <DataGrid x:Name="RegistrationsDataGrid"
+                                      Grid.Row="1"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="#111827"
+                                      RowBackground="#1F2937"
+                                      AlternatingRowBackground="#111827"
+                                      Foreground="White"
+                                      BorderBrush="#374151"
+                                      GridLinesVisibility="Horizontal"
+                                      HeadersVisibility="Column"
+                                      SelectionMode="Single"
+                                      SelectionChanged="RegistrationsDataGrid_SelectionChanged">
+                                <DataGrid.Resources>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#0F172A"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="BorderBrush" Value="#374151"/>
+                                        <Setter Property="Padding" Value="10,8"/>
+                                    </Style>
+                                </DataGrid.Resources>
+
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Pasif Yap"
+                                                  Click="SetRegistrationPassiveMenuItem_Click"/>
+                                        <MenuItem Header="Kaydı İptal Et"
+                                                  Click="CancelRegistrationMenuItem_Click"/>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="2*"/>
+                                    <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="1.4*"/>
+                                    <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="1.4*"/>
+                                    <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="1.2*"/>
+                                    <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="1.1*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>
@@ -868,7 +973,7 @@
 
         <Border Grid.Row="2"
                 Background="#1F2937"
-                Padding="15">
+                Padding="2">
 
             <Grid>
 

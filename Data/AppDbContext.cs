@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS ""Registrations"" (
     ""PaidAmount"" TEXT NOT NULL,
     ""RemainingDebt"" TEXT NOT NULL,
     ""Reference"" TEXT,
+    ""Status"" TEXT,
     ""RegistrationDate"" TEXT NOT NULL,
     ""IsActive"" INTEGER NOT NULL
 );";
@@ -65,6 +66,7 @@ CREATE TABLE IF NOT EXISTS ""Registrations"" (
                 EnsureColumn(Database.GetDbConnection(), existingColumns, "TransferCity", "TEXT");
                 EnsureColumn(Database.GetDbConnection(), existingColumns, "District", "TEXT");
                 EnsureColumn(Database.GetDbConnection(), existingColumns, "Reference", "TEXT");
+                EnsureColumn(Database.GetDbConnection(), existingColumns, "Status", "TEXT");
             }
             finally
             {

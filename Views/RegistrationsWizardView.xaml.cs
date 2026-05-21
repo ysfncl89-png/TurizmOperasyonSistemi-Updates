@@ -6,6 +6,7 @@ using System.Windows.Data;
 using System.ComponentModel;
 using System.Windows.Media;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 
@@ -16,6 +17,8 @@ namespace TurizmOperasyonSistemi.Views
         private int currentStep = 1;
         private int selectedPersonId = 0;
         private ICollectionView _personsView;
+        private ICollectionView _registrationsView;
+        private List<RegistrationListItem> _registrationItems = new();
 
         private string selectedJoinCity = "";
 
@@ -24,7 +27,9 @@ namespace TurizmOperasyonSistemi.Views
         {
             InitializeComponent();
             LoadPersons();
+            LoadRegistrations();
             LoadSettingsToComboBoxes();
+            UpdateRegistrationActionButtons();
         }
 
         private const int MaxStep = 9;
@@ -39,6 +44,52 @@ namespace TurizmOperasyonSistemi.Views
                 _personsView = CollectionViewSource.GetDefaultView(PersonsDataGrid.ItemsSource);
                 _personsView.Filter = FilterPersons;
             }
+        }
+
+        private void LoadRegistrations()
+        {
+            using (var db = new AppDbContext())
+            {
+                db.EnsureRegistrationSchema();
+
+                _registrationItems = db.Registrations
+                    .Select(x => new RegistrationListItem
+                    {
+                        Id = x.Id,
+                        PersonFullName = x.Person != null
+                            ? ((x.Person.FirstName ?? "") + " " + (x.Person.LastName ?? "")).Trim()
+                            : $"Kişi #{x.PersonId}",
+                        TourType = x.TourType ?? "",
+                        Period = x.Period ?? "",
+                        DepartureCity = x.DepartureCity ?? "",
+                        TotalPrice = x.TotalPrice,
+                        Currency = x.Currency ?? "",
+                        Status = string.IsNullOrWhiteSpace(x.Status) ? "Aktif" : x.Status
+                    })
+                    .OrderByDescending(x => x.Id)
+                    .ToList();
+            }
+
+            RegistrationsDataGrid.ItemsSource = _registrationItems;
+            _registrationsView = CollectionViewSource.GetDefaultView(RegistrationsDataGrid.ItemsSource);
+            _registrationsView.Filter = FilterRegistrations;
+            _registrationsView.Refresh();
+        }
+
+        private bool FilterRegistrations(object obj)
+        {
+            if (obj is not RegistrationListItem item)
+                return false;
+
+            var text = Normalize(RegistrationSearchTextBox?.Text ?? "");
+            if (string.IsNullOrWhiteSpace(text))
+                return true;
+
+            return Normalize(item.PersonFullName).Contains(text)
+                || Normalize(item.TourType).Contains(text)
+                || Normalize(item.Period).Contains(text)
+                || Normalize(item.DepartureCity).Contains(text)
+                || Normalize(item.Status).Contains(text);
         }
 
         private bool FilterPersons(object obj)
@@ -92,6 +143,11 @@ namespace TurizmOperasyonSistemi.Views
             CheckSearchValidity();
         }
 
+        private void RegistrationSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _registrationsView?.Refresh();
+        }
+
         private void ShowPassiveCheckBox_Changed(object sender, RoutedEventArgs e)
         {
             _personsView?.Refresh();
@@ -108,6 +164,76 @@ namespace TurizmOperasyonSistemi.Views
                 (!anyItem && !string.IsNullOrWhiteSpace(SearchTextBox.Text))
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+        }
+
+        private void RegistrationsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateRegistrationActionButtons();
+        }
+
+        private void SetRegistrationPassiveButton_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateSelectedRegistrationStatus("Pasif");
+        }
+
+        private void CancelRegistrationButton_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateSelectedRegistrationStatus("İptal");
+        }
+
+        private void SetRegistrationPassiveMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateSelectedRegistrationStatus("Pasif");
+        }
+
+        private void CancelRegistrationMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateSelectedRegistrationStatus("İptal");
+        }
+
+        private void UpdateSelectedRegistrationStatus(string status)
+        {
+            if (RegistrationsDataGrid.SelectedItem is not RegistrationListItem selectedRegistration)
+            {
+                MessageBox.Show("Lütfen durumunu değiştirmek için bir operasyon kaydı seçiniz.");
+                return;
+            }
+
+            using (var db = new AppDbContext())
+            {
+                db.EnsureRegistrationSchema();
+
+                var registration = db.Registrations.FirstOrDefault(x => x.Id == selectedRegistration.Id);
+                if (registration == null)
+                {
+                    MessageBox.Show("Seçilen operasyon kaydı bulunamadı.");
+                    return;
+                }
+
+                registration.Status = status;
+                registration.IsActive = status == "Aktif";
+                db.SaveChanges();
+            }
+
+            LoadRegistrations();
+            SelectRegistration(selectedRegistration.Id);
+            UpdateRegistrationActionButtons();
+        }
+
+        private void SelectRegistration(int registrationId)
+        {
+            var item = _registrationItems.FirstOrDefault(x => x.Id == registrationId);
+            if (item != null)
+            {
+                RegistrationsDataGrid.SelectedItem = item;
+            }
+        }
+
+        private void UpdateRegistrationActionButtons()
+        {
+            bool hasSelection = RegistrationsDataGrid?.SelectedItem is RegistrationListItem;
+            SetRegistrationPassiveButton.IsEnabled = hasSelection;
+            CancelRegistrationButton.IsEnabled = hasSelection;
         }
 
         private void PersonsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -397,12 +523,15 @@ namespace TurizmOperasyonSistemi.Views
                             PaidAmount = paidAmount,
                             RemainingDebt = remainingDebt,
                             Reference = reference,
+                            Status = "Aktif",
                             CreatedDate = DateTime.Now,
                             IsActive = true
                         };
 
                         db.Registrations.Add(newRegistration);
                         db.SaveChanges();
+                        LoadRegistrations();
+                        SwitchToStep(1);
 
                         MessageBox.Show(
                             "Kayıt işlemi başarıyla SQLite veritabanına kaydedildi!",
@@ -691,6 +820,21 @@ namespace TurizmOperasyonSistemi.Views
                     NextButton.IsEnabled = true;
                 }
             }
+        }
+
+        private sealed class RegistrationListItem
+        {
+            public int Id { get; set; }
+            public string PersonFullName { get; set; }
+            public string TourType { get; set; }
+            public string Period { get; set; }
+            public string DepartureCity { get; set; }
+            public decimal TotalPrice { get; set; }
+            public string Currency { get; set; }
+            public string Status { get; set; }
+            public string TotalPriceDisplay => string.IsNullOrWhiteSpace(Currency)
+                ? TotalPrice.ToString("N2")
+                : $"{TotalPrice:N2} {Currency}";
         }
     }
 }

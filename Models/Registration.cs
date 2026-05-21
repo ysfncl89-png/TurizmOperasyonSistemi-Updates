@@ -61,6 +61,8 @@ namespace TurizmOperasyonSistemi.Models
         // 8. ADIM: Referans
         public string Reference { get; set; }      // Referans Kimse (TextBox)
 
+        public string Status { get; set; } = "Aktif";
+
         // Sistem Takip Alanları
         [Column("RegistrationDate")]
         public DateTime CreatedDate { get; set; } = DateTime.Now;
