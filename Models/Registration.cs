@@ -26,26 +26,34 @@ namespace TurizmOperasyonSistemi.Models
         public string GroupType { get; set; }     // Grup Türü (Örn: Öğrenci, Aile vb.)
 
         [Required]
+        [Column("DayCount")]
         public string DaysCount { get; set; }     // Kaç Günlük Grup (Örn: 7 Gün, 14 Gün)
 
         // 3. ADIM: Vize ve Bilet
+        [Column("VisaStatus")]
         public string VisaRequest { get; set; }    // Vize Talebi
+        [Column("TicketStatus")]
         public string TicketRequest { get; set; }  // Bilet Talebi
 
         // 4. ADIM: Kargo Talebi
+        [Column("CargoStatus")]
         public string CargoRequest { get; set; }   // Kargo Talebi
 
         // 5. ADIM: Oda Türü
         public string RoomType { get; set; }       // Oda Türü (Örn: Single, Double, Triple)
 
         // 6. ADIM: Katılım Yapılacak Şehir ve Aktarma
+        [Column("JoinCity")]
         public string DepartureCity { get; set; }  // Katılım Yapılacak Şehir
+        [Column("TransferStatus")]
         public string HasTransfer { get; set; }    // Aktarma var mı? (Örn: Var / Yok)
         public string TransferCity { get; set; }   // Aktarma Şehri (Eğer "Var" seçildiyse)
         public string District { get; set; }       // İlçe (TextBox'tan gelecek string)
 
         // 7. ADIM: Fiyat ve Ödeme
+        [Column("TourPrice")]
         public decimal TotalPrice { get; set; }     // Toplam Fiyat (Fiyat Kutusu)
+        [Column("CurrencyType")]
         public string Currency { get; set; }       // Para Birimi (EUR, USD, TRY vb.)
         public decimal PaidAmount { get; set; }    // Ödenen Tutar
         public decimal RemainingDebt { get; set; } // Kalan Borç (Otomatik hesaplanıp veri tabanına yazılacak)
@@ -54,6 +62,7 @@ namespace TurizmOperasyonSistemi.Models
         public string Reference { get; set; }      // Referans Kimse (TextBox)
 
         // Sistem Takip Alanları
+        [Column("RegistrationDate")]
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
     }

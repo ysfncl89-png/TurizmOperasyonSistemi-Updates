@@ -358,22 +358,47 @@ namespace TurizmOperasyonSistemi.Views
             {
                 try
                 {
+                    string transferStatus = TransferComboBox.SelectedItem?.ToString() ?? "Yok";
+                    string transferCity = transferStatus == "Var"
+                        ? (TransferCityComboBox.SelectedItem?.ToString() ?? "Belirtilmedi")
+                        : string.Empty;
+                    string district = string.IsNullOrWhiteSpace(TransferDistrictTextBox?.Text)
+                        ? "Belirtilmedi"
+                        : TransferDistrictTextBox.Text.Trim();
+                    string reference = string.IsNullOrWhiteSpace(ReferenceTextBox?.Text)
+                        ? "Belirtilmedi"
+                        : ReferenceTextBox.Text.Trim();
+
+                    decimal.TryParse((PriceTextBox?.Text ?? "0").Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out decimal totalPrice);
+                    decimal.TryParse((PaidTextBox?.Text ?? "0").Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out decimal paidAmount);
+                    decimal.TryParse((RemainingDebtTextBox?.Text ?? "0").Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out decimal remainingDebt);
+
                     using (var db = new AppDbContext())
                     {
-                        var newRegistration = new TurizmOperasyonSistemi.Models.Registration
+                        db.EnsureRegistrationSchema();
+
+                        var newRegistration = new Registration
                         {
+                            PersonId = selectedPersonId,
                             TourType = TourTypeComboBox.SelectedItem?.ToString(),
-                            GroupType = GroupTypeComboBox.SelectedItem?.ToString(),
                             Period = PeriodComboBox.SelectedItem?.ToString(),
+                            GroupType = GroupTypeComboBox.SelectedItem?.ToString(),
+                            DaysCount = DaysCountComboBox.SelectedItem?.ToString(),
                             VisaRequest = VisaRequestComboBox.SelectedItem?.ToString(),
                             TicketRequest = TicketRequestComboBox.SelectedItem?.ToString(),
                             CargoRequest = CargoRequestComboBox.SelectedItem?.ToString(),
                             RoomType = RoomTypeComboBox.SelectedItem?.ToString(),
-                            HasTransfer = TransferComboBox.SelectedItem?.ToString() == "Var" ? "Var" : "Yok",
-                            TransferCity = TransferComboBox.SelectedItem?.ToString() == "Var"
-                                ? TransferCityComboBox.SelectedItem?.ToString()
-                                : null,
+                            DepartureCity = JoinCityComboBox.SelectedItem?.ToString(),
+                            HasTransfer = transferStatus,
+                            TransferCity = transferCity,
+                            District = district,
+                            TotalPrice = totalPrice,
                             Currency = CurrencyComboBox.SelectedItem?.ToString(),
+                            PaidAmount = paidAmount,
+                            RemainingDebt = remainingDebt,
+                            Reference = reference,
+                            CreatedDate = DateTime.Now,
+                            IsActive = true
                         };
 
                         db.Registrations.Add(newRegistration);
@@ -391,7 +416,7 @@ namespace TurizmOperasyonSistemi.Views
                 catch (Exception ex)
                 {
                     MessageBox.Show(
-                        $"Veritabanına kaydedilirken bir hata oluştu: {ex.Message}",
+                        $"Veritabanına kaydedilirken bir hata oluştu: {ex.Message}\nDetay: {ex.InnerException?.Message}",
                         "Hata",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
