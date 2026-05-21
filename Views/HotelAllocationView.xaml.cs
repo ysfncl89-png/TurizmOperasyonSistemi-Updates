@@ -390,11 +390,80 @@ namespace TurizmOperasyonSistemi.Views
                 MaxCapacity = capacity
             });
         }
+    
+    // 1. ODALARI KOPARMA (CONNECTION İPTALİ) METODU
+private void BreakConnectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var currentRoom = button?.Tag as RoomViewModel;
+
+            if (currentRoom == null || !currentRoom.IsConnection) return;
+
+            string targetGroupId = currentRoom.ConnectionGroupId;
+
+            // Aynı gruptaki tüm odaları bulup bağlarını koparıyoruz
+            var connectedRooms = RoomsList.Where(r => r.ConnectionGroupId == targetGroupId).ToList();
+
+            foreach (var room in connectedRooms)
+            {
+                room.IsConnection = false;
+                room.ConnectionGroupId = "";
+                room.ConnectionGroupText = "";
+                // Çerçeve rengini standart koyu griye çekiyoruz
+                room.ConnectionBorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+                room.RoomMargin = new Thickness(5); // Marjları normal haline getir
+            }
+
+            // Listeyi bağlantı durumlarına göre tekrar alfabetik/normal sıraya diziyoruz
+            var sortedRooms = RoomsList.OrderBy(r => r.IsConnection ? r.ConnectionGroupId : "ZZZ_" + r.RoomNumber).ToList();
+            RoomsList.Clear();
+            foreach (var r in sortedRooms) RoomsList.Add(r);
+
+            MessageBox.Show("Odaların arasındaki bağlantı başarıyla koparıldı, odalar bağımsız hale geldi.", "Bağlantı İptal");
+        }
+
+        // 2. ODA KAPATMA (SİLME VE YOLCULARI HAVUZA GERİ ATMA) METODU
+        private void CloseRoomButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var currentRoom = button?.Tag as RoomViewModel;
+
+            if (currentRoom == null) return;
+
+            // Eğer oda bir connection grubuna dahilse önce uyaralım veya bağını koparalım
+            if (currentRoom.IsConnection)
+            {
+                var connResult = MessageBox.Show("Bu oda bir Connection grubuna bağlı. Kapatırsanız önce diğer odalarla bağı koparılacak. Onaylıyor musunuz?",
+                                                 "Bağlantılı Oda Kapatma", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (connResult == MessageBoxResult.No) return;
+
+                // Önce yukarıdaki metodu tetikleyip bağları çözelim
+                BreakConnectionButton_Click(sender, e);
+            }
+
+            // İÇİNDEKİ KİŞİLERİ SOLDAKİ HAVUZA GERİ GÖNDERME SİHRİ
+            if (currentRoom.Occupants.Count > 0)
+            {
+                // Odadaki tüm yolcuları tek tek sol listeye (PassengerPool) iade ediyoruz
+                foreach (var passenger in currentRoom.Occupants.ToList())
+                {
+                    PassengerPool.Add(passenger);
+                }
+                currentRoom.Occupants.Clear();
+            }
+
+            // Odayı sağ taraftaki listeden tamamen siliyoruz
+            RoomsList.Remove(currentRoom);
+
+            // Sol taraftaki yolcu sayacı etiketini güncelle
+            PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
+        }
     }
+}
 
-    // ================= 3. ADIM İÇİN GEREKLİ YARDIMCI GÖRÜNÜM MODELLERİ =================
+// ================= 3. ADIM İÇİN GEREKLİ YARDIMCI GÖRÜNÜM MODELLERİ =================
 
-    public class PassengerUiModel
+public class PassengerUiModel
     {
         public int PersonId { get; set; }
         public string FullName { get; set; }
@@ -521,4 +590,3 @@ namespace TurizmOperasyonSistemi.Views
                 new System.ComponentModel.PropertyChangedEventArgs(name));
         }
     }
-}
