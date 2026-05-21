@@ -230,7 +230,8 @@
 
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Width="210" Margin="5" Background="#0F172A" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="10">
+                                        <Border Width="210" Margin="5" Background="#0F172A" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="10"
+                                                PreviewMouseDown="RoomCard_PreviewMouseDown" Cursor="Hand">
                                             <StackPanel>
                                                 <Grid>
                                                     <TextBlock Text="{Binding RoomNumberDisplay}" Foreground="White" FontWeight="Bold" FontSize="14"/>

@@ -19,6 +19,9 @@ namespace TurizmOperasyonSistemi.Views
         public ObservableCollection<RoomViewModel> RoomsList { get; set; } = new ObservableCollection<RoomViewModel>();
         public ObservableCollection<PassengerUiModel> PassengerPool { get; set; } = new ObservableCollection<PassengerUiModel>();
 
+        // Seçilen odayı hafızada tutar
+        private RoomViewModel _selectedRoomForAllocation = null;
+
         public HotelAllocationView()
         {
             InitializeComponent();
@@ -163,20 +166,27 @@ namespace TurizmOperasyonSistemi.Views
 
             if (selectedPassenger == null) return;
 
-            // Operatörün sağ taraftan hangi odayı seçtiğini bulmasını istiyoruz ya da ilk müsait odayı hedefliyoruz.
-            // Kolaylık olması adına: Listeden seçilen veya dolumu tamamlanmamış İLK odaya yerleştirme yapalım
-            var availableRoom = RoomsList.FirstOrDefault(r => r.Occupants.Count < r.MaxCapacity);
-
-            if (availableRoom == null)
+            // KONTROL ARTIK SENDE: Operatör sağ taraftan oda seçti mi?
+            if (_selectedRoomForAllocation == null)
             {
-                MessageBox.Show("Müsait yatağı olan oda bulunamadı! Lütfen yeni bir oda açın.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Lütfen önce sağ taraftaki oda kartlarından yerleşim yapacağınız odaya bir kez tıklayarak seçin!",
+                                "Oda Seçilmedi", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // Yolcuyu odaya taşı, havuzdan sil
-            availableRoom.Occupants.Add(selectedPassenger);
+            // Seçilen oda dolmuş mu kontrolü
+            if (_selectedRoomForAllocation.Occupants.Count >= _selectedRoomForAllocation.MaxCapacity)
+            {
+                MessageBox.Show($"Bu oda ({_selectedRoomForAllocation.RoomNumberDisplay}) zaten tam dolu! Lütfen başka bir oda seçin.",
+                                "Oda Dolu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Yolcuyu bizzat SENİN seçtiğin odaya taşı, havuzdan sil
+            _selectedRoomForAllocation.Occupants.Add(selectedPassenger);
             PassengerPool.Remove(selectedPassenger);
-            availableRoom.UpdateStatus();
+            _selectedRoomForAllocation.UpdateStatus();
+
             PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
         }
 
@@ -202,6 +212,27 @@ namespace TurizmOperasyonSistemi.Views
                     PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
                 }
             }
+        }
+
+        // ODA KARTINA TIKLANDIĞINDA ONAY ALACAK YENİ FONKSİYON
+        private void RoomCard_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var border = sender as Border;
+            var clickedRoom = border?.DataContext as RoomViewModel;
+
+            if (clickedRoom == null) return;
+
+            // Eski seçili odanın efektini temizle (Eğer varsa)
+            foreach (var r in RoomsList)
+            {
+                // Durum renklerini güncellemek için kullandığımız metodu tetikliyoruz ama bordere efekt vereceğiz
+            }
+
+            // Yeni odayı seçilen olarak belirle
+            _selectedRoomForAllocation = clickedRoom;
+
+            // Kullanıcıya hangi odayı seçtiğini hissettirmek için küçük bir bilgi uyarısı
+            SelectedHotelTitleLabel.Text = $"🏨 Otel: {HotelSelectComboBox.SelectedItem} | ŞU AN SEÇİLİ ODA: Oda {clickedRoom.RoomNumber}";
         }
 
         // ================= İLERİ / GERİ BUTON MANTIKLARI =================
