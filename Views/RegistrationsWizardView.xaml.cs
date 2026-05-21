@@ -88,6 +88,7 @@ namespace TurizmOperasyonSistemi.Views
             _registrationsView = CollectionViewSource.GetDefaultView(RegistrationsDataGrid.ItemsSource);
             _registrationsView.Filter = FilterRegistrations;
             _registrationsView.Refresh();
+            UpdateRegistrationResultsState();
         }
 
         private bool FilterRegistrations(object obj)
@@ -96,10 +97,13 @@ namespace TurizmOperasyonSistemi.Views
                 return false;
 
             var text = Normalize(RegistrationSearchTextBox?.Text ?? "");
-            if (string.IsNullOrWhiteSpace(text))
-                return true;
+            var selectedPeriod = RegistrationPeriodFilterComboBox?.SelectedItem?.ToString() ?? "";
+            bool matchesPeriod = string.IsNullOrWhiteSpace(selectedPeriod)
+                || selectedPeriod == "Tüm Dönemler"
+                || string.Equals(item.Period, selectedPeriod, StringComparison.CurrentCultureIgnoreCase);
 
-            return Normalize(item.PersonFullName).Contains(text)
+            bool matchesText = string.IsNullOrWhiteSpace(text)
+                || Normalize(item.PersonFullName).Contains(text)
                 || Normalize(item.TourType).Contains(text)
                 || Normalize(item.Period).Contains(text)
                 || Normalize(item.GroupType).Contains(text)
@@ -115,6 +119,8 @@ namespace TurizmOperasyonSistemi.Views
                 || Normalize(item.Reference).Contains(text)
                 || Normalize(item.Currency).Contains(text)
                 || Normalize(item.Status).Contains(text);
+
+            return matchesPeriod && matchesText;
         }
 
         private bool FilterPersons(object obj)
@@ -171,6 +177,13 @@ namespace TurizmOperasyonSistemi.Views
         private void RegistrationSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             _registrationsView?.Refresh();
+            UpdateRegistrationResultsState();
+        }
+
+        private void RegistrationPeriodFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _registrationsView?.Refresh();
+            UpdateRegistrationResultsState();
         }
 
         private void ShowPassiveCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -198,7 +211,13 @@ namespace TurizmOperasyonSistemi.Views
 
         private void SetRegistrationPassiveButton_Click(object sender, RoutedEventArgs e)
         {
-            UpdateSelectedRegistrationStatus("Pasif");
+            if (RegistrationsDataGrid.SelectedItem is not RegistrationListItem selectedRegistration)
+            {
+                MessageBox.Show("Lütfen işlem yapmak için bir operasyon kaydı seçiniz.");
+                return;
+            }
+
+            UpdateSelectedRegistrationStatus(selectedRegistration.Status == "Pasif" ? "Aktif" : "Pasif");
         }
 
         private void CancelRegistrationButton_Click(object sender, RoutedEventArgs e)
@@ -208,7 +227,13 @@ namespace TurizmOperasyonSistemi.Views
 
         private void SetRegistrationPassiveMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            UpdateSelectedRegistrationStatus("Pasif");
+            if (RegistrationsDataGrid.SelectedItem is not RegistrationListItem selectedRegistration)
+            {
+                MessageBox.Show("Lütfen işlem yapmak için bir operasyon kaydı seçiniz.");
+                return;
+            }
+
+            UpdateSelectedRegistrationStatus(selectedRegistration.Status == "Pasif" ? "Aktif" : "Pasif");
         }
 
         private void CancelRegistrationMenuItem_Click(object sender, RoutedEventArgs e)
@@ -251,6 +276,7 @@ namespace TurizmOperasyonSistemi.Views
             if (item != null)
             {
                 RegistrationsDataGrid.SelectedItem = item;
+                RegistrationsDataGrid.ScrollIntoView(item);
             }
         }
 
@@ -259,6 +285,43 @@ namespace TurizmOperasyonSistemi.Views
             bool hasSelection = RegistrationsDataGrid?.SelectedItem is RegistrationListItem;
             SetRegistrationPassiveButton.IsEnabled = hasSelection;
             CancelRegistrationButton.IsEnabled = hasSelection;
+
+            if (!hasSelection)
+            {
+                SetRegistrationPassiveButton.Content = "Pasif Yap";
+                if (SetRegistrationPassiveMenuItem != null)
+                {
+                    SetRegistrationPassiveMenuItem.Header = "Pasif Yap";
+                }
+
+                return;
+            }
+
+            var selectedRegistration = (RegistrationListItem)RegistrationsDataGrid.SelectedItem;
+            bool canActivate = string.Equals(selectedRegistration.Status, "Pasif", StringComparison.CurrentCultureIgnoreCase);
+            string actionText = canActivate ? "Aktif Yap" : "Pasif Yap";
+
+            SetRegistrationPassiveButton.Content = actionText;
+            if (SetRegistrationPassiveMenuItem != null)
+            {
+                SetRegistrationPassiveMenuItem.Header = actionText;
+            }
+        }
+
+        private void UpdateRegistrationResultsState()
+        {
+            if (_registrationsView == null || NoRegistrationResultsPanel == null)
+                return;
+
+            bool hasAnyResult = _registrationsView.Cast<object>().Any();
+            bool hasSearchText = !string.IsNullOrWhiteSpace(RegistrationSearchTextBox?.Text);
+            bool hasPeriodFilter = RegistrationPeriodFilterComboBox?.SelectedItem != null
+                && RegistrationPeriodFilterComboBox.SelectedItem.ToString() != "Tüm Dönemler";
+
+            NoRegistrationResultsPanel.Visibility =
+                !hasAnyResult && (hasSearchText || hasPeriodFilter)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
 
         private void PersonsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -731,6 +794,19 @@ namespace TurizmOperasyonSistemi.Views
                         .OrderBy(s => s.SortOrder)
                         .Select(s => s.Value)
                         .ToList();
+
+                    var registrationPeriods = PeriodComboBox.ItemsSource
+                        .Cast<string>()
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Distinct()
+                        .ToList();
+                    registrationPeriods.Insert(0, "Tüm Dönemler");
+                    RegistrationPeriodFilterComboBox.ItemsSource = registrationPeriods;
+
+                    if (RegistrationPeriodFilterComboBox.SelectedItem == null)
+                    {
+                        RegistrationPeriodFilterComboBox.SelectedIndex = 0;
+                    }
 
                     VisaRequestComboBox.ItemsSource = db.AppSettings
                         .Where(x => (x.Type == "Vize Talebi" || x.Type == "VisaType") && x.IsActive)
