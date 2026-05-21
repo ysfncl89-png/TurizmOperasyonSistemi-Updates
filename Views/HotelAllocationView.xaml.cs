@@ -1,9 +1,13 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using TurizmOperasyonSistemi.Data; // Senin AppDbContext'in bulunduğu klasör
+using TurizmOperasyonSistemi.Data;
+using TurizmOperasyonSistemi.Models;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -11,99 +15,200 @@ namespace TurizmOperasyonSistemi.Views
     {
         private int currentStep = 1;
 
+        // Sağ taraftaki odaları ve sol taraftaki yolcuları dinamik takip etmek için ObservableCollection kullanıyoruz
+        public ObservableCollection<RoomViewModel> RoomsList { get; set; } = new ObservableCollection<RoomViewModel>();
+        public ObservableCollection<PassengerUiModel> PassengerPool { get; set; } = new ObservableCollection<PassengerUiModel>();
+
         public HotelAllocationView()
         {
             InitializeComponent();
-
-            // Sayfa açılır açılmaz senin AppSettings tablundan verileri yüklüyoruz
             LoadComboBoxData();
+
+            // XAML'deki kontrollere listelerimizi bağlıyoruz
+            RoomsItemsControl.ItemsSource = RoomsList;
+            UnallocatedPassengersGrid.ItemsSource = PassengerPool;
         }
 
+        // 1. MEVCUT LoadComboBoxData METODUNUN EN ALTINA ŞU SATIRLARI EKLE veya METODU BUNUNLA DEĞİŞTİR:
         private void LoadComboBoxData()
         {
             try
             {
                 using (var db = new AppDbContext())
                 {
-                    // Tüm ayarlar listesini veritabanından çekip hafızaya alıyoruz
                     var allSettings = db.AppSettings.ToList();
 
-                    // 1. ADIM: Otelleri Yükleme (Veritabanındaki tam adı: "Otel Ekle")
-                    HotelSelectComboBox.ItemsSource = allSettings
-                        .Where(x => x.Type != null && x.Type.Trim().Equals("Otel Ekle", StringComparison.OrdinalIgnoreCase))
-                        .Select(x => x.Value)
-                        .Distinct()
-                        .ToList();
+                    HotelSelectComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("Otel Ekle", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
+                    TourTypeComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("TourType", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
+                    PeriodComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("Dönem", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
+                    GroupTypeComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("GroupType", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
+                    DurationComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("Kaç Günlük Grup", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
 
-                    // 2. ADIM: Tur Türleri (Veritabanındaki tam adı: "TourType")
-                    TourTypeComboBox.ItemsSource = allSettings
-                        .Where(x => x.Type != null && x.Type.Trim().Equals("TourType", StringComparison.OrdinalIgnoreCase))
-                        .Select(x => x.Value)
-                        .Distinct()
-                        .ToList();
+                    // YENİ EKLEMEYE DİKKAT: Sağ taraftaki Oda Açma ComboBox'ına Ayarlar'daki RoomType değerlerini basıyoruz:
+                    NewRoomCapacityComboBox.ItemsSource = allSettings
+                        .Where(x => x.Type != null && x.Type.Trim().Equals("RoomType", StringComparison.OrdinalIgnoreCase))
+                        .Select(x => x.Value).Distinct().ToList();
 
-                    // 3. ADIM: Dönemler (Veritabanındaki tam adı: "Dönem")
-                    PeriodComboBox.ItemsSource = allSettings
-                        .Where(x => x.Type != null && x.Type.Trim().Equals("Dönem", StringComparison.OrdinalIgnoreCase))
-                        .Select(x => x.Value)
-                        .Distinct()
-                        .ToList();
-
-                    // 4. ADIM: Grup Türleri (Veritabanındaki tam adı: "GroupType")
-                    GroupTypeComboBox.ItemsSource = allSettings
-                        .Where(x => x.Type != null && x.Type.Trim().Equals("GroupType", StringComparison.OrdinalIgnoreCase))
-                        .Select(x => x.Value)
-                        .Distinct()
-                        .ToList();
-
-                    // 5. ADIM: Süreler / Gün Sayısı (Veritabanındaki tam adı: "Kaç Günlük Grup")
-                    DurationComboBox.ItemsSource = allSettings
-                        .Where(x => x.Type != null && x.Type.Trim().Equals("Kaç Günlük Grup", StringComparison.OrdinalIgnoreCase))
-                        .Select(x => x.Value)
-                        .Distinct()
-                        .ToList();
+                    if (NewRoomCapacityComboBox.Items.Count > 0) NewRoomCapacityComboBox.SelectedIndex = 0;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ayarlar veritabanından yüklenirken hata oluştu: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ayarlar yüklenirken hata: {ex.Message}");
             }
         }
 
-        // Model içindeki sütun isimleri ne olursa olsun (Type, SettingType, Tip, Key vb.) 
-        // dinamik olarak bulup hatayı engelleyen yardımcı fonksiyon:
-        private string GetModelPropertyValue(object obj, string targetType)
+        // 2. YOLCULARIN NULL HATASINA ÇARPMADAN TÜMÜNÜ GETİREN GÜVENLİ METOT:
+        private void LoadFilteredPassengers()
         {
-            if (obj == null) return "";
-
-            var properties = obj.GetType().GetProperties();
-
-            // Eğer "Type" (Tip/Key) aranıyorsa
-            if (targetType == "Type")
+            try
             {
-                var prop = properties.FirstOrDefault(p => p.Name.Equals("Type", StringComparison.OrdinalIgnoreCase) ||
-                                                          p.Name.Equals("SettingType", StringComparison.OrdinalIgnoreCase) ||
-                                                          p.Name.Equals("Tip", StringComparison.OrdinalIgnoreCase) ||
-                                                          p.Name.Equals("Key", StringComparison.OrdinalIgnoreCase));
-                return prop?.GetValue(obj)?.ToString() ?? "";
+                string selectedTourType = TourTypeComboBox.SelectedItem?.ToString();
+                string selectedPeriod = PeriodComboBox.SelectedItem?.ToString();
+                string selectedGroupType = GroupTypeComboBox.SelectedItem?.ToString();
+                string selectedDuration = DurationComboBox.SelectedItem?.ToString();
+
+                PassengerPool.Clear();
+
+                using (var db = new AppDbContext())
+                {
+                    // EF Connection'ı alıp ham bir SQL sorgusu hazırlıyoruz.
+                    // Sadece bize lazım olan sütunları seçtiğimiz için 16. sütundaki NULL hatası tamamen bypass edilir!
+                    var connection = db.Database.GetDbConnection();
+
+                    if (connection.State != System.Data.ConnectionState.Open)
+                        connection.Open();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        // Tablo ve sütun isimlerini senin veritabanına göre eşliyoruz. 
+                        // Eğer veritabanında "DayCount" yoksa hata vermemesi için SQL sorgusuna eklemiyoruz, C# tarafında çözeceğiz.
+                        command.CommandText = @"
+                    SELECT Id, PersonId, TourType, Period, GroupType, RoomType 
+                    FROM Registrations 
+                    WHERE TourType = @tourType AND Period = @period AND GroupType = @groupType";
+
+                        // SQL Enjeksiyon korumalı parametrelerimizi ekliyoruz
+                        var p1 = command.CreateParameter(); p1.ParameterName = "@tourType"; p1.Value = selectedTourType ?? (object)DBNull.Value; command.Parameters.Add(p1);
+                        var p2 = command.CreateParameter(); p2.ParameterName = "@period"; p2.Value = selectedPeriod ?? (object)DBNull.Value; command.Parameters.Add(p2);
+                        var p3 = command.CreateParameter(); p3.ParameterName = "@groupType"; p3.Value = selectedGroupType ?? (object)DBNull.Value; command.Parameters.Add(p3);
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                int personId = reader.IsDBNull(reader.GetOrdinal("PersonId")) ? 0 : reader.GetInt32(reader.GetOrdinal("PersonId"));
+                                string roomType = reader.IsDBNull(reader.GetOrdinal("RoomType")) ? "Belirtilmemiş" : reader.GetString(reader.GetOrdinal("RoomType"));
+
+                                if (personId > 0)
+                                {
+                                    // PersonId üzerinden yolcunun adını soyadını buluyoruz
+                                    var person = db.Persons.AsNoTracking().FirstOrDefault(p => p.Id == personId);
+                                    if (person != null)
+                                    {
+                                        PassengerPool.Add(new PassengerUiModel
+                                        {
+                                            PersonId = person.Id,
+                                            FullName = $"{person.FirstName} {person.LastName}",
+                                            RoomType = roomType
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
             }
-            // Eğer "Value" (Değer) aranıyorsa
-            else
+            catch (Exception ex)
             {
-                var prop = properties.FirstOrDefault(p => p.Name.Equals("Value", StringComparison.OrdinalIgnoreCase) ||
-                                                          p.Name.Equals("SettingValue", StringComparison.OrdinalIgnoreCase) ||
-                                                          p.Name.Equals("Deger", StringComparison.OrdinalIgnoreCase) ||
-                                                          p.Name.Equals("Content", StringComparison.OrdinalIgnoreCase));
-                return prop?.GetValue(obj)?.ToString() ?? "";
+                MessageBox.Show($"Yolcu havuzu yüklenirken hata oluştu: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // ================= ADIM GEÇİŞLERİ VE KORUMA MANTIKLARI =================
+        // 3. ODA NUMARASIZ, OTOMATİK SIRA NUMARALI ODA BLOĞU AÇMA METODU:
+        private void AddRoomButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (NewRoomCapacityComboBox.SelectedItem == null)
+            {
+                MessageBox.Show("Lütfen açılacak oda türünü seçin!", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string selectedRoomType = NewRoomCapacityComboBox.SelectedItem.ToString();
+
+            // Seçilen oda türünün içindeki sayısal kapasiteyi tahmin et (Örn: "2 Kişilik" -> 2, "3 Kişilik" -> 3)
+            int capacity = 2;
+            if (selectedRoomType.Contains("3") || selectedRoomType.ToLower().Contains("triple")) capacity = 3;
+            else if (selectedRoomType.Contains("4") || selectedRoomType.ToLower().Contains("quad")) capacity = 4;
+            else if (selectedRoomType.Contains("1") || selectedRoomType.ToLower().Contains("tek")) capacity = 1;
+
+            // Aynı oda türünden kaç tane açılmış bul ve sıra numarası ver (Örn: Oda 2 Kişilik #1)
+            int existingCount = RoomsList.Count(r => r.StatusText != null) + 1;
+            string autoRoomNo = $"{existingCount}";
+
+            RoomsList.Add(new RoomViewModel
+            {
+                RoomNumber = autoRoomNo,
+                MaxCapacity = capacity
+            });
+        }
+
+        // 2. YOLCUYU ODAYA YERLEŞTİRME BUTONU
+        private void AllocatePassengerButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var selectedPassenger = button?.DataContext as PassengerUiModel;
+
+            if (selectedPassenger == null) return;
+
+            // Operatörün sağ taraftan hangi odayı seçtiğini bulmasını istiyoruz ya da ilk müsait odayı hedefliyoruz.
+            // Kolaylık olması adına: Listeden seçilen veya dolumu tamamlanmamış İLK odaya yerleştirme yapalım
+            var availableRoom = RoomsList.FirstOrDefault(r => r.Occupants.Count < r.MaxCapacity);
+
+            if (availableRoom == null)
+            {
+                MessageBox.Show("Müsait yatağı olan oda bulunamadı! Lütfen yeni bir oda açın.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Yolcuyu odaya taşı, havuzdan sil
+            availableRoom.Occupants.Add(selectedPassenger);
+            PassengerPool.Remove(selectedPassenger);
+            availableRoom.UpdateStatus();
+            PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
+        }
+
+        // 3. YOLCUYUR ODADAN GERİ ALMA (SİLME) BUTONU
+        private void RemovePassengerFromRoomButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            int personId = (button?.Tag is int id) ? id : 0;
+
+            if (personId == 0) return;
+
+            // Yolcunun bulunduğu odayı bul
+            var room = RoomsList.FirstOrDefault(r => r.Occupants.Any(o => o.PersonId == personId));
+            if (room != null)
+            {
+                var passenger = room.Occupants.FirstOrDefault(o => o.PersonId == personId);
+                if (passenger != null)
+                {
+                    // Odadan çıkar, tekrar sol taraftaki havuza gönder
+                    room.Occupants.Remove(passenger);
+                    PassengerPool.Add(passenger);
+                    room.UpdateStatus();
+                    PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
+                }
+            }
+        }
+
+        // ================= İLERİ / GERİ BUTON MANTIKLARI =================
         private void NextButton_Click(object sender, RoutedEventArgs e)
         {
             if (currentStep == 1)
             {
-                // KORUMA: Otel seçilmeden geçişi engelle
                 if (HotelSelectComboBox.SelectedItem == null)
                 {
                     MessageBox.Show("Lütfen önce odalama yapacağınız oteli seçin!", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -121,13 +226,16 @@ namespace TurizmOperasyonSistemi.Views
             }
             else if (currentStep == 2)
             {
-                // KORUMA: 4 kriterin de seçildiğinden emin ol
                 if (TourTypeComboBox.SelectedItem == null || PeriodComboBox.SelectedItem == null ||
                     GroupTypeComboBox.SelectedItem == null || DurationComboBox.SelectedItem == null)
                 {
                     MessageBox.Show("Lütfen tüm tur filtreleme kriterlerini seçin!", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
+
+                // BAŞARI: 3. Adıma geçerken veritabanından yolcuları filtreleyip getiriyoruz!
+                SelectedHotelTitleLabel.Text = $"🏨 Seçilen Otel: {HotelSelectComboBox.SelectedItem} Oda Yerleşim Düzeni";
+                LoadFilteredPassengers();
 
                 Step2Grid.Visibility = Visibility.Collapsed;
                 Step3Grid.Visibility = Visibility.Visible;
@@ -137,12 +245,10 @@ namespace TurizmOperasyonSistemi.Views
 
                 NextButton.Content = "Kaydet ve Bitir";
                 currentStep = 3;
-
-                // TODO: 3. Adıma geçildiğinde seçilen filtrelere göre yolcuları listeleyecek fonksiyon buraya gelecek.
             }
             else if (currentStep == 3)
             {
-                MessageBox.Show("Odalama işlemi başarıyla kaydedildi!", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Odalama yerleşim planı başarıyla kaydedildi!", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -171,5 +277,60 @@ namespace TurizmOperasyonSistemi.Views
                 currentStep = 1;
             }
         }
+    }
+
+    // ================= 3. ADIM İÇİN GEREKLİ YARDIMCI GÖRÜNÜM MODELLERİ =================
+
+    public class PassengerUiModel
+    {
+        public int PersonId { get; set; }
+        public string FullName { get; set; }
+        public string RoomType { get; set; }
+    }
+
+    public class RoomViewModel : System.ComponentModel.INotifyPropertyChanged
+    {
+        private string _statusText = "Boş";
+        private Brush _statusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+
+        public string RoomNumber { get; set; }
+        public int MaxCapacity { get; set; }
+        public ObservableCollection<PassengerUiModel> Occupants { get; set; } = new ObservableCollection<PassengerUiModel>();
+
+        public string RoomNumberDisplay => $"Oda {RoomNumber} ({MaxCapacity} Kişilik)";
+
+        public string StatusText
+        {
+            get => _statusText;
+            set { _statusText = value; OnPropertyChanged(nameof(StatusText)); }
+        }
+
+        public Brush StatusColor
+        {
+            get => _statusColor;
+            set { _statusColor = value; OnPropertyChanged(nameof(StatusColor)); }
+        }
+
+        public void UpdateStatus()
+        {
+            if (Occupants.Count == 0)
+            {
+                StatusText = "Boş";
+                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")); // Yeşil
+            }
+            else if (Occupants.Count < MaxCapacity)
+            {
+                StatusText = $"{Occupants.Count}/{MaxCapacity} Dolu";
+                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")); // Turuncu
+            }
+            else
+            {
+                StatusText = "TAM DOLU";
+                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444")); // Kırmızı
+            }
+        }
+
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
     }
 }

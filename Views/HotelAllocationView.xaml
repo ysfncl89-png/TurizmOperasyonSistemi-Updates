@@ -140,10 +140,123 @@
             </Grid>
 
             <Grid x:Name="Step3Grid" Visibility="Collapsed">
-                <TextBlock Text="Odalama Motoru Buraya Gelecek"
-                           Foreground="White"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2.5*"/>
+                    <ColumnDefinition Width="3.5*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="#1E293B" CornerRadius="8" Margin="0,0,10,0" Padding="15" BorderBrush="#334155" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                            <TextBlock Text="👥 Odalanacak Yolcu Havuzu" Foreground="#06B6D4" FontSize="16" FontWeight="Bold"/>
+                            <TextBlock x:Name="PassengerCountLabel" Text="Seçilen Kriterlere Uygun: 0 Yolcu Bulundu" Foreground="#94A3B8" FontSize="12" Margin="0,5,0,0"/>
+                        </StackPanel>
+
+                        <DataGrid Grid.Row="1" x:Name="UnallocatedPassengersGrid" 
+          Background="Transparent" RowBackground="#0F172A" AlternatingRowBackground="#1E293B"
+          Foreground="White" BorderThickness="0" GridLinesVisibility="None"
+          AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#334155"/>
+                                    <Setter Property="Foreground" Value="#06B6D4"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Padding" Value="10,8"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="Margin" Value="0,2"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGrid.Resources>
+
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Adı Soyadı" Binding="{Binding FullName}" Width="2*"/>
+                                <DataGridTextColumn Header="Talep Edilen Oda" Binding="{Binding RoomType}" Width="1*"/>
+                                <DataGridTemplateColumn Header="İşlem" Width="1*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Odaya Ekle" Background="#06B6D4" Foreground="White" FontWeight="Bold" Padding="5,2" BorderThickness="0" Click="AllocatePassengerButton_Click"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1" Background="#1E293B" CornerRadius="8" Margin="10,0,0,0" Padding="15" BorderBrush="#334155" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock x:Name="SelectedHotelTitleLabel" Text="🏨 Seçilen Otel: Oda Yerleşim Düzeni" Foreground="#06B6D4" FontSize="16" FontWeight="Bold"/>
+                            <TextBlock Text="Yolcuları yerleştirmek için sol taraftan yolcu seçip odaya atayın." Foreground="#94A3B8" FontSize="12" Margin="0,5,0,0"/>
+                        </StackPanel>
+
+                        <Border Grid.Row="1" Background="#0F172A" Padding="10" CornerRadius="6" Margin="0,0,0,15">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="4*"/>
+                                    <ColumnDefinition Width="2*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Açılacak Oda Türü (Ayarlar Modülünden)" Foreground="#94A3B8" FontSize="11" Margin="0,0,0,4"/>
+                                    <ComboBox x:Name="NewRoomCapacityComboBox" Height="28" Background="#1E293B" Foreground="White" BorderBrush="#334155"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="1" Content="➕ Oda Bloğu Oluştur" Background="#10B981" Foreground="White" FontWeight="Bold" Height="28" VerticalAlignment="Bottom" BorderThickness="0" Click="AddRoomButton_Click"/>
+                            </Grid>
+                        </Border>
+
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="RoomsItemsControl">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Width="210" Margin="5" Background="#0F172A" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="10">
+                                            <StackPanel>
+                                                <Grid>
+                                                    <TextBlock Text="{Binding RoomNumberDisplay}" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                                                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusColor}" HorizontalAlignment="Right" FontWeight="Bold" FontSize="12"/>
+                                                </Grid>
+
+                                                <Separator Background="#334155" Margin="0,8"/>
+
+                                                <ListBox ItemsSource="{Binding Occupants}" Background="Transparent" BorderThickness="0" Height="80">
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Width="180">
+                                                                <TextBlock Text="{Binding FullName}" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center"/>
+                                                                <Button Content="❌" Background="Transparent" Foreground="#EF4444" BorderThickness="0" HorizontalAlignment="Right" Padding="2,0" Click="RemovePassengerFromRoomButton_Click" Tag="{Binding PersonId}"/>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
             </Grid>
 
         </Grid>
