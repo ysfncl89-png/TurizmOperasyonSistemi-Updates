@@ -5,6 +5,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media.Effects;
 using System.Windows.Media;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
@@ -220,9 +222,31 @@ namespace TurizmOperasyonSistemi.Views
 
             if (clickedRoom == null) return;
 
-            _selectedRoomForAllocation = clickedRoom;
+            SelectRoom(clickedRoom);
 
             SelectedHotelTitleLabel.Text = $"🏨 Otel: {HotelSelectComboBox.SelectedItem} | ŞU AN SEÇİLİ ODA: Oda {clickedRoom.RoomNumber}";
+        }
+
+        private void SelectRoom(RoomViewModel room)
+        {
+            foreach (var currentRoom in RoomsList)
+            {
+                currentRoom.SetSelected(false);
+            }
+
+            _selectedRoomForAllocation = room;
+            _selectedRoomForAllocation?.SetSelected(true);
+        }
+
+        private void ClearSelectedRoom()
+        {
+            foreach (var currentRoom in RoomsList)
+            {
+                currentRoom.SetSelected(false);
+            }
+
+            _selectedRoomForAllocation = null;
+            SelectedHotelTitleLabel.Text = $"🏨 Seçilen Otel: {HotelSelectComboBox.SelectedItem} Oda Yerleşim Düzeni";
         }
 
         private HashSet<int> GetOccupiedPersonIds()
@@ -251,6 +275,48 @@ namespace TurizmOperasyonSistemi.Views
         private void RefreshPassengerCountLabel()
         {
             PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
+        }
+
+        private bool HasRoomCardAncestor(DependencyObject source)
+        {
+            DependencyObject current = source;
+
+            while (current != null)
+            {
+                if (current is FrameworkElement element && element.DataContext is RoomViewModel)
+                {
+                    return true;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return false;
+        }
+
+        private bool HasInteractiveAncestor(DependencyObject source)
+        {
+            DependencyObject current = source;
+
+            while (current != null)
+            {
+                if (current is Button ||
+                    current is DataGrid ||
+                    current is DataGridRow ||
+                    current is DataGridCell ||
+                    current is ComboBox ||
+                    current is ComboBoxItem ||
+                    current is ListBox ||
+                    current is ListBoxItem ||
+                    current is ScrollBar)
+                {
+                    return true;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return false;
         }
 
         private void EnsureRoomAllocationColumns()
@@ -502,34 +568,16 @@ namespace TurizmOperasyonSistemi.Views
 
                 RoomViewModel secondRoom = _selectedRoomForAllocation;
 
-                // 1. Bu grup için havuzdan sıradaki neon rengi seçiyoruz
-                string selectedNeonHex = NeonColors[(_connectionGroupCounter - 1) % NeonColors.Length];
-                var neonBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(selectedNeonHex));
-
-                string gId = $"Group_{_connectionGroupCounter}";
-                string groupTitle = $"🔗 CONNECTION GRUBU #{_connectionGroupCounter} (Oda {_firstRoomToConnect.RoomNumber} + {secondRoom.RoomNumber})";
-
                 // 2. Odaları mühürle ve renklerini ata
                 _firstRoomToConnect.IsConnection = true;
-                _firstRoomToConnect.ConnectionGroupId = gId;
-                _firstRoomToConnect.ConnectionGroupText = groupTitle;
-                _firstRoomToConnect.ConnectionBorderBrush = neonBrush;
+                _firstRoomToConnect.ConnectionGroupId = $"TEMP_{Guid.NewGuid():N}";
                 _firstRoomToConnect.RoomMargin = new Thickness(5, 5, 0, 5); // Aradaki boşluğu daralt
 
                 secondRoom.IsConnection = true;
-                secondRoom.ConnectionGroupId = gId;
-                secondRoom.ConnectionGroupText = groupTitle;
-                secondRoom.ConnectionBorderBrush = neonBrush;
+                secondRoom.ConnectionGroupId = _firstRoomToConnect.ConnectionGroupId;
                 secondRoom.RoomMargin = new Thickness(0, 5, 5, 5); // İlk odaya yapışık dursun
 
-                // 3. EKRANDAKİ LİSTEYİ YENİDEN SIRALA
-                var sortedRooms = RoomsList.OrderBy(r => r.IsConnection ? r.ConnectionGroupId : "ZZZ_" + r.RoomNumber).ToList();
-
-                RoomsList.Clear();
-                foreach (var r in sortedRooms)
-                {
-                    RoomsList.Add(r);
-                }
+                NormalizeConnectionGroups();
 
                 MessageBox.Show($"Mükemmel! Oda {_firstRoomToConnect.RoomNumber} ve Oda {secondRoom.RoomNumber} yan yana getirildi ve mühürlendi!", "Bağlantı Tamam");
 
@@ -629,6 +677,18 @@ namespace TurizmOperasyonSistemi.Views
         {
             string selectedHotelName = HotelSelectComboBox.SelectedItem?.ToString();
             LoadSavedAllocations(selectedHotelName);
+        }
+
+        private void Step3Grid_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var source = e.OriginalSource as DependencyObject;
+
+            if (HasRoomCardAncestor(source) || HasInteractiveAncestor(source))
+            {
+                return;
+            }
+
+            ClearSelectedRoom();
         }
 
         private void DeleteSavedAllocationButton_Click(object sender, RoutedEventArgs e)
@@ -737,10 +797,7 @@ private void BreakConnectionButton_Click(object sender, RoutedEventArgs e)
                 room.RoomMargin = new Thickness(5); // Marjları normal haline getir
             }
 
-            // Listeyi bağlantı durumlarına göre tekrar alfabetik/normal sıraya diziyoruz
-            var sortedRooms = RoomsList.OrderBy(r => r.IsConnection ? r.ConnectionGroupId : "ZZZ_" + r.RoomNumber).ToList();
-            RoomsList.Clear();
-            foreach (var r in sortedRooms) RoomsList.Add(r);
+            NormalizeConnectionGroups();
 
             MessageBox.Show("Odaların arasındaki bağlantı başarıyla koparıldı, odalar bağımsız hale geldi.", "Bağlantı İptal");
         }
@@ -778,8 +835,65 @@ private void BreakConnectionButton_Click(object sender, RoutedEventArgs e)
             // Odayı sağ taraftaki listeden tamamen siliyoruz
             RoomsList.Remove(currentRoom);
 
+            if (_selectedRoomForAllocation == currentRoom)
+            {
+                ClearSelectedRoom();
+            }
+
+            NormalizeConnectionGroups();
+
             // Sol taraftaki yolcu sayacı etiketini güncelle
             RefreshPassengerCountLabel();
+        }
+
+        private void NormalizeConnectionGroups()
+        {
+            var connectionGroups = RoomsList
+                .Where(r => r.IsConnection && !string.IsNullOrWhiteSpace(r.ConnectionGroupId))
+                .GroupBy(r => r.ConnectionGroupId)
+                .OrderBy(g => g.Min(r => int.TryParse(r.RoomNumber, out int roomNo) ? roomNo : int.MaxValue))
+                .ToList();
+
+            int groupIndex = 1;
+            foreach (var group in connectionGroups)
+            {
+                string newGroupId = $"Group_{groupIndex}";
+                string selectedNeonHex = NeonColors[(groupIndex - 1) % NeonColors.Length];
+                var neonBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(selectedNeonHex));
+                string orderedRooms = string.Join(" + ", group
+                    .OrderBy(r => int.TryParse(r.RoomNumber, out int roomNo) ? roomNo : int.MaxValue)
+                    .Select(r => r.RoomNumber));
+                string groupTitle = $"🔗 CONNECTION GRUBU #{groupIndex} (Oda {orderedRooms})";
+
+                foreach (var room in group)
+                {
+                    room.IsConnection = true;
+                    room.ConnectionGroupId = newGroupId;
+                    room.ConnectionGroupText = groupTitle;
+                    room.ConnectionBorderBrush = neonBrush;
+                }
+
+                groupIndex++;
+            }
+
+            foreach (var room in RoomsList.Where(r => !r.IsConnection))
+            {
+                room.ConnectionGroupId = "";
+                room.ConnectionGroupText = "";
+                room.ConnectionBorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+                room.RoomMargin = new Thickness(5);
+            }
+
+            var sortedRooms = RoomsList
+                .OrderBy(r => r.IsConnection ? r.ConnectionGroupId : $"ZZZ_{r.RoomNumber}")
+                .ThenBy(r => int.TryParse(r.RoomNumber, out int roomNo) ? roomNo : int.MaxValue)
+                .ToList();
+
+            RoomsList.Clear();
+            foreach (var room in sortedRooms)
+            {
+                RoomsList.Add(room);
+            }
         }
     }
 }
@@ -812,6 +926,9 @@ public class SavedAllocationRow
         private string _statusText = "Boş";
         private Brush _statusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
         private int _maxCapacity;
+        private Brush _selectionBorderBrush = Brushes.Transparent;
+        private Thickness _selectionBorderThickness = new Thickness(0);
+        private Brush _selectionBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A"));
 
         private Brush _connectionBorderBrush =
             new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
@@ -893,6 +1010,46 @@ public class SavedAllocationRow
                 _statusColor = value;
                 OnPropertyChanged(nameof(StatusColor));
             }
+        }
+
+        public Brush SelectionBorderBrush
+        {
+            get => _selectionBorderBrush;
+            set
+            {
+                _selectionBorderBrush = value;
+                OnPropertyChanged(nameof(SelectionBorderBrush));
+            }
+        }
+
+        public Thickness SelectionBorderThickness
+        {
+            get => _selectionBorderThickness;
+            set
+            {
+                _selectionBorderThickness = value;
+                OnPropertyChanged(nameof(SelectionBorderThickness));
+            }
+        }
+
+        public Brush SelectionBackground
+        {
+            get => _selectionBackground;
+            set
+            {
+                _selectionBackground = value;
+                OnPropertyChanged(nameof(SelectionBackground));
+            }
+        }
+
+        public void SetSelected(bool isSelected)
+        {
+            SelectionBorderBrush = isSelected
+                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38BDF8"))
+                : Brushes.Transparent;
+            SelectionBorderThickness = isSelected ? new Thickness(2) : new Thickness(0);
+            SelectionBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(
+                isSelected ? "#172554" : "#0F172A"));
         }
 
         public void UpdateStatus()
