@@ -49,6 +49,7 @@ namespace TurizmOperasyonSistemi.Views
             LastNameTextBox.TextChanged += RequiredField_TextChanged;
             TcTextBox.TextChanged += RequiredField_TextChanged;
             GenderComboBox.SelectionChanged += GenderComboBox_SelectionChanged;
+            ApplyLiveRequiredHighlights();
         }
 
         public int SelectedPersonId => selectedPersonId;
@@ -263,9 +264,19 @@ namespace TurizmOperasyonSistemi.Views
             GenderComboBox.Tag = null;
         }
 
+        private void ApplyLiveRequiredHighlights()
+        {
+            FirstNameTextBox.Tag = string.IsNullOrWhiteSpace(FirstNameTextBox.Text) ? "RequiredError" : null;
+            LastNameTextBox.Tag = string.IsNullOrWhiteSpace(LastNameTextBox.Text) ? "RequiredError" : null;
+            TcTextBox.Tag = string.IsNullOrWhiteSpace(TcTextBox.Text) ? "RequiredError" : null;
+            GenderComboBox.Tag = GenderComboBox.SelectedIndex <= 0 || string.Equals(GenderComboBox.Text, "SeÃ§iniz", StringComparison.OrdinalIgnoreCase)
+                ? "RequiredError"
+                : null;
+        }
+
         private bool HighlightMissingRequiredFields()
         {
-            ClearRequiredHighlights();
+            ApplyLiveRequiredHighlights();
 
             bool hasError = false;
 
@@ -433,6 +444,7 @@ namespace TurizmOperasyonSistemi.Views
             ToggleActiveButton.Visibility = Visibility.Collapsed;
             ToggleActiveButton.Content = "Pasif Yap";
             EditSelectedButton.Visibility = Visibility.Collapsed;
+            ApplyLiveRequiredHighlights();
         }
 
         private void PopulateForm(Person person)
@@ -620,9 +632,9 @@ namespace TurizmOperasyonSistemi.Views
 
         private void RequiredField_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (sender is TextBox textBox && !string.IsNullOrWhiteSpace(textBox.Text))
+            if (sender is TextBox textBox)
             {
-                textBox.Tag = null;
+                textBox.Tag = string.IsNullOrWhiteSpace(textBox.Text) ? "RequiredError" : null;
             }
         }
 
@@ -631,6 +643,10 @@ namespace TurizmOperasyonSistemi.Views
             if (GenderComboBox.SelectedIndex > 0 && !string.Equals(GenderComboBox.Text, "Seçiniz", StringComparison.OrdinalIgnoreCase))
             {
                 GenderComboBox.Tag = null;
+            }
+            else
+            {
+                GenderComboBox.Tag = "RequiredError";
             }
         }
 
