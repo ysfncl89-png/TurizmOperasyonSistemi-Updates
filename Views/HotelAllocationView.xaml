@@ -198,7 +198,7 @@
                                        Foreground="#06B6D4"
                                        FontSize="16"
                                        FontWeight="Bold"/>
-                            <TextBlock Text="Kaydet ve Bitir sonrası kayıtlar burada görünür."
+                            <TextBlock Text="Kayıtlar otel ve tur bilgisine göre tek satır halinde özetlenir."
                                        Foreground="#94A3B8"
                                        FontSize="12"
                                        Margin="0,4,0,0"/>
@@ -237,8 +237,8 @@
                                 <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="1*"/>
                                 <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="1*"/>
                                 <DataGridTextColumn Header="Grup Gün Sayısı" Binding="{Binding DaysCount}" Width="1*"/>
-                                <DataGridTextColumn Header="Oda No" Binding="{Binding RoomNumber}" Width="0.8*"/>
-                                <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="1*"/>
+                                <DataGridTextColumn Header="Oda Sayısı" Binding="{Binding RoomCount}" Width="0.8*"/>
+                                <DataGridTextColumn Header="Oda Listesi" Binding="{Binding RoomSummary}" Width="1.8*"/>
                                 <DataGridTextColumn Header="Kişi Sayısı" Binding="{Binding OccupantCount}" Width="0.8*"/>
                                 <DataGridTextColumn Header="Yerleşen Kişiler" Binding="{Binding OccupantNames}" Width="2.4*"/>
                                 <DataGridTemplateColumn Header="İşlem" Width="0.9*">

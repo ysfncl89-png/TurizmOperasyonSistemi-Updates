@@ -398,27 +398,47 @@ namespace TurizmOperasyonSistemi.Views
                         .Where(x => passengerIds.Contains(x.Id))
                         .ToDictionary(x => x.Id, x => $"{x.FirstName} {x.LastName}");
 
-                    foreach (var allocation in allocations
-                        .OrderBy(x => x.Hotel?.Name)
-                        .ThenBy(x => x.RoomNumber))
+                    var groupedAllocations = allocations
+                        .GroupBy(x => new
+                        {
+                            HotelName = x.Hotel?.Name ?? "Bilinmiyor",
+                            x.TourType,
+                            x.Period,
+                            x.GroupType,
+                            x.DaysCount
+                        })
+                        .OrderBy(x => x.Key.HotelName)
+                        .ThenBy(x => x.Key.TourType)
+                        .ThenBy(x => x.Key.Period)
+                        .ThenBy(x => x.Key.GroupType)
+                        .ThenBy(x => x.Key.DaysCount)
+                        .ToList();
+
+                    foreach (var allocationGroup in groupedAllocations)
                     {
-                        var occupantNames = allocation.Occupants
+                        var allocationList = allocationGroup
+                            .OrderBy(x => int.TryParse(x.RoomNumber, out int roomNo) ? roomNo : int.MaxValue)
+                            .ThenBy(x => x.RoomNumber)
+                            .ToList();
+
+                        var occupantNames = allocationList
+                            .SelectMany(x => x.Occupants)
                             .Select(x => personLookup.TryGetValue(x.PassengerId, out string fullName)
                                 ? fullName
                                 : $"Yolcu #{x.PassengerId}")
+                            .Distinct()
                             .ToList();
 
                         SavedAllocations.Add(new SavedAllocationRow
                         {
-                            RoomAllocationId = allocation.Id,
-                            HotelName = allocation.Hotel?.Name ?? "Bilinmiyor",
-                            TourType = allocation.TourType,
-                            Period = allocation.Period,
-                            GroupType = allocation.GroupType,
-                            DaysCount = allocation.DaysCount,
-                            RoomNumber = allocation.RoomNumber,
-                            RoomType = allocation.RoomType,
-                            OccupantCount = allocation.Occupants.Count,
+                            HotelName = allocationGroup.Key.HotelName,
+                            TourType = allocationGroup.Key.TourType,
+                            Period = allocationGroup.Key.Period,
+                            GroupType = allocationGroup.Key.GroupType,
+                            DaysCount = allocationGroup.Key.DaysCount,
+                            RoomCount = allocationList.Count,
+                            RoomSummary = string.Join(", ", allocationList.Select(x => $"{x.RoomNumber} ({x.RoomType})")),
+                            OccupantCount = allocationList.SelectMany(x => x.Occupants).Select(x => x.PassengerId).Distinct().Count(),
                             OccupantNames = occupantNames.Count > 0
                                 ? string.Join(", ", occupantNames)
                                 : "Boş Oda"
@@ -478,7 +498,11 @@ namespace TurizmOperasyonSistemi.Views
 
                     var previousAllocations = db.RoomAllocations
                         .Include(x => x.Occupants)
-                        .Where(x => x.HotelId == hotel.Id)
+                        .Where(x => x.HotelId == hotel.Id &&
+                                    x.TourType == selectedTourType &&
+                                    x.Period == selectedPeriod &&
+                                    x.GroupType == selectedGroupType &&
+                                    x.DaysCount == selectedDaysCount)
                         .ToList();
 
                     if (previousAllocations.Count > 0)
@@ -696,13 +720,13 @@ namespace TurizmOperasyonSistemi.Views
             var button = sender as Button;
             var selectedAllocation = button?.DataContext as SavedAllocationRow;
 
-            if (selectedAllocation == null || selectedAllocation.RoomAllocationId <= 0)
+            if (selectedAllocation == null)
             {
                 return;
             }
 
             var result = MessageBox.Show(
-                $"{selectedAllocation.HotelName} otelindeki {selectedAllocation.RoomNumber} numaralı oda kaydı tamamen silinsin mi?",
+                $"{selectedAllocation.HotelName} için {selectedAllocation.TourType} / {selectedAllocation.Period} odalama kaydı tamamen silinsin mi?",
                 "Odalama Kaydını Sil",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -716,11 +740,18 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using (var db = new AppDbContext())
                 {
-                    var allocation = db.RoomAllocations
+                    var allocations = db.RoomAllocations
                         .Include(x => x.Occupants)
-                        .FirstOrDefault(x => x.Id == selectedAllocation.RoomAllocationId);
+                        .Include(x => x.Hotel)
+                        .Where(x => x.Hotel != null &&
+                                    x.Hotel.Name == selectedAllocation.HotelName &&
+                                    x.TourType == selectedAllocation.TourType &&
+                                    x.Period == selectedAllocation.Period &&
+                                    x.GroupType == selectedAllocation.GroupType &&
+                                    x.DaysCount == selectedAllocation.DaysCount)
+                        .ToList();
 
-                    if (allocation == null)
+                    if (allocations.Count == 0)
                     {
                         MessageBox.Show("Silinmek istenen kayıt bulunamadı.",
                                         "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -728,7 +759,8 @@ namespace TurizmOperasyonSistemi.Views
                         return;
                     }
 
-                    db.RoomAllocations.Remove(allocation);
+                    db.RoomOccupants.RemoveRange(allocations.SelectMany(x => x.Occupants));
+                    db.RoomAllocations.RemoveRange(allocations);
                     db.SaveChanges();
                 }
 
@@ -909,14 +941,13 @@ public class PassengerUiModel
 
 public class SavedAllocationRow
     {
-        public int RoomAllocationId { get; set; }
         public string HotelName { get; set; }
         public string TourType { get; set; }
         public string Period { get; set; }
         public string GroupType { get; set; }
         public string DaysCount { get; set; }
-        public string RoomNumber { get; set; }
-        public string RoomType { get; set; }
+        public int RoomCount { get; set; }
+        public string RoomSummary { get; set; }
         public int OccupantCount { get; set; }
         public string OccupantNames { get; set; }
     }
