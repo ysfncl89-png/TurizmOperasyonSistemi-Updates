@@ -165,13 +165,18 @@
                                Margin="0,0,0,15"
                                HorizontalAlignment="Center"/>
 
-                    <ComboBox x:Name="HotelSelectComboBox"
-                              Height="40"
-                              Background="#1E293B"
-                              Foreground="White"
-                              BorderBrush="#334155"
-                              Padding="10,5"
-                              SelectionChanged="HotelSelectComboBox_SelectionChanged"/>
+                    <Border x:Name="HotelComboHighlightBorder"
+                            CornerRadius="10"
+                            BorderThickness="2"
+                            BorderBrush="Transparent">
+                        <ComboBox x:Name="HotelSelectComboBox"
+                                  Height="40"
+                                  Background="#1E293B"
+                                  Foreground="White"
+                                  BorderBrush="#334155"
+                                  Padding="10,5"
+                                  SelectionChanged="HotelSelectComboBox_SelectionChanged"/>
+                    </Border>
 
                     <TextBlock Text="* Ayarlar modülünde eklediğiniz oteller burada listelenir."
                                Foreground="#64748B"
@@ -226,6 +231,7 @@
                                          BorderBrush="#475569"
                                          BorderThickness="1.2"
                                          Padding="10,6"
+                                         Text="Ara: otel, tur türü, dönem, grup, oda veya kişi"
                                          TextChanged="SavedAllocationFilter_Changed"/>
 
                                 <UniformGrid Columns="4" Margin="0,10,0,0">
@@ -309,7 +315,7 @@
                                 <DataGridTextColumn Header="Oda Listesi" Binding="{Binding RoomSummary}" Width="1.8*"/>
                                 <DataGridTextColumn Header="Kişi Sayısı" Binding="{Binding OccupantCount}" Width="0.8*"/>
                                 <DataGridTextColumn Header="Yerleşen Kişiler" Binding="{Binding OccupantNames}" Width="2.4*"/>
-                                <DataGridTemplateColumn Header="İşlem" Width="1.5*">
+                                <DataGridTemplateColumn Header="İşlem" Width="2.2*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -321,6 +327,14 @@
                                                         BorderThickness="0"
                                                         Margin="0,0,6,0"
                                                         Click="EditSavedAllocationButton_Click"/>
+                                                <Button Content="İncele"
+                                                        Background="#0EA5E9"
+                                                        Foreground="White"
+                                                        FontWeight="Bold"
+                                                        Padding="8,3"
+                                                        BorderThickness="0"
+                                                        Margin="0,0,6,0"
+                                                        Click="InspectSavedAllocationButton_Click"/>
                                                 <Button Content="Kaydı Sil"
                                                         Background="#DC2626"
                                                         Foreground="White"
@@ -351,13 +365,13 @@
                                 VerticalAlignment="Center">
                             <StackPanel>
                                 <TextBlock x:Name="HotelSelectionGuideTitleText"
-                                           Text="Önce yukarıdan otel seçin"
+                                           Text="Önce otel seçin"
                                            Foreground="White"
                                            FontSize="18"
                                            FontWeight="Bold"
                                            HorizontalAlignment="Center"/>
                                 <TextBlock x:Name="HotelSelectionGuideDescriptionText"
-                                           Text="Kayıt listesinden değil, üstteki otel kutusundan seçim yapmalısınız."
+                                           Text="Otel odalama kaydı yapmanız için önce yukarıdaki otel seçimi kutusundan bir otel seçin."
                                            Foreground="#E2E8F0"
                                            FontSize="16"
                                            Margin="0,8,0,0"
@@ -365,17 +379,6 @@
                                            TextWrapping="Wrap"
                                            TextAlignment="Center"
                                            HorizontalAlignment="Center"/>
-                                <Button x:Name="HotelSelectionGuideOkButton"
-                                        Content="Tamam"
-                                        Visibility="Collapsed"
-                                        Margin="0,16,0,0"
-                                        Padding="20,8"
-                                        Background="#06B6D4"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        FontWeight="Bold"
-                                        HorizontalAlignment="Center"
-                                        Click="HotelSelectionGuideOkButton_Click"/>
                             </StackPanel>
                         </Border>
                     </Border>
@@ -383,73 +386,140 @@
             </Grid>
 
             <Grid x:Name="Step2Grid" Visibility="Collapsed">
-                <StackPanel VerticalAlignment="Center"
+                <Grid>
+                    <Border x:Name="CriteriaSelectionPanel"
+                            Width="540"
                             HorizontalAlignment="Center"
-                            Width="450">
+                            VerticalAlignment="Center"
+                            Background="#1E293B"
+                            CornerRadius="14"
+                            Padding="24"
+                            BorderBrush="#334155"
+                            BorderThickness="1.5">
+                        <StackPanel>
+                            <TextBlock Text="🔍 Tur Kriterlerini Seçin"
+                                       Foreground="White"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"/>
 
-                    <TextBlock Text="🔍 Yolcu Havuzu Filtreleme Kriterleri"
-                               Foreground="White"
-                               FontSize="18"
-                               FontWeight="Bold"
-                               Margin="0,0,0,20"
-                               HorizontalAlignment="Center"/>
-
-                    <TextBlock Text="Tur Türü"
-                               Foreground="#94A3B8"
-                               Margin="0,5,0,5"/>
-
-                    <ComboBox x:Name="TourTypeComboBox"
-                              Height="35"
-                              Background="#1E293B"
-                              Foreground="White"
-                              BorderBrush="#334155"/>
-
-                    <TextBlock Text="Dönem"
-                               Foreground="#94A3B8"
-                               Margin="0,10,0,5"/>
-
-                    <ComboBox x:Name="PeriodComboBox"
-                              Height="35"
-                              Background="#1E293B"
-                              Foreground="White"
-                              BorderBrush="#334155"/>
-
-                    <Grid Margin="0,10,0,0">
-
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
-
-                            <TextBlock Text="Grup Türü"
+                            <TextBlock Text="Odalama kaydını açmadan önce tur kriterlerini tamamlayın."
                                        Foreground="#94A3B8"
-                                       Margin="0,0,0,5"/>
+                                       FontSize="13"
+                                       Margin="0,8,0,18"
+                                       TextAlignment="Center"/>
 
-                            <ComboBox x:Name="GroupTypeComboBox"
+                            <TextBlock Text="Tur Türü"
+                                       Foreground="#94A3B8"
+                                       Margin="0,5,0,5"/>
+
+                            <ComboBox x:Name="TourTypeComboBox"
                                       Height="35"
                                       Background="#1E293B"
                                       Foreground="White"
-                                      BorderBrush="#334155"/>
-                        </StackPanel>
+                                      BorderBrush="#334155"
+                                      SelectionChanged="CriteriaComboBox_SelectionChanged"/>
 
-                        <StackPanel Grid.Column="1" Margin="5,0,0,0">
-
-                            <TextBlock Text="Süre (Gün)"
+                            <TextBlock Text="Dönem"
                                        Foreground="#94A3B8"
-                                       Margin="0,0,0,5"/>
+                                       Margin="0,10,0,5"/>
 
-                            <ComboBox x:Name="DurationComboBox"
+                            <ComboBox x:Name="PeriodComboBox"
                                       Height="35"
                                       Background="#1E293B"
                                       Foreground="White"
-                                      BorderBrush="#334155"/>
+                                      BorderBrush="#334155"
+                                      SelectionChanged="CriteriaComboBox_SelectionChanged"/>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                    <TextBlock Text="Grup Türü"
+                                               Foreground="#94A3B8"
+                                               Margin="0,0,0,5"/>
+
+                                    <ComboBox x:Name="GroupTypeComboBox"
+                                              Height="35"
+                                              Background="#1E293B"
+                                              Foreground="White"
+                                              BorderBrush="#334155"
+                                              SelectionChanged="CriteriaComboBox_SelectionChanged"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                    <TextBlock Text="Süre (Gün)"
+                                               Foreground="#94A3B8"
+                                               Margin="0,0,0,5"/>
+
+                                    <ComboBox x:Name="DurationComboBox"
+                                              Height="35"
+                                              Background="#1E293B"
+                                              Foreground="White"
+                                              BorderBrush="#334155"
+                                              SelectionChanged="CriteriaComboBox_SelectionChanged"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
+                    </Border>
 
-                    </Grid>
-
-                </StackPanel>
+                    <Border x:Name="Step2DecisionOverlay"
+                            Background="#801E293B"
+                            CornerRadius="14"
+                            Visibility="Collapsed">
+                        <Border Background="#0F172A"
+                                BorderBrush="#06B6D4"
+                                BorderThickness="1.5"
+                                CornerRadius="12"
+                                Padding="24"
+                                Width="520"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                            <StackPanel>
+                                <TextBlock x:Name="Step2DecisionTitleText"
+                                           Text="Tur kriterlerini seçin"
+                                           Foreground="White"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="Step2DecisionDescriptionText"
+                                           Text="Devam etmek için dört kriteri de tamamlayın."
+                                           Foreground="#E2E8F0"
+                                           FontSize="15"
+                                           Margin="0,8,0,0"
+                                           MaxWidth="430"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            Margin="0,18,0,0">
+                                    <Button x:Name="Step2PrimaryActionButton"
+                                            Content="Tamam"
+                                            Margin="0,0,8,0"
+                                            Padding="18,8"
+                                            Background="#06B6D4"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            FontWeight="Bold"
+                                            Click="Step2PrimaryActionButton_Click"/>
+                                    <Button x:Name="Step2SecondaryActionButton"
+                                            Content="Kayıt Listesini Aç"
+                                            Visibility="Collapsed"
+                                            Padding="18,8"
+                                            Background="#334155"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            FontWeight="Bold"
+                                            Click="Step2SecondaryActionButton_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Border>
+                </Grid>
             </Grid>
 
             <Grid x:Name="Step3Grid" Visibility="Collapsed" PreviewMouseDown="Step3Grid_PreviewMouseDown">
@@ -764,6 +834,7 @@
                         Foreground="White"
                         FontWeight="Bold"
                         BorderThickness="0"
+                        Visibility="Collapsed"
                         Click="NextButton_Click"/>
 
             </Grid>
