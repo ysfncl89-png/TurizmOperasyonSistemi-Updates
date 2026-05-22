@@ -180,12 +180,13 @@
                                HorizontalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Grid.Row="1"
-                        Background="#1E293B"
-                        CornerRadius="8"
-                        Padding="15"
-                        BorderBrush="#334155"
-                        BorderThickness="1">
+                <Grid Grid.Row="1">
+                    <Border x:Name="SavedAllocationsContainer"
+                            Background="#1E293B"
+                            CornerRadius="8"
+                            Padding="15"
+                            BorderBrush="#334155"
+                            BorderThickness="1">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -267,7 +268,30 @@
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
-                </Border>
+                    </Border>
+
+                    <Border x:Name="HotelSelectionGuideOverlay"
+                            Background="#801E293B"
+                            CornerRadius="8"
+                            Visibility="Collapsed"
+                            IsHitTestVisible="False">
+                        <Border.Effect>
+                            <BlurEffect Radius="10"/>
+                        </Border.Effect>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="Önce yukarıdan otel seçin"
+                                       Foreground="White"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Kayıt listesinden değil, üstteki otel kutusundan seçim yapmalısınız."
+                                       Foreground="#E2E8F0"
+                                       FontSize="12"
+                                       Margin="0,8,0,0"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Grid>
 
             <Grid x:Name="Step2Grid" Visibility="Collapsed">

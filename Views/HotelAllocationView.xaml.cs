@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 using System.Windows.Media.Effects;
 using System.Windows.Media;
 using TurizmOperasyonSistemi.Data;
@@ -227,6 +228,28 @@ namespace TurizmOperasyonSistemi.Views
             SelectedHotelTitleLabel.Text = $"🏨 Otel: {HotelSelectComboBox.SelectedItem} | ŞU AN SEÇİLİ ODA: Oda {clickedRoom.RoomNumber}";
         }
 
+        private void ShowHotelSelectionGuidance()
+        {
+            SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
+            SavedAllocationsContainer.IsEnabled = false;
+            HotelSelectionGuideOverlay.Visibility = Visibility.Visible;
+            HotelSelectComboBox.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                HotelSelectComboBox.Focus();
+                HotelSelectComboBox.IsDropDownOpen = true;
+            }), DispatcherPriority.Background);
+        }
+
+        private void HideHotelSelectionGuidance()
+        {
+            SavedAllocationsContainer.Effect = null;
+            SavedAllocationsContainer.IsEnabled = true;
+            HotelSelectionGuideOverlay.Visibility = Visibility.Collapsed;
+            HotelSelectComboBox.ClearValue(Border.BorderBrushProperty);
+        }
+
         private void SelectRoom(RoomViewModel room)
         {
             foreach (var currentRoom in RoomsList)
@@ -437,7 +460,10 @@ namespace TurizmOperasyonSistemi.Views
                             GroupType = allocationGroup.Key.GroupType,
                             DaysCount = allocationGroup.Key.DaysCount,
                             RoomCount = allocationList.Count,
-                            RoomSummary = string.Join(", ", allocationList.Select(x => $"{x.RoomNumber} ({x.RoomType})")),
+                            RoomSummary = string.Join(", ", allocationList
+                                .GroupBy(x => x.RoomType)
+                                .OrderBy(x => x.Key)
+                                .Select(x => $"{x.Count()} {x.Key}")),
                             OccupantCount = allocationList.SelectMany(x => x.Occupants).Select(x => x.PassengerId).Distinct().Count(),
                             OccupantNames = occupantNames.Count > 0
                                 ? string.Join(", ", occupantNames)
@@ -618,6 +644,7 @@ namespace TurizmOperasyonSistemi.Views
             {
                 if (HotelSelectComboBox.SelectedItem == null)
                 {
+                    ShowHotelSelectionGuidance();
                     MessageBox.Show("Lütfen önce odalama yapacağınız oteli seçin!", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
@@ -700,6 +727,11 @@ namespace TurizmOperasyonSistemi.Views
         private void HotelSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string selectedHotelName = HotelSelectComboBox.SelectedItem?.ToString();
+            if (!string.IsNullOrWhiteSpace(selectedHotelName))
+            {
+                HideHotelSelectionGuidance();
+            }
+
             LoadSavedAllocations(selectedHotelName);
         }
 
