@@ -14,13 +14,13 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class RegistrationsWizardView
     {
+        private const int MaxStep = 9;
         private int currentStep = 1;
         private int selectedPersonId = 0;
+        private int editingRegistrationId = 0;
         private ICollectionView _personsView;
         private ICollectionView _registrationsView;
         private List<RegistrationListItem> _registrationItems = new();
-
-        private string selectedJoinCity = "";
 
 
         public RegistrationsWizardView()
@@ -30,9 +30,8 @@ namespace TurizmOperasyonSistemi.Views
             LoadRegistrations();
             LoadSettingsToComboBoxes();
             UpdateRegistrationActionButtons();
+            ShowRegistrationBrowser();
         }
-
-        private const int MaxStep = 9;
 
         private void LoadPersons()
         {
@@ -220,9 +219,9 @@ namespace TurizmOperasyonSistemi.Views
             UpdateSelectedRegistrationStatus(selectedRegistration.Status == "Pasif" ? "Aktif" : "Pasif");
         }
 
-        private void CancelRegistrationButton_Click(object sender, RoutedEventArgs e)
+        private void DeleteRegistrationButton_Click(object sender, RoutedEventArgs e)
         {
-            UpdateSelectedRegistrationStatus("İptal");
+            DeleteSelectedRegistration();
         }
 
         private void SetRegistrationPassiveMenuItem_Click(object sender, RoutedEventArgs e)
@@ -236,9 +235,9 @@ namespace TurizmOperasyonSistemi.Views
             UpdateSelectedRegistrationStatus(selectedRegistration.Status == "Pasif" ? "Aktif" : "Pasif");
         }
 
-        private void CancelRegistrationMenuItem_Click(object sender, RoutedEventArgs e)
+        private void DeleteRegistrationMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            UpdateSelectedRegistrationStatus("İptal");
+            DeleteSelectedRegistration();
         }
 
         private void UpdateSelectedRegistrationStatus(string status)
@@ -270,6 +269,36 @@ namespace TurizmOperasyonSistemi.Views
             UpdateRegistrationActionButtons();
         }
 
+        private void DeleteSelectedRegistration()
+        {
+            if (RegistrationsDataGrid.SelectedItem is not RegistrationListItem selectedRegistration)
+            {
+                MessageBox.Show("Lütfen silmek için bir operasyon kaydı seçiniz.");
+                return;
+            }
+
+            if (MessageBox.Show("Seçilen operasyon kaydı tamamen silinsin mi?", "Kaydı Sil", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            using (var db = new AppDbContext())
+            {
+                var registration = db.Registrations.FirstOrDefault(x => x.Id == selectedRegistration.Id);
+                if (registration == null)
+                {
+                    MessageBox.Show("Seçilen operasyon kaydı bulunamadı.");
+                    return;
+                }
+
+                db.Registrations.Remove(registration);
+                db.SaveChanges();
+            }
+
+            LoadRegistrations();
+            UpdateRegistrationActionButtons();
+        }
+
         private void SelectRegistration(int registrationId)
         {
             var item = _registrationItems.FirstOrDefault(x => x.Id == registrationId);
@@ -283,8 +312,13 @@ namespace TurizmOperasyonSistemi.Views
         private void UpdateRegistrationActionButtons()
         {
             bool hasSelection = RegistrationsDataGrid?.SelectedItem is RegistrationListItem;
+            EditRegistrationButton.IsEnabled = hasSelection;
             SetRegistrationPassiveButton.IsEnabled = hasSelection;
-            CancelRegistrationButton.IsEnabled = hasSelection;
+            DeleteRegistrationButton.IsEnabled = hasSelection;
+            if (DeleteRegistrationMenuItem != null)
+            {
+                DeleteRegistrationMenuItem.IsEnabled = hasSelection;
+            }
 
             if (!hasSelection)
             {
@@ -305,6 +339,66 @@ namespace TurizmOperasyonSistemi.Views
             if (SetRegistrationPassiveMenuItem != null)
             {
                 SetRegistrationPassiveMenuItem.Header = actionText;
+            }
+        }
+
+        private void EditRegistrationButton_Click(object sender, RoutedEventArgs e)
+        {
+            EditSelectedRegistration();
+        }
+
+        private void EditRegistrationMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            EditSelectedRegistration();
+        }
+
+        private void EditSelectedRegistration()
+        {
+            if (RegistrationsDataGrid.SelectedItem is not RegistrationListItem selectedRegistration)
+            {
+                MessageBox.Show("Lütfen düzenlemek için bir operasyon kaydı seçiniz.");
+                return;
+            }
+
+            using (var db = new AppDbContext())
+            {
+                var registration = db.Registrations
+                    .Include(x => x.Person)
+                    .FirstOrDefault(x => x.Id == selectedRegistration.Id);
+
+                if (registration == null)
+                {
+                    MessageBox.Show("Seçilen operasyon kaydı bulunamadı.");
+                    return;
+                }
+
+                ShowWizard();
+                ResetWizardForm();
+                editingRegistrationId = registration.Id;
+                selectedPersonId = registration.PersonId;
+
+                SelectPersonInGrid(registration.PersonId);
+
+                TourTypeComboBox.SelectedItem = registration.TourType;
+                PeriodComboBox.SelectedItem = registration.Period;
+                GroupTypeComboBox.SelectedItem = registration.GroupType;
+                DaysCountComboBox.SelectedItem = registration.DaysCount;
+                VisaRequestComboBox.SelectedItem = registration.VisaRequest;
+                TicketRequestComboBox.SelectedItem = registration.TicketRequest;
+                CargoRequestComboBox.SelectedItem = registration.CargoRequest;
+                RoomTypeComboBox.SelectedItem = registration.RoomType;
+                JoinCityComboBox.SelectedItem = registration.DepartureCity;
+                TransferComboBox.SelectedItem = string.IsNullOrWhiteSpace(registration.HasTransfer) ? "Yok" : registration.HasTransfer;
+                TransferCityComboBox.SelectedItem = registration.TransferCity;
+                TransferDistrictTextBox.Text = registration.District;
+                PriceTextBox.Text = registration.TotalPrice.ToString("N2");
+                CurrencyComboBox.SelectedItem = registration.Currency;
+                PaidTextBox.Text = registration.PaidAmount.ToString("N2");
+                RemainingDebtTextBox.Text = registration.RemainingDebt.ToString("N2");
+                ReferenceTextBox.Text = registration.Reference;
+
+                SwitchToStep(1);
+                UpdateNextButtonState();
             }
         }
 
@@ -496,8 +590,85 @@ namespace TurizmOperasyonSistemi.Views
             QuickAddFormPanel.Visibility = Visibility.Collapsed;
         }
 
+        private void StartNewRegistrationButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowWizard();
+            ResetWizardForm();
+            SwitchToStep(1);
+        }
+
+        private void ShowRegistrationBrowser()
+        {
+            WizardStepsPanel.Visibility = Visibility.Collapsed;
+            RegistrationBrowserGrid.Visibility = Visibility.Visible;
+            Step1Grid.Visibility = Visibility.Collapsed;
+            Step2Grid.Visibility = Visibility.Collapsed;
+            Step3Grid.Visibility = Visibility.Collapsed;
+            Step4Grid.Visibility = Visibility.Collapsed;
+            Step5Grid.Visibility = Visibility.Collapsed;
+            Step6Grid.Visibility = Visibility.Collapsed;
+            Step7Grid.Visibility = Visibility.Collapsed;
+            Step8Grid.Visibility = Visibility.Collapsed;
+            Step9Grid.Visibility = Visibility.Collapsed;
+            BackButton.Visibility = Visibility.Collapsed;
+            ToggleActiveButton.Visibility = Visibility.Collapsed;
+            NextButton.Visibility = Visibility.Collapsed;
+        }
+
+        private void ShowWizard()
+        {
+            WizardStepsPanel.Visibility = Visibility.Visible;
+            RegistrationBrowserGrid.Visibility = Visibility.Collapsed;
+            NextButton.Visibility = Visibility.Visible;
+        }
+
+        private void ResetWizardForm()
+        {
+            editingRegistrationId = 0;
+            selectedPersonId = 0;
+            PersonsDataGrid.SelectedItem = null;
+            SearchTextBox.Clear();
+            ShowPassiveCheckBox.IsChecked = false;
+            NoPersonPanel.Visibility = Visibility.Collapsed;
+            QuickAddFormPanel.Visibility = Visibility.Collapsed;
+            TourTypeComboBox.SelectedIndex = -1;
+            PeriodComboBox.SelectedIndex = -1;
+            GroupTypeComboBox.SelectedIndex = -1;
+            DaysCountComboBox.SelectedIndex = -1;
+            VisaRequestComboBox.SelectedIndex = -1;
+            TicketRequestComboBox.SelectedIndex = -1;
+            CargoRequestComboBox.SelectedIndex = -1;
+            RoomTypeComboBox.SelectedIndex = -1;
+            JoinCityComboBox.SelectedIndex = -1;
+            TransferComboBox.SelectedIndex = -1;
+            TransferCityComboBox.SelectedIndex = -1;
+            TransferDistrictTextBox.Clear();
+            PriceTextBox.Clear();
+            CurrencyComboBox.SelectedIndex = -1;
+            PaidTextBox.Clear();
+            RemainingDebtTextBox.Clear();
+            ReferenceTextBox.Clear();
+            TransferPanel.Visibility = Visibility.Collapsed;
+            _personsView?.Refresh();
+        }
+
+        private void SelectPersonInGrid(int personId)
+        {
+            var person = PersonsDataGrid.Items
+                .OfType<Person>()
+                .FirstOrDefault(x => x.Id == personId);
+
+            if (person != null)
+            {
+                PersonsDataGrid.SelectedItem = person;
+                PersonsDataGrid.ScrollIntoView(person);
+            }
+        }
+
         private void SwitchToStep(int step)
         {
+            RegistrationBrowserGrid.Visibility = Visibility.Collapsed;
+            WizardStepsPanel.Visibility = Visibility.Visible;
             currentStep = step;
 
             Step1Grid.Visibility = Visibility.Collapsed;
@@ -545,6 +716,12 @@ namespace TurizmOperasyonSistemi.Views
 
         private void UpdateNextButtonState()
         {
+            if (RegistrationBrowserGrid.Visibility == Visibility.Visible)
+            {
+                NextButton.IsEnabled = false;
+                return;
+            }
+
             switch (currentStep)
             {
                 case 1:
@@ -572,6 +749,13 @@ namespace TurizmOperasyonSistemi.Views
             {
                 try
                 {
+                    bool isEditMode = editingRegistrationId > 0;
+                    string visaRequest = VisaRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                    string ticketRequest = TicketRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                    string cargoRequest = CargoRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                    string roomType = RoomTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                    string departureCity = JoinCityComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                    string currency = CurrencyComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
                     string transferStatus = TransferComboBox.SelectedItem?.ToString() ?? "Yok";
                     string transferCity = transferStatus == "Var"
                         ? (TransferCityComboBox.SelectedItem?.ToString() ?? "Belirtilmedi")
@@ -591,38 +775,54 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         
 
-                        var newRegistration = new Registration
-                        {
-                            PersonId = selectedPersonId,
-                            TourType = TourTypeComboBox.SelectedItem?.ToString(),
-                            Period = PeriodComboBox.SelectedItem?.ToString(),
-                            GroupType = GroupTypeComboBox.SelectedItem?.ToString(),
-                            DaysCount = DaysCountComboBox.SelectedItem?.ToString(),
-                            VisaRequest = VisaRequestComboBox.SelectedItem?.ToString(),
-                            TicketRequest = TicketRequestComboBox.SelectedItem?.ToString(),
-                            CargoRequest = CargoRequestComboBox.SelectedItem?.ToString(),
-                            RoomType = RoomTypeComboBox.SelectedItem?.ToString(),
-                            DepartureCity = JoinCityComboBox.SelectedItem?.ToString(),
-                            HasTransfer = transferStatus,
-                            TransferCity = transferCity,
-                            District = district,
-                            TotalPrice = totalPrice,
-                            Currency = CurrencyComboBox.SelectedItem?.ToString(),
-                            PaidAmount = paidAmount,
-                            RemainingDebt = remainingDebt,
-                            Reference = reference,
-                            Status = "Aktif",
-                            CreatedDate = DateTime.Now,
-                            IsActive = true
-                        };
+                        var registration = isEditMode
+                            ? db.Registrations.FirstOrDefault(x => x.Id == editingRegistrationId)
+                            : new Registration
+                            {
+                                CreatedDate = DateTime.Now,
+                                Status = "Aktif",
+                                IsActive = true
+                            };
 
-                        db.Registrations.Add(newRegistration);
+                        if (registration == null)
+                        {
+                            MessageBox.Show("Düzenlenecek kayıt bulunamadı.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                            return;
+                        }
+
+                        registration.PersonId = selectedPersonId;
+                        registration.TourType = TourTypeComboBox.SelectedItem?.ToString();
+                        registration.Period = PeriodComboBox.SelectedItem?.ToString();
+                        registration.GroupType = GroupTypeComboBox.SelectedItem?.ToString();
+                        registration.DaysCount = DaysCountComboBox.SelectedItem?.ToString();
+                        registration.VisaRequest = visaRequest;
+                        registration.TicketRequest = ticketRequest;
+                        registration.CargoRequest = cargoRequest;
+                        registration.RoomType = roomType;
+                        registration.DepartureCity = departureCity;
+                        registration.HasTransfer = transferStatus;
+                        registration.TransferCity = transferCity;
+                        registration.District = district;
+                        registration.TotalPrice = totalPrice;
+                        registration.Currency = currency;
+                        registration.PaidAmount = paidAmount;
+                        registration.RemainingDebt = remainingDebt;
+                        registration.Reference = reference;
+
+                        if (!isEditMode)
+                        {
+                            db.Registrations.Add(registration);
+                        }
+
                         db.SaveChanges();
                         LoadRegistrations();
-                        SwitchToStep(1);
+                        ResetWizardForm();
+                        ShowRegistrationBrowser();
 
                         MessageBox.Show(
-                            "Kayıt işlemi başarıyla SQLite veritabanına kaydedildi!",
+                            isEditMode
+                                ? "Kayıt işlemi başarıyla güncellendi!"
+                                : "Kayıt işlemi başarıyla SQLite veritabanına kaydedildi!",
                             "Başarılı",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
@@ -758,7 +958,12 @@ namespace TurizmOperasyonSistemi.Views
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
-            if (currentStep > 1)
+            if (currentStep == 1)
+            {
+                ResetWizardForm();
+                ShowRegistrationBrowser();
+            }
+            else if (currentStep > 1)
             {
                 SwitchToStep(currentStep - 1);
             }

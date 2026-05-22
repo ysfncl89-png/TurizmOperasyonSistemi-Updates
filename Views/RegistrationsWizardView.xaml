@@ -15,10 +15,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0"
+        <StackPanel x:Name="WizardStepsPanel"
+                    Grid.Row="0"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
-                    Margin="0,20,0,20">
+                    Margin="0,20,0,20"
+                    Visibility="Collapsed">
 
             <Border x:Name="Step1Border"
                     Background="#06B6D4"
@@ -116,7 +118,212 @@
 
         <Grid Grid.Row="1" Margin="20,0,20,20">
 
-            <Grid x:Name="Step1Grid" Visibility="Visible">
+            <Grid x:Name="RegistrationBrowserGrid" Visibility="Visible">
+                <Border Background="#161B2E"
+                        BorderBrush="#F59E0B"
+                        BorderThickness="1.5"
+                        CornerRadius="14"
+                        Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="📋 Kaydedilen Operasyonlar"
+                                           Foreground="#FBBF24"
+                                           FontSize="18"
+                                           FontWeight="Bold"/>
+                                <TextBlock Text="Bu alan yalnızca kayıt modülünde oluşturduğunuz operasyonları gösterir. Arama ve dönem filtresi birlikte çalışır."
+                                           Foreground="#D1D5DB"
+                                           Margin="0,4,0,12"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2.2*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="1*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBox x:Name="RegistrationSearchTextBox"
+                                             Grid.Column="0"
+                                             Background="#0F172A"
+                                             Foreground="White"
+                                             BorderBrush="#475569"
+                                             Padding="10,8"
+                                             FontSize="14"
+                                             VerticalContentAlignment="Center"
+                                             TextChanged="RegistrationSearchTextBox_TextChanged"
+                                             Tag="Yolcu adı, tur, şehir veya referans ara..."/>
+
+                                    <ComboBox x:Name="RegistrationPeriodFilterComboBox"
+                                              Grid.Column="2"
+                                              Background="#0F172A"
+                                              Foreground="White"
+                                              BorderBrush="#475569"
+                                              Padding="8"
+                                              FontSize="13"
+                                              SelectionChanged="RegistrationPeriodFilterComboBox_SelectionChanged"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <Button x:Name="EditRegistrationButton"
+                                    Grid.Column="1"
+                                    Content="Kaydı Düzenle"
+                                    Margin="18,30,10,0"
+                                    Background="#2563EB"
+                                    Foreground="White"
+                                    Padding="16,10"
+                                    FontWeight="Bold"
+                                    Click="EditRegistrationButton_Click"
+                                    IsEnabled="False"/>
+
+                            <Button x:Name="SetRegistrationPassiveButton"
+                                    Grid.Column="2"
+                                    Content="Pasif Yap"
+                                    Margin="0,30,10,0"
+                                    Background="#F59E0B"
+                                    Foreground="White"
+                                    Padding="16,10"
+                                    FontWeight="Bold"
+                                    Click="SetRegistrationPassiveButton_Click"
+                                    IsEnabled="False"/>
+
+                            <Button x:Name="DeleteRegistrationButton"
+                                    Grid.Column="3"
+                                    Content="Kaydı Sil"
+                                    Margin="0,30,0,0"
+                                    Background="#DC2626"
+                                    Foreground="White"
+                                    Padding="16,10"
+                                    FontWeight="Bold"
+                                    Click="DeleteRegistrationButton_Click"
+                                    IsEnabled="False"/>
+                        </Grid>
+
+                        <Grid Grid.Row="1">
+                            <DataGrid x:Name="RegistrationsDataGrid"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      MinHeight="360"
+                                      Background="#0F172A"
+                                      RowBackground="#162033"
+                                      AlternatingRowBackground="#111827"
+                                      Foreground="White"
+                                      BorderBrush="#334155"
+                                      GridLinesVisibility="Horizontal"
+                                      HeadersVisibility="Column"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Auto"
+                                      SelectionMode="Single"
+                                      SelectionChanged="RegistrationsDataGrid_SelectionChanged">
+                                <DataGrid.Resources>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#1E293B"/>
+                                        <Setter Property="Foreground" Value="#F8FAFC"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="BorderBrush" Value="#475569"/>
+                                        <Setter Property="Padding" Value="10,8"/>
+                                    </Style>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="FontSize" Value="12.5"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Background" Value="#162033"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status}" Value="Pasif">
+                                                <Setter Property="Background" Value="#2B3240"/>
+                                                <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                <Setter Property="Opacity" Value="0.72"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="İptal">
+                                                <Setter Property="Background" Value="#3A1F24"/>
+                                                <Setter Property="Foreground" Value="#FCA5A5"/>
+                                                <Setter Property="Opacity" Value="0.82"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.Resources>
+
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Kaydı Düzenle"
+                                                  Click="EditRegistrationMenuItem_Click"/>
+                                        <MenuItem x:Name="SetRegistrationPassiveMenuItem"
+                                                  Header="Pasif Yap"
+                                                  Click="SetRegistrationPassiveMenuItem_Click"/>
+                                        <MenuItem x:Name="DeleteRegistrationMenuItem"
+                                                  Header="Kaydı Sil"
+                                                  Click="DeleteRegistrationMenuItem_Click"/>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Kayıt No" Binding="{Binding Id}" Width="90"/>
+                                    <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="180"/>
+                                    <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="130"/>
+                                    <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="130"/>
+                                    <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="120"/>
+                                    <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="100"/>
+                                    <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="110"/>
+                                    <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="110"/>
+                                    <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="110"/>
+                                    <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="110"/>
+                                    <DataGridTextColumn Header="Katılım Şehri" Binding="{Binding DepartureCity}" Width="120"/>
+                                    <DataGridTextColumn Header="Aktarma" Binding="{Binding TransferStatus}" Width="90"/>
+                                    <DataGridTextColumn Header="Aktarma Şehri" Binding="{Binding TransferCity}" Width="120"/>
+                                    <DataGridTextColumn Header="İlçe" Binding="{Binding District}" Width="110"/>
+                                    <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="130"/>
+                                    <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmountDisplay}" Width="120"/>
+                                    <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebtDisplay}" Width="120"/>
+                                    <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="100"/>
+                                    <DataGridTextColumn Header="Referans" Binding="{Binding Reference}" Width="140"/>
+                                    <DataGridTextColumn Header="Kayıt Tarihi" Binding="{Binding CreatedDateDisplay}" Width="130"/>
+                                    <DataGridTextColumn Header="Aktiflik" Binding="{Binding IsActiveDisplay}" Width="90"/>
+                                    <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="110"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Border x:Name="NoRegistrationResultsPanel"
+                                    Background="#0B1220"
+                                    BorderBrush="#334155"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Padding="28,22"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock Text="Bu Kayıt daha Önce Yapılmamış"
+                                               Foreground="#FBBF24"
+                                               FontSize="17"
+                                               FontWeight="Bold"
+                                               HorizontalAlignment="Center"/>
+                                    <Button x:Name="StartNewRegistrationButton"
+                                            Content="Kayıt Yapmak İçin İlerle"
+                                            Background="#10B981"
+                                            Foreground="White"
+                                            Padding="16,10"
+                                            Margin="0,14,0,0"
+                                            FontWeight="Bold"
+                                            HorizontalAlignment="Center"
+                                            Click="StartNewRegistrationButton_Click"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Grid x:Name="Step1Grid" Visibility="Collapsed">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -476,191 +683,6 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="2"
-                            Margin="0,18,0,0"
-                            Background="#161B2E"
-                            BorderBrush="#F59E0B"
-                            BorderThickness="1.5"
-                            CornerRadius="14"
-                            Padding="12">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Grid Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="📋 Kaydedilen Operasyonlar"
-                                               Foreground="#FBBF24"
-                                               FontSize="18"
-                                               FontWeight="Bold"/>
-                                    <TextBlock Text="Bu alan yalnızca kayıt modülünde oluşturduğunuz operasyonları gösterir. Arama ve dönem filtresi birlikte çalışır."
-                                               Foreground="#D1D5DB"
-                                               Margin="0,4,0,12"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2.2*"/>
-                                            <ColumnDefinition Width="12"/>
-                                            <ColumnDefinition Width="1*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <TextBox x:Name="RegistrationSearchTextBox"
-                                                 Grid.Column="0"
-                                                 Background="#0F172A"
-                                                 Foreground="White"
-                                                 BorderBrush="#475569"
-                                                 Padding="10,8"
-                                                 FontSize="14"
-                                                 VerticalContentAlignment="Center"
-                                                 TextChanged="RegistrationSearchTextBox_TextChanged"
-                                                 Tag="Yolcu adı, tur, şehir veya referans ara..."/>
-
-                                        <ComboBox x:Name="RegistrationPeriodFilterComboBox"
-                                                  Grid.Column="2"
-                                                  Background="#0F172A"
-                                                  Foreground="White"
-                                                  BorderBrush="#475569"
-                                                  Padding="8"
-                                                  FontSize="13"
-                                                  SelectionChanged="RegistrationPeriodFilterComboBox_SelectionChanged"/>
-                                    </Grid>
-                                </StackPanel>
-
-                                <Button x:Name="SetRegistrationPassiveButton"
-                                        Grid.Column="1"
-                                        Content="Pasif Yap"
-                                        Margin="18,30,10,0"
-                                        Background="#F59E0B"
-                                        Foreground="White"
-                                        Padding="16,10"
-                                        FontWeight="Bold"
-                                        Click="SetRegistrationPassiveButton_Click"
-                                        IsEnabled="False"/>
-
-                                <Button x:Name="CancelRegistrationButton"
-                                        Grid.Column="2"
-                                        Content="Kaydı İptal Et"
-                                        Margin="0,30,0,0"
-                                        Background="#DC2626"
-                                        Foreground="White"
-                                        Padding="16,10"
-                                        FontWeight="Bold"
-                                        Click="CancelRegistrationButton_Click"
-                                        IsEnabled="False"/>
-                            </Grid>
-
-                            <Grid Grid.Row="1">
-                                <DataGrid x:Name="RegistrationsDataGrid"
-                                          AutoGenerateColumns="False"
-                                          IsReadOnly="True"
-                                          MinHeight="360"
-                                          Background="#0F172A"
-                                          RowBackground="#162033"
-                                          AlternatingRowBackground="#111827"
-                                          Foreground="White"
-                                          BorderBrush="#334155"
-                                          GridLinesVisibility="Horizontal"
-                                          HeadersVisibility="Column"
-                                          HorizontalScrollBarVisibility="Auto"
-                                          VerticalScrollBarVisibility="Auto"
-                                          SelectionMode="Single"
-                                          SelectionChanged="RegistrationsDataGrid_SelectionChanged">
-                                    <DataGrid.Resources>
-                                        <Style TargetType="DataGridColumnHeader">
-                                            <Setter Property="Background" Value="#1E293B"/>
-                                            <Setter Property="Foreground" Value="#F8FAFC"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                            <Setter Property="BorderBrush" Value="#475569"/>
-                                            <Setter Property="Padding" Value="10,8"/>
-                                        </Style>
-                                        <Style TargetType="DataGridRow">
-                                            <Setter Property="FontSize" Value="12.5"/>
-                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                            <Setter Property="Background" Value="#162033"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Status}" Value="Pasif">
-                                                    <Setter Property="Background" Value="#2B3240"/>
-                                                    <Setter Property="Foreground" Value="#9CA3AF"/>
-                                                    <Setter Property="Opacity" Value="0.72"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Status}" Value="İptal">
-                                                    <Setter Property="Background" Value="#3A1F24"/>
-                                                    <Setter Property="Foreground" Value="#FCA5A5"/>
-                                                    <Setter Property="Opacity" Value="0.82"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </DataGrid.Resources>
-
-                                    <DataGrid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem x:Name="SetRegistrationPassiveMenuItem"
-                                                      Header="Pasif Yap"
-                                                      Click="SetRegistrationPassiveMenuItem_Click"/>
-                                            <MenuItem Header="Kaydı İptal Et"
-                                                      Click="CancelRegistrationMenuItem_Click"/>
-                                        </ContextMenu>
-                                    </DataGrid.ContextMenu>
-
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Kayıt No" Binding="{Binding Id}" Width="90"/>
-                                        <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="180"/>
-                                        <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="130"/>
-                                        <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="130"/>
-                                        <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="120"/>
-                                        <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="100"/>
-                                        <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="110"/>
-                                        <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="110"/>
-                                        <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="110"/>
-                                        <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="110"/>
-                                        <DataGridTextColumn Header="Katılım Şehri" Binding="{Binding DepartureCity}" Width="120"/>
-                                        <DataGridTextColumn Header="Aktarma" Binding="{Binding TransferStatus}" Width="90"/>
-                                        <DataGridTextColumn Header="Aktarma Şehri" Binding="{Binding TransferCity}" Width="120"/>
-                                        <DataGridTextColumn Header="İlçe" Binding="{Binding District}" Width="110"/>
-                                        <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="130"/>
-                                        <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmountDisplay}" Width="120"/>
-                                        <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebtDisplay}" Width="120"/>
-                                        <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="100"/>
-                                        <DataGridTextColumn Header="Referans" Binding="{Binding Reference}" Width="140"/>
-                                        <DataGridTextColumn Header="Kayıt Tarihi" Binding="{Binding CreatedDateDisplay}" Width="130"/>
-                                        <DataGridTextColumn Header="Aktiflik" Binding="{Binding IsActiveDisplay}" Width="90"/>
-                                        <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="110"/>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-
-                                <Border x:Name="NoRegistrationResultsPanel"
-                                        Background="#0B1220"
-                                        BorderBrush="#334155"
-                                        BorderThickness="1"
-                                        CornerRadius="12"
-                                        Padding="28,22"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Visibility="Collapsed">
-                                    <StackPanel>
-                                        <TextBlock Text="Bu kayıt daha önce yapılmamış."
-                                                   Foreground="#FBBF24"
-                                                   FontSize="17"
-                                                   FontWeight="Bold"
-                                                   HorizontalAlignment="Center"/>
-                                        <TextBlock Text="Arama metnini veya dönem filtresini değiştirerek tekrar kontrol edebilirsiniz."
-                                                   Foreground="#CBD5E1"
-                                                   Margin="0,8,0,0"
-                                                   TextAlignment="Center"
-                                                   HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-                        </Grid>
-                    </Border>
                 </Grid>
             </Grid>
 
