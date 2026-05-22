@@ -6,6 +6,8 @@ using System.Windows.Data;
 using System.ComponentModel;
 using System.Windows.Media;
 using System.Collections.Generic;
+using System.Windows.Media.Effects;
+using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
@@ -23,6 +25,8 @@ namespace TurizmOperasyonSistemi.Views
         private ICollectionView _personsView;
         private ICollectionView _registrationsView;
         private List<RegistrationListItem> _registrationItems = new();
+        private readonly BlurEffect _registrationBrowserBlur = new BlurEffect { Radius = 10 };
+        private bool _isSyncingRegistrationPeriodGuide = false;
 
 
         public RegistrationsWizardView()
@@ -216,6 +220,21 @@ namespace TurizmOperasyonSistemi.Views
         {
             _registrationsView?.Refresh();
             UpdateRegistrationResultsState();
+            UpdateRegistrationPeriodGuideState();
+        }
+
+        private void RegistrationPeriodGuideComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isSyncingRegistrationPeriodGuide || RegistrationPeriodGuideComboBox.SelectedItem == null)
+            {
+                return;
+            }
+
+            _isSyncingRegistrationPeriodGuide = true;
+            RegistrationPeriodFilterComboBox.SelectedItem = RegistrationPeriodGuideComboBox.SelectedItem;
+            _isSyncingRegistrationPeriodGuide = false;
+
+            UpdateRegistrationPeriodGuideState();
         }
 
         private void ShowPassiveCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -673,6 +692,7 @@ namespace TurizmOperasyonSistemi.Views
             BackButton.Visibility = Visibility.Collapsed;
             ToggleActiveButton.Visibility = Visibility.Collapsed;
             NextButton.Visibility = Visibility.Collapsed;
+            ResetRegistrationPeriodGuide();
         }
 
         private void ShowWizard()
@@ -680,6 +700,44 @@ namespace TurizmOperasyonSistemi.Views
             WizardStepsPanel.Visibility = Visibility.Visible;
             RegistrationBrowserGrid.Visibility = Visibility.Collapsed;
             NextButton.Visibility = Visibility.Visible;
+        }
+
+        private void ResetRegistrationPeriodGuide()
+        {
+            if (RegistrationPeriodFilterComboBox == null || RegistrationPeriodGuideComboBox == null)
+            {
+                return;
+            }
+
+            _isSyncingRegistrationPeriodGuide = true;
+            RegistrationPeriodFilterComboBox.SelectedIndex = -1;
+            RegistrationPeriodGuideComboBox.ItemsSource = RegistrationPeriodFilterComboBox.ItemsSource;
+            RegistrationPeriodGuideComboBox.SelectedIndex = -1;
+            _isSyncingRegistrationPeriodGuide = false;
+
+            UpdateRegistrationPeriodGuideState();
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                RegistrationPeriodGuideComboBox.Focus();
+                RegistrationPeriodGuideComboBox.IsDropDownOpen = true;
+            }), DispatcherPriority.Background);
+        }
+
+        private void UpdateRegistrationPeriodGuideState()
+        {
+            if (RegistrationPeriodGuideOverlay == null || RegistrationBrowserContentBorder == null || RegistrationBrowserGrid == null)
+            {
+                return;
+            }
+
+            bool shouldShowGuide =
+                RegistrationBrowserGrid.Visibility == Visibility.Visible &&
+                RegistrationPeriodFilterComboBox?.SelectedItem == null;
+
+            RegistrationPeriodGuideOverlay.Visibility = shouldShowGuide ? Visibility.Visible : Visibility.Collapsed;
+            RegistrationBrowserContentBorder.Effect = shouldShowGuide ? _registrationBrowserBlur : null;
+            RegistrationBrowserContentBorder.IsHitTestVisible = !shouldShowGuide;
         }
 
         private void ResetWizardForm()
@@ -836,7 +894,28 @@ namespace TurizmOperasyonSistemi.Views
 
                     using (var db = new AppDbContext())
                     {
-                        
+                        string selectedTourType = TourTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+                        string selectedPeriod = PeriodComboBox.SelectedItem?.ToString() ?? string.Empty;
+                        string selectedGroupType = GroupTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+                        string selectedDaysCount = DaysCountComboBox.SelectedItem?.ToString() ?? string.Empty;
+
+                        bool duplicateRegistrationExists = db.Registrations.Any(x =>
+                            x.PersonId == selectedPersonId &&
+                            x.TourType == selectedTourType &&
+                            x.Period == selectedPeriod &&
+                            x.GroupType == selectedGroupType &&
+                            x.DaysCount == selectedDaysCount &&
+                            (!isEditMode || x.Id != editingRegistrationId));
+
+                        if (duplicateRegistrationExists)
+                        {
+                            MessageBox.Show(
+                                "Bu kişi aynı Tur Türü, Dönem, Grup Türü ve Grup Süresi için daha önce zaten kaydedilmiş.",
+                                "Mükerrer Kayıt",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                            return;
+                        }
 
                         var registration = isEditMode
                             ? db.Registrations.FirstOrDefault(x => x.Id == editingRegistrationId)
@@ -854,10 +933,10 @@ namespace TurizmOperasyonSistemi.Views
                         }
 
                         registration.PersonId = selectedPersonId;
-                        registration.TourType = TourTypeComboBox.SelectedItem?.ToString();
-                        registration.Period = PeriodComboBox.SelectedItem?.ToString();
-                        registration.GroupType = GroupTypeComboBox.SelectedItem?.ToString();
-                        registration.DaysCount = DaysCountComboBox.SelectedItem?.ToString();
+                        registration.TourType = selectedTourType;
+                        registration.Period = selectedPeriod;
+                        registration.GroupType = selectedGroupType;
+                        registration.DaysCount = selectedDaysCount;
                         registration.VisaRequest = visaRequest;
                         registration.TicketRequest = ticketRequest;
                         registration.CargoRequest = cargoRequest;
