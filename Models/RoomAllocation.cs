@@ -14,6 +14,10 @@ namespace TurizmOperasyonSistemi.Models
 
         public string RoomNumber { get; set; } // Örn: 101, 102 veya "Oda 1"
         public string RoomType { get; set; } // Örn: DBL, TRPL, SINGLE
+        public string TourType { get; set; } // Bağlı olduğu tur türü
+        public string Period { get; set; } // Bağlı olduğu dönem
+        public string GroupType { get; set; } // Bağlı olduğu grup türü
+        public string DaysCount { get; set; } // Kaç günlük grup
         public bool IsConnection { get; set; } // Connection oda mı?
         public string ConnectionGroupId { get; set; } // Bağlantı grubu ID'si
 

@@ -147,9 +147,16 @@
         <Grid Grid.Row="1" Margin="15">
 
             <Grid x:Name="Step1Grid" Visibility="Visible">
-                <StackPanel VerticalAlignment="Center"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0"
+                            VerticalAlignment="Top"
                             HorizontalAlignment="Center"
-                            Width="400">
+                            Width="460"
+                            Margin="0,20,0,20">
 
                     <TextBlock Text="🏨 Odalama Yapılacak Oteli Seçin"
                                Foreground="White"
@@ -163,7 +170,8 @@
                               Background="#1E293B"
                               Foreground="White"
                               BorderBrush="#334155"
-                              Padding="10,5"/>
+                              Padding="10,5"
+                              SelectionChanged="HotelSelectComboBox_SelectionChanged"/>
 
                     <TextBlock Text="* Ayarlar modülünde eklediğiniz oteller burada listelenir."
                                Foreground="#64748B"
@@ -171,6 +179,85 @@
                                Margin="0,10,0,0"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
+
+                <Border Grid.Row="1"
+                        Background="#1E293B"
+                        CornerRadius="8"
+                        Padding="15"
+                        BorderBrush="#334155"
+                        BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                            <TextBlock x:Name="SavedAllocationsTitleLabel"
+                                       Text="Kaydedilen Oda Yerleşimleri"
+                                       Foreground="#06B6D4"
+                                       FontSize="16"
+                                       FontWeight="Bold"/>
+                            <TextBlock Text="Kaydet ve Bitir sonrası kayıtlar burada görünür."
+                                       Foreground="#94A3B8"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <DataGrid Grid.Row="1"
+                                  x:Name="SavedAllocationsGrid"
+                                  Background="Transparent"
+                                  RowBackground="#0F172A"
+                                  AlternatingRowBackground="#1E293B"
+                                  Foreground="White"
+                                  BorderThickness="0"
+                                  GridLinesVisibility="None"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column">
+
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#334155"/>
+                                    <Setter Property="Foreground" Value="#06B6D4"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Padding" Value="10,8"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="Margin" Value="0,2"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGrid.Resources>
+
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Otel" Binding="{Binding HotelName}" Width="1.3*"/>
+                                <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="1*"/>
+                                <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="1*"/>
+                                <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="1*"/>
+                                <DataGridTextColumn Header="Grup Gün Sayısı" Binding="{Binding DaysCount}" Width="1*"/>
+                                <DataGridTextColumn Header="Oda No" Binding="{Binding RoomNumber}" Width="0.8*"/>
+                                <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="1*"/>
+                                <DataGridTextColumn Header="Kişi Sayısı" Binding="{Binding OccupantCount}" Width="0.8*"/>
+                                <DataGridTextColumn Header="Yerleşen Kişiler" Binding="{Binding OccupantNames}" Width="2.4*"/>
+                                <DataGridTemplateColumn Header="İşlem" Width="0.9*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Kaydı Sil"
+                                                    Background="#DC2626"
+                                                    Foreground="White"
+                                                    FontWeight="Bold"
+                                                    Padding="8,3"
+                                                    BorderThickness="0"
+                                                    Click="DeleteSavedAllocationButton_Click"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
             </Grid>
 
             <Grid x:Name="Step2Grid" Visibility="Collapsed">

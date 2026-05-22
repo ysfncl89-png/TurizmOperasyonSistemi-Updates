@@ -18,6 +18,7 @@ namespace TurizmOperasyonSistemi.Views
         // Sağ taraftaki odaları ve sol taraftaki yolcuları dinamik takip etmek için ObservableCollection kullanıyoruz
         public ObservableCollection<RoomViewModel> RoomsList { get; set; } = new ObservableCollection<RoomViewModel>();
         public ObservableCollection<PassengerUiModel> PassengerPool { get; set; } = new ObservableCollection<PassengerUiModel>();
+        public ObservableCollection<SavedAllocationRow> SavedAllocations { get; set; } = new ObservableCollection<SavedAllocationRow>();
 
         // Seçilen odayı hafızada tutar
         private RoomViewModel _selectedRoomForAllocation = null;
@@ -39,11 +40,15 @@ namespace TurizmOperasyonSistemi.Views
         public HotelAllocationView()
         {
             InitializeComponent();
+            EnsureRoomAllocationColumns();
             LoadComboBoxData();
 
             // XAML'deki kontrollere listelerimizi bağlıyoruz
             RoomsItemsControl.ItemsSource = RoomsList;
             UnallocatedPassengersGrid.ItemsSource = PassengerPool;
+            SavedAllocationsGrid.ItemsSource = SavedAllocations;
+
+            LoadSavedAllocations();
         }
 
         private void LoadComboBoxData()
@@ -248,6 +253,229 @@ namespace TurizmOperasyonSistemi.Views
             PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
         }
 
+        private void EnsureRoomAllocationColumns()
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    db.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN TourType TEXT NOT NULL DEFAULT ''");
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    db.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN Period TEXT NOT NULL DEFAULT ''");
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    db.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN GroupType TEXT NOT NULL DEFAULT ''");
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    db.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN DaysCount TEXT NOT NULL DEFAULT ''");
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private void LoadSavedAllocations(string hotelNameFilter = null)
+        {
+            try
+            {
+                SavedAllocations.Clear();
+
+                using (var db = new AppDbContext())
+                {
+                    var allocations = db.RoomAllocations
+                        .AsNoTracking()
+                        .Include(x => x.Hotel)
+                        .Include(x => x.Occupants)
+                        .ToList();
+
+                    if (!string.IsNullOrWhiteSpace(hotelNameFilter))
+                    {
+                        allocations = allocations
+                            .Where(x => x.Hotel != null && x.Hotel.Name == hotelNameFilter)
+                            .ToList();
+                    }
+
+                    var passengerIds = allocations
+                        .SelectMany(x => x.Occupants)
+                        .Select(x => x.PassengerId)
+                        .Distinct()
+                        .ToList();
+
+                    var personLookup = db.Persons
+                        .AsNoTracking()
+                        .Where(x => passengerIds.Contains(x.Id))
+                        .ToDictionary(x => x.Id, x => $"{x.FirstName} {x.LastName}");
+
+                    foreach (var allocation in allocations
+                        .OrderBy(x => x.Hotel?.Name)
+                        .ThenBy(x => x.RoomNumber))
+                    {
+                        var occupantNames = allocation.Occupants
+                            .Select(x => personLookup.TryGetValue(x.PassengerId, out string fullName)
+                                ? fullName
+                                : $"Yolcu #{x.PassengerId}")
+                            .ToList();
+
+                        SavedAllocations.Add(new SavedAllocationRow
+                        {
+                            RoomAllocationId = allocation.Id,
+                            HotelName = allocation.Hotel?.Name ?? "Bilinmiyor",
+                            TourType = allocation.TourType,
+                            Period = allocation.Period,
+                            GroupType = allocation.GroupType,
+                            DaysCount = allocation.DaysCount,
+                            RoomNumber = allocation.RoomNumber,
+                            RoomType = allocation.RoomType,
+                            OccupantCount = allocation.Occupants.Count,
+                            OccupantNames = occupantNames.Count > 0
+                                ? string.Join(", ", occupantNames)
+                                : "Boş Oda"
+                        });
+                    }
+                }
+
+                SavedAllocationsTitleLabel.Text = string.IsNullOrWhiteSpace(hotelNameFilter)
+                    ? "Kaydedilen Oda Yerleşimleri"
+                    : $"{hotelNameFilter} İçin Kaydedilen Oda Yerleşimleri";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Kaydedilen odalamalar yüklenirken hata oluştu: {ex.Message}",
+                                "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private bool SaveRoomAllocationsToDatabase()
+        {
+            if (HotelSelectComboBox.SelectedItem == null)
+            {
+                MessageBox.Show("Lütfen önce odalama yapılacak oteli seçin.",
+                                "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            if (RoomsList.Count == 0)
+            {
+                MessageBox.Show("Kaydedilecek en az bir oda açmanız gerekiyor.",
+                                "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            string selectedHotelName = HotelSelectComboBox.SelectedItem.ToString();
+            string selectedTourType = TourTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedPeriod = PeriodComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedGroupType = GroupTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedDaysCount = DurationComboBox.SelectedItem?.ToString() ?? string.Empty;
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var hotel = db.Hotels.FirstOrDefault(x => x.Name == selectedHotelName);
+
+                    if (hotel == null)
+                    {
+                        hotel = new Hotel
+                        {
+                            Name = selectedHotelName
+                        };
+
+                        db.Hotels.Add(hotel);
+                        db.SaveChanges();
+                    }
+
+                    var previousAllocations = db.RoomAllocations
+                        .Include(x => x.Occupants)
+                        .Where(x => x.HotelId == hotel.Id)
+                        .ToList();
+
+                    if (previousAllocations.Count > 0)
+                    {
+                        db.RoomOccupants.RemoveRange(previousAllocations.SelectMany(x => x.Occupants));
+                        db.RoomAllocations.RemoveRange(previousAllocations);
+                        db.SaveChanges();
+                    }
+
+                    foreach (var room in RoomsList)
+                    {
+                        var roomAllocation = new RoomAllocation
+                        {
+                            HotelId = hotel.Id,
+                            RoomNumber = room.RoomNumber ?? string.Empty,
+                            RoomType = room.RoomTypeName ?? string.Empty,
+                            TourType = selectedTourType,
+                            Period = selectedPeriod,
+                            GroupType = selectedGroupType,
+                            DaysCount = selectedDaysCount,
+                            IsConnection = room.IsConnection,
+                            ConnectionGroupId = room.ConnectionGroupId ?? string.Empty,
+                            Occupants = room.Occupants
+                                .Where(x => x.PersonId > 0)
+                                .Select(x => new RoomOccupant
+                                {
+                                    PassengerId = x.PersonId
+                                })
+                                .ToList()
+                        };
+
+                        db.RoomAllocations.Add(roomAllocation);
+                    }
+
+                    db.SaveChanges();
+                }
+
+                LoadSavedAllocations(selectedHotelName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Odalama kaydı veritabanına yazılırken hata oluştu: {ex.Message}",
+                                "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private void ShowStep1()
+        {
+            Step3Grid.Visibility = Visibility.Collapsed;
+            Step2Grid.Visibility = Visibility.Collapsed;
+            Step1Grid.Visibility = Visibility.Visible;
+
+            Tab3.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+            Tab2.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+            Tab1.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#06B6D4"));
+
+            NextButton.Content = "İleri ▶";
+            BackButton.Visibility = Visibility.Collapsed;
+            currentStep = 1;
+        }
+
         // İKİ ODAYI CONNECTION YAP
         private void ConnectRoomsButton_Click(object sender, RoutedEventArgs e)
         {
@@ -358,7 +586,14 @@ namespace TurizmOperasyonSistemi.Views
             }
             else if (currentStep == 3)
             {
-                MessageBox.Show("Odalama yerleşim planı başarıyla kaydedildi!", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (!SaveRoomAllocationsToDatabase())
+                {
+                    return;
+                }
+
+                MessageBox.Show("Odalama yerleşim planı veritabanına kaydedildi ve kayıt listesi güncellendi!",
+                                "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+                ShowStep1();
             }
         }
 
@@ -387,6 +622,65 @@ namespace TurizmOperasyonSistemi.Views
                 BackButton.Visibility = Visibility.Collapsed;
 
                 currentStep = 1;
+            }
+        }
+
+        private void HotelSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            string selectedHotelName = HotelSelectComboBox.SelectedItem?.ToString();
+            LoadSavedAllocations(selectedHotelName);
+        }
+
+        private void DeleteSavedAllocationButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var selectedAllocation = button?.DataContext as SavedAllocationRow;
+
+            if (selectedAllocation == null || selectedAllocation.RoomAllocationId <= 0)
+            {
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"{selectedAllocation.HotelName} otelindeki {selectedAllocation.RoomNumber} numaralı oda kaydı tamamen silinsin mi?",
+                "Odalama Kaydını Sil",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var allocation = db.RoomAllocations
+                        .Include(x => x.Occupants)
+                        .FirstOrDefault(x => x.Id == selectedAllocation.RoomAllocationId);
+
+                    if (allocation == null)
+                    {
+                        MessageBox.Show("Silinmek istenen kayıt bulunamadı.",
+                                        "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information);
+                        LoadSavedAllocations(HotelSelectComboBox.SelectedItem?.ToString());
+                        return;
+                    }
+
+                    db.RoomAllocations.Remove(allocation);
+                    db.SaveChanges();
+                }
+
+                LoadSavedAllocations(HotelSelectComboBox.SelectedItem?.ToString());
+
+                MessageBox.Show("Seçilen odalama kaydı tamamen silindi.",
+                                "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Odalama kaydı silinirken hata oluştu: {ex.Message}",
+                                "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -497,6 +791,20 @@ public class PassengerUiModel
         public int PersonId { get; set; }
         public string FullName { get; set; }
         public string RoomType { get; set; }
+    }
+
+public class SavedAllocationRow
+    {
+        public int RoomAllocationId { get; set; }
+        public string HotelName { get; set; }
+        public string TourType { get; set; }
+        public string Period { get; set; }
+        public string GroupType { get; set; }
+        public string DaysCount { get; set; }
+        public string RoomNumber { get; set; }
+        public string RoomType { get; set; }
+        public int OccupantCount { get; set; }
+        public string OccupantNames { get; set; }
     }
 
     public class RoomViewModel : System.ComponentModel.INotifyPropertyChanged
