@@ -190,6 +190,7 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
@@ -205,7 +206,73 @@
                                        Margin="0,4,0,0"/>
                         </StackPanel>
 
-                        <DataGrid Grid.Row="1"
+                        <Border Grid.Row="1"
+                                Background="#0F172A"
+                                CornerRadius="8"
+                                Padding="12"
+                                Margin="0,0,0,12"
+                                BorderBrush="#334155"
+                                BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="Kayıt Bulma Araçları"
+                                           Foreground="#E2E8F0"
+                                           FontWeight="Bold"
+                                           Margin="0,0,0,10"/>
+
+                                <TextBox x:Name="SavedAllocationSearchTextBox"
+                                         Height="36"
+                                         Background="#1E293B"
+                                         Foreground="#F8FAFC"
+                                         BorderBrush="#475569"
+                                         BorderThickness="1.2"
+                                         Padding="10,6"
+                                         TextChanged="SavedAllocationFilter_Changed"/>
+
+                                <UniformGrid Columns="4" Margin="0,10,0,0">
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Tur Türü"
+                                                   Foreground="#94A3B8"
+                                                   FontSize="12"
+                                                   Margin="0,0,0,4"/>
+                                        <ComboBox x:Name="SavedAllocationTourTypeFilterComboBox"
+                                                  Height="34"
+                                                  SelectionChanged="SavedAllocationFilter_Changed"/>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Dönem"
+                                                   Foreground="#94A3B8"
+                                                   FontSize="12"
+                                                   Margin="0,0,0,4"/>
+                                        <ComboBox x:Name="SavedAllocationPeriodFilterComboBox"
+                                                  Height="34"
+                                                  SelectionChanged="SavedAllocationFilter_Changed"/>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Grup Türü"
+                                                   Foreground="#94A3B8"
+                                                   FontSize="12"
+                                                   Margin="0,0,0,4"/>
+                                        <ComboBox x:Name="SavedAllocationGroupTypeFilterComboBox"
+                                                  Height="34"
+                                                  SelectionChanged="SavedAllocationFilter_Changed"/>
+                                    </StackPanel>
+
+                                    <StackPanel>
+                                        <TextBlock Text="Gün Sayısı"
+                                                   Foreground="#94A3B8"
+                                                   FontSize="12"
+                                                   Margin="0,0,0,4"/>
+                                        <ComboBox x:Name="SavedAllocationDaysFilterComboBox"
+                                                  Height="34"
+                                                  SelectionChanged="SavedAllocationFilter_Changed"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <DataGrid Grid.Row="2"
                                   x:Name="SavedAllocationsGrid"
                                   Background="Transparent"
                                   RowBackground="#0F172A"
@@ -273,23 +340,44 @@
                     <Border x:Name="HotelSelectionGuideOverlay"
                             Background="#801E293B"
                             CornerRadius="8"
-                            Visibility="Collapsed"
-                            IsHitTestVisible="False">
-                        <Border.Effect>
-                            <BlurEffect Radius="10"/>
-                        </Border.Effect>
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="Önce yukarıdan otel seçin"
-                                       Foreground="White"
-                                       FontSize="18"
-                                       FontWeight="Bold"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="Kayıt listesinden değil, üstteki otel kutusundan seçim yapmalısınız."
-                                       Foreground="#E2E8F0"
-                                       FontSize="12"
-                                       Margin="0,8,0,0"
-                                       HorizontalAlignment="Center"/>
-                        </StackPanel>
+                            Visibility="Collapsed">
+                        <Border Background="#0F172A"
+                                BorderBrush="#06B6D4"
+                                BorderThickness="1.5"
+                                CornerRadius="12"
+                                Padding="24"
+                                Width="460"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                            <StackPanel>
+                                <TextBlock x:Name="HotelSelectionGuideTitleText"
+                                           Text="Önce yukarıdan otel seçin"
+                                           Foreground="White"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="HotelSelectionGuideDescriptionText"
+                                           Text="Kayıt listesinden değil, üstteki otel kutusundan seçim yapmalısınız."
+                                           Foreground="#E2E8F0"
+                                           FontSize="16"
+                                           Margin="0,8,0,0"
+                                           MaxWidth="380"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+                                <Button x:Name="HotelSelectionGuideOkButton"
+                                        Content="Tamam"
+                                        Visibility="Collapsed"
+                                        Margin="0,16,0,0"
+                                        Padding="20,8"
+                                        Background="#06B6D4"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        FontWeight="Bold"
+                                        HorizontalAlignment="Center"
+                                        Click="HotelSelectionGuideOkButton_Click"/>
+                            </StackPanel>
+                        </Border>
                     </Border>
                 </Grid>
             </Grid>

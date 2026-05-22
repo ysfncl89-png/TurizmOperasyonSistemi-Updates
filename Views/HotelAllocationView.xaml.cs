@@ -22,6 +22,8 @@ namespace TurizmOperasyonSistemi.Views
         public ObservableCollection<RoomViewModel> RoomsList { get; set; } = new ObservableCollection<RoomViewModel>();
         public ObservableCollection<PassengerUiModel> PassengerPool { get; set; } = new ObservableCollection<PassengerUiModel>();
         public ObservableCollection<SavedAllocationRow> SavedAllocations { get; set; } = new ObservableCollection<SavedAllocationRow>();
+        private List<SavedAllocationRow> _allSavedAllocations = new List<SavedAllocationRow>();
+        private bool _isPostHotelSelectionGuidanceActive = false;
 
         // Seçilen odayı hafızada tutar
         private RoomViewModel _selectedRoomForAllocation = null;
@@ -52,6 +54,14 @@ namespace TurizmOperasyonSistemi.Views
             SavedAllocationsGrid.ItemsSource = SavedAllocations;
 
             LoadSavedAllocations();
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (HotelSelectComboBox.SelectedItem == null)
+                {
+                    ShowHotelSelectionGuidance();
+                }
+            }), DispatcherPriority.Loaded);
         }
 
         private void LoadComboBoxData()
@@ -233,7 +243,11 @@ namespace TurizmOperasyonSistemi.Views
             SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
             SavedAllocationsContainer.IsEnabled = false;
             HotelSelectionGuideOverlay.Visibility = Visibility.Visible;
+            HotelSelectionGuideTitleText.Text = "Önce yukarıdan otel seçin";
+            HotelSelectionGuideDescriptionText.Text = "Kayıt listesinden değil, üstteki otel kutusundan seçim yapmalısınız.";
+            HotelSelectionGuideOkButton.Visibility = Visibility.Collapsed;
             HotelSelectComboBox.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+            _isPostHotelSelectionGuidanceActive = false;
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -242,12 +256,25 @@ namespace TurizmOperasyonSistemi.Views
             }), DispatcherPriority.Background);
         }
 
+        private void ShowPostHotelSelectionGuidance()
+        {
+            SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
+            SavedAllocationsContainer.IsEnabled = false;
+            HotelSelectionGuideOverlay.Visibility = Visibility.Visible;
+            HotelSelectionGuideTitleText.Text = "Şimdi kayıt yolunu seçin";
+            HotelSelectionGuideDescriptionText.Text = "Odalama kaydını yapacağınız kayıt listede varsa listeden seçin. Listede yoksa sadece İleri butonuna tıklayın.";
+            HotelSelectionGuideOkButton.Visibility = Visibility.Visible;
+            HotelSelectComboBox.ClearValue(Border.BorderBrushProperty);
+            _isPostHotelSelectionGuidanceActive = true;
+        }
+
         private void HideHotelSelectionGuidance()
         {
             SavedAllocationsContainer.Effect = null;
             SavedAllocationsContainer.IsEnabled = true;
             HotelSelectionGuideOverlay.Visibility = Visibility.Collapsed;
             HotelSelectComboBox.ClearValue(Border.BorderBrushProperty);
+            _isPostHotelSelectionGuidanceActive = false;
         }
 
         private void SelectRoom(RoomViewModel room)
@@ -393,7 +420,7 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                SavedAllocations.Clear();
+                var loadedRows = new List<SavedAllocationRow>();
 
                 using (var db = new AppDbContext())
                 {
@@ -452,7 +479,7 @@ namespace TurizmOperasyonSistemi.Views
                             .Distinct()
                             .ToList();
 
-                        SavedAllocations.Add(new SavedAllocationRow
+                        loadedRows.Add(new SavedAllocationRow
                         {
                             HotelName = allocationGroup.Key.HotelName,
                             TourType = allocationGroup.Key.TourType,
@@ -472,6 +499,14 @@ namespace TurizmOperasyonSistemi.Views
                     }
                 }
 
+                _allSavedAllocations = loadedRows;
+                if (SavedAllocationSearchTextBox != null)
+                {
+                    SavedAllocationSearchTextBox.Text = string.Empty;
+                }
+                PopulateSavedAllocationFilters();
+                ApplySavedAllocationFilters();
+
                 SavedAllocationsTitleLabel.Text = string.IsNullOrWhiteSpace(hotelNameFilter)
                     ? "Kaydedilen Oda Yerleşimleri"
                     : $"{hotelNameFilter} İçin Kaydedilen Oda Yerleşimleri";
@@ -481,6 +516,84 @@ namespace TurizmOperasyonSistemi.Views
                 MessageBox.Show($"Kaydedilen odalamalar yüklenirken hata oluştu: {ex.Message}",
                                 "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void PopulateSavedAllocationFilters()
+        {
+            SetFilterItems(SavedAllocationTourTypeFilterComboBox, _allSavedAllocations.Select(x => x.TourType));
+            SetFilterItems(SavedAllocationPeriodFilterComboBox, _allSavedAllocations.Select(x => x.Period));
+            SetFilterItems(SavedAllocationGroupTypeFilterComboBox, _allSavedAllocations.Select(x => x.GroupType));
+            SetFilterItems(SavedAllocationDaysFilterComboBox, _allSavedAllocations.Select(x => x.DaysCount));
+        }
+
+        private void SetFilterItems(ComboBox comboBox, IEnumerable<string> values)
+        {
+            if (comboBox == null)
+            {
+                return;
+            }
+
+            var items = new List<string> { "Tümü" };
+            items.AddRange(values
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x));
+
+            comboBox.ItemsSource = items;
+            comboBox.SelectedIndex = 0;
+        }
+
+        private void ApplySavedAllocationFilters()
+        {
+            if (SavedAllocations == null)
+            {
+                return;
+            }
+
+            string searchText = SavedAllocationSearchTextBox?.Text?.Trim() ?? string.Empty;
+            string selectedTourType = SavedAllocationTourTypeFilterComboBox?.SelectedItem?.ToString();
+            string selectedPeriod = SavedAllocationPeriodFilterComboBox?.SelectedItem?.ToString();
+            string selectedGroupType = SavedAllocationGroupTypeFilterComboBox?.SelectedItem?.ToString();
+            string selectedDays = SavedAllocationDaysFilterComboBox?.SelectedItem?.ToString();
+
+            var filteredRows = _allSavedAllocations
+                .Where(x => IsFilterMatch(x.TourType, selectedTourType))
+                .Where(x => IsFilterMatch(x.Period, selectedPeriod))
+                .Where(x => IsFilterMatch(x.GroupType, selectedGroupType))
+                .Where(x => IsFilterMatch(x.DaysCount, selectedDays))
+                .Where(x => string.IsNullOrWhiteSpace(searchText) ||
+                            ContainsText(x.HotelName, searchText) ||
+                            ContainsText(x.TourType, searchText) ||
+                            ContainsText(x.Period, searchText) ||
+                            ContainsText(x.GroupType, searchText) ||
+                            ContainsText(x.DaysCount, searchText) ||
+                            ContainsText(x.RoomSummary, searchText) ||
+                            ContainsText(x.OccupantNames, searchText))
+                .ToList();
+
+            SavedAllocations.Clear();
+            foreach (var row in filteredRows)
+            {
+                SavedAllocations.Add(row);
+            }
+        }
+
+        private bool IsFilterMatch(string value, string selectedFilter)
+        {
+            return string.IsNullOrWhiteSpace(selectedFilter) ||
+                   selectedFilter == "Tümü" ||
+                   string.Equals(value ?? string.Empty, selectedFilter, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool ContainsText(string source, string searchText)
+        {
+            return !string.IsNullOrWhiteSpace(source) &&
+                   source.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void SavedAllocationFilter_Changed(object sender, RoutedEventArgs e)
+        {
+            ApplySavedAllocationFilters();
         }
 
         private bool SaveRoomAllocationsToDatabase()
@@ -590,6 +703,15 @@ namespace TurizmOperasyonSistemi.Views
             NextButton.Content = "İleri ▶";
             BackButton.Visibility = Visibility.Collapsed;
             currentStep = 1;
+
+            if (HotelSelectComboBox.SelectedItem == null)
+            {
+                ShowHotelSelectionGuidance();
+            }
+            else
+            {
+                ShowPostHotelSelectionGuidance();
+            }
         }
 
         // İKİ ODAYI CONNECTION YAP
@@ -729,10 +851,22 @@ namespace TurizmOperasyonSistemi.Views
             string selectedHotelName = HotelSelectComboBox.SelectedItem?.ToString();
             if (!string.IsNullOrWhiteSpace(selectedHotelName))
             {
-                HideHotelSelectionGuidance();
+                ShowPostHotelSelectionGuidance();
+            }
+            else
+            {
+                ShowHotelSelectionGuidance();
             }
 
             LoadSavedAllocations(selectedHotelName);
+        }
+
+        private void HotelSelectionGuideOkButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isPostHotelSelectionGuidanceActive)
+            {
+                HideHotelSelectionGuidance();
+            }
         }
 
         private void Step3Grid_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
