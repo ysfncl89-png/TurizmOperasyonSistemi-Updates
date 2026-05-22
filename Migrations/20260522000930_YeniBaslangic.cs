@@ -12,7 +12,7 @@ namespace TurizmOperasyonSistemi.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "AppSettings",
+                name: "AppSettings", 
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
