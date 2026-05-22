@@ -50,7 +50,7 @@ namespace TurizmOperasyonSistemi.Views
         {
             using (var db = new AppDbContext())
             {
-                db.EnsureRegistrationSchema();
+                
 
                 _registrationItems = db.Registrations
                     .Select(x => new RegistrationListItem
@@ -251,7 +251,7 @@ namespace TurizmOperasyonSistemi.Views
 
             using (var db = new AppDbContext())
             {
-                db.EnsureRegistrationSchema();
+                
 
                 var registration = db.Registrations.FirstOrDefault(x => x.Id == selectedRegistration.Id);
                 if (registration == null)
@@ -589,7 +589,7 @@ namespace TurizmOperasyonSistemi.Views
 
                     using (var db = new AppDbContext())
                     {
-                        db.EnsureRegistrationSchema();
+                        
 
                         var newRegistration = new Registration
                         {

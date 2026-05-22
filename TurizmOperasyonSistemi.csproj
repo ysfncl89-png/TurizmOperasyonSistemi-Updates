@@ -19,6 +19,7 @@
   <ItemGroup>
     <Folder Include="Helpers\" />
     <Folder Include="Assets\" />
+    <Folder Include="Migrations\" />
     <Folder Include="Themes\" />
     <Folder Include="Services\" />
     <Folder Include="ViewModels\" />

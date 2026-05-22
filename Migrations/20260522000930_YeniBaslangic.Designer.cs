@@ -11,8 +11,8 @@ using TurizmOperasyonSistemi.Data;
 namespace TurizmOperasyonSistemi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260513202626_AddSortOrderToAppSettings")]
-    partial class AddSortOrderToAppSettings
+    [Migration("20260522000930_YeniBaslangic")]
+    partial class YeniBaslangic
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,25 +51,7 @@ namespace TurizmOperasyonSistemi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Capacity")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("HotelName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Notes")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -85,6 +67,10 @@ namespace TurizmOperasyonSistemi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AgeRange")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -151,27 +137,45 @@ namespace TurizmOperasyonSistemi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("CargoStatus")
+                    b.Property<string>("CargoRequest")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CargoStatus");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("RegistrationDate");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CurrencyType");
+
+                    b.Property<string>("DaysCount")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("DayCount");
+
+                    b.Property<string>("DepartureCity")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("JoinCity");
+
+                    b.Property<string>("District")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<string>("CurrencyType")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("DayCount")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("GroupType")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("HasTransfer")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("TransferStatus");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("JoinCity")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<decimal>("PaidAmount")
                         .HasColumnType("TEXT");
@@ -183,7 +187,8 @@ namespace TurizmOperasyonSistemi.Migrations
                     b.Property<int>("PersonId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("RegistrationDate")
+                    b.Property<string>("Reference")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("RemainingDebt")
@@ -193,24 +198,31 @@ namespace TurizmOperasyonSistemi.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TicketStatus")
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("TourPrice")
-                        .HasColumnType("TEXT");
+                    b.Property<string>("TicketRequest")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("TicketStatus");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("TourPrice");
 
                     b.Property<string>("TourType")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TransferStatus")
+                    b.Property<string>("TransferCity")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("VisaStatus")
+                    b.Property<string>("VisaRequest")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("VisaStatus");
 
                     b.HasKey("Id");
 
@@ -219,26 +231,20 @@ namespace TurizmOperasyonSistemi.Migrations
                     b.ToTable("Registrations");
                 });
 
-            modelBuilder.Entity("TurizmOperasyonSistemi.Models.Room", b =>
+            modelBuilder.Entity("TurizmOperasyonSistemi.Models.RoomAllocation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Capacity")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("GenderType")
+                    b.Property<string>("ConnectionGroupId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("HotelId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsFull")
+                    b.Property<bool>("IsConnection")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("RoomNumber")
@@ -253,34 +259,26 @@ namespace TurizmOperasyonSistemi.Migrations
 
                     b.HasIndex("HotelId");
 
-                    b.ToTable("Rooms");
+                    b.ToTable("RoomAllocations");
                 });
 
-            modelBuilder.Entity("TurizmOperasyonSistemi.Models.RoomAssignment", b =>
+            modelBuilder.Entity("TurizmOperasyonSistemi.Models.RoomOccupant", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("AssignmentDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
+                    b.Property<int>("PassengerId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("RegistrationId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("RoomId")
+                    b.Property<int>("RoomAllocationId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RegistrationId");
+                    b.HasIndex("RoomAllocationId");
 
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("RoomAssignments");
+                    b.ToTable("RoomOccupants");
                 });
 
             modelBuilder.Entity("TurizmOperasyonSistemi.Models.Registration", b =>
@@ -294,10 +292,10 @@ namespace TurizmOperasyonSistemi.Migrations
                     b.Navigation("Person");
                 });
 
-            modelBuilder.Entity("TurizmOperasyonSistemi.Models.Room", b =>
+            modelBuilder.Entity("TurizmOperasyonSistemi.Models.RoomAllocation", b =>
                 {
                     b.HasOne("TurizmOperasyonSistemi.Models.Hotel", "Hotel")
-                        .WithMany("Rooms")
+                        .WithMany()
                         .HasForeignKey("HotelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -305,28 +303,20 @@ namespace TurizmOperasyonSistemi.Migrations
                     b.Navigation("Hotel");
                 });
 
-            modelBuilder.Entity("TurizmOperasyonSistemi.Models.RoomAssignment", b =>
+            modelBuilder.Entity("TurizmOperasyonSistemi.Models.RoomOccupant", b =>
                 {
-                    b.HasOne("TurizmOperasyonSistemi.Models.Registration", "Registration")
-                        .WithMany()
-                        .HasForeignKey("RegistrationId")
+                    b.HasOne("TurizmOperasyonSistemi.Models.RoomAllocation", "RoomAllocation")
+                        .WithMany("Occupants")
+                        .HasForeignKey("RoomAllocationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TurizmOperasyonSistemi.Models.Room", "Room")
-                        .WithMany()
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Registration");
-
-                    b.Navigation("Room");
+                    b.Navigation("RoomAllocation");
                 });
 
-            modelBuilder.Entity("TurizmOperasyonSistemi.Models.Hotel", b =>
+            modelBuilder.Entity("TurizmOperasyonSistemi.Models.RoomAllocation", b =>
                 {
-                    b.Navigation("Rooms");
+                    b.Navigation("Occupants");
                 });
 #pragma warning restore 612, 618
         }
