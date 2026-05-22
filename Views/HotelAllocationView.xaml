@@ -241,16 +241,26 @@
                                 <DataGridTextColumn Header="Oda Listesi" Binding="{Binding RoomSummary}" Width="1.8*"/>
                                 <DataGridTextColumn Header="Kişi Sayısı" Binding="{Binding OccupantCount}" Width="0.8*"/>
                                 <DataGridTextColumn Header="Yerleşen Kişiler" Binding="{Binding OccupantNames}" Width="2.4*"/>
-                                <DataGridTemplateColumn Header="İşlem" Width="0.9*">
+                                <DataGridTemplateColumn Header="İşlem" Width="1.5*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="Kaydı Sil"
-                                                    Background="#DC2626"
-                                                    Foreground="White"
-                                                    FontWeight="Bold"
-                                                    Padding="8,3"
-                                                    BorderThickness="0"
-                                                    Click="DeleteSavedAllocationButton_Click"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Düzenle"
+                                                        Background="#2563EB"
+                                                        Foreground="White"
+                                                        FontWeight="Bold"
+                                                        Padding="8,3"
+                                                        BorderThickness="0"
+                                                        Margin="0,0,6,0"
+                                                        Click="EditSavedAllocationButton_Click"/>
+                                                <Button Content="Kaydı Sil"
+                                                        Background="#DC2626"
+                                                        Foreground="White"
+                                                        FontWeight="Bold"
+                                                        Padding="8,3"
+                                                        BorderThickness="0"
+                                                        Click="DeleteSavedAllocationButton_Click"/>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

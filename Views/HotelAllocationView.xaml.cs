@@ -776,6 +776,120 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        private void EditSavedAllocationButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var selectedAllocation = button?.DataContext as SavedAllocationRow;
+
+            if (selectedAllocation == null)
+            {
+                return;
+            }
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var allocations = db.RoomAllocations
+                        .AsNoTracking()
+                        .Include(x => x.Hotel)
+                        .Include(x => x.Occupants)
+                        .Where(x => x.Hotel != null &&
+                                    x.Hotel.Name == selectedAllocation.HotelName &&
+                                    x.TourType == selectedAllocation.TourType &&
+                                    x.Period == selectedAllocation.Period &&
+                                    x.GroupType == selectedAllocation.GroupType &&
+                                    x.DaysCount == selectedAllocation.DaysCount)
+                        .ToList();
+
+                    allocations = allocations
+                        .OrderBy(x => int.TryParse(x.RoomNumber, out int roomNo) ? roomNo : int.MaxValue)
+                        .ThenBy(x => x.RoomNumber)
+                        .ToList();
+
+                    if (allocations.Count == 0)
+                    {
+                        MessageBox.Show("Düzenlenecek odalama kaydı bulunamadı.",
+                                        "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+
+                    var passengerIds = allocations
+                        .SelectMany(x => x.Occupants)
+                        .Select(x => x.PassengerId)
+                        .Distinct()
+                        .ToList();
+
+                    var persons = db.Persons
+                        .AsNoTracking()
+                        .Where(x => passengerIds.Contains(x.Id))
+                        .ToDictionary(x => x.Id, x => $"{x.FirstName} {x.LastName}");
+
+                    HotelSelectComboBox.SelectedItem = selectedAllocation.HotelName;
+                    TourTypeComboBox.SelectedItem = selectedAllocation.TourType;
+                    PeriodComboBox.SelectedItem = selectedAllocation.Period;
+                    GroupTypeComboBox.SelectedItem = selectedAllocation.GroupType;
+                    DurationComboBox.SelectedItem = selectedAllocation.DaysCount;
+
+                    RoomsList.Clear();
+                    PassengerPool.Clear();
+                    _selectedRoomForAllocation = null;
+                    _firstRoomToConnect = null;
+
+                    foreach (var allocation in allocations)
+                    {
+                        int capacity = ResolveRoomCapacity(allocation.RoomType);
+                        var room = new RoomViewModel
+                        {
+                            RoomNumber = allocation.RoomNumber,
+                            RoomTypeName = allocation.RoomType,
+                            MaxCapacity = capacity,
+                            IsConnection = allocation.IsConnection,
+                            ConnectionGroupId = allocation.ConnectionGroupId ?? string.Empty
+                        };
+
+                        foreach (var occupant in allocation.Occupants)
+                        {
+                            room.Occupants.Add(new PassengerUiModel
+                            {
+                                PersonId = occupant.PassengerId,
+                                FullName = persons.TryGetValue(occupant.PassengerId, out string fullName)
+                                    ? fullName
+                                    : $"Yolcu #{occupant.PassengerId}",
+                                RoomType = allocation.RoomType
+                            });
+                        }
+
+                        room.UpdateStatus();
+                        RoomsList.Add(room);
+                    }
+                }
+
+                NormalizeConnectionGroups();
+                LoadFilteredPassengers();
+                ClearSelectedRoom();
+
+                Step1Grid.Visibility = Visibility.Collapsed;
+                Step2Grid.Visibility = Visibility.Collapsed;
+                Step3Grid.Visibility = Visibility.Visible;
+
+                Tab1.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+                Tab2.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+                Tab3.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#06B6D4"));
+
+                BackButton.Visibility = Visibility.Visible;
+                NextButton.Content = "Kaydet ve Bitir";
+                currentStep = 3;
+
+                SelectedHotelTitleLabel.Text = $"🏨 Seçilen Otel: {selectedAllocation.HotelName} Oda Yerleşim Düzeni";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Odalama kaydı düzenlenirken hata oluştu: {ex.Message}",
+                                "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         // ODA EKLE
         private void AddRoomButton_Click(object sender, RoutedEventArgs e)
         {
@@ -804,6 +918,19 @@ namespace TurizmOperasyonSistemi.Views
                 RoomTypeName = selectedRoomType,
                 MaxCapacity = capacity
             });
+        }
+
+        private int ResolveRoomCapacity(string roomType)
+        {
+            string selectedRoomType = (roomType ?? string.Empty).ToUpper();
+
+            if (selectedRoomType.Contains("SNGL") || selectedRoomType.Contains("SINGLE")) return 1;
+            if (selectedRoomType.Contains("DBL") || selectedRoomType.Contains("TWIN")) return 2;
+            if (selectedRoomType.Contains("TRPL") || selectedRoomType.Contains("TRİPLE")) return 3;
+            if (selectedRoomType.Contains("QUAD")) return 4;
+            if (selectedRoomType.Contains("QUINT")) return 5;
+
+            return 2;
         }
     
     // 1. ODALARI KOPARMA (CONNECTION İPTALİ) METODU
