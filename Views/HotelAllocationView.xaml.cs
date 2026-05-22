@@ -59,7 +59,7 @@ namespace TurizmOperasyonSistemi.Views
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                ShowStep1(true);
+                ShowStep1(false);
             }), DispatcherPriority.Loaded);
         }
 
@@ -104,56 +104,48 @@ namespace TurizmOperasyonSistemi.Views
 
                 using (var db = new AppDbContext())
                 {
-                    var connection = db.Database.GetDbConnection();
-
-                    if (connection.State != System.Data.ConnectionState.Open)
-                        connection.Open();
-
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = @"
-                    SELECT Id, PersonId, TourType, Period, GroupType, RoomType 
-                    FROM Registrations 
-                    WHERE TourType = @tourType AND Period = @period AND GroupType = @groupType";
-
-                        var p1 = command.CreateParameter();
-                        p1.ParameterName = "@tourType";
-                        p1.Value = selectedTourType ?? (object)DBNull.Value;
-                        command.Parameters.Add(p1);
-
-                        var p2 = command.CreateParameter();
-                        p2.ParameterName = "@period";
-                        p2.Value = selectedPeriod ?? (object)DBNull.Value;
-                        command.Parameters.Add(p2);
-
-                        var p3 = command.CreateParameter();
-                        p3.ParameterName = "@groupType";
-                        p3.Value = selectedGroupType ?? (object)DBNull.Value;
-                        command.Parameters.Add(p3);
-                        
-                        using (var reader = command.ExecuteReader())
+                    var matchingRegistrations = db.Registrations
+                        .AsNoTracking()
+                        .Where(x => x.TourType == selectedTourType &&
+                                    x.Period == selectedPeriod &&
+                                    x.GroupType == selectedGroupType &&
+                                    x.DaysCount == selectedDuration)
+                        .Select(x => new
                         {
-                            while (reader.Read())
-                            {
-                                int personId = reader.IsDBNull(reader.GetOrdinal("PersonId")) ? 0 : reader.GetInt32(reader.GetOrdinal("PersonId"));
-                                string roomType = reader.IsDBNull(reader.GetOrdinal("RoomType")) ? "Belirtilmemiş" : reader.GetString(reader.GetOrdinal("RoomType"));
+                            x.PersonId,
+                            x.RoomType
+                        })
+                        .ToList();
 
-                                if (personId > 0)
-                                {
-                                    var person = db.Persons.AsNoTracking().FirstOrDefault(p => p.Id == personId);
+                    var personIds = matchingRegistrations
+                        .Select(x => x.PersonId)
+                        .Where(x => x > 0)
+                        .Distinct()
+                        .ToList();
 
-                                    if (person != null && !occupiedPersonIds.Contains(person.Id))
-                                    {
-                                        AddPassengerToPoolIfMissing(new PassengerUiModel
-                                        {
-                                            PersonId = person.Id,
-                                            FullName = $"{person.FirstName} {person.LastName}",
-                                            RoomType = roomType
-                                        });
-                                    }
-                                }
-                            }
+                    var persons = db.Persons
+                        .AsNoTracking()
+                        .Where(x => personIds.Contains(x.Id))
+                        .ToDictionary(x => x.Id, x => $"{x.FirstName} {x.LastName}");
+
+                    foreach (var registration in matchingRegistrations)
+                    {
+                        if (registration.PersonId <= 0 || occupiedPersonIds.Contains(registration.PersonId))
+                        {
+                            continue;
                         }
+
+                        if (!persons.TryGetValue(registration.PersonId, out string fullName))
+                        {
+                            continue;
+                        }
+
+                        AddPassengerToPoolIfMissing(new PassengerUiModel
+                        {
+                            PersonId = registration.PersonId,
+                            FullName = fullName,
+                            RoomType = string.IsNullOrWhiteSpace(registration.RoomType) ? "Belirtilmemiş" : registration.RoomType
+                        });
                     }
                 }
 
@@ -239,6 +231,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ShowHotelSelectionGuidance()
         {
+            HotelSelectionPanel.Visibility = Visibility.Visible;
             SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
             SavedAllocationsContainer.IsEnabled = false;
             HotelSelectionGuideOverlay.Visibility = Visibility.Visible;
@@ -358,11 +351,34 @@ namespace TurizmOperasyonSistemi.Views
 
             _isStep1GuidanceMode = false;
             ShowStep1(false);
+            LoadSavedAllocations(_matchedSavedAllocation.HotelName);
             SavedAllocationTourTypeFilterComboBox.SelectedItem = _matchedSavedAllocation.TourType;
             SavedAllocationPeriodFilterComboBox.SelectedItem = _matchedSavedAllocation.Period;
             SavedAllocationGroupTypeFilterComboBox.SelectedItem = _matchedSavedAllocation.GroupType;
             SavedAllocationDaysFilterComboBox.SelectedItem = _matchedSavedAllocation.DaysCount;
             ApplySavedAllocationFilters();
+        }
+
+        private void ResetToHotelSelectionStep()
+        {
+            _suppressHotelSelectionChanged = true;
+            HotelSelectComboBox.SelectedItem = null;
+            _suppressHotelSelectionChanged = false;
+
+            _matchedSavedAllocation = null;
+            ClearRoomAllocationDraft();
+            ResetCriteriaSelections();
+            LoadSavedAllocations();
+            ShowStep1(true);
+        }
+
+        private void ClearRoomAllocationDraft()
+        {
+            RoomsList.Clear();
+            PassengerPool.Clear();
+            _selectedRoomForAllocation = null;
+            _firstRoomToConnect = null;
+            RefreshPassengerCountLabel();
         }
 
         private void SelectRoom(RoomViewModel room)
@@ -608,10 +624,56 @@ namespace TurizmOperasyonSistemi.Views
 
         private void PopulateSavedAllocationFilters()
         {
-            SetFilterItems(SavedAllocationTourTypeFilterComboBox, _allSavedAllocations.Select(x => x.TourType));
-            SetFilterItems(SavedAllocationPeriodFilterComboBox, _allSavedAllocations.Select(x => x.Period));
-            SetFilterItems(SavedAllocationGroupTypeFilterComboBox, _allSavedAllocations.Select(x => x.GroupType));
-            SetFilterItems(SavedAllocationDaysFilterComboBox, _allSavedAllocations.Select(x => x.DaysCount));
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var allSettings = db.AppSettings
+                        .AsNoTracking()
+                        .Where(x => x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .ThenBy(x => x.Id)
+                        .ToList();
+
+                    SetFilterItems(
+                        SavedAllocationTourTypeFilterComboBox,
+                        allSettings
+                            .Where(x => IsSettingTypeMatch(x.Type, "TourType", "Tur Türü"))
+                            .Select(x => x.Value));
+
+                    SetFilterItems(
+                        SavedAllocationPeriodFilterComboBox,
+                        allSettings
+                            .Where(x => IsSettingTypeMatch(x.Type, "Dönem"))
+                            .Select(x => x.Value));
+
+                    SetFilterItems(
+                        SavedAllocationGroupTypeFilterComboBox,
+                        allSettings
+                            .Where(x => IsSettingTypeMatch(x.Type, "GroupType", "Grup Türü"))
+                            .Select(x => x.Value));
+
+                    SetFilterItems(
+                        SavedAllocationDaysFilterComboBox,
+                        allSettings
+                            .Where(x => IsSettingTypeMatch(x.Type, "Kaç Günlük Grup", "CountOfDays"))
+                            .Select(x => x.Value));
+                }
+            }
+            catch
+            {
+                SetFilterItems(SavedAllocationTourTypeFilterComboBox, Enumerable.Empty<string>());
+                SetFilterItems(SavedAllocationPeriodFilterComboBox, Enumerable.Empty<string>());
+                SetFilterItems(SavedAllocationGroupTypeFilterComboBox, Enumerable.Empty<string>());
+                SetFilterItems(SavedAllocationDaysFilterComboBox, Enumerable.Empty<string>());
+            }
+        }
+
+        private bool IsSettingTypeMatch(string type, params string[] expectedTypes)
+        {
+            string normalizedType = type?.Trim() ?? string.Empty;
+            return expectedTypes.Any(expected =>
+                normalizedType.Equals(expected, StringComparison.OrdinalIgnoreCase));
         }
 
         private void SetFilterItems(ComboBox comboBox, IEnumerable<string> values)
@@ -624,11 +686,38 @@ namespace TurizmOperasyonSistemi.Views
             var items = new List<string> { "Tümü" };
             items.AddRange(values
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct()
-                .OrderBy(x => x));
+                .Distinct());
 
             comboBox.ItemsSource = items;
-            comboBox.SelectedIndex = 0;
+            comboBox.SelectedIndex = -1;
+        }
+
+        private void ResetSavedAllocationSearchAndFilters()
+        {
+            if (SavedAllocationSearchTextBox != null)
+            {
+                SavedAllocationSearchTextBox.Text = string.Empty;
+            }
+
+            if (SavedAllocationTourTypeFilterComboBox != null)
+            {
+                SavedAllocationTourTypeFilterComboBox.SelectedIndex = -1;
+            }
+
+            if (SavedAllocationPeriodFilterComboBox != null)
+            {
+                SavedAllocationPeriodFilterComboBox.SelectedIndex = -1;
+            }
+
+            if (SavedAllocationGroupTypeFilterComboBox != null)
+            {
+                SavedAllocationGroupTypeFilterComboBox.SelectedIndex = -1;
+            }
+
+            if (SavedAllocationDaysFilterComboBox != null)
+            {
+                SavedAllocationDaysFilterComboBox.SelectedIndex = -1;
+            }
         }
 
         private void ApplySavedAllocationFilters()
@@ -663,6 +752,12 @@ namespace TurizmOperasyonSistemi.Views
             foreach (var row in filteredRows)
             {
                 SavedAllocations.Add(row);
+            }
+
+            if (NoSavedAllocationResultPanel != null)
+            {
+                bool hasNoResult = filteredRows.Count == 0;
+                NoSavedAllocationResultPanel.Visibility = hasNoResult ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -792,6 +887,7 @@ namespace TurizmOperasyonSistemi.Views
             BackButton.Visibility = Visibility.Collapsed;
             currentStep = 1;
             _isStep1GuidanceMode = showHotelGuidance;
+            HotelSelectionPanel.Visibility = showHotelGuidance ? Visibility.Visible : Visibility.Collapsed;
 
             if (showHotelGuidance)
             {
@@ -896,8 +992,12 @@ namespace TurizmOperasyonSistemi.Views
 
                 MessageBox.Show("Odalama yerleşim planı veritabanına kaydedildi ve kayıt listesi güncellendi!",
                                 "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
-                _matchedSavedAllocation = FindMatchingSavedAllocation();
-                OpenSavedAllocationsScreenForMatchedCriteria();
+                _matchedSavedAllocation = null;
+                _isStep1GuidanceMode = false;
+                ShowStep1(false);
+                LoadSavedAllocations();
+                ResetSavedAllocationSearchAndFilters();
+                ApplySavedAllocationFilters();
             }
         }
 
@@ -909,7 +1009,7 @@ namespace TurizmOperasyonSistemi.Views
             }
             else if (currentStep == 2)
             {
-                ShowStep1(true);
+                ResetToHotelSelectionStep();
             }
         }
 
@@ -986,6 +1086,11 @@ namespace TurizmOperasyonSistemi.Views
         private void Step2SecondaryActionButton_Click(object sender, RoutedEventArgs e)
         {
             OpenSavedAllocationsScreenForMatchedCriteria();
+        }
+
+        private void GoToNewAllocationFromGridButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetToHotelSelectionStep();
         }
 
         private void Step3Grid_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

@@ -121,7 +121,7 @@
             <UniformGrid Columns="3" x:Name="WizardTabs">
 
                 <Border x:Name="Tab1" Background="#06B6D4" CornerRadius="4" Margin="5" Padding="10">
-                    <TextBlock Text="1. Otel Seçimi"
+                    <TextBlock Text="1. Kayıt Listesi"
                                Foreground="White"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
@@ -152,11 +152,13 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0"
+                <StackPanel x:Name="HotelSelectionPanel"
+                            Grid.Row="0"
                             VerticalAlignment="Top"
                             HorizontalAlignment="Center"
                             Width="460"
-                            Margin="0,20,0,20">
+                            Margin="0,20,0,20"
+                            Visibility="Collapsed">
 
                     <TextBlock Text="🏨 Odalama Yapılacak Oteli Seçin"
                                Foreground="White"
@@ -231,7 +233,7 @@
                                          BorderBrush="#475569"
                                          BorderThickness="1.2"
                                          Padding="10,6"
-                                         Text="Ara: otel, tur türü, dönem, grup, oda veya kişi"
+                                         ToolTip="Ara: otel, tur türü, dönem, grup, oda veya kişi"
                                          TextChanged="SavedAllocationFilter_Changed"/>
 
                                 <UniformGrid Columns="4" Margin="0,10,0,0">
@@ -278,7 +280,8 @@
                             </StackPanel>
                         </Border>
 
-                        <DataGrid Grid.Row="2"
+                        <Grid Grid.Row="2">
+                            <DataGrid
                                   x:Name="SavedAllocationsGrid"
                                   Background="Transparent"
                                   RowBackground="#0F172A"
@@ -327,14 +330,6 @@
                                                         BorderThickness="0"
                                                         Margin="0,0,6,0"
                                                         Click="EditSavedAllocationButton_Click"/>
-                                                <Button Content="İncele"
-                                                        Background="#0EA5E9"
-                                                        Foreground="White"
-                                                        FontWeight="Bold"
-                                                        Padding="8,3"
-                                                        BorderThickness="0"
-                                                        Margin="0,0,6,0"
-                                                        Click="InspectSavedAllocationButton_Click"/>
                                                 <Button Content="Kaydı Sil"
                                                         Background="#DC2626"
                                                         Foreground="White"
@@ -347,7 +342,39 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
-                        </DataGrid>
+                            </DataGrid>
+
+                            <Border x:Name="NoSavedAllocationResultPanel"
+                                    Visibility="Collapsed"
+                                    Background="#CC0F172A"
+                                    CornerRadius="10"
+                                    Padding="20"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    MaxWidth="460">
+                                <StackPanel>
+                                    <TextBlock Text="Aradığınız kriterlerde kayıt bulunamadı."
+                                               Foreground="White"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               TextAlignment="Center"/>
+                                    <TextBlock Text="Yeni bir odalama kaydı oluşturmak isterseniz şimdi otel seçimine geçebilirsiniz."
+                                               Foreground="#CBD5E1"
+                                               Margin="0,8,0,0"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"/>
+                                    <Button Content="Yeni Odalama Kaydı Oluştur"
+                                            Margin="0,16,0,0"
+                                            Padding="18,8"
+                                            Background="#06B6D4"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            FontWeight="Bold"
+                                            HorizontalAlignment="Center"
+                                            Click="GoToNewAllocationFromGridButton_Click"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
                     </Grid>
                     </Border>
 
