@@ -83,6 +83,7 @@ namespace TurizmOperasyonSistemi.Views
                 string selectedDuration = DurationComboBox.SelectedItem?.ToString();
 
                 PassengerPool.Clear();
+                var occupiedPersonIds = GetOccupiedPersonIds();
 
                 using (var db = new AppDbContext())
                 {
@@ -124,9 +125,9 @@ namespace TurizmOperasyonSistemi.Views
                                 {
                                     var person = db.Persons.AsNoTracking().FirstOrDefault(p => p.Id == personId);
 
-                                    if (person != null)
+                                    if (person != null && !occupiedPersonIds.Contains(person.Id))
                                     {
-                                        PassengerPool.Add(new PassengerUiModel
+                                        AddPassengerToPoolIfMissing(new PassengerUiModel
                                         {
                                             PersonId = person.Id,
                                             FullName = $"{person.FirstName} {person.LastName}",
@@ -139,7 +140,7 @@ namespace TurizmOperasyonSistemi.Views
                     }
                 }
 
-                PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
+                RefreshPassengerCountLabel();
             }
             catch (Exception ex)
             {
@@ -180,7 +181,7 @@ namespace TurizmOperasyonSistemi.Views
             PassengerPool.Remove(selectedPassenger);
             _selectedRoomForAllocation.UpdateStatus();
 
-            PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
+            RefreshPassengerCountLabel();
         }
 
         private void RemovePassengerFromRoomButton_Click(object sender, RoutedEventArgs e)
@@ -199,10 +200,10 @@ namespace TurizmOperasyonSistemi.Views
                 if (passenger != null)
                 {
                     room.Occupants.Remove(passenger);
-                    PassengerPool.Add(passenger);
+                    AddPassengerToPoolIfMissing(passenger);
                     room.UpdateStatus();
 
-                    PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
+                    RefreshPassengerCountLabel();
                 }
             }
         }
@@ -217,6 +218,34 @@ namespace TurizmOperasyonSistemi.Views
             _selectedRoomForAllocation = clickedRoom;
 
             SelectedHotelTitleLabel.Text = $"🏨 Otel: {HotelSelectComboBox.SelectedItem} | ŞU AN SEÇİLİ ODA: Oda {clickedRoom.RoomNumber}";
+        }
+
+        private HashSet<int> GetOccupiedPersonIds()
+        {
+            return RoomsList
+                .SelectMany(r => r.Occupants)
+                .Select(o => o.PersonId)
+                .Where(id => id > 0)
+                .ToHashSet();
+        }
+
+        private void AddPassengerToPoolIfMissing(PassengerUiModel passenger)
+        {
+            if (passenger == null)
+            {
+                return;
+            }
+
+            bool exists = PassengerPool.Any(x => x.PersonId == passenger.PersonId);
+            if (!exists)
+            {
+                PassengerPool.Add(passenger);
+            }
+        }
+
+        private void RefreshPassengerCountLabel()
+        {
+            PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
         }
 
         // İKİ ODAYI CONNECTION YAP
@@ -447,7 +476,7 @@ private void BreakConnectionButton_Click(object sender, RoutedEventArgs e)
                 // Odadaki tüm yolcuları tek tek sol listeye (PassengerPool) iade ediyoruz
                 foreach (var passenger in currentRoom.Occupants.ToList())
                 {
-                    PassengerPool.Add(passenger);
+                    AddPassengerToPoolIfMissing(passenger);
                 }
                 currentRoom.Occupants.Clear();
             }
@@ -456,7 +485,7 @@ private void BreakConnectionButton_Click(object sender, RoutedEventArgs e)
             RoomsList.Remove(currentRoom);
 
             // Sol taraftaki yolcu sayacı etiketini güncelle
-            PassengerCountLabel.Text = $"Seçilen Kriterlere Uygun: {PassengerPool.Count} Yolcu Bulundu";
+            RefreshPassengerCountLabel();
         }
     }
 }

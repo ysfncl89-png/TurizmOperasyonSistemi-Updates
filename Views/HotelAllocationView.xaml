@@ -256,6 +256,7 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
@@ -271,7 +272,34 @@
                                        Margin="0,5,0,0"/>
                         </StackPanel>
 
-                        <DataGrid Grid.Row="1"
+                        <Border Grid.Row="1"
+                                Background="#142033"
+                                BorderBrush="#2D415C"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12"
+                                Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Nasıl ilerleyeceksiniz?"
+                                           Foreground="#F8FAFC"
+                                           FontSize="13"
+                                           FontWeight="Bold"/>
+                                <TextBlock Text="1. Sağ taraftan önce bir oda açın."
+                                           Foreground="#CBD5E1"
+                                           Margin="0,6,0,0"/>
+                                <TextBlock Text="2. Odaya tıklayıp aktif oda olarak seçin."
+                                           Foreground="#CBD5E1"
+                                           Margin="0,2,0,0"/>
+                                <TextBlock Text="3. Soldaki yolculardan istediğinizi Odaya Ekle ile yerleştirin."
+                                           Foreground="#CBD5E1"
+                                           Margin="0,2,0,0"/>
+                                <TextBlock Text="4. Gerekirse odayı kapatınca yolcular otomatik havuza geri döner."
+                                           Foreground="#CBD5E1"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <DataGrid Grid.Row="2"
                                   x:Name="UnallocatedPassengersGrid"
                                   Background="Transparent"
                                   RowBackground="#0F172A"
