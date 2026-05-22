@@ -13,6 +13,9 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class PersonsWizardView : Page
     {
+        public event Action<Person> PersonSelectionChanged;
+        public event Action<int> PersonSaved;
+
         private enum StepOneState
         {
             Initial,
@@ -46,6 +49,30 @@ namespace TurizmOperasyonSistemi.Views
             LastNameTextBox.TextChanged += RequiredField_TextChanged;
             TcTextBox.TextChanged += RequiredField_TextChanged;
             GenderComboBox.SelectionChanged += GenderComboBox_SelectionChanged;
+        }
+
+        public int SelectedPersonId => selectedPersonId;
+
+        public bool HasActiveSelectedPerson =>
+            PersonsDataGrid.SelectedItem is Person person && person.IsActive;
+
+        public void SelectPersonForExternalFlow(int personId)
+        {
+            if (personId <= 0)
+            {
+                return;
+            }
+
+            currentStep = 1;
+            UpdateSteps();
+            RestoreSelectedPerson(personId);
+
+            if (PersonsDataGrid.SelectedItem is Person person)
+            {
+                SearchTextBox.Text = $"{person.FirstName} {person.LastName}".Trim();
+                SetStepOneState(StepOneState.SearchResults);
+                NotifyPersonSelectionChanged(person);
+            }
         }
 
         private void PersonsWizardView_Loaded(object sender, RoutedEventArgs e)
@@ -449,6 +476,8 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     SetStepOneState(StepOneState.SearchResults);
                 }
+
+                NotifyPersonSelectionChanged(person);
             }
             else
             {
@@ -456,6 +485,7 @@ namespace TurizmOperasyonSistemi.Views
                 ToggleActiveButton.Visibility = Visibility.Collapsed;
                 EditSelectedButton.Visibility = Visibility.Collapsed;
                 SaveButton.Content = "Kaydet";
+                PersonSelectionChanged?.Invoke(null);
 
                 if (_stepOneState == StepOneState.SearchResults)
                 {
@@ -503,6 +533,8 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                int savedPersonId = 0;
+
                 if (HighlightMissingRequiredFields())
                 {
                     MessageBox.Show("Zorunlu alanları doldurun.");
@@ -568,9 +600,11 @@ namespace TurizmOperasyonSistemi.Views
                     person.PassportEndDate = PassportEndPicker.SelectedDate;
 
                     db.SaveChanges();
+                    savedPersonId = person.Id;
                 }
 
                 ClearRequiredHighlights();
+                PersonSaved?.Invoke(savedPersonId);
 
                 MessageBox.Show(selectedPersonId > 0 ? "Güncellendi" : "Kaydedildi");
 
@@ -644,6 +678,11 @@ namespace TurizmOperasyonSistemi.Views
                     break;
                 }
             }
+        }
+
+        private void NotifyPersonSelectionChanged(Person person)
+        {
+            PersonSelectionChanged?.Invoke(person);
         }
 
         private void ResetModuleToEntryState()

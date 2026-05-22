@@ -18,6 +18,8 @@ namespace TurizmOperasyonSistemi.Views
         private int currentStep = 1;
         private int selectedPersonId = 0;
         private int editingRegistrationId = 0;
+        private bool skipPersonSelectionStepForEdit = false;
+        private PersonsWizardView _personsWizardView;
         private ICollectionView _personsView;
         private ICollectionView _registrationsView;
         private List<RegistrationListItem> _registrationItems = new();
@@ -29,8 +31,39 @@ namespace TurizmOperasyonSistemi.Views
             LoadPersons();
             LoadRegistrations();
             LoadSettingsToComboBoxes();
+            InitializePersonsModuleHost();
             UpdateRegistrationActionButtons();
             ShowRegistrationBrowser();
+        }
+
+        private void InitializePersonsModuleHost()
+        {
+            _personsWizardView = new PersonsWizardView();
+            _personsWizardView.PersonSelectionChanged += PersonsWizardView_PersonSelectionChanged;
+            _personsWizardView.PersonSaved += PersonsWizardView_PersonSaved;
+            PersonsModuleFrame.Navigate(_personsWizardView);
+        }
+
+        private void PersonsWizardView_PersonSelectionChanged(Person person)
+        {
+            selectedPersonId = person?.Id ?? 0;
+            UpdateNextButtonState();
+        }
+
+        private void PersonsWizardView_PersonSaved(int personId)
+        {
+            if (personId <= 0)
+            {
+                return;
+            }
+
+            selectedPersonId = personId;
+            _personsWizardView?.SelectPersonForExternalFlow(personId);
+
+            if (currentStep == 1)
+            {
+                SwitchToStep(2);
+            }
         }
 
         private void LoadPersons()
@@ -196,11 +229,37 @@ namespace TurizmOperasyonSistemi.Views
             if (_personsView == null) return;
 
             bool anyItem = _personsView.Cast<object>().Any();
+            bool hasSearchText = !string.IsNullOrWhiteSpace(SearchTextBox.Text);
 
-            NoPersonPanel.Visibility =
-                (!anyItem && !string.IsNullOrWhiteSpace(SearchTextBox.Text))
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+            if (!anyItem && hasSearchText)
+            {
+                ShowNoPersonPopup();
+            }
+            else if (QuickAddFormPanel.Visibility != Visibility.Visible)
+            {
+                HidePersonPopup();
+            }
+        }
+
+        private void ShowNoPersonPopup()
+        {
+            PersonPopupOverlay.Visibility = Visibility.Visible;
+            NoPersonPanel.Visibility = Visibility.Visible;
+            QuickAddFormPanel.Visibility = Visibility.Collapsed;
+        }
+
+        private void ShowQuickAddPopup()
+        {
+            PersonPopupOverlay.Visibility = Visibility.Visible;
+            NoPersonPanel.Visibility = Visibility.Collapsed;
+            QuickAddFormPanel.Visibility = Visibility.Visible;
+        }
+
+        private void HidePersonPopup()
+        {
+            PersonPopupOverlay.Visibility = Visibility.Collapsed;
+            NoPersonPanel.Visibility = Visibility.Collapsed;
+            QuickAddFormPanel.Visibility = Visibility.Collapsed;
         }
 
         private void RegistrationsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -375,6 +434,7 @@ namespace TurizmOperasyonSistemi.Views
                 ShowWizard();
                 ResetWizardForm();
                 editingRegistrationId = registration.Id;
+                skipPersonSelectionStepForEdit = true;
                 selectedPersonId = registration.PersonId;
 
                 SelectPersonInGrid(registration.PersonId);
@@ -397,7 +457,7 @@ namespace TurizmOperasyonSistemi.Views
                 RemainingDebtTextBox.Text = registration.RemainingDebt.ToString("N2");
                 ReferenceTextBox.Text = registration.Reference;
 
-                SwitchToStep(1);
+                SwitchToStep(2);
                 UpdateNextButtonState();
             }
         }
@@ -422,6 +482,7 @@ namespace TurizmOperasyonSistemi.Views
         {
             if (PersonsDataGrid.SelectedItem is Person person)
             {
+                HidePersonPopup();
                 selectedPersonId = person.Id;
 
                 if (!person.IsActive)
@@ -445,8 +506,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ShowQuickAddButton_Click(object sender, RoutedEventArgs e)
         {
-            NoPersonPanel.Visibility = Visibility.Collapsed;
-            QuickAddFormPanel.Visibility = Visibility.Visible;
+            ShowQuickAddPopup();
 
             LoadSettingsToWizardForm();
 
@@ -587,7 +647,7 @@ namespace TurizmOperasyonSistemi.Views
             QuickLastNameTextBox.Clear();
             QuickPhoneTextBox.Clear();
             QuickBirthDatePicker.SelectedDate = null;
-            QuickAddFormPanel.Visibility = Visibility.Collapsed;
+            HidePersonPopup();
         }
 
         private void StartNewRegistrationButton_Click(object sender, RoutedEventArgs e)
@@ -625,12 +685,13 @@ namespace TurizmOperasyonSistemi.Views
         private void ResetWizardForm()
         {
             editingRegistrationId = 0;
+            skipPersonSelectionStepForEdit = false;
             selectedPersonId = 0;
             PersonsDataGrid.SelectedItem = null;
+            InitializePersonsModuleHost();
             SearchTextBox.Clear();
             ShowPassiveCheckBox.IsChecked = false;
-            NoPersonPanel.Visibility = Visibility.Collapsed;
-            QuickAddFormPanel.Visibility = Visibility.Collapsed;
+            HidePersonPopup();
             TourTypeComboBox.SelectedIndex = -1;
             PeriodComboBox.SelectedIndex = -1;
             GroupTypeComboBox.SelectedIndex = -1;
@@ -663,6 +724,8 @@ namespace TurizmOperasyonSistemi.Views
                 PersonsDataGrid.SelectedItem = person;
                 PersonsDataGrid.ScrollIntoView(person);
             }
+
+            _personsWizardView?.SelectPersonForExternalFlow(personId);
         }
 
         private void SwitchToStep(int step)
@@ -725,7 +788,7 @@ namespace TurizmOperasyonSistemi.Views
             switch (currentStep)
             {
                 case 1:
-                    NextButton.IsEnabled = PersonsDataGrid.SelectedItem is Person p && p.IsActive;
+                    NextButton.IsEnabled = _personsWizardView?.HasActiveSelectedPerson == true;
                     break;
 
                 case 2:
@@ -959,6 +1022,11 @@ namespace TurizmOperasyonSistemi.Views
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
             if (currentStep == 1)
+            {
+                ResetWizardForm();
+                ShowRegistrationBrowser();
+            }
+            else if (skipPersonSelectionStepForEdit && currentStep == 2)
             {
                 ResetWizardForm();
                 ShowRegistrationBrowser();

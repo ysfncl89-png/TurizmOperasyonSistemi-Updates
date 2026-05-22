@@ -327,11 +327,11 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="📋 Kaydedilen Operasyonlar"
+                        <TextBlock Text="📋 Kaydedilen Operasyonlar"
                                            Foreground="#FBBF24"
                                            FontSize="18"
                                            FontWeight="Bold"/>
-                                <TextBlock Text="Bu alan yalnızca kayıt modülünde oluşturduğunuz operasyonları gösterir. Arama ve dönem filtresi birlikte çalışır."
+                                <TextBlock Text="Yeni Tur Kaydı Yapmadan Önce Yapmak istediğiniz Kaydın Daha Önceden Yapılıp Yapılmadığını Kontrol Etmek İçin Arama Yapın"
                                            Foreground="#D1D5DB"
                                            Margin="0,4,0,12"/>
                                 <Grid>
@@ -511,28 +511,44 @@
                 </Border>
             </Grid>
 
-            <Grid x:Name="Step1Grid" Visibility="Collapsed">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <Grid x:Name="Step1Grid" Visibility="Collapsed" Background="#990F172A">
+                <Border Background="#111827"
+                        CornerRadius="16"
+                        Panel.ZIndex="200">
+                    <Frame x:Name="PersonsModuleFrame"
+                           NavigationUIVisibility="Hidden"/>
+                </Border>
 
-                <Border Grid.Row="0"
-                        Background="#1F2937"
-                        CornerRadius="8"
-                        Padding="15"
-                        Margin="0,0,0,15">
+                <Border Background="#172033"
+                        BorderBrush="#22D3EE"
+                        BorderThickness="1.5"
+                        CornerRadius="22"
+                        Padding="24"
+                        Width="1180"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                    <StackPanel>
+                        <StackPanel Grid.Row="0">
+                            <TextBlock Text="👤 Kişi Seçimi"
+                                       Foreground="#F8FAFC"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Tur kaydını yapacağınız kişinin sistemde daha önce kayıtlı olup olmadığını kontrol edin. Kayıt varsa seçin, yoksa popup formdan yeni kişi oluşturun."
+                                       Foreground="#CBD5E1"
+                                       FontSize="13"
+                                       Margin="0,8,0,16"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
 
-                        <TextBlock Text="🔍 Tur kaydını yapacağınız kişinin veritabanında kayıtlı olup olmadığını arama kutusunda arama yaparak kontrol edin. Varsa kişiyi seçerek ilerleyin. Yoksa Kişiyi kaydederek ilerleyin"
-                                   Foreground="#06B6D4"
-                                   FontSize="14"
-                                   FontWeight="Bold"
-                                   Margin="0,0,0,10"
-                                   TextWrapping="Wrap"/>
-
-                        <Grid>
+                        <Grid Grid.Row="1" Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -543,7 +559,7 @@
                                      Background="#111827"
                                      Foreground="White"
                                      BorderBrush="#374151"
-                                     Padding="8"
+                                     Padding="10,8"
                                      FontSize="14"
                                      VerticalContentAlignment="Center"
                                      TextChanged="SearchTextBox_TextChanged"
@@ -569,90 +585,116 @@
                                     FontWeight="Bold"
                                     Click="SearchButton_Click"/>
                         </Grid>
-                    </StackPanel>
-                </Border>
 
-                <Grid Grid.Row="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="1.4*"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="1.9*"/>
-                    </Grid.RowDefinitions>
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                    <DataGrid x:Name="PersonsDataGrid"
-                              Grid.Row="0"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              Background="#1F2937"
-                              RowBackground="#1F2937"
-                              AlternatingRowBackground="#111827"
-                              Foreground="White"
-                              BorderBrush="#374151"
-                              HeadersVisibility="Column"
-                              SelectionChanged="PersonsDataGrid_SelectionChanged">
+                            <DataGrid x:Name="PersonsDataGrid"
+                                      Grid.Row="0"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="#1F2937"
+                                      RowBackground="#1F2937"
+                                      AlternatingRowBackground="#111827"
+                                      Foreground="White"
+                                      BorderBrush="#374151"
+                                      HeadersVisibility="Column"
+                                      SelectionChanged="PersonsDataGrid_SelectionChanged">
 
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Adı" Binding="{Binding FirstName}" Width="120"/>
-                            <DataGridTextColumn Header="Soyadı" Binding="{Binding LastName}" Width="120"/>
-                            <DataGridTextColumn Header="TC Kimlik No" Binding="{Binding TcNo}" Width="110"/>
-                            <DataGridTextColumn Header="Cinsiyet" Binding="{Binding Gender}" Width="80"/>
-                            <DataGridTextColumn Header="Doğum Tarihi" Binding="{Binding BirthDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="100"/>
-                            <DataGridTextColumn Header="Yaş" Binding="{Binding Age}" Width="60"/>
-                            <DataGridTextColumn Header="Yaş Aralığı" Binding="{Binding AgeRange}" Width="95"/>
-                            <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="110"/>
-                            <DataGridTextColumn Header="Adres" Binding="{Binding Address}" Width="180"/>
-                            <DataGridTextColumn Header="Kan Grubu" Binding="{Binding BloodType}" Width="85"/>
-                            <DataGridTextColumn Header="Hastalık Durumu" Binding="{Binding HealthStatus}" Width="140"/>
-                            <DataGridTextColumn Header="Aşı Durumu" Binding="{Binding VaccineStatus}" Width="110"/>
-                            <DataGridTextColumn Header="Pasaport Türü" Binding="{Binding PassportType}" Width="110"/>
-                            <DataGridTextColumn Header="Pasaport No" Binding="{Binding PassportNo}" Width="100"/>
-                            <DataGridTextColumn Header="Pasp. Başlangıç" Binding="{Binding PassportStartDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
-                            <DataGridTextColumn Header="Pasp. Bitiş" Binding="{Binding PassportEndDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
-                            <DataGridTextColumn Header="Durum" Binding="{Binding IsActive}" Width="70"/>
-                        </DataGrid.Columns>
-                        
-                    </DataGrid>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Adı" Binding="{Binding FirstName}" Width="120"/>
+                                    <DataGridTextColumn Header="Soyadı" Binding="{Binding LastName}" Width="120"/>
+                                    <DataGridTextColumn Header="TC Kimlik No" Binding="{Binding TcNo}" Width="110"/>
+                                    <DataGridTextColumn Header="Cinsiyet" Binding="{Binding Gender}" Width="80"/>
+                                    <DataGridTextColumn Header="Doğum Tarihi" Binding="{Binding BirthDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="100"/>
+                                    <DataGridTextColumn Header="Yaş" Binding="{Binding Age}" Width="60"/>
+                                    <DataGridTextColumn Header="Yaş Aralığı" Binding="{Binding AgeRange}" Width="95"/>
+                                    <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="110"/>
+                                    <DataGridTextColumn Header="Adres" Binding="{Binding Address}" Width="180"/>
+                                    <DataGridTextColumn Header="Kan Grubu" Binding="{Binding BloodType}" Width="85"/>
+                                    <DataGridTextColumn Header="Hastalık Durumu" Binding="{Binding HealthStatus}" Width="140"/>
+                                    <DataGridTextColumn Header="Aşı Durumu" Binding="{Binding VaccineStatus}" Width="110"/>
+                                    <DataGridTextColumn Header="Pasaport Türü" Binding="{Binding PassportType}" Width="110"/>
+                                    <DataGridTextColumn Header="Pasaport No" Binding="{Binding PassportNo}" Width="100"/>
+                                    <DataGridTextColumn Header="Pasp. Başlangıç" Binding="{Binding PassportStartDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
+                                    <DataGridTextColumn Header="Pasp. Bitiş" Binding="{Binding PassportEndDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="110"/>
+                                    <DataGridTextColumn Header="Durum" Binding="{Binding IsActive}" Width="70"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
 
-                    <StackPanel x:Name="NoPersonPanel"
-                                Grid.Row="1"
-                                Margin="0,15,0,0"
-                                HorizontalAlignment="Center"
-                                Visibility="Collapsed">
+                            <TextBlock Grid.Row="1"
+                                       Text="Kayıt bulunduysa kişiyi seçin. Sonrasında diğer adımlara ileri geri rahatça geçebilirsiniz."
+                                       Foreground="#CBD5E1"
+                                       Margin="0,12,0,0"
+                                       TextAlignment="Center"/>
 
-                        <TextBlock Text="Aradığınız kişi sistemde bulunamadı."
-                                   Foreground="#EF4444"
-                                   Margin="0,0,0,5"
-                                   HorizontalAlignment="Center"/>
+                            <Border x:Name="PersonPopupOverlay"
+                                    Grid.RowSpan="2"
+                                    Background="#B30F172A"
+                                    CornerRadius="12"
+                                    Visibility="Collapsed"
+                                    Panel.ZIndex="20"/>
 
-                        <Button x:Name="ShowQuickAddButton"
-                                Content="➕ Bu Kişiyi Hızlıca Sisteme Kaydet"
-                                Background="#10B981"
-                                Foreground="White"
-                                Padding="15,10"
-                                FontWeight="Bold"
-                                Click="ShowQuickAddButton_Click"/>
-                    </StackPanel>
+                            <Border x:Name="NoPersonPanel"
+                                    Grid.RowSpan="2"
+                                    Background="#172033"
+                                    BorderBrush="#F59E0B"
+                                    BorderThickness="1.5"
+                                    CornerRadius="18"
+                                    Padding="24"
+                                    Width="520"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="Collapsed"
+                                    Panel.ZIndex="30">
+                                <StackPanel>
+                                    <TextBlock Text="Aradığınız kişi sistemde bulunamadı"
+                                               Foreground="#F8FAFC"
+                                               FontSize="22"
+                                               FontWeight="Bold"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Kişi seçimi adımını tamamlamak için bu kişiyi popup formdan hızlıca kaydedebilirsiniz."
+                                               Foreground="#CBD5E1"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               Margin="0,10,0,18"/>
 
-                    <Border x:Name="QuickAddFormPanel"
-                             Grid.Row="1"
-                            Background="#1F2937"
-                            CornerRadius="8"
-                            Padding="20"
-                            Margin="0,15,0,0"
-                            Width="780"
-                            HorizontalAlignment="Center"
-                             Visibility="Collapsed">
+                                    <Button x:Name="ShowQuickAddButton"
+                                            Content="➕ Bu Kişiyi Hızlıca Sisteme Kaydet"
+                                            Background="#10B981"
+                                            Foreground="White"
+                                            Padding="15,10"
+                                            FontWeight="Bold"
+                                            Click="ShowQuickAddButton_Click"/>
+                                </StackPanel>
+                            </Border>
 
-                        <StackPanel>
+                            <Border x:Name="QuickAddFormPanel"
+                                    Grid.RowSpan="2"
+                                    Background="#1F2937"
+                                    BorderBrush="#22D3EE"
+                                    BorderThickness="1.5"
+                                    CornerRadius="18"
+                                    Padding="20"
+                                    Width="780"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="Collapsed"
+                                    Panel.ZIndex="35">
 
-                            <TextBlock Text="👤 Yeni Kişi Detaylı Kayıt Formu"
-                                       Foreground="#10B981"
-                                       FontSize="16"
-                                       FontWeight="Bold"
-                                       Margin="0,0,0,15"
-                                       HorizontalAlignment="Center"/>
+                                <StackPanel>
 
-                            <Grid>
+                                    <TextBlock Text="👤 Yeni Kişi Detaylı Kayıt Formu"
+                                               Foreground="#10B981"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               Margin="0,0,0,15"
+                                               HorizontalAlignment="Center"/>
+
+                                    <Grid>
 
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -860,18 +902,19 @@
 
                             </Grid>
 
-                            <Button x:Name="SaveQuickPersonButton"
-                                    Content="👁️ Bilgileri Önizle ve Kaydet"
-                                    Background="#10B981"
-                                    Foreground="White"
-                                    Padding="15,10"
-                                    FontWeight="Bold"
-                                    Margin="0,15,0,0"
-                                    Click="SaveQuickPersonButton_Click"/>
-                        </StackPanel>
-                    </Border>
-
-                </Grid>
+                                    <Button x:Name="SaveQuickPersonButton"
+                                            Content="👁️ Bilgileri Önizle ve Kaydet"
+                                            Background="#10B981"
+                                            Foreground="White"
+                                            Padding="15,10"
+                                            FontWeight="Bold"
+                                            Margin="0,15,0,0"
+                                            Click="SaveQuickPersonButton_Click"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
             </Grid>
 
             <Grid x:Name="Step2Grid" Visibility="Collapsed">
