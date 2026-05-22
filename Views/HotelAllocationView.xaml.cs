@@ -112,7 +112,7 @@ namespace TurizmOperasyonSistemi.Views
                         p3.ParameterName = "@groupType";
                         p3.Value = selectedGroupType ?? (object)DBNull.Value;
                         command.Parameters.Add(p3);
-
+                        
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())

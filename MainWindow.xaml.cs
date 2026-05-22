@@ -20,6 +20,7 @@ namespace TurizmOperasyonSistemi
             PersonsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             ListsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             SettingsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
+            HotelAllocationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
 
             // 🔹 Yeni eklediğimiz kayıt butonunun rengini de burada sıfırlıyoruz
             RegistrationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
@@ -66,9 +67,9 @@ namespace TurizmOperasyonSistemi
         }
         private void HotelAllocationButton_Click(object sender, RoutedEventArgs e)
         {
-            // Diğer modüllerde (Kişiler, Kayıt vb.) ana paneli nasıl değiştiriyorsan o ismi kullan.
-            // Örneğin ana panelinin adı MainContentControl ise:
-            MainFrame.Content = new HotelAllocationView();
+            ResetMenuColors();
+            HotelAllocationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+            MainFrame.Navigate(new HotelAllocationView());
         }
     }
 }
