@@ -24,8 +24,10 @@ namespace TurizmOperasyonSistemi.Views
         public ObservableCollection<SavedAllocationRow> SavedAllocations { get; set; } = new ObservableCollection<SavedAllocationRow>();
         private List<SavedAllocationRow> _allSavedAllocations = new List<SavedAllocationRow>();
         private SavedAllocationRow _matchedSavedAllocation = null;
-        private bool _isStep1GuidanceMode = true;
         private bool _suppressHotelSelectionChanged;
+        private bool _suppressStep1SelectionChanged;
+        private bool _suppressStep2SelectionChanged;
+        private bool _isPreviewMode;
 
         // Seçilen odayı hafızada tutar
         private RoomViewModel _selectedRoomForAllocation = null;
@@ -59,7 +61,7 @@ namespace TurizmOperasyonSistemi.Views
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                ShowStep1(false);
+                ResetModuleToInitialState();
             }), DispatcherPriority.Loaded);
         }
 
@@ -69,13 +71,38 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using (var db = new AppDbContext())
                 {
-                    var allSettings = db.AppSettings.ToList();
+                    var allSettings = db.AppSettings
+                        .Where(x => x.IsActive)
+                        .OrderBy(x => x.SortOrder)
+                        .ThenBy(x => x.Id)
+                        .ToList();
 
-                    HotelSelectComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("Otel Ekle", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
-                    TourTypeComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("TourType", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
-                    PeriodComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("Dönem", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
-                    GroupTypeComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("GroupType", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
-                    DurationComboBox.ItemsSource = allSettings.Where(x => x.Type != null && x.Type.Trim().Equals("Kaç Günlük Grup", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
+                    var hotels = allSettings
+                        .Where(x => IsSettingTypeMatch(x.Type, "Otel Ekle"))
+                        .Select(x => x.Value);
+                    var tourTypes = allSettings
+                        .Where(x => IsSettingTypeMatch(x.Type, "TourType", "Tur Türü"))
+                        .Select(x => x.Value);
+                    var periods = allSettings
+                        .Where(x => IsSettingTypeMatch(x.Type, "Dönem"))
+                        .Select(x => x.Value);
+                    var groupTypes = allSettings
+                        .Where(x => IsSettingTypeMatch(x.Type, "GroupType", "Grup Türü"))
+                        .Select(x => x.Value);
+                    var durations = allSettings
+                        .Where(x => IsSettingTypeMatch(x.Type, "Kaç Günlük Grup", "CountOfDays"))
+                        .Select(x => x.Value);
+
+                    SetComboItems(HotelSelectComboBox, hotels);
+                    SetComboItems(Step2HotelComboBox, hotels);
+                    SetComboItems(Step1TourTypeComboBox, tourTypes);
+                    SetComboItems(TourTypeComboBox, tourTypes);
+                    SetComboItems(Step1PeriodComboBox, periods);
+                    SetComboItems(PeriodComboBox, periods);
+                    SetComboItems(Step1GroupTypeComboBox, groupTypes);
+                    SetComboItems(GroupTypeComboBox, groupTypes);
+                    SetComboItems(Step1DurationComboBox, durations);
+                    SetComboItems(DurationComboBox, durations);
 
                     NewRoomCapacityComboBox.ItemsSource = allSettings
                         .Where(x => x.Type != null && x.Type.Trim().Equals("RoomType", StringComparison.OrdinalIgnoreCase))
@@ -88,6 +115,19 @@ namespace TurizmOperasyonSistemi.Views
             {
                 MessageBox.Show($"Ayarlar yüklenirken hata: {ex.Message}");
             }
+        }
+
+        private void SetComboItems(ComboBox comboBox, IEnumerable<string> values)
+        {
+            if (comboBox == null)
+            {
+                return;
+            }
+
+            comboBox.ItemsSource = values
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList();
         }
 
         private void LoadFilteredPassengers()
@@ -229,83 +269,84 @@ namespace TurizmOperasyonSistemi.Views
             SelectedHotelTitleLabel.Text = $"🏨 Otel: {HotelSelectComboBox.SelectedItem} | ŞU AN SEÇİLİ ODA: Oda {clickedRoom.RoomNumber}";
         }
 
-        private void ShowHotelSelectionGuidance()
+        private void ResetModuleToInitialState()
         {
-            HotelSelectionPanel.Visibility = Visibility.Visible;
-            SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
-            SavedAllocationsContainer.IsEnabled = false;
-            HotelSelectionGuideOverlay.Visibility = Visibility.Visible;
-            HotelSelectionGuideTitleText.Text = "Önce otel seçin";
-            HotelSelectionGuideDescriptionText.Text = "Otel odalama kaydı yapmanız için önce yukarıdaki otel seçimi kutusundan bir otel seçin.";
-            HotelComboHighlightBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD166"));
-            HotelComboHighlightBorder.Effect = new DropShadowEffect
-            {
-                Color = (Color)ColorConverter.ConvertFromString("#FFD166"),
-                BlurRadius = 24,
-                ShadowDepth = 0,
-                Opacity = 1
-            };
+            _suppressStep1SelectionChanged = true;
+            _suppressStep2SelectionChanged = true;
+            _suppressHotelSelectionChanged = true;
+
+            Step1TourTypeComboBox.SelectedItem = null;
+            Step1PeriodComboBox.SelectedItem = null;
+            Step1GroupTypeComboBox.SelectedItem = null;
+            Step1DurationComboBox.SelectedItem = null;
+            HotelSelectComboBox.SelectedItem = null;
+
+            TourTypeComboBox.SelectedItem = null;
+            PeriodComboBox.SelectedItem = null;
+            GroupTypeComboBox.SelectedItem = null;
+            DurationComboBox.SelectedItem = null;
+            Step2HotelComboBox.SelectedItem = null;
+
+            _suppressHotelSelectionChanged = false;
+            _suppressStep2SelectionChanged = false;
+            _suppressStep1SelectionChanged = false;
+
+            _matchedSavedAllocation = null;
+            _isPreviewMode = false;
+            ClearMatchedHighlight();
+            ClearRoomAllocationDraft();
+            SavedAllocations.Clear();
+            LoadSavedAllocations();
+            UpdateStep1ProgressiveVisibility();
+            UpdateStep1ResultArea();
+            UpdateStep2ProceedButtonVisibility();
+            ShowStep1(false);
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                HotelSelectComboBox.Focus();
-                HotelSelectComboBox.IsDropDownOpen = true;
+                Step1TourTypeComboBox.Focus();
+                Step1TourTypeComboBox.IsDropDownOpen = true;
             }), DispatcherPriority.Background);
         }
 
-        private void HideHotelSelectionGuidance()
+        private void UpdateStep1ProgressiveVisibility()
         {
-            SavedAllocationsContainer.Effect = null;
-            SavedAllocationsContainer.IsEnabled = true;
-            HotelSelectionGuideOverlay.Visibility = Visibility.Collapsed;
-            HotelComboHighlightBorder.BorderBrush = Brushes.Transparent;
-            HotelComboHighlightBorder.Effect = null;
+            Step1PeriodBorder.Visibility = Step1TourTypeComboBox.SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
+            Step1GroupTypeBorder.Visibility = Step1PeriodComboBox.SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
+            Step1DurationBorder.Visibility = Step1GroupTypeComboBox.SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
+            HotelComboHighlightBorder.Visibility = Step1DurationComboBox.SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private void ShowStep2Decision(string title, string description, string primaryButtonText, bool showSecondaryButton)
+        private bool AreAllStep1SelectionsMade()
         {
-            Step2DecisionOverlay.Visibility = Visibility.Visible;
-            Step2DecisionTitleText.Text = title;
-            Step2DecisionDescriptionText.Text = description;
-            Step2PrimaryActionButton.Content = primaryButtonText;
-            Step2SecondaryActionButton.Visibility = showSecondaryButton ? Visibility.Visible : Visibility.Collapsed;
-            CriteriaSelectionPanel.Effect = new DropShadowEffect
-            {
-                Color = (Color)ColorConverter.ConvertFromString("#FFD166"),
-                BlurRadius = 26,
-                ShadowDepth = 0,
-                Opacity = 0.95
-            };
-            CriteriaSelectionPanel.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD166"));
+            return Step1TourTypeComboBox.SelectedItem != null &&
+                   Step1PeriodComboBox.SelectedItem != null &&
+                   Step1GroupTypeComboBox.SelectedItem != null &&
+                   Step1DurationComboBox.SelectedItem != null &&
+                   HotelSelectComboBox.SelectedItem != null;
         }
 
-        private void HideStep2Decision()
-        {
-            Step2DecisionOverlay.Visibility = Visibility.Collapsed;
-            CriteriaSelectionPanel.Effect = null;
-            CriteriaSelectionPanel.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
-        }
-
-        private bool AreAllCriteriaSelected()
+        private bool AreAllStep2SelectionsMade()
         {
             return TourTypeComboBox.SelectedItem != null &&
                    PeriodComboBox.SelectedItem != null &&
                    GroupTypeComboBox.SelectedItem != null &&
-                   DurationComboBox.SelectedItem != null;
+                   DurationComboBox.SelectedItem != null &&
+                   Step2HotelComboBox.SelectedItem != null;
         }
 
-        private SavedAllocationRow FindMatchingSavedAllocation()
+        private SavedAllocationRow FindMatchingSavedAllocationForStep1()
         {
-            if (HotelSelectComboBox.SelectedItem == null || !AreAllCriteriaSelected())
+            if (!AreAllStep1SelectionsMade())
             {
                 return null;
             }
 
-            string selectedHotelName = HotelSelectComboBox.SelectedItem.ToString();
-            string selectedTourType = TourTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
-            string selectedPeriod = PeriodComboBox.SelectedItem?.ToString() ?? string.Empty;
-            string selectedGroupType = GroupTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
-            string selectedDaysCount = DurationComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedHotelName = HotelSelectComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedTourType = Step1TourTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedPeriod = Step1PeriodComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedGroupType = Step1GroupTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedDaysCount = Step1DurationComboBox.SelectedItem?.ToString() ?? string.Empty;
 
             return _allSavedAllocations.FirstOrDefault(x =>
                 string.Equals(x.HotelName, selectedHotelName, StringComparison.OrdinalIgnoreCase) &&
@@ -315,61 +356,99 @@ namespace TurizmOperasyonSistemi.Views
                 string.Equals(x.DaysCount, selectedDaysCount, StringComparison.OrdinalIgnoreCase));
         }
 
-        private void EvaluateCriteriaDecision()
+        private void ClearMatchedHighlight()
         {
-            _matchedSavedAllocation = FindMatchingSavedAllocation();
-
-            if (!AreAllCriteriaSelected())
+            foreach (var row in _allSavedAllocations)
             {
-                HideStep2Decision();
+                row.IsMatchedHighlight = false;
+            }
+        }
+
+        private void UpdateStep1ResultArea()
+        {
+            UpdateStep1ProgressiveVisibility();
+            Step1NoMatchPanel.Visibility = Visibility.Collapsed;
+            Step1PreviewPanel.Visibility = _isPreviewMode ? Visibility.Visible : Visibility.Collapsed;
+            HotelSelectionGuideOverlay.Visibility = Visibility.Collapsed;
+            NoSavedAllocationResultPanel.Visibility = Visibility.Collapsed;
+
+            ClearMatchedHighlight();
+            SavedAllocations.Clear();
+
+            if (_isPreviewMode && _matchedSavedAllocation != null)
+            {
+                _matchedSavedAllocation.IsMatchedHighlight = true;
+                SavedAllocations.Add(_matchedSavedAllocation);
+                SavedAllocationsContainer.Effect = null;
+                SavedAllocationsContainer.IsEnabled = true;
                 return;
             }
+
+            if (!AreAllStep1SelectionsMade())
+            {
+                SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
+                SavedAllocationsContainer.IsEnabled = false;
+                return;
+            }
+
+            _matchedSavedAllocation = FindMatchingSavedAllocationForStep1();
 
             if (_matchedSavedAllocation != null)
             {
-                ShowStep2Decision(
-                    "Bu odalama kaydı zaten var",
-                    "Daha önce bu odalama kaydını yaptınız. Düzenlemek veya incelemek isterseniz kayıt listesine geçin.",
-                    "Kayıt Listesini Aç",
-                    false);
+                _matchedSavedAllocation.IsMatchedHighlight = true;
+                SavedAllocations.Add(_matchedSavedAllocation);
+                SavedAllocationsContainer.Effect = null;
+                SavedAllocationsContainer.IsEnabled = true;
                 return;
             }
 
-            ShowStep2Decision(
-                "Bu kriterlerde kayıt yok",
-                "Seçtiğiniz kriterlerde bir odalama kaydı henüz yapılmamış. Devam etmek için odalama kaydı oluşturabilirsiniz.",
-                "Odalama Kaydı Yap",
-                false);
+            SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
+            SavedAllocationsContainer.IsEnabled = false;
+            Step1NoMatchPanel.Visibility = Visibility.Visible;
         }
 
-        private void OpenSavedAllocationsScreenForMatchedCriteria()
+        private void SyncStep1SelectionsToStep2()
         {
-            if (_matchedSavedAllocation == null)
-            {
-                return;
-            }
-
-            _isStep1GuidanceMode = false;
-            ShowStep1(false);
-            LoadSavedAllocations(_matchedSavedAllocation.HotelName);
-            SavedAllocationTourTypeFilterComboBox.SelectedItem = _matchedSavedAllocation.TourType;
-            SavedAllocationPeriodFilterComboBox.SelectedItem = _matchedSavedAllocation.Period;
-            SavedAllocationGroupTypeFilterComboBox.SelectedItem = _matchedSavedAllocation.GroupType;
-            SavedAllocationDaysFilterComboBox.SelectedItem = _matchedSavedAllocation.DaysCount;
-            ApplySavedAllocationFilters();
+            _suppressStep2SelectionChanged = true;
+            TourTypeComboBox.SelectedItem = Step1TourTypeComboBox.SelectedItem;
+            PeriodComboBox.SelectedItem = Step1PeriodComboBox.SelectedItem;
+            GroupTypeComboBox.SelectedItem = Step1GroupTypeComboBox.SelectedItem;
+            DurationComboBox.SelectedItem = Step1DurationComboBox.SelectedItem;
+            Step2HotelComboBox.SelectedItem = HotelSelectComboBox.SelectedItem;
+            _suppressStep2SelectionChanged = false;
+            UpdateStep2ProceedButtonVisibility();
         }
 
-        private void ResetToHotelSelectionStep()
+        private void SyncStep2SelectionsToStep1()
         {
+            _suppressStep1SelectionChanged = true;
             _suppressHotelSelectionChanged = true;
-            HotelSelectComboBox.SelectedItem = null;
+            Step1TourTypeComboBox.SelectedItem = TourTypeComboBox.SelectedItem;
+            Step1PeriodComboBox.SelectedItem = PeriodComboBox.SelectedItem;
+            Step1GroupTypeComboBox.SelectedItem = GroupTypeComboBox.SelectedItem;
+            Step1DurationComboBox.SelectedItem = DurationComboBox.SelectedItem;
+            HotelSelectComboBox.SelectedItem = Step2HotelComboBox.SelectedItem;
             _suppressHotelSelectionChanged = false;
+            _suppressStep1SelectionChanged = false;
+            UpdateStep1ProgressiveVisibility();
+        }
 
-            _matchedSavedAllocation = null;
-            ClearRoomAllocationDraft();
-            ResetCriteriaSelections();
-            LoadSavedAllocations();
-            ShowStep1(true);
+        private void UpdateStep2ProceedButtonVisibility()
+        {
+            ProceedToRoomingButton.Visibility = AreAllStep2SelectionsMade()
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        private void ShowSavedAllocationPreview(string title, string description)
+        {
+            SyncStep2SelectionsToStep1();
+            _matchedSavedAllocation = FindMatchingSavedAllocationForStep1();
+            _isPreviewMode = _matchedSavedAllocation != null;
+            Step1PreviewTitleText.Text = title;
+            Step1PreviewDescriptionText.Text = description;
+            ShowStep1(false);
+            UpdateStep1ResultArea();
         }
 
         private void ClearRoomAllocationDraft()
@@ -873,7 +952,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        private void ShowStep1(bool showHotelGuidance)
+        private void ShowStep1(bool _)
         {
             Step3Grid.Visibility = Visibility.Collapsed;
             Step2Grid.Visibility = Visibility.Collapsed;
@@ -886,17 +965,8 @@ namespace TurizmOperasyonSistemi.Views
             NextButton.Visibility = Visibility.Collapsed;
             BackButton.Visibility = Visibility.Collapsed;
             currentStep = 1;
-            _isStep1GuidanceMode = showHotelGuidance;
-            HotelSelectionPanel.Visibility = showHotelGuidance ? Visibility.Visible : Visibility.Collapsed;
-
-            if (showHotelGuidance)
-            {
-                ShowHotelSelectionGuidance();
-            }
-            else
-            {
-                HideHotelSelectionGuidance();
-            }
+            HotelSelectionPanel.Visibility = Visibility.Visible;
+            UpdateStep1ResultArea();
         }
 
         private void ShowStep2()
@@ -912,14 +982,17 @@ namespace TurizmOperasyonSistemi.Views
             BackButton.Visibility = Visibility.Visible;
             NextButton.Visibility = Visibility.Collapsed;
             currentStep = 2;
-            EvaluateCriteriaDecision();
+            UpdateStep2ProceedButtonVisibility();
         }
 
         private void ShowStep3()
         {
+            _suppressHotelSelectionChanged = true;
+            HotelSelectComboBox.SelectedItem = Step2HotelComboBox.SelectedItem;
+            _suppressHotelSelectionChanged = false;
+
             SelectedHotelTitleLabel.Text = $"🏨 Seçilen Otel: {HotelSelectComboBox.SelectedItem} Oda Yerleşim Düzeni";
             LoadFilteredPassengers();
-            HideStep2Decision();
 
             Step1Grid.Visibility = Visibility.Collapsed;
             Step2Grid.Visibility = Visibility.Collapsed;
@@ -990,14 +1063,10 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
-                MessageBox.Show("Odalama yerleşim planı veritabanına kaydedildi ve kayıt listesi güncellendi!",
-                                "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
-                _matchedSavedAllocation = null;
-                _isStep1GuidanceMode = false;
-                ShowStep1(false);
                 LoadSavedAllocations();
-                ResetSavedAllocationSearchAndFilters();
-                ApplySavedAllocationFilters();
+                ShowSavedAllocationPreview(
+                    "Kayıt datagridde görünüyor",
+                    "Kaydettiğiniz odalama kaydı eşleşen datagrid önizlemesinde gösteriliyor. Önizlemeyi kapatınca başlangıç ekranına döneceksiniz.");
             }
         }
 
@@ -1009,7 +1078,8 @@ namespace TurizmOperasyonSistemi.Views
             }
             else if (currentStep == 2)
             {
-                ResetToHotelSelectionStep();
+                SyncStep2SelectionsToStep1();
+                ShowStep1(false);
             }
         }
 
@@ -1020,30 +1090,12 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
-            string selectedHotelName = HotelSelectComboBox.SelectedItem?.ToString();
-            LoadSavedAllocations(selectedHotelName);
-
-            if (string.IsNullOrWhiteSpace(selectedHotelName))
-            {
-                if (currentStep == 1)
-                {
-                    ShowHotelSelectionGuidance();
-                }
-                return;
-            }
-
-            HideHotelSelectionGuidance();
-            ResetCriteriaSelections();
-
-            if (currentStep == 1 && _isStep1GuidanceMode)
-            {
-                ShowStep2();
-            }
+            UpdateStep1ResultArea();
         }
 
         private void HotelSelectionGuideOkButton_Click(object sender, RoutedEventArgs e)
         {
-            HideHotelSelectionGuidance();
+            HotelSelectionGuideOverlay.Visibility = Visibility.Collapsed;
         }
 
         private void ResetCriteriaSelections()
@@ -1052,45 +1104,99 @@ namespace TurizmOperasyonSistemi.Views
             PeriodComboBox.SelectedItem = null;
             GroupTypeComboBox.SelectedItem = null;
             DurationComboBox.SelectedItem = null;
+            Step2HotelComboBox.SelectedItem = null;
             _matchedSavedAllocation = null;
-            HideStep2Decision();
+            UpdateStep2ProceedButtonVisibility();
         }
 
-        private void CriteriaComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void Step1Selection_Changed(object sender, SelectionChangedEventArgs e)
         {
-            if (currentStep != 2)
+            if (_suppressStep1SelectionChanged)
             {
                 return;
             }
 
-            EvaluateCriteriaDecision();
+            if (sender == Step1TourTypeComboBox)
+            {
+                _suppressStep1SelectionChanged = true;
+                Step1PeriodComboBox.SelectedItem = null;
+                Step1GroupTypeComboBox.SelectedItem = null;
+                Step1DurationComboBox.SelectedItem = null;
+                _suppressHotelSelectionChanged = true;
+                HotelSelectComboBox.SelectedItem = null;
+                _suppressHotelSelectionChanged = false;
+                _suppressStep1SelectionChanged = false;
+            }
+            else if (sender == Step1PeriodComboBox)
+            {
+                _suppressStep1SelectionChanged = true;
+                Step1GroupTypeComboBox.SelectedItem = null;
+                Step1DurationComboBox.SelectedItem = null;
+                _suppressHotelSelectionChanged = true;
+                HotelSelectComboBox.SelectedItem = null;
+                _suppressHotelSelectionChanged = false;
+                _suppressStep1SelectionChanged = false;
+            }
+            else if (sender == Step1GroupTypeComboBox)
+            {
+                _suppressStep1SelectionChanged = true;
+                Step1DurationComboBox.SelectedItem = null;
+                _suppressHotelSelectionChanged = true;
+                HotelSelectComboBox.SelectedItem = null;
+                _suppressHotelSelectionChanged = false;
+                _suppressStep1SelectionChanged = false;
+            }
+            else if (sender == Step1DurationComboBox)
+            {
+                _suppressHotelSelectionChanged = true;
+                HotelSelectComboBox.SelectedItem = null;
+                _suppressHotelSelectionChanged = false;
+            }
+
+            _isPreviewMode = false;
+            UpdateStep1ResultArea();
         }
 
-        private void Step2PrimaryActionButton_Click(object sender, RoutedEventArgs e)
+        private void Step2Selection_Changed(object sender, SelectionChangedEventArgs e)
         {
-            if (!AreAllCriteriaSelected())
+            if (_suppressStep2SelectionChanged)
             {
-                HideStep2Decision();
                 return;
             }
 
-            if (_matchedSavedAllocation == null)
+            UpdateStep2ProceedButtonVisibility();
+        }
+
+        private void Step1ProceedToCriteriaButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!AreAllStep1SelectionsMade())
             {
-                ShowStep3();
                 return;
             }
 
-            OpenSavedAllocationsScreenForMatchedCriteria();
+            SyncStep1SelectionsToStep2();
+            ShowStep2();
         }
 
-        private void Step2SecondaryActionButton_Click(object sender, RoutedEventArgs e)
+        private void ProceedToRoomingButton_Click(object sender, RoutedEventArgs e)
         {
-            OpenSavedAllocationsScreenForMatchedCriteria();
+            if (!AreAllStep2SelectionsMade())
+            {
+                return;
+            }
+
+            SyncStep2SelectionsToStep1();
+            ShowStep3();
+        }
+
+        private void CloseStep1PreviewButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetModuleToInitialState();
         }
 
         private void GoToNewAllocationFromGridButton_Click(object sender, RoutedEventArgs e)
         {
-            ResetToHotelSelectionStep();
+            ResetModuleToInitialState();
         }
 
         private void Step3Grid_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -1145,7 +1251,7 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         MessageBox.Show("Silinmek istenen kayıt bulunamadı.",
                                         "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information);
-                        LoadSavedAllocations(HotelSelectComboBox.SelectedItem?.ToString());
+                        ResetModuleToInitialState();
                         return;
                     }
 
@@ -1154,10 +1260,9 @@ namespace TurizmOperasyonSistemi.Views
                     db.SaveChanges();
                 }
 
-                LoadSavedAllocations(HotelSelectComboBox.SelectedItem?.ToString());
-
                 MessageBox.Show("Seçilen odalama kaydı tamamen silindi.",
                                 "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+                ResetModuleToInitialState();
             }
             catch (Exception ex)
             {
@@ -1233,15 +1338,27 @@ namespace TurizmOperasyonSistemi.Views
                         .Where(x => passengerIds.Contains(x.Id))
                         .ToDictionary(x => x.Id, x => $"{x.FirstName} {x.LastName}");
 
+                    _suppressStep1SelectionChanged = true;
+                    _suppressStep2SelectionChanged = true;
                     _suppressHotelSelectionChanged = true;
-                    HotelSelectComboBox.SelectedItem = selectedAllocation.HotelName;
-                    _suppressHotelSelectionChanged = false;
 
-                    LoadSavedAllocations(selectedAllocation.HotelName);
+                    Step1TourTypeComboBox.SelectedItem = selectedAllocation.TourType;
+                    Step1PeriodComboBox.SelectedItem = selectedAllocation.Period;
+                    Step1GroupTypeComboBox.SelectedItem = selectedAllocation.GroupType;
+                    Step1DurationComboBox.SelectedItem = selectedAllocation.DaysCount;
+                    HotelSelectComboBox.SelectedItem = selectedAllocation.HotelName;
+
                     TourTypeComboBox.SelectedItem = selectedAllocation.TourType;
                     PeriodComboBox.SelectedItem = selectedAllocation.Period;
                     GroupTypeComboBox.SelectedItem = selectedAllocation.GroupType;
                     DurationComboBox.SelectedItem = selectedAllocation.DaysCount;
+                    Step2HotelComboBox.SelectedItem = selectedAllocation.HotelName;
+
+                    _suppressHotelSelectionChanged = false;
+                    _suppressStep2SelectionChanged = false;
+                    _suppressStep1SelectionChanged = false;
+
+                    LoadSavedAllocations(selectedAllocation.HotelName);
 
                     RoomsList.Clear();
                     PassengerPool.Clear();
@@ -1281,6 +1398,7 @@ namespace TurizmOperasyonSistemi.Views
                 LoadFilteredPassengers();
                 ClearSelectedRoom();
                 _matchedSavedAllocation = selectedAllocation;
+                _isPreviewMode = false;
                 ShowStep3();
             }
             catch (Exception ex)
@@ -1332,9 +1450,9 @@ namespace TurizmOperasyonSistemi.Views
 
             return 2;
         }
-    
-    // 1. ODALARI KOPARMA (CONNECTION İPTALİ) METODU
-private void BreakConnectionButton_Click(object sender, RoutedEventArgs e)
+
+        // 1. ODALARI KOPARMA (CONNECTION İPTALİ) METODU
+        private void BreakConnectionButton_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
             var currentRoom = button?.Tag as RoomViewModel;
@@ -1460,185 +1578,186 @@ private void BreakConnectionButton_Click(object sender, RoutedEventArgs e)
 // ================= 3. ADIM İÇİN GEREKLİ YARDIMCI GÖRÜNÜM MODELLERİ =================
 
 public class PassengerUiModel
-    {
-        public int PersonId { get; set; }
-        public string FullName { get; set; }
-        public string RoomType { get; set; }
-    }
+{
+    public int PersonId { get; set; }
+    public string FullName { get; set; }
+    public string RoomType { get; set; }
+}
 
 public class SavedAllocationRow
+{
+    public string HotelName { get; set; }
+    public string TourType { get; set; }
+    public string Period { get; set; }
+    public string GroupType { get; set; }
+    public string DaysCount { get; set; }
+    public int RoomCount { get; set; }
+    public string RoomSummary { get; set; }
+    public int OccupantCount { get; set; }
+    public string OccupantNames { get; set; }
+    public bool IsMatchedHighlight { get; set; }
+}
+
+public class RoomViewModel : System.ComponentModel.INotifyPropertyChanged
+{
+    private string _statusText = "Boş";
+    private Brush _statusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+    private int _maxCapacity;
+    private Brush _selectionBorderBrush = Brushes.Transparent;
+    private Thickness _selectionBorderThickness = new Thickness(0);
+    private Brush _selectionBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A"));
+
+    private Brush _connectionBorderBrush =
+        new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+
+    private string _connectionGroupText = "";
+    private Thickness _roomMargin = new Thickness(5);
+
+    public string RoomNumber { get; set; }
+    public string RoomTypeName { get; set; }
+
+    public int MaxCapacity
     {
-        public string HotelName { get; set; }
-        public string TourType { get; set; }
-        public string Period { get; set; }
-        public string GroupType { get; set; }
-        public string DaysCount { get; set; }
-        public int RoomCount { get; set; }
-        public string RoomSummary { get; set; }
-        public int OccupantCount { get; set; }
-        public string OccupantNames { get; set; }
+        get => _maxCapacity;
+        set
+        {
+            _maxCapacity = value;
+            OnPropertyChanged(nameof(MaxCapacity));
+            OnPropertyChanged(nameof(RoomNumberDisplay));
+        }
     }
 
-    public class RoomViewModel : System.ComponentModel.INotifyPropertyChanged
+    public ObservableCollection<PassengerUiModel> Occupants { get; set; } =
+        new ObservableCollection<PassengerUiModel>();
+
+    public string RoomNumberDisplay =>
+        $"Oda {RoomNumber} [{RoomTypeName}] ({MaxCapacity} Yatak)";
+
+    // NEON BAĞLANTI ÖZELLİKLERİ
+    public bool IsConnection { get; set; } = false;
+
+    public string ConnectionGroupId { get; set; } = "";
+
+    public string ConnectionGroupText
     {
-        private string _statusText = "Boş";
-        private Brush _statusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
-        private int _maxCapacity;
-        private Brush _selectionBorderBrush = Brushes.Transparent;
-        private Thickness _selectionBorderThickness = new Thickness(0);
-        private Brush _selectionBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A"));
-
-        private Brush _connectionBorderBrush =
-            new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
-
-        private string _connectionGroupText = "";
-        private Thickness _roomMargin = new Thickness(5);
-
-        public string RoomNumber { get; set; }
-        public string RoomTypeName { get; set; }
-
-        public int MaxCapacity
+        get => _connectionGroupText;
+        set
         {
-            get => _maxCapacity;
-            set
-            {
-                _maxCapacity = value;
-                OnPropertyChanged(nameof(MaxCapacity));
-                OnPropertyChanged(nameof(RoomNumberDisplay));
-            }
-        }
-
-        public ObservableCollection<PassengerUiModel> Occupants { get; set; } =
-            new ObservableCollection<PassengerUiModel>();
-
-        public string RoomNumberDisplay =>
-            $"Oda {RoomNumber} [{RoomTypeName}] ({MaxCapacity} Yatak)";
-
-        // NEON BAĞLANTI ÖZELLİKLERİ
-        public bool IsConnection { get; set; } = false;
-
-        public string ConnectionGroupId { get; set; } = "";
-
-        public string ConnectionGroupText
-        {
-            get => _connectionGroupText;
-            set
-            {
-                _connectionGroupText = value;
-                OnPropertyChanged(nameof(ConnectionGroupText));
-            }
-        }
-
-        public Brush ConnectionBorderBrush
-        {
-            get => _connectionBorderBrush;
-            set
-            {
-                _connectionBorderBrush = value;
-                OnPropertyChanged(nameof(ConnectionBorderBrush));
-            }
-        }
-
-        // Odalar grup içinde yan yana gelirken dış çerçevenin marjını sıfırlamak için
-        public Thickness RoomMargin
-        {
-            get => _roomMargin;
-            set
-            {
-                _roomMargin = value;
-                OnPropertyChanged(nameof(RoomMargin));
-            }
-        }
-
-        public string StatusText
-        {
-            get => _statusText;
-            set
-            {
-                _statusText = value;
-                OnPropertyChanged(nameof(StatusText));
-            }
-        }
-
-        public Brush StatusColor
-        {
-            get => _statusColor;
-            set
-            {
-                _statusColor = value;
-                OnPropertyChanged(nameof(StatusColor));
-            }
-        }
-
-        public Brush SelectionBorderBrush
-        {
-            get => _selectionBorderBrush;
-            set
-            {
-                _selectionBorderBrush = value;
-                OnPropertyChanged(nameof(SelectionBorderBrush));
-            }
-        }
-
-        public Thickness SelectionBorderThickness
-        {
-            get => _selectionBorderThickness;
-            set
-            {
-                _selectionBorderThickness = value;
-                OnPropertyChanged(nameof(SelectionBorderThickness));
-            }
-        }
-
-        public Brush SelectionBackground
-        {
-            get => _selectionBackground;
-            set
-            {
-                _selectionBackground = value;
-                OnPropertyChanged(nameof(SelectionBackground));
-            }
-        }
-
-        public void SetSelected(bool isSelected)
-        {
-            SelectionBorderBrush = isSelected
-                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38BDF8"))
-                : Brushes.Transparent;
-            SelectionBorderThickness = isSelected ? new Thickness(2) : new Thickness(0);
-            SelectionBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(
-                isSelected ? "#172554" : "#0F172A"));
-        }
-
-        public void UpdateStatus()
-        {
-            if (Occupants.Count == 0)
-            {
-                StatusText = "Boş";
-                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
-            }
-            else if (Occupants.Count < MaxCapacity)
-            {
-                StatusText = $"{Occupants.Count}/{MaxCapacity} Dolu";
-                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
-            }
-            else if (Occupants.Count == MaxCapacity)
-            {
-                StatusText = "Dolu";
-                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
-            }
-            else
-            {
-                StatusText = $"+{Occupants.Count - MaxCapacity} Çocuk/Ekstra";
-                StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A855F7"));
-            }
-        }
-
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-
-        protected void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this,
-                new System.ComponentModel.PropertyChangedEventArgs(name));
+            _connectionGroupText = value;
+            OnPropertyChanged(nameof(ConnectionGroupText));
         }
     }
+
+    public Brush ConnectionBorderBrush
+    {
+        get => _connectionBorderBrush;
+        set
+        {
+            _connectionBorderBrush = value;
+            OnPropertyChanged(nameof(ConnectionBorderBrush));
+        }
+    }
+
+    // Odalar grup içinde yan yana gelirken dış çerçevenin marjını sıfırlamak için
+    public Thickness RoomMargin
+    {
+        get => _roomMargin;
+        set
+        {
+            _roomMargin = value;
+            OnPropertyChanged(nameof(RoomMargin));
+        }
+    }
+
+    public string StatusText
+    {
+        get => _statusText;
+        set
+        {
+            _statusText = value;
+            OnPropertyChanged(nameof(StatusText));
+        }
+    }
+
+    public Brush StatusColor
+    {
+        get => _statusColor;
+        set
+        {
+            _statusColor = value;
+            OnPropertyChanged(nameof(StatusColor));
+        }
+    }
+
+    public Brush SelectionBorderBrush
+    {
+        get => _selectionBorderBrush;
+        set
+        {
+            _selectionBorderBrush = value;
+            OnPropertyChanged(nameof(SelectionBorderBrush));
+        }
+    }
+
+    public Thickness SelectionBorderThickness
+    {
+        get => _selectionBorderThickness;
+        set
+        {
+            _selectionBorderThickness = value;
+            OnPropertyChanged(nameof(SelectionBorderThickness));
+        }
+    }
+
+    public Brush SelectionBackground
+    {
+        get => _selectionBackground;
+        set
+        {
+            _selectionBackground = value;
+            OnPropertyChanged(nameof(SelectionBackground));
+        }
+    }
+
+    public void SetSelected(bool isSelected)
+    {
+        SelectionBorderBrush = isSelected
+            ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38BDF8"))
+            : Brushes.Transparent;
+        SelectionBorderThickness = isSelected ? new Thickness(2) : new Thickness(0);
+        SelectionBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(
+            isSelected ? "#172554" : "#0F172A"));
+    }
+
+    public void UpdateStatus()
+    {
+        if (Occupants.Count == 0)
+        {
+            StatusText = "Boş";
+            StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+        }
+        else if (Occupants.Count < MaxCapacity)
+        {
+            StatusText = $"{Occupants.Count}/{MaxCapacity} Dolu";
+            StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+        }
+        else if (Occupants.Count == MaxCapacity)
+        {
+            StatusText = "Dolu";
+            StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+        }
+        else
+        {
+            StatusText = $"+{Occupants.Count - MaxCapacity} Çocuk/Ekstra";
+            StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A855F7"));
+        }
+    }
+
+    public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+    protected void OnPropertyChanged(string name)
+    {
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(name));
+    }
+}
