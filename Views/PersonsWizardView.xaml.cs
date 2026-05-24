@@ -24,12 +24,33 @@ namespace TurizmOperasyonSistemi.Views
             Editing
         }
 
+        private void NoMatchScrollTimer_Tick(object sender, EventArgs e)
+        {
+            _noMatchScrollTimer?.Stop();
+
+            try
+            {
+                if (RootScrollViewer != null && FormPanel != null && SearchTextBox != null)
+                {
+                    var searchBottom = SearchTextBox.TranslatePoint(new Point(0, SearchTextBox.ActualHeight), RootScrollViewer).Y;
+                    double offset = Math.Max(0, searchBottom - 10);
+                    RootScrollViewer.ScrollToVerticalOffset(offset);
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         private readonly BlurEffect _panelBlur = new BlurEffect { Radius = 10 };
 
         private int currentStep = 1;
         private int selectedPersonId = 0;
+        private Button ToggleActiveButton;
         private StepOneState _stepOneState = StepOneState.Initial;
         private ICollectionView _personsView;
+        private System.Windows.Threading.DispatcherTimer _noMatchScrollTimer;
 
         public PersonsWizardView()
         {
@@ -45,11 +66,24 @@ namespace TurizmOperasyonSistemi.Views
             UpdateSteps();
 
             Loaded += PersonsWizardView_Loaded;
+            Loaded += PersonsWizardView_PostLoad;
             FirstNameTextBox.TextChanged += RequiredField_TextChanged;
             LastNameTextBox.TextChanged += RequiredField_TextChanged;
             TcTextBox.TextChanged += RequiredField_TextChanged;
             GenderComboBox.SelectionChanged += GenderComboBox_SelectionChanged;
             ApplyLiveRequiredHighlights();
+
+            _noMatchScrollTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(650)
+            };
+            _noMatchScrollTimer.Tick += NoMatchScrollTimer_Tick;
+        }
+
+        private void PersonsWizardView_PostLoad(object sender, RoutedEventArgs e)
+        {
+            // Arama sonucu yoksa formun üst kısmında uyarıyı göster
+            EvaluateSearchState();
         }
 
         public int SelectedPersonId => selectedPersonId;
@@ -269,9 +303,7 @@ namespace TurizmOperasyonSistemi.Views
             FirstNameTextBox.Tag = string.IsNullOrWhiteSpace(FirstNameTextBox.Text) ? "RequiredError" : null;
             LastNameTextBox.Tag = string.IsNullOrWhiteSpace(LastNameTextBox.Text) ? "RequiredError" : null;
             TcTextBox.Tag = string.IsNullOrWhiteSpace(TcTextBox.Text) ? "RequiredError" : null;
-            GenderComboBox.Tag = GenderComboBox.SelectedIndex <= 0 || string.Equals(GenderComboBox.Text, "SeÃ§iniz", StringComparison.OrdinalIgnoreCase)
-                ? "RequiredError"
-                : null;
+            GenderComboBox.Tag = GenderComboBox.SelectedIndex <= 0 ? "RequiredError" : null;
         }
 
         private bool HighlightMissingRequiredFields()
@@ -317,7 +349,10 @@ namespace TurizmOperasyonSistemi.Views
 
             selectedPersonId = 0;
             PersonsDataGrid.SelectedItem = null;
-            ToggleActiveButton.Visibility = Visibility.Collapsed;
+            if (ToggleActiveButton != null)
+            {
+                ToggleActiveButton.Visibility = Visibility.Collapsed;
+            }
             EditSelectedButton.Visibility = Visibility.Collapsed;
 
             _personsView?.Refresh();
@@ -341,12 +376,28 @@ namespace TurizmOperasyonSistemi.Views
                 ClearForm();
                 SetStepOneState(StepOneState.SearchResults);
                 SearchStateTextBlock.Text = "Kayıt bulunduysa listeden kişiyi seçin. Pasif bir kişiyi de burada görebilir, aktif yapabilir veya Düzenle ile güncelleyebilirsiniz.";
+                // Arama sonucu bulunduğunda "kayıt bulunamadı" uyarısını gizle
+                NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
+                // Herhangi bir zamanlayıcı varsa durdur
+                _noMatchScrollTimer?.Stop();
                 return;
             }
 
+            // Sonuç yok: direkt formu arama kutusunun hemen altına getir
             ClearForm();
             SetStepOneState(StepOneState.NewPerson);
             SearchStateTextBlock.Text = "Aradığınız kişi sistemde kayıtlı değil. Aşağıdaki formdan kişiyi kaydederek ilerleyin.";
+            NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
+            // Artık otomatik kaydırma yapmak istemiyoruz; scroll'u sabit en yukarıya al
+            _noMatchScrollTimer?.Stop();
+            try
+            {
+                RootScrollViewer?.ScrollToVerticalOffset(0);
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void SetStepOneState(StepOneState state)
@@ -366,6 +417,7 @@ namespace TurizmOperasyonSistemi.Views
             switch (_stepOneState)
             {
                 case StepOneState.Initial:
+                    ResultsPanel.Visibility = Visibility.Visible;
                     ResultsPanel.Effect = _panelBlur;
                     ResultsOverlay.Visibility = Visibility.Visible;
                     ResultsOverlayTitle.Text = "Önce kişiyi arayın";
@@ -377,9 +429,11 @@ namespace TurizmOperasyonSistemi.Views
                     FormOverlayText.Text = "Önce yukarıdan arama yapın. Kayıt bulunamazsa bu form yeni kişi kaydı için açılacak.";
                     FormCaptionTextBlock.Text = "Yeni kişi kaydı oluşturmak ya da seçili kişiyi güncellemek için bu alanı kullanın.";
                     SearchStateTextBlock.Text = "Aramayı başlatın. Sistem pasif kişiler dahil tüm eşleşmeleri sonuçlarda gösterecek.";
+                    NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                     break;
 
                 case StepOneState.SearchResults:
+                    ResultsPanel.Visibility = Visibility.Visible;
                     ResultsPanel.Effect = null;
                     ResultsOverlay.Visibility = Visibility.Collapsed;
 
@@ -388,20 +442,22 @@ namespace TurizmOperasyonSistemi.Views
                     FormOverlayTitle.Text = "Kayıt bulundu";
                     FormOverlayText.Text = "Düzenleme yapmak istiyorsanız listeden kişiyi seçip Düzenle butonuna tıklayın. Sadece aktif pasif durumunu değiştirmek istiyorsanız sağdaki butonu kullanabilirsiniz.";
                     FormCaptionTextBlock.Text = "Seçili kaydı düzenlemek için önce listeden kişiyi seçip Düzenle butonuna tıklayın.";
+                    NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                     break;
 
                 case StepOneState.NewPerson:
-                    ResultsPanel.Effect = _panelBlur;
-                    ResultsOverlay.Visibility = Visibility.Visible;
-                    ResultsOverlayTitle.Text = "Kayıt bulunamadı";
-                    ResultsOverlayText.Text = "Aradığınız kişi sistemde kayıtlı değil. Aşağıdaki formdan kişiyi kaydederek ilerleyin.";
+                    // Sonuç panelini gizleyip formu doğrudan arama kutusunun altına taşıyalım
+                    ResultsPanel.Visibility = Visibility.Collapsed;
+                    ResultsOverlay.Visibility = Visibility.Collapsed;
 
                     FormPanel.Effect = null;
                     FormOverlay.Visibility = Visibility.Collapsed;
                     FormCaptionTextBlock.Text = "Bu kişi sistemde bulunamadı. Aşağıdaki alanları doldurup adımlarda ilerleyebilirsiniz.";
+                    NoPersonNoticeTextBlock.Visibility = Visibility.Visible;
                     break;
 
                 case StepOneState.Editing:
+                    ResultsPanel.Visibility = Visibility.Visible;
                     ResultsPanel.Effect = null;
                     ResultsOverlay.Visibility = Visibility.Collapsed;
 
@@ -409,6 +465,7 @@ namespace TurizmOperasyonSistemi.Views
                     FormOverlay.Visibility = Visibility.Collapsed;
                     FormCaptionTextBlock.Text = "Seçili kişi düzenleme modunda. Değişiklikleri yapıp son adımda güncelleyebilirsiniz.";
                     SearchStateTextBlock.Text = "Düzenleme modundasınız. Kişi pasifse aktif yapabilir, aktifse pasif yapabilir ve adımlar arasında ilerleyerek güncelleyebilirsiniz.";
+                    NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                     break;
             }
 
@@ -441,8 +498,11 @@ namespace TurizmOperasyonSistemi.Views
             selectedPersonId = 0;
 
             SaveButton.Content = "Kaydet";
-            ToggleActiveButton.Visibility = Visibility.Collapsed;
-            ToggleActiveButton.Content = "Pasif Yap";
+            if (ToggleActiveButton != null)
+            {
+                ToggleActiveButton.Visibility = Visibility.Collapsed;
+                ToggleActiveButton.Content = "Pasif Yap";
+            }
             EditSelectedButton.Visibility = Visibility.Collapsed;
             ApplyLiveRequiredHighlights();
         }
@@ -476,13 +536,9 @@ namespace TurizmOperasyonSistemi.Views
                 PopulateForm(person);
 
                 SaveButton.Content = "Güncelle";
-                ToggleActiveButton.Visibility = Visibility.Visible;
-                ToggleActiveButton.Content = person.IsActive ? "Pasif Yap" : "Aktif Yap";
                 EditSelectedButton.Visibility = Visibility.Visible;
 
-                SearchStateTextBlock.Text = person.IsActive
-                    ? "Bu kişi aktif kayıtta. İsterseniz Pasif Yap ile durumunu değiştirebilir ya da Düzenle ile kayıt adımlarına geçebilirsiniz."
-                    : "Bu kişi pasif durumda. İsterseniz Aktif Yap ile yeniden aktif edebilir ya da Düzenle ile kayıt adımlarına geçebilirsiniz.";
+                SearchStateTextBlock.Text = "Kayıt bulundu. Düzenle ile kaydı güncelleyebilirsiniz.";
 
                 if (_stepOneState != StepOneState.Editing)
                 {
@@ -494,7 +550,10 @@ namespace TurizmOperasyonSistemi.Views
             else
             {
                 selectedPersonId = 0;
-                ToggleActiveButton.Visibility = Visibility.Collapsed;
+                if (ToggleActiveButton != null)
+                {
+                    ToggleActiveButton.Visibility = Visibility.Collapsed;
+                }
                 EditSelectedButton.Visibility = Visibility.Collapsed;
                 SaveButton.Content = "Kaydet";
                 PersonSelectionChanged?.Invoke(null);
@@ -518,7 +577,8 @@ namespace TurizmOperasyonSistemi.Views
             PopulateForm(person);
             SaveButton.Content = "Güncelle";
             SetStepOneState(StepOneState.Editing);
-            FirstNameTextBox.BringIntoView();
+            // Form alanına kaydır
+            RootScrollViewer?.ScrollToVerticalOffset(FormPanel.TranslatePoint(new Point(0,0), RootScrollViewer).Y - 10);
         }
 
         private void LoadPreview()
@@ -550,6 +610,47 @@ namespace TurizmOperasyonSistemi.Views
                 if (HighlightMissingRequiredFields())
                 {
                     MessageBox.Show("Zorunlu alanları doldurun.");
+
+                    // Eksik alan hangi adımda ise kullanıcıyı o adıma taşıyalım ve ilgili kontrole odak verelim
+                    try
+                    {
+                        // Kimlik bilgileri adımı (Step 1)
+                        if (FirstNameTextBox.Tag as string == "RequiredError" ||
+                            LastNameTextBox.Tag as string == "RequiredError" ||
+                            TcTextBox.Tag as string == "RequiredError" ||
+                            GenderComboBox.Tag as string == "RequiredError")
+                        {
+                            currentStep = 1;
+                            UpdateSteps();
+
+                            // İlk eksik alanı bulup odak ver
+                            if (FirstNameTextBox.Tag as string == "RequiredError")
+                            {
+                                FirstNameTextBox.Focus();
+                                FirstNameTextBox.BringIntoView();
+                            }
+                            else if (LastNameTextBox.Tag as string == "RequiredError")
+                            {
+                                LastNameTextBox.Focus();
+                                LastNameTextBox.BringIntoView();
+                            }
+                            else if (TcTextBox.Tag as string == "RequiredError")
+                            {
+                                TcTextBox.Focus();
+                                TcTextBox.BringIntoView();
+                            }
+                            else if (GenderComboBox.Tag as string == "RequiredError")
+                            {
+                                GenderComboBox.Focus();
+                                GenderComboBox.BringIntoView();
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // ignore focus failures
+                    }
+
                     return;
                 }
 
@@ -557,6 +658,18 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     TcTextBox.Tag = "RequiredError";
                     MessageBox.Show("TC Kimlik No 11 haneli olmalıdır.");
+                    try
+                    {
+                        // Kullanıcıyı kimlik adımına getir ve TC textbox'a odak ver
+                        currentStep = 1;
+                        UpdateSteps();
+                        TcTextBox.Focus();
+                        TcTextBox.BringIntoView();
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
                     return;
                 }
 
@@ -640,7 +753,8 @@ namespace TurizmOperasyonSistemi.Views
 
         private void GenderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (GenderComboBox.SelectedIndex > 0 && !string.Equals(GenderComboBox.Text, "Seçiniz", StringComparison.OrdinalIgnoreCase))
+            // Sadece SelectedIndex kontrolü ile validasyonu yapıyoruz (daha güvenilir)
+            if (GenderComboBox.SelectedIndex > 0)
             {
                 GenderComboBox.Tag = null;
             }
@@ -652,30 +766,8 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ToggleActiveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (selectedPersonId == 0)
-            {
-                MessageBox.Show("Lütfen bir kişi seçin.");
-                return;
-            }
-
-            using (var db = new AppDbContext())
-            {
-                var person = db.Persons.FirstOrDefault(p => p.Id == selectedPersonId);
-
-                if (person != null)
-                {
-                    person.IsActive = !person.IsActive;
-                    db.SaveChanges();
-
-                    MessageBox.Show(person.IsActive ? "Aktif" : "Pasif");
-                }
-            }
-
-            int personIdToRestore = selectedPersonId;
-
-            LoadPersons();
-            _personsView?.Refresh();
-            RestoreSelectedPerson(personIdToRestore);
+            // Pasif/aktif toggle özelliği kaldırıldı
+            return;
         }
 
         private void RestoreSelectedPerson(int personId)

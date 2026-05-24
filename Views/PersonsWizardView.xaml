@@ -220,7 +220,7 @@
         </Style>
     </Page.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer x:Name="RootScrollViewer" VerticalScrollBarVisibility="Auto">
         <Grid Margin="25">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -334,7 +334,16 @@
                                 <TextBox x:Name="SearchTextBox"
                                          Grid.Column="0"
                                          Height="40"
-                                         TextChanged="SearchTextBox_TextChanged"/>
+                                         TextChanged="SearchTextBox_TextChanged"
+                                         BorderBrush="#22D3EE"
+                                         BorderThickness="2"
+                                         Padding="12,7"
+                                         Background="#0F172A"
+                                         Foreground="#E2F9FF">
+                                    <TextBox.Effect>
+                                        <DropShadowEffect Color="#22D3EE" BlurRadius="18" ShadowDepth="0" Opacity="0.85"/>
+                                    </TextBox.Effect>
+                                </TextBox>
 
                                 <Border x:Name="SearchStateBorder"
                                         Grid.Column="1"
@@ -362,17 +371,6 @@
                                         Visibility="Collapsed"
                                         Margin="0,0,10,0"
                                         Click="EditSelectedButton_Click"/>
-
-                                <Button x:Name="ToggleActiveButton"
-                                        Grid.Column="3"
-                                        Content="Pasif Yap"
-                                        Height="40"
-                                        Width="115"
-                                        Background="#DC2626"
-                                        Foreground="White"
-                                        FontWeight="Bold"
-                                        Visibility="Collapsed"
-                                        Click="ToggleActiveButton_Click"/>
                             </Grid>
                         </StackPanel>
 
@@ -443,6 +441,14 @@
                                                FontSize="12"
                                                Margin="0,5,0,15"
                                                TextWrapping="Wrap"/>
+
+                                    <TextBlock x:Name="NoPersonNoticeTextBlock"
+                                               Text=""
+                                               Foreground="#FBBF24"
+                                               FontWeight="SemiBold"
+                                               FontSize="13"
+                                               Margin="0,0,0,8"
+                                               Visibility="Collapsed"/>
 
                                     <TextBlock Text="Ad"
                                                Foreground="#F8FAFC"
