@@ -63,6 +63,97 @@ namespace TurizmOperasyonSistemi.Views
             {
                 ResetModuleToInitialState();
             }), DispatcherPriority.Loaded);
+
+            // Combobox'lara kutucuğa tıklandığında da açılma davranışı ekle
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                AttachComboBoxOpenOnBoxClick();
+            }), DispatcherPriority.Loaded);
+
+            // Ayrıca tüm görsel ağa çarpan tıklamaları yakalayarak
+            // herhangi bir ComboBox içindeki kutucuğa tıklanırsa açılmasını garantileyelim.
+            // handledEventsToo=true ile daha önce yakalanmış olayları da işleyebiliriz.
+            this.AddHandler(
+                System.Windows.UIElement.PreviewMouseLeftButtonDownEvent,
+                new System.Windows.Input.MouseButtonEventHandler(Root_PreviewMouseLeftButtonDown),
+                true);
+        }
+
+        private void AttachComboBoxOpenOnBoxClick()
+        {
+            try
+            {
+                AttachToChildren(this);
+            }
+            catch
+            {
+                // Ignore attach failures
+            }
+        }
+
+        private void AttachToChildren(DependencyObject parent)
+        {
+            if (parent == null) return;
+
+            int count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+
+                if (child is ComboBox cb)
+                {
+                    // Avoid multiple attachments
+                    cb.PreviewMouseLeftButtonDown -= ComboBox_PreviewMouseLeftButtonDown;
+                    cb.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
+                }
+
+                AttachToChildren(child);
+            }
+        }
+
+        private void ComboBox_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is ComboBox cb)
+            {
+                // Eğer zaten açık değilse aç
+                if (!cb.IsDropDownOpen)
+                {
+                    cb.IsDropDownOpen = true;
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void Root_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                var source = e.OriginalSource as DependencyObject;
+                var combo = FindAncestor<ComboBox>(source);
+                if (combo != null)
+                {
+                    if (!combo.IsDropDownOpen)
+                    {
+                        combo.IsDropDownOpen = true;
+                        // İşlemi sonlandırıyoruz böylece varsayılan davranışla çakışma azalır
+                        e.Handled = true;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        private T FindAncestor<T>(DependencyObject current) where T : DependencyObject
+        {
+            while (current != null)
+            {
+                if (current is T t) return t;
+                current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+            }
+            return null;
         }
 
         private void LoadComboBoxData()
