@@ -1030,10 +1030,11 @@
                                                                         Padding="4,0"
                                                                         Margin="6,0,0,0"
                                                                         Click="RemovePassengerFromRoomButton_Click"
-                                                                        Tag="{Binding PersonId}">
+                                                                        Tag="{Binding PersonId}"
+                                                                        ToolTip="Odadan çıkar">
                                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                                         <TextBlock Text="❌" FontSize="12" Margin="0,0,6,0"/>
-                                                                        <TextBlock Text="Odadan çıkar" FontSize="12" Foreground="#EF4444"/>
+                                                                        <TextBlock Text="Çıkar" FontSize="12" Foreground="#EF4444"/>
                                                                     </StackPanel>
                                                                 </Button>
                                                             </Grid>
