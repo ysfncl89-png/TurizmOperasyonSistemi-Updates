@@ -20,6 +20,10 @@
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Background" Value="#1F2937"/>
                 <Setter Property="BorderBrush" Value="#334155"/>
+                <!-- Tutarlı içerik hizalamaları ve iç bosluk -->
+                <Setter Property="Padding" Value="12,0"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
 
                 <Setter Property="Template">
 
@@ -27,14 +31,15 @@
 
                         <ControlTemplate TargetType="Button">
 
-                            <Border x:Name="border"
+                        <Border x:Name="border"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="12">
+                            CornerRadius="12"
+                            Padding="{TemplateBinding Padding}">
 
-                                <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"/>
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
 
                             </Border>
 
@@ -100,70 +105,90 @@
 
                 <Button x:Name="HomeButton"
                         Style="{StaticResource MenuButtonStyle}"
-                        Content="Anasayfa"
                         Height="50"
                         Margin="15,10"
                         Background="#06B6D4"
                         Foreground="White"
                         BorderThickness="0"
                         FontSize="16"
-                        Click="HomeButton_Click"/>
+                        Click="HomeButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🏠" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Anasayfa" FontSize="14" VerticalAlignment="Center" Foreground="White"/>
+                    </StackPanel>
+                </Button>
 
                 <Button x:Name="PersonsButton"
                         Style="{StaticResource MenuButtonStyle}"
-                        Content="Kişiler"
                         Height="50"
                         Margin="15,10"
                         Background="#1F2937"
                         Foreground="White"
                         BorderThickness="0"
                         FontSize="16"
-                        Click="PersonsButton_Click"/>
+                        Click="PersonsButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="👥" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Kişiler" FontSize="14" VerticalAlignment="Center" Foreground="White"/>
+                    </StackPanel>
+                </Button>
 
 
 
                 <Button x:Name="RegistrationButton"
                         Style="{StaticResource MenuButtonStyle}"
-                        Content="Kayıt Modülü"
                         Height="50"
                         Margin="15,10"
                         Background="#1F2937"
                         Foreground="White"
                         BorderThickness="0"
                         FontSize="16"
-                        Click="RegistrationButton_Click"/>
+                        Click="RegistrationButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📝" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Kayıt Modülü" FontSize="14" VerticalAlignment="Center" Foreground="White"/>
+                    </StackPanel>
+                </Button>
 
 
                 <Button x:Name="HotelAllocationButton" 
         Click="HotelAllocationButton_Click"
         Style="{StaticResource MenuButtonStyle}">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🛏️" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="🛏️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <TextBlock Text="Otel Odalama" FontSize="14" VerticalAlignment="Center" Foreground="White"/>
                     </StackPanel>
                 </Button>
 
                 <Button x:Name="ListsButton"
                         Style="{StaticResource MenuButtonStyle}"
-                        Content="Listeler"
                         Height="50"
                         Margin="15,10"
                         Background="#1F2937"
                         Foreground="White"
                         BorderThickness="0"
                         FontSize="16"
-                        Click="ListsButton_Click"/>
+                        Click="ListsButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📋" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Listeler" FontSize="14" VerticalAlignment="Center" Foreground="White"/>
+                    </StackPanel>
+                </Button>
 
                 <Button x:Name="SettingsButton"
                         Style="{StaticResource MenuButtonStyle}"
-                        Content="Ayarlar"
                         Height="50"
                         Margin="15,10"
                         Background="#1F2937"
                         Foreground="White"
                         BorderThickness="0"
                         FontSize="16"
-                        Click="SettingsButton_Click"/>
+                        Click="SettingsButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚙️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Ayarlar" FontSize="14" VerticalAlignment="Center" Foreground="White"/>
+                    </StackPanel>
+                </Button>
 
             </StackPanel>
 

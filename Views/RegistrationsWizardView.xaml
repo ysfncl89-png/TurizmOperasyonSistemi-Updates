@@ -355,7 +355,7 @@
 
                         <!-- Non-blurred area: description and search (user requested to exclude these from blur) -->
                         <StackPanel Grid.Row="1" Margin="0,0,0,8">
-                            <TextBlock Text="Yeni Tur Kaydı Yapmadan Önce Yapmak istediğiniz Kaydın Daha Önceden Yapılıp Yapılmadığını Kontrol Etmek İçin Arama Yapın"
+                            <TextBlock Text="Yapmak istediğiniz Kaydın Daha Önceden Yapılıp Yapılmadığını Kontrol Etmek İçin İsim Soy İsim Ya da Dönem yazarak Arama Yapın"
                                        Foreground="#D1D5DB"
                                        Margin="0,4,0,8"/>
                             <Grid Margin="0,0,0,0">
