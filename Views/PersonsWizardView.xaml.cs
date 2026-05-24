@@ -24,6 +24,43 @@ namespace TurizmOperasyonSistemi.Views
             Editing
         }
 
+        private void DeleteSelectedButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(PersonsDataGrid.SelectedItem is Person person))
+            {
+                MessageBox.Show("Lütfen silmek için bir kişi seçin.");
+                return;
+            }
+
+            var result = MessageBox.Show($"{person.FirstName} {person.LastName} adlı kişiyi silmek istediğinize emin misiniz?", "Onay", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var dbPerson = db.Persons.FirstOrDefault(x => x.Id == person.Id);
+                    if (dbPerson != null)
+                    {
+                        db.Persons.Remove(dbPerson);
+                        db.SaveChanges();
+                    }
+                }
+
+                MessageBox.Show("Kişi silindi.");
+                LoadPersons();
+                ResetModuleToEntryState();
+                UpdateSteps();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
         private void NoMatchScrollTimer_Tick(object sender, EventArgs e)
         {
             _noMatchScrollTimer?.Stop();
@@ -60,6 +97,12 @@ namespace TurizmOperasyonSistemi.Views
             LoadComboBox(AgeRangeComboBox, "Yaş Aralığı");
             LoadComboBox(BloodComboBox, "Kan Grubu");
             LoadComboBox(PassportTypeComboBox, "Pasaport Türü");
+
+            // Ensure clicking the combo box surface (not only the arrow) opens the dropdown
+            GenderComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
+            AgeRangeComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
+            BloodComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
+            PassportTypeComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
 
             LoadPersons();
             ResetModuleToEntryState();
@@ -537,6 +580,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 SaveButton.Content = "Güncelle";
                 EditSelectedButton.Visibility = Visibility.Visible;
+                DeleteSelectedButton.Visibility = Visibility.Visible;
 
                 SearchStateTextBlock.Text = "Kayıt bulundu. Düzenle ile kaydı güncelleyebilirsiniz.";
 
@@ -555,6 +599,7 @@ namespace TurizmOperasyonSistemi.Views
                     ToggleActiveButton.Visibility = Visibility.Collapsed;
                 }
                 EditSelectedButton.Visibility = Visibility.Collapsed;
+                DeleteSelectedButton.Visibility = Visibility.Collapsed;
                 SaveButton.Content = "Kaydet";
                 PersonSelectionChanged?.Invoke(null);
 
@@ -761,6 +806,19 @@ namespace TurizmOperasyonSistemi.Views
             else
             {
                 GenderComboBox.Tag = "RequiredError";
+            }
+        }
+
+        private void ComboBox_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is ComboBox cb)
+            {
+                // Eğer zaten açıksa normal davranış sürsün
+                if (!cb.IsDropDownOpen)
+                {
+                    cb.IsDropDownOpen = true;
+                    e.Handled = true;
+                }
             }
         }
 

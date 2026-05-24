@@ -38,6 +38,43 @@ namespace TurizmOperasyonSistemi.Views
             InitializePersonsModuleHost();
             UpdateRegistrationActionButtons();
             ShowRegistrationBrowser();
+            // Attach click handlers to all ComboBox controls on this page so clicking anywhere opens the dropdown
+            AttachComboBoxClickHandlers(this);
+        }
+
+        private void ComboBox_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is ComboBox cb)
+            {
+                if (!cb.IsDropDownOpen)
+                {
+                    cb.IsDropDownOpen = true;
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void AttachComboBoxClickHandlers(DependencyObject root)
+        {
+            if (root == null)
+                return;
+
+            int count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                if (child is ComboBox cb)
+                {
+                    // Remove existing handlers to avoid double subscription
+                    cb.PreviewMouseLeftButtonDown -= ComboBox_PreviewMouseLeftButtonDown;
+                    cb.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
+                    cb.MouseLeftButtonDown -= ComboBox_PreviewMouseLeftButtonDown;
+                    cb.MouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
+                }
+
+                // Recurse
+                AttachComboBoxClickHandlers(child);
+            }
         }
 
         private void InitializePersonsModuleHost()
