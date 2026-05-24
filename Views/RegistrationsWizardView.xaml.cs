@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.ComponentModel;
 using System.Windows.Media;
+using System.Windows.Input;
 using System.Collections.Generic;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
@@ -258,6 +259,8 @@ namespace TurizmOperasyonSistemi.Views
             _registrationsView?.Refresh();
             UpdateRegistrationResultsState();
             UpdateRegistrationPeriodGuideState();
+            // Keep focus on search box after selecting a period
+            FocusRegistrationSearchBox();
         }
 
         private void RegistrationPeriodGuideComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -791,6 +794,8 @@ namespace TurizmOperasyonSistemi.Views
             ToggleActiveButton.Visibility = Visibility.Collapsed;
             NextButton.Visibility = Visibility.Collapsed;
             ResetRegistrationPeriodGuide();
+            // If a period is already selected, focus the search box so user can type immediately.
+            FocusRegistrationSearchBox();
         }
 
         private void ShowWizard()
@@ -836,6 +841,30 @@ namespace TurizmOperasyonSistemi.Views
             RegistrationPeriodGuideOverlay.Visibility = shouldShowGuide ? Visibility.Visible : Visibility.Collapsed;
             RegistrationBrowserContentBorder.Effect = shouldShowGuide ? _registrationBrowserBlur : null;
             RegistrationBrowserContentBorder.IsHitTestVisible = !shouldShowGuide;
+        }
+
+        private void FocusRegistrationSearchBox()
+        {
+            try
+            {
+                if (RegistrationBrowserGrid == null || RegistrationSearchTextBox == null)
+                    return;
+
+                // If the period guide overlay is visible, do not steal focus
+                if (RegistrationPeriodGuideOverlay != null && RegistrationPeriodGuideOverlay.Visibility == Visibility.Visible)
+                    return;
+
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    RegistrationSearchTextBox.Focus();
+                    Keyboard.Focus(RegistrationSearchTextBox);
+                    try { RegistrationSearchTextBox.CaretIndex = RegistrationSearchTextBox.Text?.Length ?? 0; } catch { }
+                }), DispatcherPriority.Background);
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void ResetWizardForm()
