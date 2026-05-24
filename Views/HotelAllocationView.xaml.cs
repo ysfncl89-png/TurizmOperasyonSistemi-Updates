@@ -413,6 +413,68 @@ namespace TurizmOperasyonSistemi.Views
             Step1GroupTypeBorder.Visibility = Step1PeriodComboBox.SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
             Step1DurationBorder.Visibility = Step1GroupTypeComboBox.SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
             HotelComboHighlightBorder.Visibility = Step1DurationComboBox.SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
+
+            // Yeni açılan alanların kullanıcı tarafından görülmesini sağlamak için
+            // Step1 Grid içindeki son görünür alanı otomatik olarak kaydır.
+            try
+            {
+                var progressive = new Border[] {
+                    Step1TourTypeBorder,
+                    Step1PeriodBorder,
+                    Step1GroupTypeBorder,
+                    Step1DurationBorder,
+                    HotelComboHighlightBorder
+                };
+
+                Border lastVisible = null;
+                foreach (var b in progressive)
+                {
+                    if (b != null && b.Visibility == Visibility.Visible)
+                        lastVisible = b;
+                }
+
+                if (lastVisible != null)
+                {
+                    ScrollElementIntoView(lastVisible);
+                }
+            }
+            catch
+            {
+                // ignore scroll failures
+            }
+        }
+
+        private void ScrollElementIntoView(FrameworkElement element)
+        {
+            if (element == null) return;
+
+            // Delay until layout pass completes so ActualHeight/offsets are available
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    // If Step1Grid is a ScrollViewer, bring element into view
+                    element.BringIntoView();
+
+                    // Additionally nudge parent ScrollViewer to center the element if possible
+                    if (Step1Grid is ScrollViewer sv)
+                    {
+                        // Calculate element offset relative to ScrollViewer
+                        var transform = element.TransformToAncestor(sv) as System.Windows.Media.Transform;
+                        if (transform != null)
+                        {
+                            var point = transform.Transform(new System.Windows.Point(0, 0));
+                            double target = point.Y - 10; // small top margin
+                            if (target < 0) target = 0;
+                            sv.ScrollToVerticalOffset(target);
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         private bool AreAllStep1SelectionsMade()
