@@ -564,7 +564,7 @@
                             BorderBrush="#FBBF24"
                             BorderThickness="1.8"
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Top"
+                            VerticalAlignment="Center"
                             Margin="0,28,0,0">
                         <StackPanel>
                             <TextBlock Text="Önce Dönem Seçin"

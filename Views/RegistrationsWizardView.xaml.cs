@@ -820,11 +820,7 @@ namespace TurizmOperasyonSistemi.Views
 
             UpdateRegistrationPeriodGuideState();
 
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                RegistrationPeriodGuideComboBox.Focus();
-                RegistrationPeriodGuideComboBox.IsDropDownOpen = true;
-            }), DispatcherPriority.Background);
+            // Do not auto-focus or open the period guide combobox to avoid unexpected dropdown opening.
         }
 
         private void UpdateRegistrationPeriodGuideState()
@@ -1089,6 +1085,17 @@ namespace TurizmOperasyonSistemi.Views
                         LoadRegistrations();
                         ResetWizardForm();
                         ShowRegistrationBrowser();
+
+                        // If there is existing text in the registration search box, clear it and focus
+                        try
+                        {
+                            if (!string.IsNullOrWhiteSpace(RegistrationSearchTextBox?.Text))
+                            {
+                                RegistrationSearchTextBox.Clear();
+                            }
+                            FocusRegistrationSearchBox();
+                        }
+                        catch { }
 
                         MessageBox.Show(
                             isEditMode

@@ -170,7 +170,10 @@
             <Setter Property="Background" Value="#1E293B"/>
             <Setter Property="Foreground" Value="#F8FAFC"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="8,4"/>
+            <!-- Daha küçük padding ile tarih metninin kutuya sığmasını sağla -->
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Left"/>
         </Style>
 
         <Style TargetType="DataGrid">
@@ -499,7 +502,8 @@
                                                FontSize="13"/>
                                     <DatePicker x:Name="BirthDatePicker"
                                                 Height="36"
-                                                SelectedDateChanged="BirthDatePicker_SelectedDateChanged"/>
+                                                SelectedDateChanged="BirthDatePicker_SelectedDateChanged"
+                                                SelectedDateFormat="Short"/>
 
                                     <TextBlock Text="Yaş"
                                                Foreground="#F8FAFC"
@@ -611,14 +615,16 @@
                                        FontWeight="SemiBold"
                                        FontSize="13"/>
                             <DatePicker x:Name="PassportStartPicker"
-                                        Height="36"/>
+                                        Height="36"
+                                        SelectedDateFormat="Short"/>
 
                             <TextBlock Text="Pasaport Bitiş"
                                        Foreground="#F8FAFC"
                                        FontWeight="SemiBold"
                                        FontSize="13"/>
                             <DatePicker x:Name="PassportEndPicker"
-                                        Height="36"/>
+                                        Height="36"
+                                        SelectedDateFormat="Short"/>
                         </StackPanel>
                     </Grid>
 
