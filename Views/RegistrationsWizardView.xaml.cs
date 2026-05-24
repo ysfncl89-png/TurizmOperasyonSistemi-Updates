@@ -176,23 +176,30 @@ namespace TurizmOperasyonSistemi.Views
                 || selectedPeriod == "Tüm Dönemler"
                 || string.Equals(item.Period, selectedPeriod, StringComparison.CurrentCultureIgnoreCase);
 
-            bool matchesText = string.IsNullOrWhiteSpace(text)
-                || Normalize(item.PersonFullName).Contains(text)
-                || Normalize(item.TourType).Contains(text)
-                || Normalize(item.Period).Contains(text)
-                || Normalize(item.GroupType).Contains(text)
-                || Normalize(item.DaysCount).Contains(text)
-                || Normalize(item.VisaRequest).Contains(text)
-                || Normalize(item.TicketRequest).Contains(text)
-                || Normalize(item.CargoRequest).Contains(text)
-                || Normalize(item.RoomType).Contains(text)
-                || Normalize(item.DepartureCity).Contains(text)
-                || Normalize(item.TransferStatus).Contains(text)
-                || Normalize(item.TransferCity).Contains(text)
-                || Normalize(item.District).Contains(text)
-                || Normalize(item.Reference).Contains(text)
-                || Normalize(item.Currency).Contains(text)
-                || Normalize(item.Status).Contains(text);
+            bool matchesText = true;
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                // Split search into tokens and require that every token is present in at least one searchable field
+                var tokens = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                matchesText = tokens.All(token =>
+                    (item.PersonFullName != null && Normalize(item.PersonFullName).Contains(token))
+                    || (item.TourType != null && Normalize(item.TourType).Contains(token))
+                    || (item.Period != null && Normalize(item.Period).Contains(token))
+                    || (item.GroupType != null && Normalize(item.GroupType).Contains(token))
+                    || (item.DaysCount != null && Normalize(item.DaysCount).Contains(token))
+                    || (item.VisaRequest != null && Normalize(item.VisaRequest).Contains(token))
+                    || (item.TicketRequest != null && Normalize(item.TicketRequest).Contains(token))
+                    || (item.CargoRequest != null && Normalize(item.CargoRequest).Contains(token))
+                    || (item.RoomType != null && Normalize(item.RoomType).Contains(token))
+                    || (item.DepartureCity != null && Normalize(item.DepartureCity).Contains(token))
+                    || (item.TransferStatus != null && Normalize(item.TransferStatus).Contains(token))
+                    || (item.TransferCity != null && Normalize(item.TransferCity).Contains(token))
+                    || (item.District != null && Normalize(item.District).Contains(token))
+                    || (item.Reference != null && Normalize(item.Reference).Contains(token))
+                    || (item.Currency != null && Normalize(item.Currency).Contains(token))
+                    || (item.Status != null && Normalize(item.Status).Contains(token))
+                );
+            }
 
             return matchesPeriod && matchesText;
         }
@@ -553,13 +560,15 @@ namespace TurizmOperasyonSistemi.Views
                 string search = (RegistrationSearchTextBox?.Text ?? string.Empty).Trim();
                 if (!string.IsNullOrWhiteSpace(search) && _registrationsView != null)
                 {
+                    var nSearch = Normalize(search);
+
                     var matched = _registrationsView.Cast<object>().OfType<RegistrationListItem>()
-                        .Any(x => x.PersonFullName?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-                                  || x.TourType?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-                                  || x.Period?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-                                  || x.GroupType?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-                                  || x.DaysCount?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-                                  || x.Reference?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0);
+                        .Any(x => (!string.IsNullOrWhiteSpace(x.PersonFullName) && Normalize(x.PersonFullName).Contains(nSearch))
+                                  || (!string.IsNullOrWhiteSpace(x.TourType) && Normalize(x.TourType).Contains(nSearch))
+                                  || (!string.IsNullOrWhiteSpace(x.Period) && Normalize(x.Period).Contains(nSearch))
+                                  || (!string.IsNullOrWhiteSpace(x.GroupType) && Normalize(x.GroupType).Contains(nSearch))
+                                  || (!string.IsNullOrWhiteSpace(x.DaysCount) && Normalize(x.DaysCount).Contains(nSearch))
+                                  || (!string.IsNullOrWhiteSpace(x.Reference) && Normalize(x.Reference).Contains(nSearch)));
 
                     if (matched)
                         shouldApplyBlur = false;

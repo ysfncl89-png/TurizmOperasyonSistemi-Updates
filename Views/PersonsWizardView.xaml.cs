@@ -418,7 +418,7 @@ namespace TurizmOperasyonSistemi.Views
             {
                 ClearForm();
                 SetStepOneState(StepOneState.SearchResults);
-                SearchStateTextBlock.Text = "Kayıt bulundu listeden kişiyi seçin.";
+                SearchStateTextBlock.Text = "Kayıt bulundu . Kişiyi düzenleyecek ya da tamamen silecekseniz listeden kişiyi seçin.";
                 // Arama sonucu bulunduğunda "kayıt bulunamadı" uyarısını gizle
                 NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                 // Herhangi bir zamanlayıcı varsa durdur
@@ -582,7 +582,7 @@ namespace TurizmOperasyonSistemi.Views
                 EditSelectedButton.Visibility = Visibility.Visible;
                 DeleteSelectedButton.Visibility = Visibility.Visible;
 
-                SearchStateTextBlock.Text = "Kayıt bulundu. Düzenle ile kaydı güncelleyebilir veya Sil Butonunu tıklayarak kişiyi sisteminizden tamamen silebilirsiniz";
+                SearchStateTextBlock.Text = "Düzenle ile kaydı güncelleyebilir veya Sil Butonunu tıklayarak kişiyi sisteminizden tamamen silebilirsiniz";
 
                 if (_stepOneState != StepOneState.Editing)
                 {
