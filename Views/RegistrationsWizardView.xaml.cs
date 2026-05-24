@@ -532,6 +532,67 @@ namespace TurizmOperasyonSistemi.Views
                 !hasAnyResult && (hasSearchText || hasPeriodFilter)
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+
+            // Apply blurring rules requested:
+            // Eğer bir dönem seçilmişse ekran buzlu olsun ve başlık (RegistrationBrowserTitleTextBlock) buzsuz kalsın.
+            // Ancak arama kutusuna yazılan metin datagridde eşleşiyorsa blur kalksın.
+            try
+            {
+                bool shouldApplyBlur = false;
+
+                // Dönem seçilmişse başlangıçta blur uygula (kullanıcının arama yapmasını bekleyeceğiz)
+                if (RegistrationPeriodFilterComboBox?.SelectedItem != null && RegistrationPeriodFilterComboBox.SelectedItem.ToString() != "Tüm Dönemler")
+                {
+                    shouldApplyBlur = true;
+                }
+
+                // Eğer arama metni varsa ve veri gridde sonuç bulunuyorsa blur kalksın
+                string search = (RegistrationSearchTextBox?.Text ?? string.Empty).Trim();
+                if (!string.IsNullOrWhiteSpace(search) && _registrationsView != null)
+                {
+                    var matched = _registrationsView.Cast<object>().OfType<RegistrationListItem>()
+                        .Any(x => x.PersonFullName?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+                                  || x.TourType?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+                                  || x.Period?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+                                  || x.GroupType?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+                                  || x.DaysCount?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+                                  || x.Reference?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                    if (matched)
+                        shouldApplyBlur = false;
+                }
+
+                SetRegistrationBrowserBlur(shouldApplyBlur);
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        private void SetRegistrationBrowserBlur(bool blur)
+        {
+            try
+            {
+                Effect effect = blur ? (Effect)new BlurEffect { Radius = 8 } : null;
+
+                // Elements to blur: search box, period combobox, warning panel, datagrid container
+                if (RegistrationBrowserBlurContainer != null)
+                {
+                    RegistrationBrowserBlurContainer.Effect = effect;
+                    RegistrationBrowserBlurContainer.IsHitTestVisible = !blur;
+                }
+
+                // Title remains unblurred
+                if (RegistrationBrowserTitleTextBlock != null)
+                {
+                    RegistrationBrowserTitleTextBlock.Effect = null;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void PersonsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
