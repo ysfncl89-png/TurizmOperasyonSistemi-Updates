@@ -71,5 +71,13 @@ namespace TurizmOperasyonSistemi
             HotelAllocationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             MainFrame.Navigate(new HotelAllocationView());
         }
+
+        // Programatik olarak anasayfaya geçiş yapmak isteyen diğer bileşenler için
+        public void NavigateToHome()
+        {
+            ResetMenuColors();
+            HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#06B6D4"));
+            MainFrame.Navigate(new HomeView());
+        }
     }
 }

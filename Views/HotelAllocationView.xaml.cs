@@ -1197,6 +1197,46 @@ namespace TurizmOperasyonSistemi.Views
             SelectedHotelTitleLabel.Text = $"🏨 Seçilen Otel: {HotelSelectComboBox.SelectedItem} Oda Yerleşim Düzeni";
             LoadFilteredPassengers();
 
+            // Eğer seçilen kriterlere ait hiç kayıt yoksa kullanıcıyı uyar ve anasayfaya yönlendir
+            try
+            {
+                string selectedTourType = TourTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+                string selectedPeriod = PeriodComboBox.SelectedItem?.ToString() ?? string.Empty;
+                string selectedGroupType = GroupTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+                string selectedDaysCount = DurationComboBox.SelectedItem?.ToString() ?? string.Empty;
+
+                using (var db = new AppDbContext())
+                {
+                    bool anyRegistration = db.Registrations
+                        .AsNoTracking()
+                        .Any(x => x.TourType == selectedTourType
+                               && x.Period == selectedPeriod
+                               && x.GroupType == selectedGroupType
+                               && x.DaysCount == selectedDaysCount);
+
+                    if (!anyRegistration)
+                    {
+                        MessageBox.Show(
+                            "Henüz bu tura, bu döneme, bu grup türüne ve bu grup süresine kaydettiğiniz kimse yok.\nOtel odalamasını yapmadan önce gerekli kayıtları yapın.",
+                            "Kayıt Bulunamadı",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+
+                        var main = Window.GetWindow(this) as MainWindow;
+                        if (main != null)
+                        {
+                            main.NavigateToHome();
+                        }
+
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+
             Step1Grid.Visibility = Visibility.Collapsed;
             Step2Grid.Visibility = Visibility.Collapsed;
             Step3Grid.Visibility = Visibility.Visible;
@@ -1268,8 +1308,8 @@ namespace TurizmOperasyonSistemi.Views
 
                 LoadSavedAllocations();
                 ShowSavedAllocationPreview(
-                    "Kayıt datagridde görünüyor",
-                    "Kaydettiğiniz odalama kaydı eşleşen datagrid önizlemesinde gösteriliyor. Önizlemeyi kapatınca başlangıç ekranına döneceksiniz.");
+                    "Kayıt Başarılı",
+                    "Kaydettiğiniz odalama kaydı aşağıda önizlemede gösteriliyor. Önizlemeyi kapatınca Otel Odalama modülü başlangıç ekranına döneceksiniz.");
             }
         }
 
@@ -1412,6 +1452,47 @@ namespace TurizmOperasyonSistemi.Views
             if (!AreAllStep2SelectionsMade())
             {
                 return;
+            }
+
+            // Önce seçilen kriterlere uyan kayıt (yolcu) var mı kontrol edelim
+            string selectedTourType = TourTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedPeriod = PeriodComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedGroupType = GroupTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
+            string selectedDuration = DurationComboBox.SelectedItem?.ToString() ?? string.Empty;
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    bool anyMatching = db.Registrations
+                        .AsNoTracking()
+                        .Any(x => x.TourType == selectedTourType
+                               && x.Period == selectedPeriod
+                               && x.GroupType == selectedGroupType
+                               && x.DaysCount == selectedDuration);
+
+                    if (!anyMatching)
+                    {
+                        // Kullanıcıyı uyar ve OK ile anasayfaya gönder
+                        MessageBox.Show(
+                            "Henüz bu tura, bu döneme, bu grup türüne ve bu grup süresine kaydettiğiniz kimse yok.\nOtel odalamasını yapmadan önce gerekli kayıtları yapın.",
+                            "Kayıt Bulunamadı",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+
+                        var main = Window.GetWindow(this) as MainWindow;
+                        if (main != null)
+                        {
+                            main.NavigateToHome();
+                        }
+
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // Hata durumunda normal akışı devam ettirelim
             }
 
             SyncStep2SelectionsToStep1();
