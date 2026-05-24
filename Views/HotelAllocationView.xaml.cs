@@ -16,6 +16,7 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class HotelAllocationView : UserControl
     {
+
         private int currentStep = 1;
 
         // Sağ taraftaki odaları ve sol taraftaki yolcuları dinamik takip etmek için ObservableCollection kullanıyoruz
@@ -77,7 +78,13 @@ namespace TurizmOperasyonSistemi.Views
                 System.Windows.UIElement.PreviewMouseLeftButtonDownEvent,
                 new System.Windows.Input.MouseButtonEventHandler(Root_PreviewMouseLeftButtonDown),
                 true);
+
+
+
+
         }
+
+
 
         private void AttachComboBoxOpenOnBoxClick()
         {
@@ -1322,6 +1329,18 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
+            // Eğer sonuç yok uyarısı görünüyorsa, kullanıcı 'İleri'ye bastığında
+            // Kriter Seçimi (Step2) adımını atlayıp doğrudan Odalama Motoru (Step3)'na geçilsin.
+            if (Step1NoMatchPanel != null && Step1NoMatchPanel.Visibility == Visibility.Visible)
+            {
+                // Kriterleri Step1'den Step2'ye kopyala, başlığı güncelle ve doğrudan Step3'e geç
+                SyncStep1SelectionsToStep2();
+                UpdateAllocationModeTitle();
+                ShowStep3();
+                return;
+            }
+
+            // Normal akış: Step2'ye geç
             SyncStep1SelectionsToStep2();
             ShowStep2();
         }
