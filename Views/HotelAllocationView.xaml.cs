@@ -459,6 +459,7 @@ namespace TurizmOperasyonSistemi.Views
             Step2HotelComboBox.SelectedItem = HotelSelectComboBox.SelectedItem;
             _suppressStep2SelectionChanged = false;
             UpdateStep2ProceedButtonVisibility();
+            UpdateAllocationModeTitle();
         }
 
         private void SyncStep2SelectionsToStep1()
@@ -1207,6 +1208,20 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             UpdateStep2ProceedButtonVisibility();
+            UpdateAllocationModeTitle();
+        }
+
+        private void UpdateAllocationModeTitle()
+        {
+            // Step 2'deki 5 ComboBox'ın seçimlerini al
+            string tourType = TourTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+            string period = PeriodComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+            string groupType = GroupTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+            string daysCount = DurationComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+            string hotel = Step2HotelComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+
+            // Başlığı güncelle: "Tur Türü | Dönem | Grup Türü | Gün Sayısı | Otel Adı"
+            AllocationModeTitle.Text = $"{tourType} | {period} | {groupType} | {daysCount} | {hotel}";
         }
 
         private void Step1ProceedToCriteriaButton_Click(object sender, RoutedEventArgs e)
@@ -1228,7 +1243,7 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             SyncStep2SelectionsToStep1();
-            AllocationModeTitle.Text = "Yeni Odalama Kaydı - Taslak";
+            UpdateAllocationModeTitle();
             ShowStep3();
         }
 
@@ -1442,8 +1457,8 @@ namespace TurizmOperasyonSistemi.Views
                 ClearSelectedRoom();
                 _matchedSavedAllocation = selectedAllocation;
                 _isPreviewMode = false;
-            AllocationModeTitle.Text = $"Düzenlenen Kayıt: {selectedAllocation.HotelName} - {selectedAllocation.TourType} / {selectedAllocation.Period}";
-            ShowStep3();
+                UpdateAllocationModeTitle();
+                ShowStep3();
             }
             catch (Exception ex)
             {
