@@ -565,7 +565,7 @@
                     <Border x:Name="Step1PreviewPanel"
                             Background="Transparent"
                             Visibility="Collapsed">
-                        <Border Background="#0F172A"
+                    <Border Background="#0F172A"
                                 BorderBrush="#06B6D4"
                                 BorderThickness="1.5"
                                 CornerRadius="12"
@@ -573,7 +573,8 @@
                                 Width="520"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Top"
-                                Margin="0,24,0,0">
+                                Margin="0,-120,0,0"
+                                Panel.ZIndex="100">
                             <StackPanel>
                                 <TextBlock x:Name="Step1PreviewTitleText"
                                            Text="Kayıt önizlemesi hazır"
@@ -864,6 +865,19 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock x:Name="AllocationModeTitle"
+                                       Text=""
+                                       Foreground="#FFD700"
+                                       FontSize="15"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Left"
+                                       Margin="0,0,0,6"
+                                       TextTrimming="CharacterEllipsis">
+                                <TextBlock.Effect>
+                                    <DropShadowEffect Color="#FFD700" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                </TextBlock.Effect>
+                            </TextBlock>
+
                             <TextBlock x:Name="SelectedHotelTitleLabel"
                                        Text="🏨 Seçilen Otel: Oda Yerleşim Düzeni"
                                        Foreground="#06B6D4"
@@ -960,16 +974,27 @@
                                                            Margin="0,0,0,4"/>
 
                                                 <Grid>
-                                                    <TextBlock Text="{Binding RoomNumberDisplay}"
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Grid.Column="0"
+                                                               Text="{Binding RoomNumberDisplay}"
                                                                Foreground="White"
                                                                FontWeight="Bold"
-                                                               FontSize="12"/>
+                                                               FontSize="12"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,8,0" />
 
-                                                    <TextBlock Text="{Binding StatusText}"
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding StatusText}"
                                                                Foreground="{Binding StatusColor}"
                                                                FontWeight="Bold"
                                                                FontSize="11"
-                                                               HorizontalAlignment="Right"/>
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Right" />
                                                 </Grid>
 
                                                 <Separator Background="#334155" Margin="0,8"/>
@@ -982,12 +1007,20 @@
                                                     <ListBox.ItemTemplate>
                                                         <DataTemplate>
                                                             <Grid Width="180">
-                                                                <TextBlock Text="{Binding FullName}"
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="28" />
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <TextBlock Grid.Column="0"
+                                                                           Text="{Binding FullName}"
                                                                            Foreground="#CBD5E1"
                                                                            FontSize="12"
-                                                                           VerticalAlignment="Center"/>
+                                                                           VerticalAlignment="Center"
+                                                                           TextTrimming="CharacterEllipsis"/>
 
-                                                                <Button Content="❌"
+                                                                <Button Grid.Column="1"
+                                                                        Content="❌"
                                                                         Background="Transparent"
                                                                         Foreground="#EF4444"
                                                                         BorderThickness="0"

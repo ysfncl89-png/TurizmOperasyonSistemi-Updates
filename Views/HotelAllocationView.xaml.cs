@@ -375,6 +375,9 @@ namespace TurizmOperasyonSistemi.Views
             ClearMatchedHighlight();
             SavedAllocations.Clear();
 
+            // Apply frosted look to combo boxes when preview mode is active
+            SetComboBoxesFrosted(_isPreviewMode);
+
             if (_isPreviewMode && _matchedSavedAllocation != null)
             {
                 _matchedSavedAllocation.IsMatchedHighlight = true;
@@ -388,6 +391,7 @@ namespace TurizmOperasyonSistemi.Views
             {
                 SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
                 SavedAllocationsContainer.IsEnabled = false;
+                SetComboBoxesFrosted(false);
                 return;
             }
 
@@ -405,6 +409,44 @@ namespace TurizmOperasyonSistemi.Views
             SavedAllocationsContainer.Effect = new BlurEffect { Radius = 10 };
             SavedAllocationsContainer.IsEnabled = false;
             Step1NoMatchPanel.Visibility = Visibility.Visible;
+        }
+
+        private void SetComboBoxesFrosted(bool frosted)
+        {
+            try
+            {
+                var blur = frosted ? new BlurEffect { Radius = 4 } : null as Effect;
+                double opacity = frosted ? 0.7 : 1.0;
+
+                ComboBox[] targets = new ComboBox[] {
+                    Step1TourTypeComboBox,
+                    Step1PeriodComboBox,
+                    Step1GroupTypeComboBox,
+                    Step1DurationComboBox,
+                    HotelSelectComboBox,
+                    TourTypeComboBox,
+                    PeriodComboBox,
+                    GroupTypeComboBox,
+                    DurationComboBox,
+                    Step2HotelComboBox,
+                    SavedAllocationTourTypeFilterComboBox,
+                    SavedAllocationPeriodFilterComboBox,
+                    SavedAllocationGroupTypeFilterComboBox,
+                    SavedAllocationDaysFilterComboBox
+                };
+
+                foreach (var cb in targets)
+                {
+                    if (cb == null) continue;
+                    cb.Effect = blur;
+                    cb.Opacity = opacity;
+                    cb.IsHitTestVisible = !frosted;
+                }
+            }
+            catch
+            {
+                // ignore UI tweak failures
+            }
         }
 
         private void SyncStep1SelectionsToStep2()
@@ -1186,6 +1228,7 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             SyncStep2SelectionsToStep1();
+            AllocationModeTitle.Text = "Yeni Odalama Kaydı - Taslak";
             ShowStep3();
         }
 
@@ -1399,7 +1442,8 @@ namespace TurizmOperasyonSistemi.Views
                 ClearSelectedRoom();
                 _matchedSavedAllocation = selectedAllocation;
                 _isPreviewMode = false;
-                ShowStep3();
+            AllocationModeTitle.Text = $"Düzenlenen Kayıt: {selectedAllocation.HotelName} - {selectedAllocation.TourType} / {selectedAllocation.Period}";
+            ShowStep3();
             }
             catch (Exception ex)
             {
@@ -1614,7 +1658,18 @@ public class RoomViewModel : System.ComponentModel.INotifyPropertyChanged
     private Thickness _roomMargin = new Thickness(5);
 
     public string RoomNumber { get; set; }
-    public string RoomTypeName { get; set; }
+    private string _roomTypeName;
+    public string RoomTypeName
+    {
+        get => _roomTypeName;
+        set
+        {
+            _roomTypeName = value;
+            OnPropertyChanged(nameof(RoomTypeName));
+            OnPropertyChanged(nameof(RoomNumberDisplay));
+            OnPropertyChanged(nameof(BedCount));
+        }
+    }
 
     public int MaxCapacity
     {
@@ -1630,8 +1685,24 @@ public class RoomViewModel : System.ComponentModel.INotifyPropertyChanged
     public ObservableCollection<PassengerUiModel> Occupants { get; set; } =
         new ObservableCollection<PassengerUiModel>();
 
+    public int BedCount
+    {
+        get
+        {
+            var type = (RoomTypeName ?? string.Empty).ToUpper();
+            if (type.Contains("SNGL") || type.Contains("SINGLE")) return 1;
+            if (type.Contains("DBL")) return 1; // DBL: 1 yatak ama 2 kişilik
+            if (type.Contains("TWIN")) return 2;
+            if (type.Contains("TRPL") || type.Contains("TRİPLE") || type.Contains("TRIPLE")) return 3;
+            if (type.Contains("QUAD")) return 4;
+            if (type.Contains("QUINT")) return 5;
+            // fallback: assume beds equal to person capacity
+            return MaxCapacity;
+        }
+    }
+
     public string RoomNumberDisplay =>
-        $"Oda {RoomNumber} [{RoomTypeName}] ({MaxCapacity} Yatak)";
+        $"Oda {RoomNumber} [{RoomTypeName}] ({BedCount} Yatak, {MaxCapacity} Kişilik)";
 
     // NEON BAĞLANTI ÖZELLİKLERİ
     public bool IsConnection { get; set; } = false;
