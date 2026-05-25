@@ -9,6 +9,7 @@
         WindowStartupLocation="CenterScreen"
         Background="#0F172A">
 
+
     <Grid>
         <Grid.Resources>
 
