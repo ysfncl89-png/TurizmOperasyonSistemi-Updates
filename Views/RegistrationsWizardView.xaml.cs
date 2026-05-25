@@ -181,26 +181,23 @@ namespace TurizmOperasyonSistemi.Views
             bool matchesText = true;
             if (!string.IsNullOrWhiteSpace(text))
             {
-                // Split search into tokens and require that every token is present in at least one searchable field
                 var tokens = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                matchesText = tokens.All(token =>
-                    (item.PersonFullName != null && Normalize(item.PersonFullName).Contains(token))
-                    || (item.TourType != null && Normalize(item.TourType).Contains(token))
-                    || (item.Period != null && Normalize(item.Period).Contains(token))
-                    || (item.GroupType != null && Normalize(item.GroupType).Contains(token))
-                    || (item.DaysCount != null && Normalize(item.DaysCount).Contains(token))
-                    || (item.VisaRequest != null && Normalize(item.VisaRequest).Contains(token))
-                    || (item.TicketRequest != null && Normalize(item.TicketRequest).Contains(token))
-                    || (item.CargoRequest != null && Normalize(item.CargoRequest).Contains(token))
-                    || (item.RoomType != null && Normalize(item.RoomType).Contains(token))
-                    || (item.DepartureCity != null && Normalize(item.DepartureCity).Contains(token))
-                    || (item.TransferStatus != null && Normalize(item.TransferStatus).Contains(token))
-                    || (item.TransferCity != null && Normalize(item.TransferCity).Contains(token))
-                    || (item.District != null && Normalize(item.District).Contains(token))
-                    || (item.Reference != null && Normalize(item.Reference).Contains(token))
-                    || (item.Currency != null && Normalize(item.Currency).Contains(token))
-                    || (item.Status != null && Normalize(item.Status).Contains(token))
-                );
+
+                // If the user typed mostly digits (TC), search TC field; otherwise search by person full name
+                bool tokensAreDigits = tokens.All(t => t.All(char.IsDigit));
+
+                if (tokensAreDigits)
+                {
+                    matchesText = tokens.All(token =>
+                        (item.PersonTc != null && Normalize(item.PersonTc).Contains(token))
+                    );
+                }
+                else
+                {
+                    matchesText = tokens.All(token =>
+                        (item.PersonFullName != null && Normalize(item.PersonFullName).Contains(token))
+                    );
+                }
             }
 
             return matchesPeriod && matchesText;
