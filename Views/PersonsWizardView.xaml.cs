@@ -13,6 +13,10 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class PersonsWizardView : Page
     {
+        // Eğer bu modül başka bir wizard içinde embed edildiyse ve
+        // kayıt sonrası kullanıcıya küçük bir 'Kaydedildi' bildirimi
+        // gösterilmesini istemiyorsak bu bayrağı true yapın.
+        public bool SuppressSavedNotification { get; set; } = false;
         public event Action<Person> PersonSelectionChanged;
         public event Action<int> PersonSaved;
 
@@ -776,7 +780,10 @@ namespace TurizmOperasyonSistemi.Views
                 ClearRequiredHighlights();
                 PersonSaved?.Invoke(savedPersonId);
 
-                MessageBox.Show(selectedPersonId > 0 ? "Güncellendi" : "Kaydedildi");
+                if (!SuppressSavedNotification)
+                {
+                    MessageBox.Show(selectedPersonId > 0 ? "Güncellendi" : "Kaydedildi");
+                }
 
                 LoadPersons();
                 ResetModuleToEntryState();

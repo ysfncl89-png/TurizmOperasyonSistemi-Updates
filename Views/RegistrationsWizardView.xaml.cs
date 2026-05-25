@@ -81,6 +81,7 @@ namespace TurizmOperasyonSistemi.Views
         private void InitializePersonsModuleHost()
         {
             _personsWizardView = new PersonsWizardView();
+            _personsWizardView.SuppressSavedNotification = true;
             _personsWizardView.PersonSelectionChanged += PersonsWizardView_PersonSelectionChanged;
             _personsWizardView.PersonSaved += PersonsWizardView_PersonSaved;
             PersonsModuleFrame.Navigate(_personsWizardView);
@@ -1091,6 +1092,41 @@ namespace TurizmOperasyonSistemi.Views
                         }
 
                         db.SaveChanges();
+
+                        // Senkronizasyon: Kayıt güncellendiğinde/eklendiğinde
+                        // o kişiye ait varsa RoomOccupant kayıtlarını bul ve bağlı
+                        // RoomAllocation öğesini kayıt verilerine göre güncelle.
+                        try
+                        {
+                            var occupants = db.RoomOccupants
+                                .Include(o => o.RoomAllocation)
+                                .Where(o => o.PassengerId == registration.PersonId)
+                                .ToList();
+
+                            if (occupants.Any())
+                            {
+                                foreach (var occ in occupants)
+                                {
+                                    var alloc = occ.RoomAllocation;
+                                    if (alloc == null) continue;
+
+                                    alloc.TourType = registration.TourType;
+                                    alloc.Period = registration.Period;
+                                    alloc.GroupType = registration.GroupType;
+                                    alloc.DaysCount = registration.DaysCount;
+                                    // Eğer RoomAllocation modelinde RoomType varsa eşleştir
+                                    alloc.RoomType = registration.RoomType;
+
+                                    db.RoomAllocations.Update(alloc);
+                                }
+
+                                db.SaveChanges();
+                            }
+                        }
+                        catch
+                        {
+                            // Hata olması durumunda işlem başarısız olsa bile uygulama devam etsin
+                        }
                         LoadRegistrations();
                         ResetWizardForm();
                         ShowRegistrationBrowser();
