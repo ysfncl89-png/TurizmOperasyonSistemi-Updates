@@ -544,6 +544,27 @@ namespace TurizmOperasyonSistemi.Views
                     ? Visibility.Visible
                     : Visibility.Collapsed;
 
+            // Eğer sonuç yok paneli görünürse, kullanıcıya hangi dönem için sonuç bulunamadığını göster
+            try
+            {
+                if (NoRegistrationResultsPanel.Visibility == Visibility.Visible && NoRegistrationMessageTextBlock != null)
+                {
+                    var selectedPeriod = RegistrationPeriodFilterComboBox?.SelectedItem?.ToString() ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(selectedPeriod) && selectedPeriod != "Tüm Dönemler")
+                    {
+                        NoRegistrationMessageTextBlock.Text = $"Bu kayıt daha önce {selectedPeriod} dönemi için yapılmamış";
+                    }
+                    else
+                    {
+                        NoRegistrationMessageTextBlock.Text = "Bu kayıt daha Önce Yapılmamış";
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+
             // Apply blurring rules requested:
             // Eğer bir dönem seçilmişse ekran buzlu olsun ve başlık (RegistrationBrowserTitleTextBlock) buzsuz kalsın.
             // Ancak arama kutusuna yazılan metin datagridde eşleşiyorsa blur kalksın.

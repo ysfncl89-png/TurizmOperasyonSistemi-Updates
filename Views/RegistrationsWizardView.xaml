@@ -356,27 +356,18 @@
                         <!-- Non-blurred area: description and search (user requested to exclude these from blur) -->
                         <StackPanel Grid.Row="1" Margin="0,0,0,8">
                             <Grid Margin="0,4,0,8">
-                                <!-- Arka glow katmanı -->
-                                <TextBlock Text="İlgili dönemde yapmak istediğiniz kaydın daha önceden yapılıp yapılmadığını kontrol etmek için ADI SOYADI ile arama yapınız."
-                                           Foreground="#06B6D4"
-                                           Opacity="0.45"
-                                           FontSize="14"
-                                           TextWrapping="Wrap"
-                                           HorizontalAlignment="Left"
-                                           VerticalAlignment="Center">
-                                    <TextBlock.Effect>
-                                        <DropShadowEffect Color="#06B6D4" BlurRadius="20" ShadowDepth="0" Opacity="0.9"/>
-                                    </TextBlock.Effect>
-                                </TextBlock>
+                                
 
                                 <!-- Ön plan net neon metin -->
-                                <TextBlock Text="İlgili dönemde yapmak istediğiniz kaydın daha önceden yapılıp yapılmadığını kontrol etmek için ADI SOYADI ile arama yapınız."
-                                           Foreground="#E6FCFF"
+                                <TextBlock Foreground="#E6FCFF"
                                            FontSize="14"
                                            FontWeight="SemiBold"
                                            TextWrapping="Wrap"
                                            HorizontalAlignment="Left"
                                            VerticalAlignment="Center">
+                                    <Run Text="İlgili dönemde yapmak istediğiniz kaydın daha önceden yapılıp yapılmadığını kontrol etmek için "/>
+                                    <Run Text="ADI SOYADI" Foreground="#F59E0B" FontWeight="Bold" />
+                                    <Run Text=" ile arama yapınız." />
                                     <TextBlock.Effect>
                                         <DropShadowEffect Color="#38BDF8" BlurRadius="8" ShadowDepth="0" Opacity="0.95"/>
                                     </TextBlock.Effect>
@@ -560,7 +551,7 @@
                         Visibility="Collapsed"
                         Panel.ZIndex="60">
                     <StackPanel>
-                        <TextBlock Text="Bu Kayıt daha Önce Yapılmamış"
+                        <TextBlock x:Name="NoRegistrationMessageTextBlock" Text="Bu kayıt daha Önce Yapılmamış"
                                    Foreground="#FBBF24"
                                    FontSize="17"
                                    FontWeight="Bold"
