@@ -23,11 +23,30 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <ComboBox x:Name="TourTypeFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" Grid.Column="0"/>
-            <ComboBox x:Name="PeriodFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" Grid.Column="1"/>
-            <ComboBox x:Name="GroupTypeFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" Grid.Column="2"/>
-            <ComboBox x:Name="DaysFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" Grid.Column="3"/>
-            <ComboBox x:Name="HotelFilter" Height="34" SelectionChanged="Filter_Changed" Grid.Column="4"/>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Tur Türü" Foreground="#94A3B8" Margin="0,0,0,6"/>
+                <ComboBox x:Name="TourTypeFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Dönem" Foreground="#94A3B8" Margin="0,0,0,6"/>
+                <ComboBox x:Name="PeriodFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Grup Türü" Foreground="#94A3B8" Margin="0,0,0,6"/>
+                <ComboBox x:Name="GroupTypeFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="3">
+                <TextBlock Text="Gün Sayısı" Foreground="#94A3B8" Margin="0,0,0,6"/>
+                <ComboBox x:Name="DaysFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="4">
+                <TextBlock Text="Otel" Foreground="#94A3B8" Margin="0,0,0,6"/>
+                <ComboBox x:Name="HotelFilter" Height="34" SelectionChanged="Filter_Changed" />
+            </StackPanel>
         </Grid>
 
         <DataGrid x:Name="ResultsGrid" Grid.Row="2" AutoGenerateColumns="False" HeadersVisibility="Column"

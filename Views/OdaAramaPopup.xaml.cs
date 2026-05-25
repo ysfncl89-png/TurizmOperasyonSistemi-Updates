@@ -63,11 +63,23 @@ namespace TurizmOperasyonSistemi.Views
 
                     // populate filter comboboxes
                     var settings = db.AppSettings.Where(x => x.IsActive).OrderBy(x => x.SortOrder).ThenBy(x => x.Id).ToList();
-                    var tours = settings.Where(x => x.Type != null && x.Type.Trim().Equals("TourType", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
-                    var periods = settings.Where(x => x.Type != null && x.Type.Trim().Equals("Dönem", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
-                    var groupTypes = settings.Where(x => x.Type != null && x.Type.Trim().Equals("GroupType", StringComparison.OrdinalIgnoreCase)).Select(x => x.Value).Distinct().ToList();
+                    var tours = settings.Where(x => x.Type != null && (x.Type.Trim().Equals("TourType", StringComparison.OrdinalIgnoreCase) || x.Type.Trim().Equals("Tur Türü", StringComparison.OrdinalIgnoreCase))).Select(x => x.Value).Distinct().ToList();
+                    var periods = settings.Where(x => x.Type != null && (x.Type.Trim().Equals("Dönem", StringComparison.OrdinalIgnoreCase) || x.Type.Trim().Equals("Period", StringComparison.OrdinalIgnoreCase))).Select(x => x.Value).Distinct().ToList();
+                    var groupTypes = settings.Where(x => x.Type != null && (x.Type.Trim().Equals("GroupType", StringComparison.OrdinalIgnoreCase) || x.Type.Trim().Equals("Grup Türü", StringComparison.OrdinalIgnoreCase))).Select(x => x.Value).Distinct().ToList();
                     var days = settings.Where(x => x.Type != null && (x.Type.Trim().Equals("Kaç Günlük Grup", StringComparison.OrdinalIgnoreCase) || x.Type.Trim().Equals("CountOfDays", StringComparison.OrdinalIgnoreCase))).Select(x => x.Value).Distinct().ToList();
-                    var hotels = db.Hotels.AsNoTracking().Select(x => x.Name).Distinct().ToList();
+                    var hotelsFromSettings = settings.Where(x => x.Type != null && (x.Type.Trim().Equals("Otel Ekle", StringComparison.OrdinalIgnoreCase) || x.Type.Trim().Equals("Hotel", StringComparison.OrdinalIgnoreCase))).Select(x => x.Value).Distinct().ToList();
+                    var hotelsFromDb = db.Hotels.AsNoTracking().Select(x => x.Name).Distinct().ToList();
+
+                    // Preserve the order of hotels as defined in AppSettings (SortOrder then Id)
+                    var hotels = new List<string>();
+                    // add hotels from settings first in the order they come (settings already ordered)
+                    hotels.AddRange(hotelsFromSettings.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct());
+                    // then append any hotels that exist in DB but not in settings, preserving DB order
+                    foreach (var h in hotelsFromDb)
+                    {
+                        if (string.IsNullOrWhiteSpace(h)) continue;
+                        if (!hotels.Contains(h)) hotels.Add(h);
+                    }
 
                     TourTypeFilter.ItemsSource = new List<string> { "Tümü" }.Concat(tours).ToList();
                     PeriodFilter.ItemsSource = new List<string> { "Tümü" }.Concat(periods).ToList();
