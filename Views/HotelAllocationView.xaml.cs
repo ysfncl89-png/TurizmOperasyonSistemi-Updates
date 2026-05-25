@@ -419,8 +419,9 @@ namespace TurizmOperasyonSistemi.Views
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
+                // Sadece odak ver, açma davranışını iptal et
                 Step1TourTypeComboBox.Focus();
-                Step1TourTypeComboBox.IsDropDownOpen = true;
+                Step1TourTypeComboBox.IsDropDownOpen = false;
             }), DispatcherPriority.Background);
         }
 
