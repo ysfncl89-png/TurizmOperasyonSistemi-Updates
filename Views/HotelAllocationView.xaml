@@ -343,17 +343,38 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                            <TextBlock x:Name="SavedAllocationsTitleLabel"
-                                       Text="Eşleşen Oda Yerleşimi"
-                                       Foreground="#06B6D4"
-                                       FontSize="16"
-                                       FontWeight="Bold"/>
-                            <TextBlock Text="Seçtiğiniz 5 kritere ait daha önce yapılmış odalama kaydı burada görünür."
-                                       Foreground="#94A3B8"
-                                       FontSize="12"
-                                       Margin="0,4,0,0"/>
-                        </StackPanel>
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="160" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock x:Name="SavedAllocationsTitleLabel"
+                                           Text="Eşleşen Oda Yerleşimi"
+                                           Foreground="#06B6D4"
+                                           FontSize="16"
+                                           FontWeight="Bold"/>
+                                <TextBlock Text="Seçtiğiniz 5 kritere ait daha önce yapılmış odalama kaydı burada görünür."
+                                           Foreground="#94A3B8"
+                                           FontSize="12"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                                    x:Name="ShowAllRecordsButton"
+                                    Content="Tüm kayıtları göster"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Padding="8,4"
+                                    Margin="6,0,0,0"
+                                    Background="#0F172A"
+                                    Foreground="#F8FAFC"
+                                    BorderBrush="#334155"
+                                    BorderThickness="1"
+                                    FontSize="12"
+                                    Click="ShowAllRecordsButton_Click"/>
+                        </Grid>
 
                         <Border Grid.Row="1"
                                 Background="#0F172A"

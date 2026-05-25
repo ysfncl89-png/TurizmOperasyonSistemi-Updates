@@ -84,6 +84,23 @@ namespace TurizmOperasyonSistemi.Views
 
         }
 
+        private void ShowAllRecordsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var ownerWindow = Window.GetWindow(this);
+                var selected = OdaAramaPopup.ShowDialogAndReturn(ownerWindow);
+                if (selected != null)
+                {
+                    LoadSavedAllocationIntoRooming(selected);
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
 
 
         private void AttachComboBoxOpenOnBoxClick()
