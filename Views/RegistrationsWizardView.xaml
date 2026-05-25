@@ -512,6 +512,14 @@
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Kayıt No" Binding="{Binding Id}" Width="90"/>
                                     <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="180"/>
+                                    <DataGridTextColumn Header="TC" Binding="{Binding PersonTc}" Width="120">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#F59E0B"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
                                     <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="130"/>
                                     <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="130"/>
                                     <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="120"/>

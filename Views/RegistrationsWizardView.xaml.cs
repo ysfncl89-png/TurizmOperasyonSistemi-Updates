@@ -134,6 +134,7 @@ namespace TurizmOperasyonSistemi.Views
                         PersonFullName = x.Person != null
                             ? ((x.Person.FirstName ?? "") + " " + (x.Person.LastName ?? "")).Trim()
                             : $"Kişi #{x.PersonId}",
+                        PersonTc = x.Person != null ? (x.Person.TcKimlikNo ?? "") : "",
                         TourType = x.TourType ?? "",
                         Period = x.Period ?? "",
                         GroupType = x.GroupType ?? "",
@@ -1481,6 +1482,7 @@ namespace TurizmOperasyonSistemi.Views
         {
             public int Id { get; set; }
             public string PersonFullName { get; set; }
+            public string PersonTc { get; set; }
             public string TourType { get; set; }
             public string Period { get; set; }
             public string GroupType { get; set; }
