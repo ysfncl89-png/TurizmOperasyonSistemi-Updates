@@ -1387,7 +1387,12 @@
                 <Border Background="#1F2937"
                         CornerRadius="8"
                         Padding="25"
-                        Margin="20">
+                        Margin="20"
+                        MaxWidth="600"
+                        HorizontalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="4" Opacity="0.18"/>
+                    </Border.Effect>
 
                     <StackPanel>
 
