@@ -5,7 +5,7 @@
         xmlns:local="clr-namespace:TurizmOperasyonSistemi"
         Title="Turizm Operasyon Sistemi"
         Height="800"
-        Width="1400"
+        Width="1525"
         WindowStartupLocation="CenterScreen"
         Background="#0F172A">
 

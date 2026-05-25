@@ -43,6 +43,19 @@ namespace TurizmOperasyonSistemi.Views
             AttachComboBoxClickHandlers(this);
         }
 
+        private int ResolveRoomCapacity(string roomType)
+        {
+            string selectedRoomType = (roomType ?? string.Empty).ToUpper();
+
+            if (selectedRoomType.Contains("SNGL") || selectedRoomType.Contains("SINGLE")) return 1;
+            if (selectedRoomType.Contains("DBL") || selectedRoomType.Contains("TWIN")) return 2;
+            if (selectedRoomType.Contains("TRPL") || selectedRoomType.Contains("TRİPLE") || selectedRoomType.Contains("TRIPLE")) return 3;
+            if (selectedRoomType.Contains("QUAD")) return 4;
+            if (selectedRoomType.Contains("QUINT")) return 5;
+
+            return 2;
+        }
+
         private void ComboBox_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (sender is ComboBox cb)
@@ -1117,34 +1130,92 @@ namespace TurizmOperasyonSistemi.Views
                         // RoomAllocation öğesini kayıt verilerine göre güncelle.
                         try
                         {
+                            // Kişiye ait mevcut RoomOccupant kayıtlarını al
                             var occupants = db.RoomOccupants
                                 .Include(o => o.RoomAllocation)
                                 .Where(o => o.PassengerId == registration.PersonId)
                                 .ToList();
 
-                            if (occupants.Any())
+                            var processedPreviousAllocIds = new HashSet<int>();
+
+                            foreach (var occ in occupants)
                             {
-                                foreach (var occ in occupants)
+                                var currentAlloc = occ.RoomAllocation;
+                                if (currentAlloc != null)
                                 {
-                                    var alloc = occ.RoomAllocation;
-                                    if (alloc == null) continue;
-
-                                    alloc.TourType = registration.TourType;
-                                    alloc.Period = registration.Period;
-                                    alloc.GroupType = registration.GroupType;
-                                    alloc.DaysCount = registration.DaysCount;
-                                    // Eğer RoomAllocation modelinde RoomType varsa eşleştir
-                                    alloc.RoomType = registration.RoomType;
-
-                                    db.RoomAllocations.Update(alloc);
+                                    processedPreviousAllocIds.Add(currentAlloc.Id);
                                 }
 
-                                db.SaveChanges();
+                                // Eğer zaten doğru grup/şartlardaysa sadece RoomType güncelle
+                                if (currentAlloc != null &&
+                                    string.Equals(currentAlloc.TourType ?? string.Empty, registration.TourType ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+                                    string.Equals(currentAlloc.Period ?? string.Empty, registration.Period ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+                                    string.Equals(currentAlloc.GroupType ?? string.Empty, registration.GroupType ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+                                    string.Equals(currentAlloc.DaysCount ?? string.Empty, registration.DaysCount ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    currentAlloc.RoomType = registration.RoomType;
+                                    db.RoomAllocations.Update(currentAlloc);
+                                    continue;
+                                }
+
+                                // Uygun mevcut oda (aynı Tur/Periyot/Grup/Süre) ve kapasite müsait olanı bul
+                                var targetAlloc = db.RoomAllocations
+                                    .Include(a => a.Occupants)
+                                    .FirstOrDefault(a =>
+                                        string.Equals(a.TourType ?? string.Empty, registration.TourType ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(a.Period ?? string.Empty, registration.Period ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(a.GroupType ?? string.Empty, registration.GroupType ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(a.DaysCount ?? string.Empty, registration.DaysCount ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+                                        (a.Occupants.Count < ResolveRoomCapacity(a.RoomType)));
+
+                                if (targetAlloc != null)
+                                {
+                                    // Taşıma: RoomOccupant'ın RoomAllocationId değerini değiştir
+                                    occ.RoomAllocationId = targetAlloc.Id;
+                                    db.RoomOccupants.Update(occ);
+                                }
+                                else
+                                {
+                                    // Uygun oda yoksa yeni bir RoomAllocation oluşturup taşı
+                                    var newAlloc = new TurizmOperasyonSistemi.Models.RoomAllocation
+                                    {
+                                        HotelId = 0,
+                                        RoomNumber = "AUTO",
+                                        RoomType = registration.RoomType ?? string.Empty,
+                                        TourType = registration.TourType ?? string.Empty,
+                                        Period = registration.Period ?? string.Empty,
+                                        GroupType = registration.GroupType ?? string.Empty,
+                                        DaysCount = registration.DaysCount ?? string.Empty,
+                                        IsConnection = false,
+                                        ConnectionGroupId = string.Empty
+                                    };
+
+                                    db.RoomAllocations.Add(newAlloc);
+                                    db.SaveChanges(); // Id almak için kaydet
+
+                                    occ.RoomAllocationId = newAlloc.Id;
+                                    db.RoomOccupants.Update(occ);
+                                }
                             }
+
+                            // Boş kalan önceki odaları kapat (sil)
+                            foreach (var prevId in processedPreviousAllocIds)
+                            {
+                                var alloc = db.RoomAllocations
+                                    .Include(a => a.Occupants)
+                                    .FirstOrDefault(a => a.Id == prevId);
+
+                                if (alloc != null && (alloc.Occupants == null || alloc.Occupants.Count == 0))
+                                {
+                                    db.RoomAllocations.Remove(alloc);
+                                }
+                            }
+
+                            db.SaveChanges();
                         }
                         catch
                         {
-                            // Hata olması durumunda işlem başarısız olsa bile uygulama devam etsin
+                            // Hata olsa bile kayıt akışını bozmuyoruz
                         }
                         LoadRegistrations();
                         ResetWizardForm();
