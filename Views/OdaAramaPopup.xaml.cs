@@ -55,6 +55,25 @@ namespace TurizmOperasyonSistemi.Views
                     db.RoomOccupants.RemoveRange(toRemove);
                     db.SaveChanges();
                 }
+
+                // Her durumda: oda içinde hiçbir Occupant kalmamış olan RoomAllocation kayıtlarını sil
+                try
+                {
+                    var emptyAllocations = db.RoomAllocations
+                        .Include(a => a.Occupants)
+                        .Where(a => !a.Occupants.Any())
+                        .ToList();
+
+                    if (emptyAllocations.Count > 0)
+                    {
+                        db.RoomAllocations.RemoveRange(emptyAllocations);
+                        db.SaveChanges();
+                    }
+                }
+                catch
+                {
+                    // Sessizce atla
+                }
             }
             catch
             {
