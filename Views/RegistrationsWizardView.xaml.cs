@@ -12,6 +12,7 @@ using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
+using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -1217,6 +1218,17 @@ namespace TurizmOperasyonSistemi.Views
                         {
                             // Hata olsa bile kayıt akışını bozmuyoruz
                         }
+
+                        // Bildirim gönder: Bir kaydın odalama kriterleri güncellendi
+                        try
+                        {
+                            NotificationCenter.Publish("RegistrationSaved", registration.PersonId);
+                        }
+                        catch
+                        {
+                            // ignore
+                        }
+
                         LoadRegistrations();
                         ResetWizardForm();
                         ShowRegistrationBrowser();

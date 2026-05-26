@@ -11,6 +11,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
+using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -79,9 +80,46 @@ namespace TurizmOperasyonSistemi.Views
                 new System.Windows.Input.MouseButtonEventHandler(Root_PreviewMouseLeftButtonDown),
                 true);
 
+            // Abone ol: Kayıt modülünde bir kayıt değiştiğinde odalama görünümünü güncelle
+            NotificationCenter.Subscribe(OnNotificationReceived);
 
 
 
+
+        }
+
+        private void OnNotificationReceived(string key, object payload)
+        {
+            try
+            {
+                if (key != "RegistrationSaved") return;
+
+                if (payload is not int personId) return;
+
+                // Eğer odalamalarda bu kişi varsa tüm odalardan çıkar ve havuza ekle
+                bool removed = false;
+
+                foreach (var room in RoomsList.ToList())
+                {
+                    var occ = room.Occupants.FirstOrDefault(o => o.PersonId == personId);
+                    if (occ != null)
+                    {
+                        room.Occupants.Remove(occ);
+                        AddPassengerToPoolIfMissing(occ);
+                        room.UpdateStatus();
+                        removed = true;
+                    }
+                }
+
+                if (removed)
+                {
+                    RefreshPassengerCountLabel();
+                }
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void ShowAllRecordsButton_Click(object sender, RoutedEventArgs e)
