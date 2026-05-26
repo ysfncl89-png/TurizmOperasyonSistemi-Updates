@@ -22,12 +22,57 @@ namespace TurizmOperasyonSistemi.Views
             LoadData();
         }
 
+        // Verilen DbContext üzerinde, odalara atanmış yolculardan
+        // Registration tablosunda ilgili oda kaydının TourType/Period/GroupType/DaysCount
+        // kriterlerini aynı anda karşılayan bir kayıt bulunmayanları temizle.
+        private void CleanupOrphanOccupants(AppDbContext db)
+        {
+            try
+            {
+                var occupants = db.RoomOccupants.Include(o => o.RoomAllocation).ToList();
+                var toRemove = new List<RoomOccupant>();
+
+                foreach (var occ in occupants)
+                {
+                    var alloc = occ.RoomAllocation;
+                    if (alloc == null) continue;
+
+                    bool hasMatchingRegistration = db.Registrations.Any(r =>
+                        r.PersonId == occ.PassengerId
+                        && r.TourType == alloc.TourType
+                        && r.Period == alloc.Period
+                        && r.GroupType == alloc.GroupType
+                        && r.DaysCount == alloc.DaysCount);
+
+                    if (!hasMatchingRegistration)
+                    {
+                        toRemove.Add(occ);
+                    }
+                }
+
+                if (toRemove.Count > 0)
+                {
+                    db.RoomOccupants.RemoveRange(toRemove);
+                    db.SaveChanges();
+                }
+            }
+            catch
+            {
+                // Temizlik sırasında hata olsa bile uygulamanın çalışmasına devam et.
+            }
+        }
+
         private void LoadData()
         {
             try
             {
                 using (var db = new AppDbContext())
                 {
+                    // Temizlik: Oda kayıtlarında bulunan, ancak Registrations tablosunda
+                    // aynı TurType, Period, GroupType ve DaysCount kriterlerini aynı anda
+                    // karşılayan bir kaydı olmayan yolcuları (RoomOccupant) sil.
+                    CleanupOrphanOccupants(db);
+
                     var allocations = db.RoomAllocations
                         .AsNoTracking()
                         .Include(x => x.Hotel)
