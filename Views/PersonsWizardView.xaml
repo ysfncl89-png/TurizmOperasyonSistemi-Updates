@@ -410,11 +410,60 @@
                                                TextWrapping="Wrap"/>
 
                                     <DataGrid x:Name="PersonsDataGrid"
-                                              AutoGenerateColumns="True"
+                                              AutoGenerateColumns="False"
                                               Height="320"
                                               RowHeight="38"
                                               SelectionMode="Single"
-                                              SelectionChanged="PersonsDataGrid_SelectionChanged"/>
+                                              SelectionChanged="PersonsDataGrid_SelectionChanged"
+                                              ColumnHeaderHeight="44"
+                                              HorizontalScrollBarVisibility="Auto">
+                                        <DataGrid.Resources>
+                                            <Style x:Key="LocalHeaderStyle" TargetType="DataGridColumnHeader">
+                                                <Setter Property="Background" Value="#16394A"/>
+                                                <Setter Property="Foreground" Value="#E6F9FF"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Padding" Value="12,8"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                                <Setter Property="BorderBrush" Value="#20333F"/>
+                                                <Setter Property="BorderThickness" Value="0,0,1,2"/>
+                                            </Style>
+                                            <Style x:Key="LocalCellStyle" TargetType="DataGridCell">
+                                                <Setter Property="Padding" Value="10,6"/>
+                                                <Setter Property="Foreground" Value="#E6F7FF"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                <Setter Property="BorderBrush" Value="#20333F"/>
+                                                <Setter Property="BorderThickness" Value="0,0,1,0"/>
+                                            </Style>
+                                        </DataGrid.Resources>
+                                        <DataGrid.ColumnHeaderStyle>
+                                            <StaticResource ResourceKey="LocalHeaderStyle"/>
+                                        </DataGrid.ColumnHeaderStyle>
+                                        <DataGrid.CellStyle>
+                                            <StaticResource ResourceKey="LocalCellStyle"/>
+                                        </DataGrid.CellStyle>
+                                        <DataGrid.GridLinesVisibility>Vertical</DataGrid.GridLinesVisibility>
+
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Id" Binding="{Binding Id}" Visibility="Collapsed"/>
+                                            <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="150"/>
+                                            <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="150"/>
+                                            <DataGridTextColumn Header="TC Kimlik No" Binding="{Binding TcKimlikNo}" Width="150"/>
+                                            <DataGridTextColumn Header="Cinsiyet" Binding="{Binding Gender}" Width="90"/>
+                                            <DataGridTextColumn Header="Doğum Tarihi" Binding="{Binding BirthDate, StringFormat=d}" Width="120"/>
+                                            <DataGridTextColumn Header="Yaş Aralığı" Binding="{Binding AgeRange}" Width="100"/>
+                                            <DataGridTextColumn Header="Telefon" Binding="{Binding PhoneNumber}" Width="120"/>
+                                            <DataGridTextColumn Header="Adres" Binding="{Binding Address}" Width="220"/>
+                                            <DataGridTextColumn Header="Pasaport Türü" Binding="{Binding PassportType}" Width="120"/>
+                                            <DataGridTextColumn Header="Pasaport No" Binding="{Binding PassportNumber}" Width="120"/>
+                                            <DataGridTextColumn Header="Pasaport Başlangıç" Binding="{Binding PassportStartDate, StringFormat=d}" Width="130"/>
+                                            <DataGridTextColumn Header="Pasaport Bitiş" Binding="{Binding PassportEndDate, StringFormat=d}" Width="130"/>
+                                            <DataGridTextColumn Header="Kan Grubu" Binding="{Binding BloodType}" Width="90"/>
+                                            <DataGridTextColumn Header="Hastalık Durumu" Binding="{Binding HealthStatus}" Width="150"/>
+                                            <DataGridTextColumn Header="Aşı Durumu" Binding="{Binding VaccineStatus}" Width="130"/>
+                                            <DataGridCheckBoxColumn Header="Aktif" Binding="{Binding IsActive}" Width="70"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
                                 </StackPanel>
                             </Border>
 
