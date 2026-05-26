@@ -1133,6 +1133,18 @@ namespace TurizmOperasyonSistemi.Views
                 return false;
             }
 
+            // Eğer odalar açılmış fakat hiçbir odaya kişi yerleştirilmemişse kullanıcıyı uyar
+            bool anyOccupied = RoomsList.Any(r => r.Occupants != null && r.Occupants.Count > 0);
+            if (!anyOccupied)
+            {
+                MessageBox.Show(
+                    "Kaydetmek için açtığınız oda(lar)a en az bir kişi yerleştirmeniz gerekiyor.",
+                    "Uyarı",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return false;
+            }
+
             string selectedHotelName = HotelSelectComboBox.SelectedItem.ToString();
             string selectedTourType = TourTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
             string selectedPeriod = PeriodComboBox.SelectedItem?.ToString() ?? string.Empty;
