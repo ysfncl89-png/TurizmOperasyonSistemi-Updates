@@ -475,7 +475,7 @@ namespace TurizmOperasyonSistemi.Views
                     FormOverlayTitle.Text = "Kayıt formu beklemede";
                     FormOverlayText.Text = "Önce yukarıdan arama yapın. Kayıt bulunamazsa bu form yeni kişi kaydı için açılacak.";
                     FormCaptionTextBlock.Text = "Yeni kişi kaydı oluşturmak ya da seçili kişiyi güncellemek için bu alanı kullanın.";
-                    SearchStateTextBlock.Text = "Aramayı başlatın. Sistem pasif kişiler dahil tüm eşleşmeleri sonuçlarda gösterecek.";
+                    SearchStateTextBlock.Text = "Aramayı başlatın. Sistem tüm eşleşmeleri sonuçlarda gösterecek.Kişi kaydı yoksa kayıt formu otomatik açılacak.";
                     NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                     break;
 
@@ -511,7 +511,7 @@ namespace TurizmOperasyonSistemi.Views
                     FormPanel.Effect = null;
                     FormOverlay.Visibility = Visibility.Collapsed;
                     FormCaptionTextBlock.Text = "Seçili kişi düzenleme modunda. Değişiklikleri yapıp son adımda güncelleyebilirsiniz.";
-                    SearchStateTextBlock.Text = "Düzenleme modundasınız. Kişi pasifse aktif yapabilir, aktifse pasif yapabilir ve adımlar arasında ilerleyerek güncelleyebilirsiniz.";
+                    SearchStateTextBlock.Text = "Düzenleme modundasınız. Kişinin Kişisel bilgilerini adımlar arasında ilerleyerek güncelleyebilirsiniz.Veritabanından tamamen silmek isterseniz sil butonuna tıklayabilirsiniz";
                     NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                     break;
             }
