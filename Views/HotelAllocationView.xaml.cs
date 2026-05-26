@@ -1514,7 +1514,31 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             SyncStep2SelectionsToStep1();
+            // Sync selections and check if there is an existing saved allocation for these criteria.
+            // If varsa yükle; yoksa önce geçiş öncesi draft odaları temizle ki eski odalar yeni kriterlerle karışmasın.
             UpdateAllocationModeTitle();
+
+            try
+            {
+                // refresh saved allocations lookup
+                LoadSavedAllocations();
+            }
+            catch
+            {
+                // ignore failures
+            }
+
+            var matched = FindMatchingSavedAllocationForStep1();
+            if (matched != null)
+            {
+                // Eğer daha önce bu kriterler için kaydedilmiş bir odalama varsa,
+                // onu yükleyip düzenlemeye geç.
+                LoadSavedAllocationIntoRooming(matched);
+                return;
+            }
+
+            // Kayıt yoksa önce mevcut draft'ı temizle ki eski odalar yeni kriterlerle karışmasın
+            ClearRoomAllocationDraft();
             ShowStep3();
         }
 

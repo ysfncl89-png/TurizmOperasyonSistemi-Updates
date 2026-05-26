@@ -129,14 +129,14 @@
 
                 <Border x:Name="Tab2" Background="#334155" CornerRadius="4" Margin="5" Padding="10">
                     <TextBlock Text="2. Kriter Seçimi"
-                               Foreground="#94A3B8"
+                               Foreground="White"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
                 </Border>
 
                 <Border x:Name="Tab3" Background="#334155" CornerRadius="4" Margin="5" Padding="10">
                     <TextBlock Text="3. Odalama Motoru"
-                               Foreground="#94A3B8"
+                               Foreground="White"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
                 </Border>
