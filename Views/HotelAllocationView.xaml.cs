@@ -1831,15 +1831,24 @@ namespace TurizmOperasyonSistemi.Views
             else if (selectedRoomType.Contains("QUAD")) capacity = 4;
             else if (selectedRoomType.Contains("QUINT")) capacity = 5;
 
-            int existingCount = RoomsList.Count + 1;
-            string autoRoomNo = $"{existingCount}";
+            // Oda numaralandırması: eksik olan en küçük pozitif tam sayıyı ata
+            var existingNumbers = RoomsList
+                .Select(r => { int n; return int.TryParse(r.RoomNumber, out n) ? n : -1; })
+                .Where(n => n > 0)
+                .ToHashSet();
+
+            int newNumber = 1;
+            while (existingNumbers.Contains(newNumber)) newNumber++;
 
             RoomsList.Add(new RoomViewModel
             {
-                RoomNumber = autoRoomNo,
+                RoomNumber = newNumber.ToString(),
                 RoomTypeName = selectedRoomType,
                 MaxCapacity = capacity
             });
+
+            // Oda eklendikten sonra numaralandırmayı tutarlı hale getir
+            ReassignRoomNumbers();
         }
 
         private int ResolveRoomCapacity(string roomType)
@@ -1987,6 +1996,74 @@ namespace TurizmOperasyonSistemi.Views
             foreach (var room in sortedRooms)
             {
                 RoomsList.Add(room);
+            }
+
+            // Tekrardan numaralandır ve duplicate varsa düzelt
+            ReassignRoomNumbers();
+        }
+
+        // Oda numaralarını ardışık ve benzersiz yapar.
+        private void ReassignRoomNumbers()
+        {
+            try
+            {
+                // Bağlantılı grupları ayrı ayrı numaralandırmaya çalışmayacağız;
+                // tüm odaları soldan sağa sıra ile yeni numara verelim
+                int counter = 1;
+                foreach (var room in RoomsList.ToList())
+                {
+                    room.RoomNumber = counter.ToString();
+                    counter++;
+                }
+                // Yeniden numaralandırma sonrası bağlantı grup başlıklarını ve renklerini güncelle
+                try
+                {
+                    var connectionGroups = RoomsList
+                        .Where(r => r.IsConnection && !string.IsNullOrWhiteSpace(r.ConnectionGroupId))
+                        .GroupBy(r => r.ConnectionGroupId)
+                        .OrderBy(g => g.Min(r => int.TryParse(r.RoomNumber, out int n) ? n : int.MaxValue))
+                        .ToList();
+
+                    int groupIndex = 1;
+                    foreach (var group in connectionGroups)
+                    {
+                        if (group.Count() <= 1)
+                        {
+                            var single = group.First();
+                            single.IsConnection = false;
+                            single.ConnectionGroupId = "";
+                            single.ConnectionGroupText = "";
+                            single.ConnectionBorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+                            single.RoomMargin = new Thickness(5);
+                            continue;
+                        }
+
+                        string selectedNeonHex = NeonColors[(groupIndex - 1) % NeonColors.Length];
+                        var neonBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(selectedNeonHex));
+                        string orderedRooms = string.Join(" + ", group
+                            .OrderBy(r => int.TryParse(r.RoomNumber, out int n) ? n : int.MaxValue)
+                            .Select(r => r.RoomNumber));
+
+                        string groupTitle = $"🔗 CONNECTION GRUBU #{groupIndex} (Oda {orderedRooms})";
+
+                        foreach (var room in group)
+                        {
+                            room.IsConnection = true;
+                            room.ConnectionGroupText = groupTitle;
+                            room.ConnectionBorderBrush = neonBrush;
+                        }
+
+                        groupIndex++;
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+            catch
+            {
+                // ignore
             }
         }
     }

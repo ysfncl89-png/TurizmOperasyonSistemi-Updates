@@ -1023,6 +1023,7 @@
                                                                Foreground="White"
                                                                FontWeight="Bold"
                                                                FontSize="12"
+                                                               TextWrapping="Wrap"
                                                                TextTrimming="CharacterEllipsis"
                                                                VerticalAlignment="Center"
                                                                Margin="0,0,8,0" />
@@ -1041,7 +1042,8 @@
                                                 <ListBox ItemsSource="{Binding Occupants}"
                                                          Background="Transparent"
                                                          BorderThickness="0"
-                                                         Height="80">
+                                                         MaxHeight="92"
+                                                         MinHeight="48">
 
                                                     <ListBox.ItemTemplate>
                                                         <DataTemplate>
