@@ -487,7 +487,7 @@ namespace TurizmOperasyonSistemi.Views
                     FormPanel.Effect = _panelBlur;
                     FormOverlay.Visibility = Visibility.Visible;
                     FormOverlayTitle.Text = "Kayıt bulundu";
-                    FormOverlayText.Text = "Düzenleme yapmak istiyorsanız listeden kişiyi seçip Düzenle butonuna tıklayın. Sadece aktif pasif durumunu değiştirmek istiyorsanız sağdaki butonu kullanabilirsiniz.";
+                    FormOverlayText.Text = "Düzenleme yapmak istiyorsanız listeden kişiyi seçip Düzenle butonuna tıklayın. Kişiyi veri tabanınızdan kalıcı olarak silmek istiyorsanız sağdaki butonu kullanabilirsiniz.";
                     FormCaptionTextBlock.Text = "Seçili kaydı düzenlemek için önce listeden kişiyi seçip Düzenle butonuna tıklayın.";
                     NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                     break;
