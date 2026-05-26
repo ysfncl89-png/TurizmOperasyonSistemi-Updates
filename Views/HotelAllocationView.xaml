@@ -1010,7 +1010,10 @@
                                                            Foreground="#A855F7"
                                                            FontSize="10"
                                                            FontWeight="Bold"
-                                                           Margin="0,0,0,4"/>
+                                                           Margin="0,0,0,4"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           TextWrapping="NoWrap"
+                                                           ToolTip="{Binding ConnectionGroupText}"/>
 
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
