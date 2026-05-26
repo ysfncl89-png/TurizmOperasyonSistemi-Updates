@@ -1946,12 +1946,25 @@ namespace TurizmOperasyonSistemi.Views
                     .Select(r => r.RoomNumber));
                 string groupTitle = $"🔗 CONNECTION GRUBU #{groupIndex} (Oda {orderedRooms})";
 
-                foreach (var room in group)
+                // Eğer grupta yalnızca bir oda kaldıysa artık bağlantı olmamalı
+                if (group.Count() == 1)
                 {
-                    room.IsConnection = true;
-                    room.ConnectionGroupId = newGroupId;
-                    room.ConnectionGroupText = groupTitle;
-                    room.ConnectionBorderBrush = neonBrush;
+                    var single = group.First();
+                    single.IsConnection = false;
+                    single.ConnectionGroupId = "";
+                    single.ConnectionGroupText = "";
+                    single.ConnectionBorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+                    single.RoomMargin = new Thickness(5);
+                }
+                else
+                {
+                    foreach (var room in group)
+                    {
+                        room.IsConnection = true;
+                        room.ConnectionGroupId = newGroupId;
+                        room.ConnectionGroupText = groupTitle;
+                        room.ConnectionBorderBrush = neonBrush;
+                    }
                 }
 
                 groupIndex++;
