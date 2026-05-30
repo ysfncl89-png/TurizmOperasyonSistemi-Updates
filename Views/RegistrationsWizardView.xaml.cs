@@ -1080,8 +1080,7 @@ namespace TurizmOperasyonSistemi.Views
                                 "Mükerrer Kayıt",
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Warning);
-                            ResetWizardForm();
-                            ShowRegistrationBrowser();
+                            NavigationService?.Navigate(new RegistrationsWizardView());
                             return;
                         }
 
