@@ -13,7 +13,7 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="Background" Value="#1F2937"/>
-            <Setter Property="BorderBrush" Value="#38BDF8"/>
+            <Setter Property="BorderBrush" Value="#FFEC4899"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
 
@@ -46,7 +46,7 @@
 
                                         <DropShadowEffect BlurRadius="25"
                                                           ShadowDepth="0"
-                                                          Color="#38BDF8"
+                                        Color="#FFEC4899"
                                                           Opacity="0.8"/>
 
                                     </Setter.Value>
@@ -55,7 +55,7 @@
 
                                 <Setter TargetName="border"
                                         Property="BorderBrush"
-                                        Value="#67E8F9"/>
+                                        Value="#FFEC4899"/>
 
                             </Trigger>
 
