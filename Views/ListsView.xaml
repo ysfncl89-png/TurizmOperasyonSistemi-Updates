@@ -99,16 +99,26 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="18">
 
-            <TextBlock Text="Listeler Modülü"
+            <TextBlock Text="LİSTELER MODÜLÜ"
                        FontSize="30"
                        FontWeight="Bold"
                        Foreground="White"
                        Margin="0,0,0,10"/>
 
-            <TextBlock Text="Kartlara fareyle geldiğinizde merkezdeki ana buton etrafına seçenekler fırlayacak."
-                       FontSize="14"
-                       Foreground="#D1D5DB"
-                       Margin="0,0,0,20"/>
+            <TextBlock Foreground="#E6FCFF"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center">
+                                    <Run Text="NE TÜR BİR LİSTE ÜRETMEK İSTİYORSUNUZ?  "/>
+                                    <Run Text="KARTLARIN ÜZERİNE GİDEREK" />
+                                    <Run Text="LİSTE TÜRÜNÜ SEÇİN." Foreground="#F59E0B" FontWeight="Bold" />
+                                    
+                <TextBlock.Effect>
+                    <DropShadowEffect Color="#38BDF8" BlurRadius="8" ShadowDepth="0" Opacity="0.95"/>
+                </TextBlock.Effect>
+            </TextBlock>
 
             <UniformGrid Columns="3" HorizontalAlignment="Stretch" VerticalAlignment="Top">
 
