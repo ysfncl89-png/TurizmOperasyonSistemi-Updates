@@ -114,6 +114,9 @@ namespace TurizmOperasyonSistemi.Views
 
             Loaded += PersonsWizardView_Loaded;
             Loaded += PersonsWizardView_PostLoad;
+            // subscribe to notifications from other modules (like Lists/Health edits)
+            Services.NotificationCenter.Subscribe(OnNotification);
+            Unloaded += (s, e) => Services.NotificationCenter.Unsubscribe(OnNotification);
             FirstNameTextBox.TextChanged += RequiredField_TextChanged;
             LastNameTextBox.TextChanged += RequiredField_TextChanged;
             TcTextBox.TextChanged += RequiredField_TextChanged;
@@ -160,6 +163,35 @@ namespace TurizmOperasyonSistemi.Views
         private void PersonsWizardView_Loaded(object sender, RoutedEventArgs e)
         {
             SearchTextBox.Focus();
+        }
+
+        private void OnNotification(string key, object payload)
+        {
+            if (key != "PersonUpdated") return;
+            // payload expected to be person id
+            int id = 0;
+            if (payload is int i) id = i;
+            else if (payload is long l) id = (int)l;
+
+            try
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    LoadPersons();
+                    if (id > 0)
+                    {
+                        RestoreSelectedPerson(id);
+                        if (PersonsDataGrid.SelectedItem is Person person)
+                        {
+                            PopulateForm(person);
+                        }
+                    }
+                });
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
@@ -766,8 +798,12 @@ namespace TurizmOperasyonSistemi.Views
                     person.PhoneNumber = PhoneTextBox.Text;
                     person.Address = AddressTextBox.Text;
                     person.BloodType = BloodComboBox.Text;
-                    person.HealthStatus = HealthTextBox.Text;
-                    person.VaccineStatus = VaccineTextBox.Text;
+                    person.BloodType = string.IsNullOrWhiteSpace(BloodComboBox.Text) || string.Equals(BloodComboBox.Text, "Seçiniz", StringComparison.OrdinalIgnoreCase)
+                        ? "Belirtmedi"
+                        : BloodComboBox.Text;
+
+                    person.HealthStatus = string.IsNullOrWhiteSpace(HealthTextBox.Text) ? "Belirtmedi" : HealthTextBox.Text;
+                    person.VaccineStatus = string.IsNullOrWhiteSpace(VaccineTextBox.Text) ? "Belirtmedi" : VaccineTextBox.Text;
                     person.PassportType = PassportTypeComboBox.Text;
                     person.PassportNumber = PassportTextBox.Text;
                     person.PassportStartDate = PassportStartPicker.SelectedDate;

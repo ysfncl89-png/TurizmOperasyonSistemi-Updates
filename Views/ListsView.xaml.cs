@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TurizmOperasyonSistemi.Data;
+using TurizmOperasyonSistemi.Models;
+using TurizmOperasyonSistemi.Views;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -32,12 +34,49 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     btn.Click += Kb_opt1_Click;
                 }
+
+                var btn2 = this.FindName("kb_opt2") as Button;
+                if (btn2 != null)
+                {
+                    btn2.Click += Kb_opt2_Click;
+                }
             }
             catch
             {
                 // ignore
             }
         }
+        private void Kb_opt2_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var personsView = new PersonsHealthView();
+
+                // If running inside a NavigationService-enabled host, navigate there
+                if (this.NavigationService != null)
+                {
+                    this.NavigationService.Navigate(personsView);
+                    return;
+                }
+
+                // Otherwise open a new window with the view
+                var win = new Window
+                {
+                    Title = "Sağlık - Kişiler",
+                    Content = new Frame { Content = personsView, NavigationUIVisibility = NavigationUIVisibility.Hidden },
+                    Width = 900,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
         private void Kb_opt1_Click(object sender, RoutedEventArgs e)
         {
             try
