@@ -110,10 +110,10 @@
                        Foreground="#D1D5DB"
                        Margin="0,0,0,20"/>
 
-            <UniformGrid Columns="3" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <UniformGrid Columns="3" HorizontalAlignment="Stretch" VerticalAlignment="Top">
 
                 <!-- Kişisel Bilgiler Card (3 options) -->
-                <Border x:Name="border1" Width="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg1}" Margin="18" Padding="18" ClipToBounds="False" MouseEnter="Border_MouseEnter" MouseLeave="Border_MouseLeave">
+                <Border x:Name="border1" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg1}" Margin="18" Padding="18" ClipToBounds="False" MouseEnter="Border_MouseEnter" MouseLeave="Border_MouseLeave">
                     <Border.Triggers>
                         <EventTrigger RoutedEvent="MouseEnter">
                             <BeginStoryboard>
@@ -226,7 +226,7 @@
                 </Border>
 
                 <!-- Tur Kayıtları Card (6 options) -->
-                <Border x:Name="border2" Width="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg2}" Margin="18" Padding="18" ClipToBounds="False" MouseEnter="Border_MouseEnter" MouseLeave="Border_MouseLeave">
+                <Border x:Name="border2" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg2}" Margin="18" Padding="18" ClipToBounds="False" MouseEnter="Border_MouseEnter" MouseLeave="Border_MouseLeave">
                     <Grid x:Name="card2">
                         <TextBlock Text="Tur Kayıtları" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
@@ -457,7 +457,7 @@
                 </Border>
 
                 <!-- Otel Odalama Card (simple icon card) -->
-                <Border x:Name="border3" Width="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg3}" Margin="18" Padding="18" ClipToBounds="True">
+                <Border x:Name="border3" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg3}" Margin="18" Padding="18" ClipToBounds="True">
                     <Grid x:Name="card3">
                         <TextBlock Text="Otel Odalama" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
@@ -473,7 +473,7 @@
                 </Border>
 
                 <!-- Ödeme Card (simple icon card) -->
-                <Border x:Name="border4" Width="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg4}" Margin="18" Padding="18" ClipToBounds="True">
+                <Border x:Name="border4" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg4}" Margin="18" Padding="18" ClipToBounds="True">
                     <Grid x:Name="card4">
                         <TextBlock Text="Ödeme" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
@@ -489,7 +489,7 @@
                 </Border>
 
                 <!-- Kargo Card (simple icon card) -->
-                <Border x:Name="border5" Width="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg5}" Margin="18" Padding="18" ClipToBounds="True">
+                <Border x:Name="border5" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg5}" Margin="18" Padding="18" ClipToBounds="True">
                     <Grid x:Name="card5">
                         <TextBlock Text="Kargo" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
