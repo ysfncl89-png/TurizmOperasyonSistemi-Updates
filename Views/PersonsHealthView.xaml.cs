@@ -21,6 +21,25 @@ namespace TurizmOperasyonSistemi.Views
             public string PropertyName { get; init; }
         }
 
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (this.NavigationService != null && this.NavigationService.CanGoBack)
+                {
+                    this.NavigationService.GoBack();
+                    return;
+                }
+
+                var win = Window.GetWindow(this);
+                if (win != null)
+                {
+                    win.Close();
+                }
+            }
+            catch { }
+        }
+
         private static readonly IReadOnlyList<ExportColumn> ExportColumns = new[]
         {
             new ExportColumn { Header = "Ad", PropertyName = "FirstName" },

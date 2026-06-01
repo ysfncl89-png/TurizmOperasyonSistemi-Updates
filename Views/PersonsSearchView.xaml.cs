@@ -20,6 +20,27 @@ namespace TurizmOperasyonSistemi.Views
             LoadPersons();
         }
 
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // if navigated within a frame, go back
+                if (this.NavigationService != null && this.NavigationService.CanGoBack)
+                {
+                    this.NavigationService.GoBack();
+                    return;
+                }
+
+                // otherwise close parent window
+                var win = Window.GetWindow(this);
+                if (win != null)
+                {
+                    win.Close();
+                }
+            }
+            catch { }
+        }
+
         private void PersonsDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             // find the DataGridCell that was double-clicked

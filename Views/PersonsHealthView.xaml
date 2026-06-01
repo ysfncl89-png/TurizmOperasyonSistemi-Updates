@@ -96,13 +96,21 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Grid Width="420" Height="40" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button x:Name="BackButton" Content="← Geri" Width="100" Height="40" Margin="0,0,12,0" Click="BackButton_Click"
+                        Background="#EC4899" Foreground="White" FontWeight="SemiBold" FontSize="14" BorderThickness="0" Cursor="Hand">
+                    <Button.Effect>
+                        <DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="0" Opacity="0.25"/>
+                    </Button.Effect>
+                </Button>
+                <Grid Width="420" Height="40" HorizontalAlignment="Left">
                 <TextBox x:Name="SearchTextBox" Height="40" FontSize="14" Padding="12,6" VerticalContentAlignment="Center"
                          Background="#0F172A" Foreground="#E2F9FF" BorderBrush="#22D3EE" BorderThickness="2"
                          TextChanged="SearchTextBox_TextChanged"/>
                 <TextBlock IsHitTestVisible="False" Margin="18,0,0,0" VerticalAlignment="Center" Foreground="#9CAFC0" FontSize="13"
                            Text="Kan Grubu, Hastalık veya Aşı durumuna göre arayın..." x:Name="SearchHint"/>
             </Grid>
+            </StackPanel>
 
             <Button x:Name="ExportButton" Grid.Column="1" Content="Çıktı Al / İndir" Margin="12,0,0,0" Padding="18,9"
                     FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC" Cursor="Hand"
