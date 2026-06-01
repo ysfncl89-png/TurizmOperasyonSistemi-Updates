@@ -24,6 +24,49 @@ namespace TurizmOperasyonSistemi.Views
         public ListsView()
         {
             InitializeComponent();
+            // attach click handler for iletişim button
+            try
+            {
+                var btn = this.FindName("kb_opt1") as Button;
+                if (btn != null)
+                {
+                    btn.Click += Kb_opt1_Click;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+        private void Kb_opt1_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var personsView = new PersonsSearchView();
+
+                // If running inside a NavigationService-enabled host, navigate there
+                if (this.NavigationService != null)
+                {
+                    this.NavigationService.Navigate(personsView);
+                    return;
+                }
+
+                // Otherwise open a new window with the view
+                var win = new Window
+                {
+                    Title = "Kişiler",
+                    Content = new Frame { Content = personsView, NavigationUIVisibility = NavigationUIVisibility.Hidden },
+                    Width = 900,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
         private void Border_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
