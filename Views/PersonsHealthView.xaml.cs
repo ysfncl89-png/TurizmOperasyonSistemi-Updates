@@ -602,7 +602,7 @@ namespace TurizmOperasyonSistemi.Views
             // compute widths using headers and values for selected columns
             var headers = columns.Select(c => c.Header).ToList();
             var widths = GetExcelColumnWidths(rows, headers);
-            var colsXml = string.Join(string.Empty, widths.Select((width, index) => $@"<col min=""{index + 1}"" max=""{index + 1}"" width=""{width:F2}"" customWidth=""1""/>"));
+            // build rows (header + data)
             rowXml.Add(BuildXlsxRow(1, headers, header: true));
             for (var i = 0; i < rows.Count; i++)
             {
@@ -617,9 +617,6 @@ namespace TurizmOperasyonSistemi.Views
   <sheetViews>
     <sheetView workbookViewId=""0""/>
   </sheetViews>
-  <cols>
-    {colsXml}
-  </cols>
   <sheetData>
     {string.Join(Environment.NewLine, rowXml)}
   </sheetData>
