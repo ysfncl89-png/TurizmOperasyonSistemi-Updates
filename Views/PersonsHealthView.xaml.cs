@@ -602,6 +602,27 @@ namespace TurizmOperasyonSistemi.Views
             // compute widths using headers and values for selected columns
             var headers = columns.Select(c => c.Header).ToList();
             var widths = GetExcelColumnWidths(rows, headers);
+            // attempt to use DataGrid actual widths if available
+            try
+            {
+                if (ResultsDataGrid != null && ResultsDataGrid.Columns != null)
+                {
+                    var visibleCols = ResultsDataGrid.Columns.Where(c => c.Visibility == System.Windows.Visibility.Visible).ToList();
+                    for (var i = 0; i < Math.Min(widths.Count, visibleCols.Count); i++)
+                    {
+                        var w = visibleCols[i].ActualWidth;
+                        if (!double.IsNaN(w) && w > 0)
+                        {
+                            widths[i] = Math.Min(42, Math.Max(widths[i], w / 7)); // heuristic: pixels to excel width units
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // ignore if UI not available
+            }
+
             // build rows (header + data)
             rowXml.Add(BuildXlsxRow(1, headers, header: true));
             for (var i = 0; i < rows.Count; i++)
@@ -692,16 +713,35 @@ namespace TurizmOperasyonSistemi.Views
                 var left = x + (int)(i * columnWidth);
                 var right = x + (int)((i + 1) * columnWidth);
                 var top = y + rowHeight;
-                yield return $"{left} {y} {right - left} {rowHeight} re S";
+                // for header row draw filled rectangle with stroke and white text
                 var text = EscapePdf(values[i] ?? string.Empty);
                 var textX = left + 4;
                 var textY = y + 7;
                 if (header)
                 {
+                    // header color #22324A -> normalized
+                    var rf = 34.0/255.0;
+                    var gf = 50.0/255.0;
+                    var bf = 74.0/255.0;
+                    // set fill color (use invariant culture to force dot decimal separator)
+                    yield return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:F3} {1:F3} {2:F3} rg", rf, gf, bf);
+                    // set stroke color to black
+                    yield return "0 0 0 RG";
+                    // fill and stroke rectangle
+                    yield return $"{left} {y} {right - left} {rowHeight} re B";
+                    // set text color to white
+                    yield return "1 1 1 rg";
                     yield return $"BT /F2 9 Tf {textX} {textY} Td ({EscapePdfText(values[i] ?? string.Empty)}) Tj ET";
+                    // reset fill color to black for subsequent operations
+                    yield return "0 0 0 rg";
                 }
                 else
                 {
+                    // ensure stroke is black and draw border
+                    yield return "0 0 0 RG";
+                    yield return $"{left} {y} {right - left} {rowHeight} re S";
+                    // text color black
+                    yield return "0 0 0 rg";
                     yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(values[i] ?? string.Empty)}) Tj ET";
                 }
             }
