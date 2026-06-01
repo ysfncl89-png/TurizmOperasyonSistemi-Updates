@@ -40,6 +40,12 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     btn2.Click += Kb_opt2_Click;
                 }
+                // Tur Kayıtları - Genel butonu
+                var tkGenel = this.FindName("tk_o1") as Button;
+                if (tkGenel != null)
+                {
+                    tkGenel.Click += Tk_o1_Click;
+                }
             }
             catch
             {
@@ -65,6 +71,35 @@ namespace TurizmOperasyonSistemi.Views
                     Title = "Sağlık - Kişiler",
                     Content = new Frame { Content = personsView, NavigationUIVisibility = NavigationUIVisibility.Hidden },
                     Width = 900,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void Tk_o1_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var personsView = new PersonsGeneralView();
+
+                if (this.NavigationService != null)
+                {
+                    this.NavigationService.Navigate(personsView);
+                    return;
+                }
+
+                var win = new Window
+                {
+                    Title = "Tur Kayıtları - Genel",
+                    Content = new Frame { Content = personsView, NavigationUIVisibility = NavigationUIVisibility.Hidden },
+                    Width = 1100,
                     Height = 700,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Owner = Application.Current?.MainWindow
