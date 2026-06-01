@@ -41,6 +41,49 @@ namespace TurizmOperasyonSistemi.Views
             LoadBloodOptions();
             // subscribe to notifications in case PersonsWizardView updates underlying data
             Services.NotificationCenter.Subscribe(OnNotification);
+
+            // Ensure Design button is visible next to Export button at runtime
+            try
+            {
+                if (ExportButton != null)
+                {
+                    var parent = ExportButton.Parent as Grid;
+                    if (parent != null)
+                    {
+                        // create horizontal stack panel in same grid cell
+                        var sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+
+                        // remove existing ExportButton from grid children and add into stackpanel
+                        parent.Children.Remove(ExportButton);
+                        Grid.SetColumn(sp, 1);
+                        sp.Children.Add(ExportButton);
+
+                        // create design button and wire click to existing handler
+                        var designBtn = new Button
+                        {
+                            Name = "DesignButton",
+                            Content = "Listeyi tasarla",
+                            Margin = new System.Windows.Thickness(12, 0, 0, 0),
+                            Padding = new System.Windows.Thickness(14, 9, 14, 9),
+                            FontSize = 14,
+                            FontWeight = System.Windows.FontWeights.SemiBold,
+                            Foreground = System.Windows.Media.Brushes.White,
+                            Cursor = System.Windows.Input.Cursors.Hand,
+                            Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#123046"),
+                            BorderBrush = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#60A5FA"),
+                            BorderThickness = new System.Windows.Thickness(1.2)
+                        };
+                        designBtn.Click += DesignButton_Click;
+                        sp.Children.Add(designBtn);
+
+                        parent.Children.Add(sp);
+                    }
+                }
+            }
+            catch
+            {
+                // ignore any runtime issues when manipulating visual tree
+            }
         }
 
         private void OnNotification(string key, object payload)
@@ -270,6 +313,30 @@ namespace TurizmOperasyonSistemi.Views
             if (path == null) return;
             ExportPdf(NormalizeExtension(path, ".pdf"));
         }
+
+        private void DesignButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new ListDesignDialog(ResultsDataGrid.Columns);
+                dialog.Owner = Application.Current?.MainWindow;
+                var res = dialog.ShowDialog();
+                if (res != true) return;
+
+                var options = dialog.ColumnOptions;
+                if (options == null) return;
+
+                // Apply visibility: match by header text order
+                for (int i = 0; i < ResultsDataGrid.Columns.Count && i < options.Count; i++)
+                {
+                    ResultsDataGrid.Columns[i].Visibility = options[i].IsVisible ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
         private string AskForPath(string title, string filter, string defaultFileName)
         {
             var dialog = new SaveFileDialog
@@ -292,18 +359,20 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ExportWord(string filePath)
         {
-            var rows = GetExportRows();
+            var cols = GetActiveExportColumns();
+            var rows = GetExportRows(cols);
             DeleteIfExists(filePath);
             using var archive = ZipFile.Open(filePath, ZipArchiveMode.Create);
             AddDocxContentTypes(archive);
             AddDocxRels(archive);
             AddDocxDocumentRels(archive);
-            AddDocxDocumentXml(archive, rows);
+            AddDocxDocumentXml(archive, rows, cols);
         }
 
         private void ExportExcel(string filePath)
         {
-            var rows = GetExportRows();
+            var cols = GetActiveExportColumns();
+            var rows = GetExportRows(cols);
             DeleteIfExists(filePath);
             using var archive = ZipFile.Open(filePath, ZipArchiveMode.Create);
             AddXlsxContentTypes(archive);
@@ -311,23 +380,45 @@ namespace TurizmOperasyonSistemi.Views
             AddXlsxWorkbook(archive);
             AddXlsxWorkbookRels(archive);
             AddXlsxStyles(archive);
-            AddXlsxSheet(archive, rows);
+            AddXlsxSheet(archive, rows, cols);
         }
 
         private void ExportPdf(string filePath)
         {
-            var rows = GetExportRows();
+            var cols = GetActiveExportColumns();
+            var rows = GetExportRows(cols);
             DeleteIfExists(filePath);
-            var pdf = BuildSimplePdf(rows);
+            var pdf = BuildSimplePdf(rows, cols);
             File.WriteAllBytes(filePath, pdf);
         }
-        private List<Dictionary<string, string>> GetExportRows()
+        private List<Dictionary<string, string>> GetExportRows(IReadOnlyList<ExportColumn> columns)
         {
             var source = ResultsDataGrid.ItemsSource?.Cast<object>().ToList() ?? new List<object>();
-            return source.Select(item => ExportColumns.ToDictionary(
+            // build dictionary per row using only requested columns
+            return source.Select(item => columns.ToDictionary(
                     column => column.Header,
                     column => GetPropertyValue(item, column.PropertyName)))
                 .ToList();
+        }
+
+        // Build active export column list based on current DataGrid column visibility and order
+        private IReadOnlyList<ExportColumn> GetActiveExportColumns()
+        {
+            var cols = new List<ExportColumn>();
+            foreach (var dgCol in ResultsDataGrid.Columns)
+            {
+                if (dgCol.Visibility != System.Windows.Visibility.Visible) continue;
+                var header = dgCol.Header?.ToString() ?? string.Empty;
+                // map header to known export columns
+                var match = ExportColumns.FirstOrDefault(c => string.Equals(c.Header, header, System.StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    cols.Add(match);
+                }
+            }
+            // fallback: if none matched (rare), return all
+            if (!cols.Any()) return ExportColumns;
+            return cols;
         }
 
         private string GetPropertyValue(object item, string propertyName)
@@ -378,14 +469,15 @@ namespace TurizmOperasyonSistemi.Views
             AddZipEntry(archive, "word/_rels/document.xml.rels", @"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?><Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships""/>");
         }
 
-        private void AddDocxDocumentXml(ZipArchive archive, List<Dictionary<string, string>> rows)
+        private void AddDocxDocumentXml(ZipArchive archive, List<Dictionary<string, string>> rows, IReadOnlyList<ExportColumn> columns)
         {
+            var headers = columns.Select(c => c.Header).ToList();
             var tableRows = new List<string>
             {
-                BuildWordTableRow(ExportColumns.Select(c => c.Header).ToList(), true)
+                BuildWordTableRow(headers, true)
             };
 
-            tableRows.AddRange(rows.Select(row => BuildWordTableRow(ExportColumns.Select(c => row[c.Header]).ToList(), false)));
+            tableRows.AddRange(rows.Select(row => BuildWordTableRow(headers.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList(), false)));
 
             var document = $@"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>
 <w:document xmlns:w=""http://schemas.openxmlformats.org/wordprocessingml/2006/main"">
@@ -504,18 +596,20 @@ namespace TurizmOperasyonSistemi.Views
             AddZipEntry(archive, "xl/styles.xml", styles);
         }
 
-        private void AddXlsxSheet(ZipArchive archive, List<Dictionary<string, string>> rows)
+        private void AddXlsxSheet(ZipArchive archive, List<Dictionary<string, string>> rows, IReadOnlyList<ExportColumn> columns)
         {
             var rowXml = new List<string>();
-            var widths = GetExcelColumnWidths(rows);
+            // compute widths using headers and values for selected columns
+            var headers = columns.Select(c => c.Header).ToList();
+            var widths = GetExcelColumnWidths(rows, headers);
             var colsXml = string.Join(string.Empty, widths.Select((width, index) => $@"<col min=""{index + 1}"" max=""{index + 1}"" width=""{width:F2}"" customWidth=""1""/>"));
-            rowXml.Add(BuildXlsxRow(1, ExportColumns.Select(c => c.Header).ToList(), header: true));
+            rowXml.Add(BuildXlsxRow(1, headers, header: true));
             for (var i = 0; i < rows.Count; i++)
             {
-                rowXml.Add(BuildXlsxRow(i + 2, ExportColumns.Select(c => rows[i][c.Header]).ToList(), header: false));
+                rowXml.Add(BuildXlsxRow(i + 2, headers.Select(h => rows[i].ContainsKey(h) ? rows[i][h] : string.Empty).ToList(), header: false));
             }
 
-            var lastColumn = ColumnName(ExportColumns.Count);
+            var lastColumn = ColumnName(headers.Count);
             var lastRow = Math.Max(1, rows.Count + 1);
             var sheet = $@"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>
 <worksheet xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"" xmlns:r=""http://schemas.openxmlformats.org/officeDocument/2006/relationships"">
@@ -534,14 +628,16 @@ namespace TurizmOperasyonSistemi.Views
             AddZipEntry(archive, "xl/worksheets/sheet1.xml", sheet);
         }
 
-        private List<double> GetExcelColumnWidths(List<Dictionary<string, string>> rows)
+        private List<double> GetExcelColumnWidths(List<Dictionary<string, string>> rows, List<string> headers)
         {
-            var widths = ExportColumns.Select(c => (double)Math.Max(c.Header.Length + 4, 14)).ToList();
+            var widths = headers.Select(h => (double)Math.Max(h.Length + 4, 14)).ToList();
             foreach (var row in rows)
             {
-                for (var i = 0; i < ExportColumns.Count; i++)
+                for (var i = 0; i < headers.Count; i++)
                 {
-                    var valueLength = (row[ExportColumns[i].Header] ?? string.Empty).Length + 2;
+                    var key = headers[i];
+                    var val = row.ContainsKey(key) ? row[key] : string.Empty;
+                    var valueLength = (val ?? string.Empty).Length + 2;
                     widths[i] = Math.Min(42, Math.Max(widths[i], valueLength));
                 }
             }
@@ -561,7 +657,7 @@ namespace TurizmOperasyonSistemi.Views
             return $@"<row r=""{rowNumber}"">{string.Join(string.Empty, cells)}</row>";
         }
 
-        private byte[] BuildSimplePdf(List<Dictionary<string, string>> rows)
+        private byte[] BuildSimplePdf(List<Dictionary<string, string>> rows, IReadOnlyList<ExportColumn> columns)
         {
             var pageWidth = 842;
             var pageHeight = 595;
@@ -569,7 +665,7 @@ namespace TurizmOperasyonSistemi.Views
             var top = 40;
             var rowHeight = 22;
             var usableWidth = pageWidth - margin * 2;
-            var columnWidth = usableWidth / ExportColumns.Count;
+            var columnWidth = usableWidth / columns.Count;
 
             var content = new List<string>
             {
@@ -577,13 +673,14 @@ namespace TurizmOperasyonSistemi.Views
             };
 
             var y = 520;
-            content.AddRange(BuildPdfRow(ExportColumns.Select(c => c.Header).ToList(), margin, y, columnWidth, rowHeight, true));
+            var headers = columns.Select(c => c.Header).ToList();
+            content.AddRange(BuildPdfRow(headers, margin, y, columnWidth, rowHeight, true));
             y -= rowHeight;
 
             foreach (var row in rows)
             {
                 if (y < 50) break;
-                content.AddRange(BuildPdfRow(ExportColumns.Select(c => row[c.Header]).ToList(), margin, y, columnWidth, rowHeight, false));
+                content.AddRange(BuildPdfRow(headers.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList(), margin, y, columnWidth, rowHeight, false));
                 y -= rowHeight;
             }
 
