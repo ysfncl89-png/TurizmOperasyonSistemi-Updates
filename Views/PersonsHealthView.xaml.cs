@@ -584,7 +584,7 @@ namespace TurizmOperasyonSistemi.Views
   </fonts>
   <fills count=""2"">
     <fill><patternFill patternType=""none""/></fill>
-    <fill><patternFill patternType=""solid""><fgColor rgb=""FF22324A""/><bgColor indexed=""64""/></patternFill></fill>
+    <fill><patternFill patternType=""solid""><fgColor rgb=""FF22324A""/></patternFill></fill>
   </fills>
   <borders count=""1""><border><left/><right/><top/><bottom/><diagonal/></border></borders>
   <cellStyleXfs count=""1""><xf numFmtId=""0"" fontId=""0"" fillId=""0"" borderId=""0""/></cellStyleXfs>
