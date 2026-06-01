@@ -399,6 +399,18 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)
         {
+            // Prefer showing the custom popup if available
+            try
+            {
+                if (ExportPopup != null)
+                {
+                    ExportPopup.IsOpen = true;
+                    return;
+                }
+            }
+            catch { }
+
+            // fallback to old context menu
             if (ExportButton.ContextMenu != null)
             {
                 ExportButton.ContextMenu.PlacementTarget = ExportButton;
@@ -408,6 +420,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ExportWord_Click(object sender, RoutedEventArgs e)
         {
+            try { if (ExportPopup != null) ExportPopup.IsOpen = false; } catch { }
             var path = AskForPath("Word belgesi", "Word dosyası (*.docx)|*.docx", "saglik-listesi.docx");
             if (path == null) return;
             ExportWord(NormalizeExtension(path, ".docx"));
@@ -415,6 +428,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ExportExcel_Click(object sender, RoutedEventArgs e)
         {
+            try { if (ExportPopup != null) ExportPopup.IsOpen = false; } catch { }
             var path = AskForPath("Excel çalışma kitabı", "Excel dosyası (*.xlsx)|*.xlsx", "saglik-listesi.xlsx");
             if (path == null) return;
             ExportExcel(NormalizeExtension(path, ".xlsx"));
@@ -422,6 +436,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ExportPdf_Click(object sender, RoutedEventArgs e)
         {
+            try { if (ExportPopup != null) ExportPopup.IsOpen = false; } catch { }
             var path = AskForPath("PDF belgesi", "PDF dosyası (*.pdf)|*.pdf", "saglik-listesi.pdf");
             if (path == null) return;
             ExportPdf(NormalizeExtension(path, ".pdf"));

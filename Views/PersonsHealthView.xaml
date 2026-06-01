@@ -82,6 +82,28 @@
                 </Setter.Value>
             </Setter>
         </Style>
+		<Style x:Key="ExportPopupButtonStyle" TargetType="Button">
+    <Setter Property="Background" Value="#123046"/>
+    <Setter Property="BorderBrush" Value="#2B76A6"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Foreground" Value="White"/>
+
+    <Style.Triggers>
+
+        <!-- Mouse üzerine gelince hiçbir şey değiştirme -->
+        <Trigger Property="IsMouseOver" Value="True">
+            <Setter Property="Background" Value="#123046"/>
+            <Setter Property="BorderBrush" Value="#2B76A6"/>
+        </Trigger>
+
+        <!-- Tıklayınca da renk değiştirme -->
+        <Trigger Property="IsPressed" Value="True">
+            <Setter Property="Background" Value="#123046"/>
+            <Setter Property="BorderBrush" Value="#2B76A6"/>
+        </Trigger>
+
+    </Style.Triggers>
+</Style>
     </Page.Resources>
 
     <Grid Margin="18">
@@ -120,38 +142,134 @@
                     <DropShadowEffect Color="#EC4899" BlurRadius="16" ShadowDepth="0" Opacity="0.35"/>
                 </Button.Effect>
                 <Button.ContextMenu>
-					<ContextMenu>
-
-						<MenuItem Header="Word (.docx)"
-								  Click="ExportWord_Click">
-							<MenuItem.Icon>
-								<Image Width="18"
-									   Height="18"
-									   Source="/Assets/Icons/word.png"/>
-							</MenuItem.Icon>
-						</MenuItem>
-
-						<MenuItem Header="Excel (.xlsx)"
-								  Click="ExportExcel_Click">
-							<MenuItem.Icon>
-								<Image Width="18"
-									   Height="18"
-									   Source="/Assets/Icons/excel.png"/>
-							</MenuItem.Icon>
-						</MenuItem>
-
-						<MenuItem Header="PDF (.pdf)"
-								  Click="ExportPdf_Click">
-							<MenuItem.Icon>
-								<Image Width="18"
-									   Height="18"
-									   Source="/Assets/Icons/pdf.png"/>
-							</MenuItem.Icon>
-						</MenuItem>
-
-					</ContextMenu>
+                    <!-- keep context menu as fallback for keyboard users -->
+                    <ContextMenu>
+                        <MenuItem Header="Word (.docx)" Click="ExportWord_Click"><MenuItem.Icon><Image Width="18" Height="18" Source="/Assets/Icons/word.png"/></MenuItem.Icon></MenuItem>
+                        <MenuItem Header="Excel (.xlsx)" Click="ExportExcel_Click"><MenuItem.Icon><Image Width="18" Height="18" Source="/Assets/Icons/excel.png"/></MenuItem.Icon></MenuItem>
+                        <MenuItem Header="PDF (.pdf)" Click="ExportPdf_Click"><MenuItem.Icon><Image Width="18" Height="18" Source="/Assets/Icons/pdf.png"/></MenuItem.Icon></MenuItem>
+                    </ContextMenu>
                 </Button.ContextMenu>
             </Button>
+
+            <!-- Popup that shows big icon buttons for export options -->
+			<!-- Popup that shows big icon buttons for export options -->
+			<Popup x:Name="ExportPopup"
+				   PlacementTarget="{Binding ElementName=ExportButton}"
+				   Placement="Bottom"
+				   StaysOpen="False"
+				   AllowsTransparency="True"
+				   PopupAnimation="Fade">
+
+				<Border Background="#0B1220"
+						CornerRadius="10"
+						Padding="12"
+						BorderBrush="#334155"
+						BorderThickness="1">
+
+					<Border.Effect>
+						<DropShadowEffect Color="#000000"
+										  BlurRadius="18"
+										  ShadowDepth="0"
+										  Opacity="0.25"/>
+					</Border.Effect>
+
+					<StackPanel Orientation="Horizontal"
+								HorizontalAlignment="Center">
+
+						<!-- WORD -->
+						<Button x:Name="PopupWordButton"
+								Style="{StaticResource ExportPopupButtonStyle}"
+								Click="ExportWord_Click"
+								Width="110"
+								Height="110"
+								Margin="6"
+								Cursor="Hand">
+
+							<StackPanel HorizontalAlignment="Center"
+										VerticalAlignment="Center">
+
+								<Image Source="pack://application:,,,/Assets/Icons/word.png"
+									   Width="40"
+									   Height="40"
+									   HorizontalAlignment="Center"/>
+
+								<TextBlock Text="Word"
+										   Foreground="#E2F8FF"
+										   FontWeight="SemiBold"
+										   HorizontalAlignment="Center"
+										   Margin="0,8,0,0"/>
+
+								<TextBlock Text="İndir"
+										   Foreground="#9CAFC0"
+										   FontSize="12"
+										   HorizontalAlignment="Center"/>
+							</StackPanel>
+						</Button>
+
+						<!-- EXCEL -->
+						<Button x:Name="PopupExcelButton"
+								Style="{StaticResource ExportPopupButtonStyle}"
+								Click="ExportExcel_Click"
+								Width="110"
+								Height="110"
+								Margin="6"
+								Cursor="Hand">
+							
+
+							<StackPanel HorizontalAlignment="Center"
+										VerticalAlignment="Center">
+
+								<Image Source="pack://application:,,,/Assets/Icons/excel.png"
+									   Width="40"
+									   Height="40"
+									   HorizontalAlignment="Center"/>
+
+								<TextBlock Text="Excel"
+										   Foreground="#E2F8FF"
+										   FontWeight="SemiBold"
+										   HorizontalAlignment="Center"
+										   Margin="0,8,0,0"/>
+
+								<TextBlock Text="İndir"
+										   Foreground="#9CAFC0"
+										   FontSize="12"
+										   HorizontalAlignment="Center"/>
+							</StackPanel>
+						</Button>
+
+						<!-- PDF -->
+						<Button x:Name="PopupPdfButton"
+								Style="{StaticResource ExportPopupButtonStyle}"
+								Click="ExportPdf_Click"
+								Width="110"
+								Height="110"
+								Margin="6"
+								Cursor="Hand">
+
+							<StackPanel HorizontalAlignment="Center"
+										VerticalAlignment="Center">
+
+								<Image Source="pack://application:,,,/Assets/Icons/pdf.png"
+									   Width="40"
+									   Height="40"
+									   HorizontalAlignment="Center"/>
+
+								<TextBlock Text="PDF"
+										   Foreground="#E2F8FF"
+										   FontWeight="SemiBold"
+										   HorizontalAlignment="Center"
+										   Margin="0,8,0,0"/>
+
+								<TextBlock Text="İndir"
+										   Foreground="#9CAFC0"
+										   FontSize="12"
+										   HorizontalAlignment="Center"/>
+							</StackPanel>
+						</Button>
+
+					</StackPanel>
+				</Border>
+			</Popup>
         </Grid>
 
         <Border Grid.Row="1" Background="#152234" CornerRadius="12" Padding="12">

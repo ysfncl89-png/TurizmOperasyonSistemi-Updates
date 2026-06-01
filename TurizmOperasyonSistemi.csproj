@@ -16,22 +16,13 @@
     <None Remove="Assets\Icons\Ekran görüntüsü 2026-06-01 202907.png" />
     <None Remove="Assets\Icons\Ekran görüntüsü 2026-06-01 202919.png" />
     <None Remove="Assets\Icons\Ekran görüntüsü 2026-06-01 202930.png" />
+    <None Remove="Assets\Icons\excel.png" />
+    <None Remove="Assets\Icons\pdf.png" />
+    <None Remove="Assets\Icons\word.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Page Remove="Views\SettingDialogCities.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="Assets\Icons\Ekran görüntüsü 2026-06-01 202907.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Icons\Ekran görüntüsü 2026-06-01 202919.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Icons\Ekran görüntüsü 2026-06-01 202930.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
   </ItemGroup>
 
   <ItemGroup>
@@ -47,6 +38,18 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Icons\excel.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\Icons\pdf.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\Icons\word.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>
