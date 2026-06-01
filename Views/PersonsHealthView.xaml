@@ -90,15 +90,36 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,12">
-            <Grid Width="420" Height="40">
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Width="420" Height="40" HorizontalAlignment="Left">
                 <TextBox x:Name="SearchTextBox" Height="40" FontSize="14" Padding="12,6" VerticalContentAlignment="Center"
-                         Background="#0F172A" Foreground="#E2F9FF" BorderBrush="#22D3EE" BorderThickness="2" 
+                         Background="#0F172A" Foreground="#E2F9FF" BorderBrush="#22D3EE" BorderThickness="2"
                          TextChanged="SearchTextBox_TextChanged"/>
                 <TextBlock IsHitTestVisible="False" Margin="18,0,0,0" VerticalAlignment="Center" Foreground="#9CAFC0" FontSize="13"
                            Text="Kan Grubu, Hastalık veya Aşı durumuna göre arayın..." x:Name="SearchHint"/>
             </Grid>
-        </StackPanel>
+
+            <Button x:Name="ExportButton" Grid.Column="1" Content="Çıktı Al / İndir" Margin="12,0,0,0" Padding="18,9"
+                    FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC" Cursor="Hand"
+                    Background="#172033" BorderBrush="#EC4899" BorderThickness="1.5" HorizontalAlignment="Right"
+                    Click="ExportButton_Click">
+                <Button.Effect>
+                    <DropShadowEffect Color="#EC4899" BlurRadius="16" ShadowDepth="0" Opacity="0.35"/>
+                </Button.Effect>
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Word (.docx)" Click="ExportWord_Click"/>
+                        <MenuItem Header="Excel (.xlsx)" Click="ExportExcel_Click"/>
+                        <MenuItem Header="PDF (.pdf)" Click="ExportPdf_Click"/>
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+        </Grid>
 
         <Border Grid.Row="1" Background="#152234" CornerRadius="12" Padding="12">
             <DataGrid x:Name="ResultsDataGrid" AutoGenerateColumns="False" IsReadOnly="False" SelectionMode="Single" RowHeight="36"
