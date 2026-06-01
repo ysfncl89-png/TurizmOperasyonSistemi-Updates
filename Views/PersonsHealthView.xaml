@@ -112,11 +112,36 @@
                     <DropShadowEffect Color="#EC4899" BlurRadius="16" ShadowDepth="0" Opacity="0.35"/>
                 </Button.Effect>
                 <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Word (.docx)" Click="ExportWord_Click"/>
-                        <MenuItem Header="Excel (.xlsx)" Click="ExportExcel_Click"/>
-                        <MenuItem Header="PDF (.pdf)" Click="ExportPdf_Click"/>
-                    </ContextMenu>
+					<ContextMenu>
+
+						<MenuItem Header="Word (.docx)"
+								  Click="ExportWord_Click">
+							<MenuItem.Icon>
+								<Image Width="18"
+									   Height="18"
+									   Source="/Assets/Icons/word.png"/>
+							</MenuItem.Icon>
+						</MenuItem>
+
+						<MenuItem Header="Excel (.xlsx)"
+								  Click="ExportExcel_Click">
+							<MenuItem.Icon>
+								<Image Width="18"
+									   Height="18"
+									   Source="/Assets/Icons/excel.png"/>
+							</MenuItem.Icon>
+						</MenuItem>
+
+						<MenuItem Header="PDF (.pdf)"
+								  Click="ExportPdf_Click">
+							<MenuItem.Icon>
+								<Image Width="18"
+									   Height="18"
+									   Source="/Assets/Icons/pdf.png"/>
+							</MenuItem.Icon>
+						</MenuItem>
+
+					</ContextMenu>
                 </Button.ContextMenu>
             </Button>
         </Grid>

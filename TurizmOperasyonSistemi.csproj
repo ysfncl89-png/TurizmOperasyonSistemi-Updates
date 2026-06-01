@@ -13,11 +13,28 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets\Icons\Ekran görüntüsü 2026-06-01 202907.png" />
+    <None Remove="Assets\Icons\Ekran görüntüsü 2026-06-01 202919.png" />
+    <None Remove="Assets\Icons\Ekran görüntüsü 2026-06-01 202930.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Page Remove="Views\SettingDialogCities.xaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Assets\" />
+    <Resource Include="Assets\Icons\Ekran görüntüsü 2026-06-01 202907.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\Icons\Ekran görüntüsü 2026-06-01 202919.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\Icons\Ekran görüntüsü 2026-06-01 202930.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Migrations\" />
     <Folder Include="Themes\" />
   </ItemGroup>

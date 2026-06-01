@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Security;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
@@ -114,6 +115,99 @@ namespace TurizmOperasyonSistemi.Views
             {
                 // ignore
             }
+            try
+            {
+                SetExportMenuIcons();
+            }
+            catch
+            {
+                // ignore icon assignment errors
+            }
+        }
+
+        private void SetExportMenuIcons()
+        {
+            if (ExportButton == null) return;
+            var cm = ExportButton.ContextMenu;
+            if (cm == null) return;
+
+            foreach (var item in cm.Items)
+            {
+                if (item is MenuItem mi)
+                {
+                    try
+                    {
+                        var header = (mi.Header ?? string.Empty).ToString().ToLowerInvariant();
+                        string fileName = null;
+                        if (header.Contains("word") || header.Contains(".doc")) fileName = "word.png";
+                        else if (header.Contains("excel") || header.Contains(".xlsx")) fileName = "excel.png";
+                        else if (header.Contains("pdf")) fileName = "pdf.png";
+
+                        if (!string.IsNullOrEmpty(fileName))
+                        {
+                            var bmp = LoadIcon(fileName);
+                            if (bmp != null)
+                            {
+                                var img = new Image
+                                {
+                                    Width = 18,
+                                    Height = 18,
+                                    Stretch = System.Windows.Media.Stretch.Uniform,
+                                    Source = bmp
+                                };
+                                mi.Icon = img;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // ignore per-item errors
+                    }
+                }
+            }
+        }
+
+        private BitmapImage LoadIcon(string fileName)
+        {
+            // Try pack URI with assembly, then simple pack URI, then file system path
+            var asmName = Assembly.GetExecutingAssembly().GetName().Name;
+            var candidates = new[]
+            {
+                $"pack://application:,,,/{asmName};component/Assets/Icons/{fileName}",
+                $"pack://application:,,,/Assets/Icons/{fileName}",
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty, "Assets", "Icons", fileName)
+            };
+
+            foreach (var c in candidates)
+            {
+                try
+                {
+                    Uri uri;
+                    if (c.StartsWith("pack://", System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        uri = new Uri(c, UriKind.Absolute);
+                    }
+                    else
+                    {
+                        // file-system path
+                        uri = new Uri(c, UriKind.Absolute);
+                    }
+
+                    var bi = new BitmapImage();
+                    bi.BeginInit();
+                    bi.UriSource = uri;
+                    bi.CacheOption = BitmapCacheOption.OnLoad;
+                    bi.EndInit();
+                    bi.Freeze();
+                    return bi;
+                }
+                catch
+                {
+                    // try next
+                }
+            }
+
+            return null;
         }
 
         private void LoadAll()
