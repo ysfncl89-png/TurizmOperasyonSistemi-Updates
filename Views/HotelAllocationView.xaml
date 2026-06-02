@@ -171,7 +171,7 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0"
-                                   Text="🔎 Ara Filtrele Adımında Kriterleri Sırayla Seçin "
+                                   Text="🔎 İlgili Listeyi Görmek İçin Kriterleri Sırayla Seçin "
                                    Foreground="White"
                                    FontSize="18"
                                    FontWeight="Bold"
