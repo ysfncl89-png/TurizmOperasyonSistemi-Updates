@@ -87,7 +87,7 @@
                             <Style TargetType="TextBlock">
                                 <Setter Property="Foreground" Value="#F59E0B"/>
                             </Style>
-                        </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn.ElementStyle> 
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
