@@ -133,13 +133,21 @@
                            Text="Arama... (kolon adı ile arama yapılabilir)" x:Name="SearchHint"/>
             </Grid>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">
                 <Button x:Name="ExportButton" Content="Çıktı Al / İndir" Margin="12,0,0,0" Padding="18,9"
                         FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC" Cursor="Hand"
                         Background="#172033" BorderBrush="#EC4899" BorderThickness="1.5" Click="ExportButton_Click">
                     <Button.Effect>
                         <DropShadowEffect Color="#EC4899" BlurRadius="16" ShadowDepth="0" Opacity="0.35"/>
                     </Button.Effect>
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="CSV (.csv)" Click="ExportCsv_Click" />
+                            <MenuItem Header="Word (.docx)" Click="ExportWord_Click"><MenuItem.Icon><Image Width="18" Height="18" Source="/Assets/Icons/word.png"/></MenuItem.Icon></MenuItem>
+                            <MenuItem Header="Excel (.xlsx)" Click="ExportExcel_Click"><MenuItem.Icon><Image Width="18" Height="18" Source="/Assets/Icons/excel.png"/></MenuItem.Icon></MenuItem>
+                            <MenuItem Header="PDF (.pdf)" Click="ExportPdf_Click"><MenuItem.Icon><Image Width="18" Height="18" Source="/Assets/Icons/pdf.png"/></MenuItem.Icon></MenuItem>
+                        </ContextMenu>
+                    </Button.ContextMenu>
                 </Button>
 
                 <Button x:Name="DesignButton" Content="Listeyi tasarla" Margin="12,0,0,0" Padding="14,9" Click="DesignButton_Click"
@@ -225,7 +233,20 @@
 
                 <!-- Action button (moved below comboboxes) -->
                 <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                    <TextBlock x:Name="FilterWarning" Text="Tur Türü ve Dönem seçilmeden Listeyi Göster devre dışı." Foreground="#FCA311" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="Collapsed"/>
+                    <TextBlock x:Name="FilterWarning" Text="Tur Türü ve Dönem seçilmeden Listeyi Göster devre dışı." Foreground="#FCA311" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="Visible"/>
+                    <Button x:Name="ApplyFiltersButton"
+                            Content="Listeyi Göster"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Width="220"
+                            Height="46"
+                            Padding="20,8"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Margin="0,0,0,0"
+                            HorizontalAlignment="Right"
+                            Cursor="Hand"
+                            Click="ApplyFiltersButton_Click"
+                            IsEnabled="False" />
                 </StackPanel>
             </Grid>
         </StackPanel>
