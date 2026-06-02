@@ -391,24 +391,123 @@
                     <DataGridTextColumn Header="Doğum Tarihi" Binding="{Binding BirthDate}" Width="120"/>
                     <DataGridTextColumn Header="Telefon numarası" Binding="{Binding PhoneNumber}" Width="140"/>
                     <DataGridTextColumn Header="Adres" Binding="{Binding Address}" Width="240"/>
-                    <DataGridTextColumn Header="Pasaport tipi" Binding="{Binding PassportType}" Width="120"/>
+                    <DataGridTemplateColumn Header="Pasaport tipi" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding PassportType}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_PassportType" SelectedItem="{Binding PassportType, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Pasaport numarası" Binding="{Binding PassportNumber}" Width="140"/>
                     <DataGridTextColumn Header="Pasaport Başlangıç tarihi" Binding="{Binding PassportStartDate}" Width="140"/>
                     <DataGridTextColumn Header="Pasaport bitiş tarihi" Binding="{Binding PassportEndDate}" Width="140"/>
-                    <DataGridTextColumn Header="Kan Grubu" Binding="{Binding BloodType}" Width="110"/>
+                    <DataGridTemplateColumn Header="Kan Grubu" Width="110">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding BloodType}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_BloodType" SelectedItem="{Binding BloodType, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Aşı durumu" Binding="{Binding VaccineStatus}" Width="120"/>
                     <DataGridTextColumn Header="hastalık durumu" Binding="{Binding HealthStatus}" Width="160"/>
                     <DataGridTextColumn Header="Yaş aralığı" Binding="{Binding AgeRange}" Width="110"/>
-                    <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="110"/>
-                    <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="110"/>
-                    <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="110"/>
+                    <DataGridTemplateColumn Header="Vize Talebi" Width="110">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding VisaRequest}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_VisaRequest" SelectedItem="{Binding VisaRequest, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Bilet Talebi" Width="110">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding TicketRequest}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_TicketRequest" SelectedItem="{Binding TicketRequest, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Kargo Talebi" Width="110">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding CargoRequest}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_CargoRequest" SelectedItem="{Binding CargoRequest, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Oda tipi" Binding="{Binding RoomType}" Width="110"/>
-                    <DataGridTextColumn Header="Katılım yapılacak şehir" Binding="{Binding DepartureCity}" Width="160"/>
-                    <DataGridTextColumn Header="Aktarma var mı ?" Binding="{Binding HasTransfer}" Width="120"/>
-                    <DataGridTextColumn Header="Aktarma şehri" Binding="{Binding TransferCity}" Width="140"/>
+                    <DataGridTemplateColumn Header="Katılım yapılacak şehir" Width="160">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DepartureCity}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_DepartureCity" SelectedItem="{Binding DepartureCity, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Aktarma var mı ?" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding HasTransfer}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_HasTransfer" SelectedItem="{Binding HasTransfer, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Aktarma şehri" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding TransferCity}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_TransferCity" SelectedItem="{Binding TransferCity, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="İlçe" Binding="{Binding District}" Width="120"/>
                     <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPrice}" Width="110"/>
-                    <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="90"/>
+                    <DataGridTemplateColumn Header="Para Birimi" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Currency}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox x:Name="Cb_Currency" SelectedItem="{Binding Currency, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmount}" Width="90"/>
                     <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebt}" Width="90"/>
                     <DataGridTextColumn Header="Referans" Binding="{Binding Reference}" Width="160"/>

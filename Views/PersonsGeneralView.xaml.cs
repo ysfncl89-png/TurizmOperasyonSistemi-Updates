@@ -28,6 +28,7 @@ namespace TurizmOperasyonSistemi.Views
             InitializeComponent();
             ResultsDataGrid.MouseDoubleClick += ResultsDataGrid_MouseDoubleClick;
             ResultsDataGrid.CellEditEnding += ResultsDataGrid_CellEditEnding;
+            ResultsDataGrid.PreparingCellForEdit += ResultsDataGrid_PreparingCellForEdit;
             Loaded += PersonsGeneralView_Loaded;
             LoadFilterOptions();
             // initial state: show filters, hide topbar
@@ -522,7 +523,8 @@ namespace TurizmOperasyonSistemi.Views
                 var column = cell.Column;
                 var header = (column.Header?.ToString() ?? string.Empty).Trim();
                 // allowed editable headers
-                var editable = new[] { "telefon numarası", "adres", "pasaport numarası", "aşı durumu", "hastalık durumu", "ilçe", "toplam fiyat", "ödenen", "kalan", "referans" };
+                var editable = new[] { "telefon numarası", "adres", "pasaport numarası", "aşı durumu", "hastalık durumu", "ilçe", "toplam fiyat", "ödenen", "kalan", "referans",
+                                        "pasaport tipi", "kan grubu", "vize talebi", "bilet talebi", "kargo talebi", "katılım yapılacak şehir", "aktarma var mı ?", "aktarma şehri", "para birimi" };
                 if (!editable.Contains(header.ToLowerInvariant())) return;
 
                 // make only this column editable and begin edit
@@ -555,7 +557,25 @@ namespace TurizmOperasyonSistemi.Views
                     string newText = null;
                     try
                     {
+                        // If editing element is TextBox (text columns)
                         if (e.EditingElement is TextBox tb) newText = tb.Text;
+                        else
+                        {
+                            // Try to find ComboBox inside editing element or cell content
+                            ComboBox editCb = null;
+                            if (e.EditingElement is ComboBox directCb) editCb = directCb;
+                            else editCb = FindVisualChild<ComboBox>(e.EditingElement);
+                            if (editCb == null)
+                            {
+                                try { editCb = FindVisualChild<ComboBox>(e.Column.GetCellContent(e.Row)); } catch { }
+                            }
+                            if (editCb != null)
+                            {
+                                // Prefer SelectedValue or SelectedItem.ToString
+                                if (editCb.SelectedValue != null) newText = editCb.SelectedValue.ToString();
+                                else if (editCb.SelectedItem != null) newText = editCb.SelectedItem.ToString();
+                            }
+                        }
                     }
                     catch { }
                     // use dispatcher to ensure binding updated
@@ -578,6 +598,139 @@ namespace TurizmOperasyonSistemi.Views
                 }
             }
             catch { }
+        }
+
+        private void ResultsDataGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            try
+            {
+                var header = e.Column.Header?.ToString() ?? string.Empty;
+                // when a combo box cell is prepared, populate its items from AppSettings
+                ComboBox cb = null;
+                if (e.EditingElement is ComboBox direct) cb = direct;
+                else cb = FindVisualChild<ComboBox>(e.EditingElement);
+                // fallback: try to get cell content and search there (template hosting may cause EditingElement not to contain combo yet)
+                if (cb == null)
+                {
+                    try
+                    {
+                        var content = e.Column.GetCellContent(e.Row);
+                        if (content != null) cb = FindVisualChild<ComboBox>(content);
+                    }
+                    catch { }
+                }
+                if (cb == null) return;
+                using var db = new AppDbContext();
+                var all = db.AppSettings.Where(x => x.IsActive).OrderBy(x => x.SortOrder).ToList();
+                List<string> items = null;
+                var headerKey = header.Trim().ToLowerInvariant();
+                // Robust matching: normalize Type strings (remove punctuation/spaces, lowercase) to avoid mismatches like 'Aktarma Var mı?' vs 'Aktarma Var mı ?'
+                string NormalizeForCompare(string s)
+                {
+                    if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                    var sb = new StringBuilder();
+                    foreach (var ch in s.ToLowerInvariant())
+                    {
+                        if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+                        // treat Turkish dotted letters equivalently by ToLowerInvariant above
+                    }
+                    return sb.ToString();
+                }
+
+                string headerNorm = NormalizeForCompare(headerKey);
+
+                // mapping: header -> expected setting Type values
+                List<string> expectedTypes = null;
+                switch (headerNorm)
+                {
+                    case var _ when headerNorm.Contains("pasaport"):
+                        expectedTypes = new List<string> { "Pasaport Türü", "Pasaport Tipi", "PassportType" };
+                        break;
+                    case var _ when headerNorm.Contains("kangrub") || headerNorm.Contains("kangrubu") || headerNorm.Contains("kangrubu"):
+                        expectedTypes = new List<string> { "Kan Grubu" };
+                        break;
+                    case var _ when headerNorm.Contains("vize"):
+                        expectedTypes = new List<string> { "Vize Talebi" };
+                        break;
+                    case var _ when headerNorm.Contains("bilet"):
+                        expectedTypes = new List<string> { "Bilet Talebi" };
+                        break;
+                    case var _ when headerNorm.Contains("kargo"):
+                        expectedTypes = new List<string> { "Kargo Talebi" };
+                        break;
+                    case var _ when headerNorm.Contains("katilimmenu") || headerNorm.Contains("katilim") || headerNorm.Contains("sehir"):
+                        expectedTypes = new List<string> { "Katılım Yapılacak Şehir" };
+                        break;
+                    case var _ when headerNorm.Contains("aktarmavar") || headerNorm.Contains("aktar" ):
+                        expectedTypes = new List<string> { "Aktarma Var mı ?", "Aktarma Var mı?", "Aktarma Var mı", "Aktarma" };
+                        break;
+                    case var _ when headerNorm.Contains("aktarmasehir"):
+                        expectedTypes = new List<string> { "Aktarma Şehri" };
+                        break;
+                    case var _ when headerNorm.Contains("parabirimi") || headerNorm.Contains("parabirim"):
+                        expectedTypes = new List<string> { "Para Birimi" };
+                        break;
+                }
+
+                if (expectedTypes != null)
+                {
+                    var expectedNorms = expectedTypes.Select(t => NormalizeForCompare(t)).ToList();
+                    // Preserve AppSettings SortOrder when producing ComboBox items
+                    items = all.Where(x => expectedNorms.Contains(NormalizeForCompare(x.Type)))
+                               .OrderBy(x => x.SortOrder)
+                               .Select(x => x.Value)
+                               .ToList();
+                    // Remove placeholder values that might have been stored in AppSettings
+                    items = items.Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
+                    var cleaned = new List<string>();
+                    foreach (var v in items)
+                    {
+                        var t = v.Trim();
+                        // normalize using transliteration so Turkish chars map to ASCII for robust comparison
+                        var norm = NormalizeForCompare(TransliterateTurkish(t));
+                        if (string.Equals(norm, "seciniz", StringComparison.OrdinalIgnoreCase)) continue;
+                        if (string.Equals(norm, "secilmedi", StringComparison.OrdinalIgnoreCase)) continue;
+                        cleaned.Add(t);
+                    }
+                    items = cleaned;
+                }
+                // ensure items list is not null
+                if (items == null) items = new List<string>();
+                // IMPORTANT: only use values coming from AppSettings for the mapped Types.
+                // If no values exist for the expected Type(s), do not populate unrelated options.
+                if (items.Count == 0)
+                {
+                    // leave items empty so the ComboBox will show only the default "Seçiniz" entry below
+                    items = new List<string>();
+                }
+
+                // normalize items: trim and remove null/empty and duplicates while preserving order
+                var normalized = new List<string>();
+                foreach (var it in items)
+                {
+                    if (string.IsNullOrWhiteSpace(it)) continue;
+                    var t = it.Trim();
+                    if (normalized.Any(x => string.Equals(x, t, StringComparison.OrdinalIgnoreCase))) continue;
+                    normalized.Add(t);
+                }
+                if (!normalized.Any()) normalized.Add("Seçiniz");
+                if (!normalized.Contains("Seçiniz", StringComparer.OrdinalIgnoreCase)) normalized.Insert(0, "Seçiniz");
+                cb.ItemsSource = normalized;
+            }
+            catch { }
+        }
+
+        private static TChild FindVisualChild<TChild>(DependencyObject obj) where TChild : DependencyObject
+        {
+            if (obj == null) return null;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(obj, i);
+                if (child is TChild correctlyTyped) return correctlyTyped;
+                var result = FindVisualChild<TChild>(child);
+                if (result != null) return result;
+            }
+            return null;
         }
 
         private void SaveEditedValue(GeneralRow row, string header, string newText = null)
@@ -609,8 +762,9 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using var db = new AppDbContext();
                 // person properties
-                var personProps = new[] { "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus" };
-                var registrationProps = new[] { "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference" };
+                var personProps = new[] { "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "PassportType", "BloodType" };
+                // registration properties (including new combobox-backed fields)
+                var registrationProps = new[] { "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency" };
 
                 if (personProps.Contains(propName, StringComparer.OrdinalIgnoreCase))
                 {
@@ -622,6 +776,8 @@ namespace TurizmOperasyonSistemi.Views
                     else if (propName.Equals("PassportNumber", StringComparison.OrdinalIgnoreCase)) p.PassportNumber = newVal?.ToString() ?? string.Empty;
                     else if (propName.Equals("VaccineStatus", StringComparison.OrdinalIgnoreCase)) p.VaccineStatus = newVal?.ToString() ?? string.Empty;
                     else if (propName.Equals("HealthStatus", StringComparison.OrdinalIgnoreCase)) p.HealthStatus = newVal?.ToString() ?? string.Empty;
+                    else if (propName.Equals("PassportType", StringComparison.OrdinalIgnoreCase)) p.PassportType = newVal?.ToString() ?? string.Empty;
+                    else if (propName.Equals("BloodType", StringComparison.OrdinalIgnoreCase)) p.BloodType = newVal?.ToString() ?? string.Empty;
                     db.Entry(p).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                     db.SaveChanges();
                     // refresh grid so change is visible
@@ -633,6 +789,13 @@ namespace TurizmOperasyonSistemi.Views
                     if (reg == null) return;
                     if (propName.Equals("District", StringComparison.OrdinalIgnoreCase)) { reg.District = newVal?.ToString() ?? string.Empty; }
                     else if (propName.Equals("Reference", StringComparison.OrdinalIgnoreCase)) { reg.Reference = newVal?.ToString() ?? string.Empty; }
+                    else if (propName.Equals("VisaRequest", StringComparison.OrdinalIgnoreCase)) { reg.VisaRequest = newVal?.ToString() ?? string.Empty; row.VisaRequest = reg.VisaRequest ?? string.Empty; }
+                    else if (propName.Equals("TicketRequest", StringComparison.OrdinalIgnoreCase)) { reg.TicketRequest = newVal?.ToString() ?? string.Empty; row.TicketRequest = reg.TicketRequest ?? string.Empty; }
+                    else if (propName.Equals("CargoRequest", StringComparison.OrdinalIgnoreCase)) { reg.CargoRequest = newVal?.ToString() ?? string.Empty; row.CargoRequest = reg.CargoRequest ?? string.Empty; }
+                    else if (propName.Equals("DepartureCity", StringComparison.OrdinalIgnoreCase)) { reg.DepartureCity = newVal?.ToString() ?? string.Empty; row.DepartureCity = reg.DepartureCity ?? string.Empty; }
+                    else if (propName.Equals("HasTransfer", StringComparison.OrdinalIgnoreCase)) { reg.HasTransfer = newVal?.ToString() ?? string.Empty; row.HasTransfer = reg.HasTransfer ?? string.Empty; }
+                    else if (propName.Equals("TransferCity", StringComparison.OrdinalIgnoreCase)) { reg.TransferCity = newVal?.ToString() ?? string.Empty; row.TransferCity = reg.TransferCity ?? string.Empty; }
+                    else if (propName.Equals("Currency", StringComparison.OrdinalIgnoreCase)) { reg.Currency = newVal?.ToString() ?? string.Empty; row.Currency = reg.Currency ?? string.Empty; }
                     else if (propName.Equals("TotalPrice", StringComparison.OrdinalIgnoreCase))
                     {
                         if (TryParseDecimalFlexible(newVal, out var d))
