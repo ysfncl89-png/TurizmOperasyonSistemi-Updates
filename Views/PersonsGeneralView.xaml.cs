@@ -36,6 +36,136 @@ namespace TurizmOperasyonSistemi.Views
             FiltersPanel.Visibility = Visibility.Visible;
         }
 
+        private string GetExportDefaultFileName(string extWithoutDot)
+        {
+            // build a friendly default file name from current filters and selections
+            var parts = new List<string> { "Genel Liste" };
+            try
+            {
+                var tour = CbTourType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") parts.Add(tour);
+                var period = CbPeriod?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") parts.Add(period);
+                var days = CbGroupDays?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") parts.Add(days + " Günlük");
+                var group = CbGroupType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") parts.Add(group);
+                // include smart search summary if present
+                try
+                {
+                    var searchSummary = ComposeSearchSummary(SearchTextBox?.Text ?? string.Empty);
+                    if (!string.IsNullOrWhiteSpace(searchSummary)) parts.Add(searchSummary);
+                }
+                catch { }
+            }
+            catch { }
+            // sanitize and join with ' - '
+            var name = string.Join(" - ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+            // keep filename safe
+            foreach (var c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '-');
+            return name + "." + extWithoutDot;
+        }
+
+        private string ComposeSearchSummary(string rawSearch)
+        {
+            if (string.IsNullOrWhiteSpace(rawSearch)) return string.Empty;
+            var segments = rawSearch.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
+            var segPhrases = new List<string>();
+            foreach (var seg in segments)
+            {
+                var toksOrig = seg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                var toksNorm = toksOrig.Select(t => NormalizeForSearch(t)).ToList();
+                var used = new bool[toksNorm.Count];
+                var phrases = new List<string>();
+
+                Func<int, (int len, string candidate)> TryMatchFieldAtSeg = (i) =>
+                {
+                    var maxLen = Math.Min(3, toksNorm.Count - i);
+                    for (int len = maxLen; len >= 1; len--)
+                    {
+                        var candidate = string.Join(" ", toksNorm.Skip(i).Take(len));
+                        var sel = GetSelectorForHeader(candidate);
+                        if (sel != null) return (len, candidate);
+                    }
+                    return (0, null);
+                };
+
+                for (int i = 0; i < toksNorm.Count; i++)
+                {
+                    if (used[i]) continue;
+                    var match = TryMatchFieldAtSeg(i);
+                    if (match.len > 0)
+                    {
+                        for (int t = i; t < i + match.len; t++) if (t < used.Length) used[t] = true;
+                        // gather up to 3 value tokens to the right
+                        var j = i + match.len;
+                        var valueParts = new List<string>();
+                        while (j < toksOrig.Count && TryMatchFieldAtSeg(j).len == 0 && valueParts.Count < 3)
+                        {
+                            valueParts.Add(toksOrig[j]);
+                            used[j] = true;
+                            j++;
+                        }
+                        if (valueParts.Count == 0)
+                        {
+                            var k = i - 1;
+                            var left = new List<string>();
+                            while (k >= 0 && TryMatchFieldAtSeg(k).len == 0 && !used[k])
+                            {
+                                left.Insert(0, toksOrig[k]);
+                                used[k] = true;
+                                k--;
+                            }
+                            valueParts.AddRange(left);
+                        }
+                        var valOrig = string.Join(" ", valueParts).Trim();
+                        var candidate = match.candidate;
+                        if (!string.IsNullOrEmpty(valOrig))
+                        {
+                            // human friendly phrase mapping
+                            if (candidate.Contains("aktarma"))
+                            {
+                                var vn = NormalizeForSearch(valOrig);
+                                if (vn.Contains("var")) phrases.Add("Aktarmalı");
+                                else if (vn.Contains("yok")) phrases.Add("Aktarmasız");
+                                else phrases.Add($"Aktarma {valOrig}");
+                            }
+                            else if (candidate.Contains("pasaport"))
+                            {
+                                phrases.Add($"{valOrig} pasaport");
+                            }
+                            else if (candidate.Contains("kan"))
+                            {
+                                phrases.Add($"Kan grubu {valOrig}");
+                            }
+                            else if (candidate.Contains("kargo"))
+                            {
+                                phrases.Add($"Kargo {valOrig}");
+                            }
+                            else
+                            {
+                                // fallback: value + candidate label
+                                phrases.Add($"{valOrig} {candidate}");
+                            }
+                        }
+                    }
+                }
+
+                // any unused tokens become generic phrase
+                var remaining = new List<string>();
+                for (int i = 0; i < toksOrig.Count; i++) if (!used[i]) remaining.Add(toksOrig[i]);
+                if (remaining.Any()) phrases.Add(string.Join(" ", remaining));
+
+                if (phrases.Any()) segPhrases.Add(string.Join(" ", phrases));
+            }
+
+            return string.Join(" - ", segPhrases);
+        }
+
+        // small helper extension-like local function emulation
+        // checks nullability in place of returning nullable candidate
+
+
         private void PersonsGeneralView_Loaded(object sender, RoutedEventArgs e)
         {
             try { SearchTextBox.Focus(); } catch { }
@@ -153,6 +283,22 @@ namespace TurizmOperasyonSistemi.Views
             FiltersPanel.Visibility = Visibility.Collapsed;
             TopBar.Visibility = Visibility.Visible;
             ResultsBorder.Visibility = Visibility.Visible;
+            try
+            {
+                // show a concise summary of selected filters next to the design button
+                var parts = new List<string>();
+                var tour = CbTourType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") parts.Add(tour);
+                var period = CbPeriod?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") parts.Add(period);
+                var group = CbGroupType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") parts.Add(group);
+                var days = CbGroupDays?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") parts.Add(days);
+                var summary = string.Join(" ", parts);
+                try { CurrentFilterLabel.Text = string.IsNullOrWhiteSpace(summary) ? string.Empty : summary; } catch { }
+            }
+            catch { }
         }
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)
@@ -179,21 +325,24 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ExportWord_Click(object sender, RoutedEventArgs e)
         {
-            var path = AskForPath("Word belgesi", "Word dosyası (*.docx)|*.docx", "genel-listesi.docx");
+            var defaultName = GetExportDefaultFileName("docx");
+            var path = AskForPath("Word belgesi", "Word dosyası (*.docx)|*.docx", defaultName);
             if (path == null) return;
             ExportWord(NormalizeExtension(path, ".docx"));
         }
 
         private void ExportExcel_Click(object sender, RoutedEventArgs e)
         {
-            var path = AskForPath("Excel çalışma kitabı", "Excel dosyası (*.xlsx)|*.xlsx", "genel-listesi.xlsx");
+            var defaultName = GetExportDefaultFileName("xlsx");
+            var path = AskForPath("Excel çalışma kitabı", "Excel dosyası (*.xlsx)|*.xlsx", defaultName);
             if (path == null) return;
             ExportExcel(NormalizeExtension(path, ".xlsx"));
         }
 
         private void ExportPdf_Click(object sender, RoutedEventArgs e)
         {
-            var path = AskForPath("PDF belgesi", "PDF dosyası (*.pdf)|*.pdf", "genel-listesi.pdf");
+            var defaultName = GetExportDefaultFileName("pdf");
+            var path = AskForPath("PDF belgesi", "PDF dosyası (*.pdf)|*.pdf", defaultName);
             if (path == null) return;
             ExportPdf(NormalizeExtension(path, ".pdf"));
         }
