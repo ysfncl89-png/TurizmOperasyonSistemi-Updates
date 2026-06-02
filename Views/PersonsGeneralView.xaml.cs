@@ -15,17 +15,53 @@ namespace TurizmOperasyonSistemi.Views
     public partial class PersonsGeneralView : Page
     {
         private List<GeneralRow> _allRows = new List<GeneralRow>();
+        private Button _applyButton;
 
         public PersonsGeneralView()
         {
             InitializeComponent();
             Loaded += PersonsGeneralView_Loaded;
             LoadFilterOptions();
+            // initial state: show filters, hide topbar
+            TopBar.Visibility = Visibility.Collapsed;
+            FiltersPanel.Visibility = Visibility.Visible;
         }
 
         private void PersonsGeneralView_Loaded(object sender, RoutedEventArgs e)
         {
             try { SearchTextBox.Focus(); } catch { }
+
+            // If XAML missing the ApplyFiltersButton (was edited incorrectly), create it dynamically
+            try
+            {
+                // If there is already a named button in XAML, skip dynamic creation
+                var named = this.FindName("ApplyFiltersButton") as Button;
+                if (named != null)
+                {
+                    _applyButton = named;
+                }
+                else
+                {
+                    if (FilterWarning != null)
+                    {
+                        if (FilterWarning.Parent is Panel parent)
+                        {
+                            _applyButton = new Button
+                            {
+                                Content = "Listeyi Göster",
+                                Width = 160,
+                                Padding = new Thickness(10, 8, 10, 8),
+                                IsEnabled = false
+                            };
+                            // apply style if available
+                            try { _applyButton.Style = (Style)FindResource("PrimaryButtonStyle"); } catch { }
+                            _applyButton.Click += ApplyFiltersButton_Click;
+                            parent.Children.Add(_applyButton);
+                        }
+                    }
+                }
+            }
+            catch { }
         }
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
@@ -53,27 +89,48 @@ namespace TurizmOperasyonSistemi.Views
 
                 var tour = all.Where(x => x.Type == "TourType").Select(x => x.Value).ToList();
                 tour.Insert(0, "Seçiniz");
-                CbTourType.ItemsSource = tour;
+                if (CbTourType != null) CbTourType.ItemsSource = tour;
 
                 var period = all.Where(x => x.Type == "Dönem").Select(x => x.Value).ToList();
                 period.Insert(0, "Seçiniz");
-                CbPeriod.ItemsSource = period;
+                if (CbPeriod != null) CbPeriod.ItemsSource = period;
 
                 var group = all.Where(x => x.Type == "GroupType").Select(x => x.Value).ToList();
                 group.Insert(0, "Seçiniz");
-                CbGroupType.ItemsSource = group;
+                if (CbGroupType != null) CbGroupType.ItemsSource = group;
 
                 var days = all.Where(x => x.Type == "Kaç Günlük Grup").Select(x => x.Value).ToList();
                 days.Insert(0, "Seçiniz");
-                CbGroupDays.ItemsSource = days;
+                if (CbGroupDays != null) CbGroupDays.ItemsSource = days;
             }
             catch { }
         }
 
         private void Filter_Changed(object sender, SelectionChangedEventArgs e)
         {
-            // when any selection changes, refresh list
+            try
+            {
+                var tourReady = CbTourType?.SelectedItem as string;
+                var periodReady = CbPeriod?.SelectedItem as string;
+                var ready = !string.IsNullOrWhiteSpace(tourReady) && tourReady != "Seçiniz" &&
+                            !string.IsNullOrWhiteSpace(periodReady) && periodReady != "Seçiniz";
+
+                if (_applyButton != null)
+                    _applyButton.IsEnabled = ready;
+
+                if (FilterWarning != null)
+                    FilterWarning.Visibility = ready ? Visibility.Collapsed : Visibility.Visible;
+            }
+            catch { }
+        }
+
+        private void ApplyFiltersButton_Click(object sender, RoutedEventArgs e)
+        {
+            // load results and swap UI: hide filters, show top search bar
             LoadResults();
+            FiltersPanel.Visibility = Visibility.Collapsed;
+            TopBar.Visibility = Visibility.Visible;
+            ResultsBorder.Visibility = Visibility.Visible;
         }
 
         private void LoadResults()
