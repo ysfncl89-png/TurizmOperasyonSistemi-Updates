@@ -19,8 +19,8 @@
                        Foreground="White"
                        FontSize="24"
                        FontWeight="Bold"/>
-            <TextBlock Text="Kolonları göster / gizle ve sıralamayı düzenle"
-                       Foreground="#9FB2CB"
+            <TextBlock Text="Listede Görünmesini istemediğiniz Kolonun işaretini kaldırın . Kırmızı olacak ve Listede görünmeyecek"
+                       Foreground="Orange"
                        Margin="0,4,0,0"/>
         </StackPanel>
 

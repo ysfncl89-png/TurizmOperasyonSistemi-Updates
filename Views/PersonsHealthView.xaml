@@ -106,8 +106,9 @@
 </Style>
     </Page.Resources>
 
-    <Grid Margin="18">
+        <Grid Margin="18">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -132,6 +133,12 @@
                 <TextBlock IsHitTestVisible="False" Margin="18,0,0,0" VerticalAlignment="Center" Foreground="#9CAFC0" FontSize="13"
                            Text="Kan Grubu, Hastalık veya Aşı durumuna göre arayın..." x:Name="SearchHint"/>
             </Grid>
+
+                <!-- Bilgilendirme metni: Sağlık güncelleme (arama kutusunun sağına taşındı) -->
+                <StackPanel Orientation="Horizontal" Margin="12,6,0,0" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" FontSize="13" VerticalAlignment="Center">Kan Grubu , Hastalık ve Aşı ile ilgili güncelleme yapmak isterseniz ilgili yere   </TextBlock>
+                    <TextBlock Foreground="#F59E0B" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"> ÇİFT TIKLAYIN </TextBlock>
+                </StackPanel>
             </StackPanel>
 
             <Button x:Name="ExportButton" Grid.Column="1" Content="Çıktı Al / İndir" Margin="12,0,0,0" Padding="18,9"
@@ -272,7 +279,7 @@
 			</Popup>
         </Grid>
 
-        <Border Grid.Row="1" Background="#152234" CornerRadius="12" Padding="12">
+        <Border Grid.Row="2" Background="#152234" CornerRadius="12" Padding="12">
             <DataGrid x:Name="ResultsDataGrid" AutoGenerateColumns="False" IsReadOnly="False" SelectionMode="Single" RowHeight="36" CanUserReorderColumns="True"
                       CellEditEnding="ResultsDataGrid_CellEditEnding" PreviewMouseLeftButtonDown="ResultsDataGrid_PreviewMouseLeftButtonDown" MouseDoubleClick="ResultsDataGrid_MouseDoubleClick">
                 <DataGrid.Columns>
