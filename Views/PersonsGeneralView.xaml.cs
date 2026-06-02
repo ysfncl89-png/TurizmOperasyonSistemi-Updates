@@ -637,7 +637,9 @@ namespace TurizmOperasyonSistemi.Views
                     return sb.ToString();
                 }
 
-                string headerNorm = NormalizeForCompare(headerKey);
+                // Transliterate Turkish characters before normalizing so checks like "katilim" or "sehir"
+                // match headers that contain Turkish letters (ş, ı, ö, ü, etc.).
+                string headerNorm = NormalizeForCompare(TransliterateTurkish(headerKey));
 
                 // mapping: header -> expected setting Type values
                 List<string> expectedTypes = null;
@@ -658,14 +660,19 @@ namespace TurizmOperasyonSistemi.Views
                     case var _ when headerNorm.Contains("kargo"):
                         expectedTypes = new List<string> { "Kargo Talebi" };
                         break;
-                    case var _ when headerNorm.Contains("katilimmenu") || headerNorm.Contains("katilim") || headerNorm.Contains("sehir"):
+                    // Match only katılım-related headers for DepartureCity to avoid accidentally
+                    // matching any header that contains the substring "sehir" (which would
+                    // also match TransferCity). This prevents wrong AppSettings being used.
+                    case var _ when headerNorm.Contains("katilimmenu") || headerNorm.Contains("katilim"):
                         expectedTypes = new List<string> { "Katılım Yapılacak Şehir" };
                         break;
-                    case var _ when headerNorm.Contains("aktarmavar") || headerNorm.Contains("aktar" ):
-                        expectedTypes = new List<string> { "Aktarma Var mı ?", "Aktarma Var mı?", "Aktarma Var mı", "Aktarma" };
-                        break;
-                    case var _ when headerNorm.Contains("aktarmasehir"):
+                    // Specific match for transfer city must come before generic transfer-flag match
+                    // Accept multiple normalized variants (sehir / sehri) to avoid missing Turkish suffix/inflection
+                    case var _ when headerNorm.Contains("aktarmaseh") || headerNorm.Contains("aktarmasehir") || headerNorm.Contains("aktarmasehri"):
                         expectedTypes = new List<string> { "Aktarma Şehri" };
+                        break;
+                    case var _ when headerNorm.Contains("aktarmavar") || headerNorm.Contains("aktarmavarmi"):
+                        expectedTypes = new List<string> { "Aktarma Var mı ?", "Aktarma Var mı?", "Aktarma Var mı", "Aktarma" };
                         break;
                     case var _ when headerNorm.Contains("parabirimi") || headerNorm.Contains("parabirim"):
                         expectedTypes = new List<string> { "Para Birimi" };
