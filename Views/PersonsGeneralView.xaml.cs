@@ -10,6 +10,8 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 
@@ -19,10 +21,13 @@ namespace TurizmOperasyonSistemi.Views
     {
         private List<GeneralRow> _allRows = new List<GeneralRow>();
         private Button _applyButton;
+        private DataGridColumn _editingColumn;
 
         public PersonsGeneralView()
         {
             InitializeComponent();
+            ResultsDataGrid.MouseDoubleClick += ResultsDataGrid_MouseDoubleClick;
+            ResultsDataGrid.CellEditEnding += ResultsDataGrid_CellEditEnding;
             Loaded += PersonsGeneralView_Loaded;
             LoadFilterOptions();
             // initial state: show filters, hide topbar
@@ -462,6 +467,8 @@ namespace TurizmOperasyonSistemi.Views
                     var p = reg.Person;
                     var r = new GeneralRow
                     {
+                        RegistrationId = reg.Id,
+                        PersonId = p?.Id ?? 0,
                         Sequence = seq++,
                         FirstName = p?.FirstName ?? string.Empty,
                         LastName = p?.LastName ?? string.Empty,
@@ -503,6 +510,198 @@ namespace TurizmOperasyonSistemi.Views
             {
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private void ResultsDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                var dep = (DependencyObject)e.OriginalSource;
+                var cell = FindParent<DataGridCell>(dep);
+                if (cell == null) return;
+                var column = cell.Column;
+                var header = (column.Header?.ToString() ?? string.Empty).Trim();
+                // allowed editable headers
+                var editable = new[] { "telefon numarası", "adres", "pasaport numarası", "aşı durumu", "hastalık durumu", "ilçe", "toplam fiyat", "ödenen", "kalan", "referans" };
+                if (!editable.Contains(header.ToLowerInvariant())) return;
+
+                // make only this column editable and begin edit
+                ResultsDataGrid.IsReadOnly = false;
+                foreach (var col in ResultsDataGrid.Columns) col.IsReadOnly = true;
+                column.IsReadOnly = false;
+                _editingColumn = column;
+
+                // select row and begin edit
+                if (cell.DataContext != null)
+                {
+                    ResultsDataGrid.SelectedItem = cell.DataContext;
+                    ResultsDataGrid.CurrentCell = new DataGridCellInfo(cell.DataContext, column);
+                    ResultsDataGrid.BeginEdit();
+                }
+            }
+            catch { }
+        }
+
+        private void ResultsDataGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            try
+            {
+                if (_editingColumn == null) return;
+                // commit already in progress; save after UI update
+                if (e.EditAction == DataGridEditAction.Commit)
+                {
+                    var rowItem = e.Row.Item as GeneralRow;
+                    var header = e.Column.Header?.ToString() ?? string.Empty;
+                    string newText = null;
+                    try
+                    {
+                        if (e.EditingElement is TextBox tb) newText = tb.Text;
+                    }
+                    catch { }
+                    // use dispatcher to ensure binding updated
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        try { SaveEditedValue(rowItem, header, newText); } catch { }
+                        // restore grid to read-only default
+                        ResultsDataGrid.CommitEdit();
+                        ResultsDataGrid.IsReadOnly = true;
+                        foreach (var col in ResultsDataGrid.Columns) col.IsReadOnly = true;
+                        _editingColumn = null;
+                    }));
+                }
+                else
+                {
+                    // canceled - restore
+                    ResultsDataGrid.IsReadOnly = true;
+                    foreach (var col in ResultsDataGrid.Columns) col.IsReadOnly = true;
+                    _editingColumn = null;
+                }
+            }
+            catch { }
+        }
+
+        private void SaveEditedValue(GeneralRow row, string header, string newText = null)
+        {
+            if (row == null) return;
+            var propName = MapHeaderToProperty(header);
+            if (string.IsNullOrWhiteSpace(propName)) return;
+
+            // find property on row
+            var prop = row.GetType().GetProperty(propName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+            if (prop == null) return;
+
+            // determine new value: prefer provided newText (from editing control), otherwise current row value
+            object newValObj = null;
+            if (!string.IsNullOrEmpty(newText))
+            {
+                newValObj = newText;
+                // update row property so UI reflects change
+                try { prop.SetValue(row, newText); } catch { }
+            }
+            else
+            {
+                newValObj = prop.GetValue(row);
+            }
+
+            var newVal = newValObj?.ToString();
+
+            try
+            {
+                using var db = new AppDbContext();
+                // person properties
+                var personProps = new[] { "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus" };
+                var registrationProps = new[] { "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference" };
+
+                if (personProps.Contains(propName, StringComparer.OrdinalIgnoreCase))
+                {
+                    var p = db.Persons.FirstOrDefault(x => x.Id == row.PersonId);
+                    if (p == null) return;
+                    // assign string properties
+                    if (propName.Equals("PhoneNumber", StringComparison.OrdinalIgnoreCase)) p.PhoneNumber = newVal?.ToString() ?? string.Empty;
+                    else if (propName.Equals("Address", StringComparison.OrdinalIgnoreCase)) p.Address = newVal?.ToString() ?? string.Empty;
+                    else if (propName.Equals("PassportNumber", StringComparison.OrdinalIgnoreCase)) p.PassportNumber = newVal?.ToString() ?? string.Empty;
+                    else if (propName.Equals("VaccineStatus", StringComparison.OrdinalIgnoreCase)) p.VaccineStatus = newVal?.ToString() ?? string.Empty;
+                    else if (propName.Equals("HealthStatus", StringComparison.OrdinalIgnoreCase)) p.HealthStatus = newVal?.ToString() ?? string.Empty;
+                    db.Entry(p).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                    db.SaveChanges();
+                    // refresh grid so change is visible
+                    try { ResultsDataGrid.Items.Refresh(); } catch { }
+                }
+                else if (registrationProps.Contains(propName, StringComparer.OrdinalIgnoreCase))
+                {
+                    var reg = db.Registrations.FirstOrDefault(x => x.Id == row.RegistrationId);
+                    if (reg == null) return;
+                    if (propName.Equals("District", StringComparison.OrdinalIgnoreCase)) { reg.District = newVal?.ToString() ?? string.Empty; }
+                    else if (propName.Equals("Reference", StringComparison.OrdinalIgnoreCase)) { reg.Reference = newVal?.ToString() ?? string.Empty; }
+                    else if (propName.Equals("TotalPrice", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (TryParseDecimalFlexible(newVal, out var d))
+                        {
+                            reg.TotalPrice = d;
+                            // recalc remaining debt
+                            reg.RemainingDebt = reg.TotalPrice - reg.PaidAmount;
+                            row.TotalPrice = reg.TotalPrice.ToString("0.##");
+                            row.RemainingDebt = reg.RemainingDebt.ToString("0.##");
+                        }
+                    }
+                    else if (propName.Equals("PaidAmount", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (TryParseDecimalFlexible(newVal, out var d))
+                        {
+                            reg.PaidAmount = d;
+                            // recalc remaining debt
+                            reg.RemainingDebt = reg.TotalPrice - reg.PaidAmount;
+                            row.PaidAmount = reg.PaidAmount.ToString("0.##");
+                            row.RemainingDebt = reg.RemainingDebt.ToString("0.##");
+                        }
+                    }
+                    else if (propName.Equals("RemainingDebt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // If user edits remaining debt, adjust PaidAmount = TotalPrice - RemainingDebt
+                        if (TryParseDecimalFlexible(newVal, out var d))
+                        {
+                            reg.RemainingDebt = d;
+                            reg.PaidAmount = reg.TotalPrice - reg.RemainingDebt;
+                            row.RemainingDebt = reg.RemainingDebt.ToString("0.##");
+                            row.PaidAmount = reg.PaidAmount.ToString("0.##");
+                        }
+                    }
+                    db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                    db.SaveChanges();
+                    try { ResultsDataGrid.Items.Refresh(); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Kaydetme sırasında hata: " + ex.Message);
+            }
+        }
+
+        private static T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            var parent = child;
+            while (parent != null)
+            {
+                if (parent is T correctlyTyped) return correctlyTyped;
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+            return null;
+        }
+
+        private bool TryParseDecimalFlexible(string s, out decimal value)
+        {
+            value = 0m;
+            if (string.IsNullOrWhiteSpace(s)) return false;
+            // try invariant
+            if (decimal.TryParse(s, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out value)) return true;
+            // try current culture
+            if (decimal.TryParse(s, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out value)) return true;
+            // replace comma/point heuristics
+            var alt = s.Replace(',', '.');
+            if (decimal.TryParse(alt, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out value)) return true;
+            alt = s.Replace('.', ',');
+            if (decimal.TryParse(alt, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out value)) return true;
+            return false;
         }
 
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -697,8 +896,10 @@ namespace TurizmOperasyonSistemi.Views
             return v;
         }
 
-        private class GeneralRow
+        private class GeneralRow : System.ComponentModel.INotifyPropertyChanged
         {
+            public int RegistrationId { get; set; }
+            public int PersonId { get; set; }
             public int Sequence { get; set; }
             public string FirstName { get; set; }
             public string LastName { get; set; }
@@ -723,11 +924,72 @@ namespace TurizmOperasyonSistemi.Views
             public string HasTransfer { get; set; }
             public string TransferCity { get; set; }
             public string District { get; set; }
-            public string TotalPrice { get; set; }
+            private string _totalPrice;
+            public string TotalPrice
+            {
+                get => _totalPrice;
+                set
+                {
+                    if (_totalPrice != value)
+                    {
+                        _totalPrice = value;
+                        OnPropertyChanged(nameof(TotalPrice));
+                        RecalculateRemainingFromStrings();
+                    }
+                }
+            }
             public string Currency { get; set; }
-            public string PaidAmount { get; set; }
-            public string RemainingDebt { get; set; }
+            private string _paidAmount;
+            public string PaidAmount
+            {
+                get => _paidAmount;
+                set
+                {
+                    if (_paidAmount != value)
+                    {
+                        _paidAmount = value;
+                        OnPropertyChanged(nameof(PaidAmount));
+                        RecalculateRemainingFromStrings();
+                    }
+                }
+            }
+            private string _remainingDebt;
+            public string RemainingDebt
+            {
+                get => _remainingDebt;
+                set { if (_remainingDebt != value) { _remainingDebt = value; OnPropertyChanged(nameof(RemainingDebt)); } }
+            }
             public string Reference { get; set; }
+
+            public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+            private void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
+            private void RecalculateRemainingFromStrings()
+            {
+                var t = ParseDecimalFlexible(_totalPrice);
+                var p = ParseDecimalFlexible(_paidAmount);
+                if (t.HasValue && p.HasValue)
+                {
+                    var rem = t.Value - p.Value;
+                    var remStr = rem.ToString("0.##");
+                    if (_remainingDebt != remStr)
+                    {
+                        _remainingDebt = remStr;
+                        OnPropertyChanged(nameof(RemainingDebt));
+                    }
+                }
+            }
+
+            private decimal? ParseDecimalFlexible(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return null;
+                if (decimal.TryParse(s, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var v)) return v;
+                if (decimal.TryParse(s, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out v)) return v;
+                var alt = s.Replace(',', '.');
+                if (decimal.TryParse(alt, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out v)) return v;
+                alt = s.Replace('.', ',');
+                if (decimal.TryParse(alt, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out v)) return v;
+                return null;
+            }
         }
     }
 }
