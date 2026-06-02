@@ -454,10 +454,16 @@ namespace TurizmOperasyonSistemi.Views
                 var options = dialog.ColumnOptions;
                 if (options == null) return;
 
-                // Apply visibility: match by header text order
-                for (int i = 0; i < ResultsDataGrid.Columns.Count && i < options.Count; i++)
+                // Apply ordering (DisplayIndex) and visibility based on returned options
+                var ordered = options.OrderBy(o => o.Order).ToList();
+                for (int targetIndex = 0; targetIndex < ordered.Count; targetIndex++)
                 {
-                    ResultsDataGrid.Columns[i].Visibility = options[i].IsVisible ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+                    var opt = ordered[targetIndex];
+                    var col = ResultsDataGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), opt.Title, System.StringComparison.OrdinalIgnoreCase));
+                    if (col == null) continue;
+                    // set visual display index to reflect requested order
+                    col.DisplayIndex = targetIndex;
+                    col.Visibility = opt.IsVisible ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
                 }
             }
             catch (System.Exception ex)
@@ -532,10 +538,15 @@ namespace TurizmOperasyonSistemi.Views
         // Build active export column list based on current DataGrid column visibility and order
         private IReadOnlyList<ExportColumn> GetActiveExportColumns()
         {
+            // Respect visual order (DisplayIndex) and visibility
             var cols = new List<ExportColumn>();
-            foreach (var dgCol in ResultsDataGrid.Columns)
+            var ordered = ResultsDataGrid.Columns
+                .Where(c => c.Visibility == System.Windows.Visibility.Visible)
+                .OrderBy(c => c.DisplayIndex)
+                .ToList();
+
+            foreach (var dgCol in ordered)
             {
-                if (dgCol.Visibility != System.Windows.Visibility.Visible) continue;
                 var header = dgCol.Header?.ToString() ?? string.Empty;
                 // map header to known export columns
                 var match = ExportColumns.FirstOrDefault(c => string.Equals(c.Header, header, System.StringComparison.OrdinalIgnoreCase));

@@ -273,7 +273,7 @@
         </Grid>
 
         <Border Grid.Row="1" Background="#152234" CornerRadius="12" Padding="12">
-            <DataGrid x:Name="ResultsDataGrid" AutoGenerateColumns="False" IsReadOnly="False" SelectionMode="Single" RowHeight="36"
+            <DataGrid x:Name="ResultsDataGrid" AutoGenerateColumns="False" IsReadOnly="False" SelectionMode="Single" RowHeight="36" CanUserReorderColumns="True"
                       CellEditEnding="ResultsDataGrid_CellEditEnding" PreviewMouseLeftButtonDown="ResultsDataGrid_PreviewMouseLeftButtonDown" MouseDoubleClick="ResultsDataGrid_MouseDoubleClick">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="180" IsReadOnly="True" />

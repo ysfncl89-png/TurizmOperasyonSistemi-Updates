@@ -381,7 +381,7 @@
         </StackPanel>
 
         <Border x:Name="ResultsBorder" Grid.Row="2" Background="#152234" CornerRadius="12" Padding="12" Margin="0" Visibility="Collapsed">
-            <DataGrid x:Name="ResultsDataGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" RowHeight="36">
+            <DataGrid x:Name="ResultsDataGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" RowHeight="36" CanUserReorderColumns="True">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Sıra" Binding="{Binding Sequence}" Width="60"/>
                     <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="160"/>

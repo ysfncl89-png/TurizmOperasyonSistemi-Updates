@@ -37,7 +37,7 @@
                                FontWeight="Bold"
                                FontSize="16"
                                Margin="0,0,0,12"/>
-                    <ItemsControl x:Name="ColumnsItemsControl">
+                    <ItemsControl x:Name="ColumnsItemsControl" AllowDrop="True">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border x:Name="ItemBorder"
@@ -46,6 +46,9 @@
                                         CornerRadius="12"
                                         Padding="12"
                                         Margin="0,0,0,10">
+                                    <Border.InputBindings>
+                                        <!-- enable drag from touch/mouse: handlers attached in code-behind -->
+                                    </Border.InputBindings>
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="#0B1324"/>
@@ -62,7 +65,7 @@
                                         </Style>
                                     </Border.Style>
 
-                                    <Grid>
+                                    <Grid PreviewMouseLeftButtonDown="Item_PreviewMouseLeftButtonDown" MouseMove="Item_MouseMove" AllowDrop="True" Drop="Item_Drop" DragOver="Item_DragOver">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>

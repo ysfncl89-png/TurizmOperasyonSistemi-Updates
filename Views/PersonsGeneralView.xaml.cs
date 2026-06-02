@@ -240,7 +240,12 @@ namespace TurizmOperasyonSistemi.Views
 
         private List<string> GetExportHeaders()
         {
-            var headers = ResultsDataGrid.Columns.Where(c => c.Visibility == Visibility.Visible).Select(c => c.Header?.ToString() ?? string.Empty).ToList();
+            // Respect visual order (DisplayIndex) when building export headers
+            var headers = ResultsDataGrid.Columns
+                .Where(c => c.Visibility == Visibility.Visible)
+                .OrderBy(c => c.DisplayIndex)
+                .Select(c => c.Header?.ToString() ?? string.Empty)
+                .ToList();
             if (!headers.Any())
             {
                 // fallback to all known headers from MapHeaderToProperty
@@ -585,9 +590,15 @@ namespace TurizmOperasyonSistemi.Views
                 var options = dialog.ColumnOptions;
                 if (options == null) return;
 
-                for (int i = 0; i < ResultsDataGrid.Columns.Count && i < options.Count; i++)
+                // Apply ordering (DisplayIndex) and visibility based on returned options
+                var ordered = options.OrderBy(o => o.Order).ToList();
+                for (int targetIndex = 0; targetIndex < ordered.Count; targetIndex++)
                 {
-                    ResultsDataGrid.Columns[i].Visibility = options[i].IsVisible ? Visibility.Visible : Visibility.Collapsed;
+                    var opt = ordered[targetIndex];
+                    var col = ResultsDataGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), opt.Title, StringComparison.OrdinalIgnoreCase));
+                    if (col == null) continue;
+                    col.DisplayIndex = targetIndex;
+                    col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
                 }
             }
             catch (Exception ex)
