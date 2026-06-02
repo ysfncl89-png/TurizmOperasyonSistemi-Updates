@@ -475,7 +475,7 @@ namespace TurizmOperasyonSistemi.Views
                         LastName = p?.LastName ?? string.Empty,
                         TcKimlikNo = p?.TcKimlikNo ?? string.Empty,
                         Gender = p?.Gender ?? string.Empty,
-                        BirthDate = p?.BirthDate.ToString("yyyy-MM-dd") ?? string.Empty,
+                        BirthDate = p?.BirthDate.ToString("dd.MM.yyyy") ?? string.Empty,
                         PhoneNumber = p?.PhoneNumber ?? string.Empty,
                         Address = p?.Address ?? string.Empty,
                         PassportType = p?.PassportType ?? string.Empty,
@@ -885,54 +885,182 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             SearchHint.Visibility = Visibility.Collapsed;
-            var q = text.ToLowerInvariant();
+            // Önce Türkçe karakter transliterasyonu, sonra küçültme: böylece 'İ' gibi büyük harfler doğru çevrilir
+            var q = NormalizeForSearch(text);
 
             // support column search like "Ad:ali" or "Ad: ali"
             if (q.Contains(":"))
             {
                 var parts = q.Split(new[] { ':' }, 2);
-                var key = parts[0].Trim();
-                var val = parts[1].Trim();
+                var key = TransliterateTurkish(parts[0].Trim()).ToLowerInvariant();
+                var val = NormalizeForSearch(parts[1]);
                 if (!string.IsNullOrEmpty(key))
                 {
                     Func<GeneralRow, string> selector = GetSelectorForHeader(key);
                     if (selector != null)
                     {
-                        ResultsDataGrid.ItemsSource = _allRows.Where(r => (selector(r) ?? string.Empty).ToLowerInvariant().Contains(val)).ToList();
+                        // Eğer anahtar 'ad' ise ve değer boşluk içeriyorsa (ör. "Ad:Ali Oncel"),
+                        // önce sadece ad ile, sonra "ad soyad" kombinasyonu ile de kontrol et.
+                        if (key == "ad" && val.Contains(' '))
+                        {
+                            ResultsDataGrid.ItemsSource = _allRows.Where(r =>
+                                NormalizeForSearch(r.FirstName ?? string.Empty).Contains(val) ||
+                                NormalizeForSearch((r.FirstName ?? string.Empty) + " " + (r.LastName ?? string.Empty)).Contains(val)
+                            ).ToList();
+                            return;
+                        }
+
+                        ResultsDataGrid.ItemsSource = _allRows.Where(r => NormalizeForSearch(selector(r) ?? string.Empty).Contains(val)).ToList();
                         return;
                     }
                 }
             }
 
-            // generic full-text search across all visible fields
-            ResultsDataGrid.ItemsSource = _allRows.Where(r =>
-                (r.FirstName ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.LastName ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.TcKimlikNo ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.PhoneNumber ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.Address ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.BloodType ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.HealthStatus ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.VaccineStatus ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.VisaRequest ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.TicketRequest ?? string.Empty).ToLowerInvariant().Contains(q) ||
-                (r.Reference ?? string.Empty).ToLowerInvariant().Contains(q)
-            ).ToList();
+            // Smart search with comma-separated segments: each segment must match (AND across segments)
+            var segments = (q ?? string.Empty).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s)).ToList();
+
+            var segFieldFilters = new List<List<(Func<GeneralRow, string> selector, string value)>>();
+            var segGenericTokens = new List<List<string>>();
+
+            foreach (var seg in segments)
+            {
+                var toks = seg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                var usedSeg = new bool[toks.Count];
+                var fieldFiltersSeg = new List<(Func<GeneralRow, string>, string)>();
+
+                Func<int, (Func<GeneralRow, string> sel, int len)> TryMatchFieldAtSeg = (i) =>
+                {
+                    var maxLen = Math.Min(3, toks.Count - i);
+                    for (int len = maxLen; len >= 1; len--)
+                    {
+                        var candidate = string.Join(" ", toks.Skip(i).Take(len));
+                        var sel = GetSelectorForHeader(candidate);
+                        if (sel != null) return (sel, len);
+                    }
+                    return (null, 0);
+                };
+
+                Func<int, bool> IsFieldAtSeg = (i) => TryMatchFieldAtSeg(i).sel != null;
+
+                for (int i = 0; i < toks.Count; i++)
+                {
+                    if (usedSeg[i]) continue;
+                    var match = TryMatchFieldAtSeg(i);
+                    if (match.sel != null)
+                    {
+                        for (int t = i; t < i + match.len; t++) if (t < usedSeg.Length) usedSeg[t] = true;
+                        var maxValueTokens = 3;
+                        var j = i + match.len;
+                        var valueParts = new List<string>();
+                        while (j < toks.Count && !IsFieldAtSeg(j) && valueParts.Count < maxValueTokens)
+                        {
+                            valueParts.Add(toks[j]);
+                            usedSeg[j] = true;
+                            j++;
+                        }
+                        if (valueParts.Count == 0)
+                        {
+                            var k = i - 1;
+                            var leftParts = new List<string>();
+                            while (k >= 0 && !IsFieldAtSeg(k) && !usedSeg[k])
+                            {
+                                leftParts.Insert(0, toks[k]);
+                                usedSeg[k] = true;
+                                k--;
+                            }
+                            valueParts.AddRange(leftParts);
+                        }
+                        var val = NormalizeForSearch(string.Join(" ", valueParts));
+                        if (!string.IsNullOrEmpty(val)) fieldFiltersSeg.Add((match.sel, val));
+                    }
+                }
+
+                var genericSeg = new List<string>();
+                for (int i = 0; i < toks.Count; i++) if (!usedSeg[i] && !IsFieldAtSeg(i)) genericSeg.Add(NormalizeForSearch(toks[i]));
+
+                segFieldFilters.Add(fieldFiltersSeg);
+                segGenericTokens.Add(genericSeg);
+            }
+
+            ResultsDataGrid.ItemsSource = _allRows.Where(row =>
+            {
+                for (int s = 0; s < segFieldFilters.Count; s++)
+                {
+                    var fieldFiltersSeg = segFieldFilters[s];
+                    var genericSeg = segGenericTokens[s];
+                    // all field filters in this segment must match
+                    foreach (var f in fieldFiltersSeg)
+                    {
+                        var cellVal = NormalizeForSearch(f.selector(row) ?? string.Empty);
+                        if (!cellVal.Contains(f.value)) return false;
+                    }
+                    // all generic tokens in this segment must be found somewhere
+                    foreach (var tok in genericSeg)
+                    {
+                        var found = false;
+                        if (NormalizeForSearch(row.FirstName ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.LastName ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch((row.FirstName ?? string.Empty) + " " + (row.LastName ?? string.Empty)).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.TcKimlikNo ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.PassportNumber ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.PhoneNumber ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.Address ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.Gender ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.PassportType ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.BloodType ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.HealthStatus ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.VisaRequest ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.TicketRequest ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.CargoRequest ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.RoomType ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.DepartureCity ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.HasTransfer ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.TransferCity ?? string.Empty).Contains(tok)) found = true;
+                        else if (NormalizeForSearch(row.Reference ?? string.Empty).Contains(tok)) found = true;
+                        if (!found) return false;
+                    }
+                }
+                return true;
+            }).ToList();
+        }
+
+        private string NormalizeForSearch(string input)
+        {
+            var s = TransliterateTurkish(input ?? string.Empty).ToLowerInvariant().Trim();
+            // collapse multiple whitespace into single space
+            var parts = s.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            return string.Join(" ", parts);
         }
 
         private Func<GeneralRow, string> GetSelectorForHeader(string headerKey)
         {
-            switch (headerKey.Trim().ToLowerInvariant())
+            // headerKey burada TransliterateTurkish(...).ToLowerInvariant() olacak şekilde çağrılıyor
+            var k = TransliterateTurkish(headerKey).ToLowerInvariant();
+            switch (k)
             {
                 case "ad": return r => r.FirstName;
                 case "soyad": return r => r.LastName;
-                case "tc" :
+                case "adsoyad":
+                case "ad soyad":
+                case "ad-soyad": return r => ((r.FirstName ?? string.Empty) + " " + (r.LastName ?? string.Empty)).Trim();
+                case "tc":
                 case "tc kimlik":
                 case "tckimlik": return r => r.TcKimlikNo;
                 case "cinsiyet": return r => r.Gender;
                 case "telefon":
-                case "telefon numarası": return r => r.PhoneNumber;
+                case "telefonno":
+                case "telefonnumarasi": return r => r.PhoneNumber;
                 case "adres": return r => r.Address;
+                // Treat plain "pasaport" as passport type (e.g. "bordo pasaport")
+                case "pasaport":
+                case "pasaporttipi":
+                case "pasaporttur":
+                case "passporttype": return r => r.PassportType;
+                case "pasaportno":
+                case "pasaportnumarasi":
+                case "passport": return r => r.PassportNumber;
                 case "kan grubu": return r => r.BloodType;
                 case "hastalık":
                 case "hastalık durumu": return r => r.HealthStatus;
@@ -942,6 +1070,19 @@ namespace TurizmOperasyonSistemi.Views
                 case "vize talebi": return r => r.VisaRequest;
                 case "bilet":
                 case "bilet talebi": return r => r.TicketRequest;
+                case "kargo":
+                case "kargo talebi": return r => r.CargoRequest;
+                case "oda tipi":
+                case "odatipi": return r => r.RoomType;
+                case "katilim yapilacak sehir":
+                case "katilimyapilacaksehir":
+                case "katilimsehir":
+                case "katilim": return r => r.DepartureCity;
+                case "aktarma":
+                case "aktarmavar":
+                case "aktarmavarmi": return r => r.HasTransfer;
+                case "aktarmasehri":
+                case "aktarmasehir": return r => r.TransferCity;
                 case "referans": return r => r.Reference;
                 default: return null;
             }

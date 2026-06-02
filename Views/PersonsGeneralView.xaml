@@ -141,12 +141,16 @@
                 </Button.Effect>
             </Button>
 
-            <Grid Width="420" Height="40">
+                <Grid Width="420" Height="40">
                 <TextBox x:Name="SearchTextBox" Height="40" FontSize="14" Padding="12,6" VerticalContentAlignment="Center"
                          Background="#0F172A" Foreground="#E2F9FF" BorderBrush="#22D3EE" BorderThickness="2"
                          TextChanged="SearchTextBox_TextChanged"/>
                 <TextBlock IsHitTestVisible="False" Margin="18,0,0,0" VerticalAlignment="Center" Foreground="#9CAFC0" FontSize="13"
-                           Text="Arama... (kolon adı ile arama yapılabilir)" x:Name="SearchHint"/>
+                           x:Name="SearchHint" FontStyle="Italic" Opacity="0.75">
+                    <Run Text="Akıllı Arama yaparken arama kriterlerinizin arasına "/>
+                    <Run Text="VİRGÜL" Foreground="#FCA311" FontWeight="SemiBold"/>
+                    <Run Text=" koyun"/>
+                </TextBlock>
             </Grid>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">
