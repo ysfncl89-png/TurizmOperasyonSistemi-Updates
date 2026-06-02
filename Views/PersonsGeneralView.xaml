@@ -170,7 +170,11 @@
                         <Border.Effect>
                             <DropShadowEffect Color="#8B5CF6" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
                         </Border.Effect>
-                        <ComboBox x:Name="CbTourType" Style="{StaticResource NeonCombo}" SelectionChanged="Filter_Changed" Background="Turquoise" BorderThickness="0"/>
+						<ComboBox x:Name="CbTourType"
+								  Style="{StaticResource NeonCombo}"
+								  Foreground="Black"
+								  SelectionChanged="Filter_Changed"
+								  Background="White"/>
                     </Border>
                 </StackPanel>
 
@@ -181,7 +185,11 @@
                         <Border.Effect>
                             <DropShadowEffect Color="#8B5CF6" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
                         </Border.Effect>
-                        <ComboBox x:Name="CbPeriod" Style="{StaticResource NeonCombo}" SelectionChanged="Filter_Changed" Background="Transparent" BorderThickness="0"/>
+						<ComboBox x:Name="CbPeriod"
+								  Style="{StaticResource NeonCombo}"
+								  Foreground="Black"
+								  SelectionChanged="Filter_Changed"
+								  Background="White"/>
                     </Border>
                 </StackPanel>
 
@@ -192,7 +200,11 @@
                         <Border.Effect>
                             <DropShadowEffect Color="#8B5CF6" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
                         </Border.Effect>
-                        <ComboBox x:Name="CbGroupType" Style="{StaticResource NeonCombo}" SelectionChanged="Filter_Changed" Background="Transparent" BorderThickness="0"/>
+						<ComboBox x:Name="CbGroupType"
+								  Style="{StaticResource NeonCombo}"
+								  Foreground="Black"
+								  SelectionChanged="Filter_Changed"
+								  Background="White"/>
                     </Border>
                 </StackPanel>
 
@@ -203,7 +215,11 @@
                         <Border.Effect>
                             <DropShadowEffect Color="#8B5CF6" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
                         </Border.Effect>
-                        <ComboBox x:Name="CbGroupDays" Style="{StaticResource NeonCombo}" SelectionChanged="Filter_Changed" Background="Transparent" BorderThickness="0"/>
+						<ComboBox x:Name="CbGroupDays"
+								  Style="{StaticResource NeonCombo}"
+								  Foreground="Black"
+								  SelectionChanged="Filter_Changed"
+								  Background="White"/>
                     </Border>
                 </StackPanel>
 
