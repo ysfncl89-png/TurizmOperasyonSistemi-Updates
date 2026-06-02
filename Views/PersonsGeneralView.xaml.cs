@@ -151,17 +151,24 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)
         {
+            // Prefer showing the custom popup if available
             try
             {
-                // fallback: show context menu if present
-                if (ExportButton?.ContextMenu != null)
+                var popup = this.FindName("ExportPopup") as System.Windows.Controls.Primitives.Popup;
+                if (popup != null)
                 {
-                    ExportButton.ContextMenu.PlacementTarget = ExportButton;
-                    ExportButton.ContextMenu.IsOpen = true;
+                    popup.IsOpen = true;
                     return;
                 }
             }
             catch { }
+
+            // fallback to old context menu
+            if (ExportButton?.ContextMenu != null)
+            {
+                ExportButton.ContextMenu.PlacementTarget = ExportButton;
+                ExportButton.ContextMenu.IsOpen = true;
+            }
         }
 
         private void ExportWord_Click(object sender, RoutedEventArgs e)
