@@ -5,6 +5,36 @@
 
     <Page.Resources>
 
+        <!-- Per-option theme colors so button base and hover glow stay consistent -->
+        <Color x:Key="TkGenelBaseColor">#8B5CF6</Color>
+        <SolidColorBrush x:Key="TkGenelBaseBrush" Color="{StaticResource TkGenelBaseColor}"/>
+        <Color x:Key="TkGenelHoverColor">#2F1B7A</Color>
+
+        <Color x:Key="TkVizeBaseColor">#EC4899</Color>
+        <SolidColorBrush x:Key="TkVizeBaseBrush" Color="{StaticResource TkVizeBaseColor}"/>
+        <Color x:Key="TkVizeHoverColor">#7A1238</Color>
+
+        <Color x:Key="TkBiletBaseColor">#3B82F6</Color>
+        <SolidColorBrush x:Key="TkBiletBaseBrush" Color="{StaticResource TkBiletBaseColor}"/>
+        <Color x:Key="TkBiletHoverColor">#1E40AF</Color>
+
+        <Color x:Key="TkAktarmaBaseColor">#10B981</Color>
+        <SolidColorBrush x:Key="TkAktarmaBaseBrush" Color="{StaticResource TkAktarmaBaseColor}"/>
+        <Color x:Key="TkAktarmaHoverColor">#0A5E40</Color>
+
+        <Color x:Key="TkHavayoluBaseColor">#F59E0B</Color>
+        <SolidColorBrush x:Key="TkHavayoluBaseBrush" Color="{StaticResource TkHavayoluBaseColor}"/>
+        <Color x:Key="TkHavayoluHoverColor">#7A4E00</Color>
+
+        <Color x:Key="TkReferansBaseColor">#EF4444</Color>
+        <SolidColorBrush x:Key="TkReferansBaseBrush" Color="{StaticResource TkReferansBaseColor}"/>
+        <Color x:Key="TkReferansHoverColor">#7A0B0B</Color>
+
+        <Color x:Key="TkPasaportBaseColor">#06B6D4</Color>
+        <SolidColorBrush x:Key="TkPasaportBaseBrush" Color="{StaticResource TkPasaportBaseColor}"/>
+        <Color x:Key="TkPasaportHoverColor">#03636f</Color>
+
+
         <!-- Card background brushes so we can animate color on hover -->
         <SolidColorBrush x:Key="CardBg1" Color="#0B1220" />
         <!-- kept for compatibility with existing references -->
@@ -169,7 +199,8 @@
                                 <EventTrigger RoutedEvent="MouseEnter">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="border1" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#3B1C8F" Duration="0:0:0.12" />
+                                            <ColorAnimation Storyboard.TargetName="border1" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource TkGenelHoverColor}" Duration="0:0:0.12" />
+                                            <ColorAnimation Storyboard.TargetName="kb_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Color)" To="{StaticResource TkGenelHoverColor}" Duration="0:0:0.12" />
                                             <DoubleAnimation Storyboard.TargetName="kb_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.2" Duration="0:0:0.12" />
                                         </Storyboard>
                                     </BeginStoryboard>
@@ -242,7 +273,7 @@
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
 
                         <!-- 7 option buttons arranged in target clockwise order starting at 12 o'clock -->
-                        <Button x:Name="tk_o1" Style="{StaticResource OptionButtonStyle}" Background="#8B5CF6" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Genel">
+                        <Button x:Name="tk_o1" Style="{StaticResource OptionButtonStyle}" Background="{StaticResource TkGenelBaseBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Genel">
                             <Button.Content>
                                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                                     <TextBlock Text="📄" FontSize="18" HorizontalAlignment="Center"/>
@@ -256,7 +287,7 @@
                                 <EventTrigger RoutedEvent="MouseEnter">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#2F1B7A" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource TkGenelHoverColor}" Duration="0:0:0.12" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </EventTrigger>
@@ -270,7 +301,7 @@
                             </Button.Triggers>
                         </Button>
 
-                        <Button x:Name="tk_o3" Style="{StaticResource OptionButtonStyle}" Background="#3B82F6" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Bilet">
+                        <Button x:Name="tk_o3" Style="{StaticResource OptionButtonStyle}" Background="{StaticResource TkBiletBaseBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Bilet">
                             <Button.Content>
                                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                                     <TextBlock Text="🎫" FontSize="18" HorizontalAlignment="Center"/>
@@ -284,7 +315,8 @@
                                 <EventTrigger RoutedEvent="MouseEnter">
                                 <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#1E40AF" Duration="0:0:0.12" />
+                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource TkBiletHoverColor}" Duration="0:0:0.12" />
+
                                             <DoubleAnimation Storyboard.TargetName="tk_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.15" Duration="0:0:0.12" />
                                         </Storyboard>
                                     </BeginStoryboard>
@@ -302,7 +334,7 @@
                             </Button.Triggers>
                         </Button>
 
-                        <Button x:Name="tk_o4" Style="{StaticResource OptionButtonStyle}" Background="#10B981" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Aktarma">
+                        <Button x:Name="tk_o4" Style="{StaticResource OptionButtonStyle}" Background="{StaticResource TkAktarmaBaseBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Aktarma">
                             <Button.Content>
                                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                                     <TextBlock Text="🔁" FontSize="18" HorizontalAlignment="Center"/>
@@ -316,7 +348,7 @@
                                 <EventTrigger RoutedEvent="MouseEnter">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#0A5E40" Duration="0:0:0.12" />
+                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource TkAktarmaHoverColor}" Duration="0:0:0.12" />
                                             <DoubleAnimation Storyboard.TargetName="tk_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.15" Duration="0:0:0.12" />
                                         </Storyboard>
                                     </BeginStoryboard>
@@ -332,7 +364,7 @@
                             </Button.Triggers>
                         </Button>
 
-                        <Button x:Name="tk_o5" Style="{StaticResource OptionButtonStyle}" Background="#F59E0B" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Havayolu">
+                        <Button x:Name="tk_o5" Style="{StaticResource OptionButtonStyle}" Background="{StaticResource TkHavayoluBaseBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Havayolu">
                             <Button.Content>
                                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                                     <TextBlock Text="✈️" FontSize="18" HorizontalAlignment="Center"/>
@@ -346,7 +378,7 @@
                                 <EventTrigger RoutedEvent="MouseEnter">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#7A4E00" Duration="0:0:0.12" />
+                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource TkHavayoluHoverColor}" Duration="0:0:0.12" />
                                             <DoubleAnimation Storyboard.TargetName="tk_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.15" Duration="0:0:0.12" />
                                         </Storyboard>
                                     </BeginStoryboard>
@@ -362,7 +394,7 @@
                             </Button.Triggers>
                         </Button>
 
-                        <Button x:Name="tk_o6" Style="{StaticResource OptionButtonStyle}" Background="#EF4444" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Referans">
+                        <Button x:Name="tk_o6" Style="{StaticResource OptionButtonStyle}" Background="{StaticResource TkReferansBaseBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Referans">
                             <Button.Content>
                                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                                     <TextBlock Text="🔖" FontSize="18" HorizontalAlignment="Center"/>
@@ -376,7 +408,7 @@
                                 <EventTrigger RoutedEvent="MouseEnter">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#7A0B0B" Duration="0:0:0.12" />
+                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource TkReferansHoverColor}" Duration="0:0:0.12" />
                                             <DoubleAnimation Storyboard.TargetName="tk_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.15" Duration="0:0:0.12" />
                                         </Storyboard>
                                     </BeginStoryboard>
@@ -392,7 +424,7 @@
                             </Button.Triggers>
                         </Button>
 
-                        <Button x:Name="tk_o7" Style="{StaticResource OptionButtonStyle}" Background="#06B6D4" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Pasaport">
+                        <Button x:Name="tk_o7" Style="{StaticResource OptionButtonStyle}" Background="{StaticResource TkPasaportBaseBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Pasaport">
                             <Button.Content>
                                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                                     <TextBlock Text="🛂" FontSize="18" HorizontalAlignment="Center"/>
@@ -406,7 +438,8 @@
                                 <EventTrigger RoutedEvent="MouseEnter">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#0E7A85" Duration="0:0:0.12" />
+                                            <ColorAnimation Storyboard.TargetName="border2" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource TkPasaportHoverColor}" Duration="0:0:0.12" />
+                                            <ColorAnimation Storyboard.TargetName="tk_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Color)" To="{StaticResource TkPasaportHoverColor}" Duration="0:0:0.12" />
                                             <DoubleAnimation Storyboard.TargetName="tk_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.15" Duration="0:0:0.12" />
                                         </Storyboard>
                                     </BeginStoryboard>

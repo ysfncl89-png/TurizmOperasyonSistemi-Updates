@@ -34,6 +34,8 @@ namespace TurizmOperasyonSistemi.Views
         public void ConfigureMode(ViewMode mode)
         {
             _currentMode = mode;
+            // apply theme for the newly selected mode (scope: this page only)
+            ApplyTheme(mode);
             // update filter title dynamically
             try
             {
@@ -101,6 +103,8 @@ namespace TurizmOperasyonSistemi.Views
         public PersonsGeneralView()
         {
             InitializeComponent();
+            // Apply initial theme for the default mode
+            ApplyTheme(_currentMode);
             // ensure default column projection is applied after InitializeComponent
             Loaded += (s, e) => ConfigureMode(_currentMode);
             ResultsDataGrid.MouseDoubleClick += ResultsDataGrid_MouseDoubleClick;
@@ -111,6 +115,89 @@ namespace TurizmOperasyonSistemi.Views
             // initial state: show filters, hide topbar
             TopBar.Visibility = Visibility.Collapsed;
             FiltersPanel.Visibility = Visibility.Visible;
+        }
+
+        // Theme structure local to this page
+        private struct PageTheme
+        {
+            public Color PrimaryStart;
+            public Color PrimaryEnd;
+            public Color Glow;
+        }
+
+        private void ApplyTheme(ViewMode mode)
+        {
+            // define per-mode themes
+            PageTheme theme;
+            switch (mode)
+            {
+                case ViewMode.Genel:
+                    // match ListsView TkGenelBaseColor (#8B5CF6)
+                    theme.PrimaryStart = (Color)ColorConverter.ConvertFromString("#FF8B5CF6");
+                    theme.PrimaryEnd = (Color)ColorConverter.ConvertFromString("#FF8B5CF6");
+                    theme.Glow = (Color)ColorConverter.ConvertFromString("#FF8B5CF6");
+                    break;
+                case ViewMode.Vize:
+                    // match ListsView TkVizeBaseColor (#EC4899)
+                    theme.PrimaryStart = (Color)ColorConverter.ConvertFromString("#FFEC4899");
+                    theme.PrimaryEnd = (Color)ColorConverter.ConvertFromString("#FFEC4899");
+                    theme.Glow = (Color)ColorConverter.ConvertFromString("#FFEC4899");
+                    break;
+                case ViewMode.Pasaport:
+                    // match ListsView TkPasaportBaseColor (#06B6D4)
+                    theme.PrimaryStart = (Color)ColorConverter.ConvertFromString("#FF06B6D4");
+                    theme.PrimaryEnd = (Color)ColorConverter.ConvertFromString("#FF06B6D4");
+                    theme.Glow = (Color)ColorConverter.ConvertFromString("#FF06B6D4");
+                    break;
+                case ViewMode.Bilet:
+                    // match ListsView TkBiletBaseColor (#3B82F6)
+                    theme.PrimaryStart = (Color)ColorConverter.ConvertFromString("#FF3B82F6");
+                    theme.PrimaryEnd = (Color)ColorConverter.ConvertFromString("#FF3B82F6");
+                    theme.Glow = (Color)ColorConverter.ConvertFromString("#FF3B82F6");
+                    break;
+                case ViewMode.Aktarma:
+                    // match ListsView TkAktarmaBaseColor (#10B981)
+                    theme.PrimaryStart = (Color)ColorConverter.ConvertFromString("#FF10B981");
+                    theme.PrimaryEnd = (Color)ColorConverter.ConvertFromString("#FF10B981");
+                    theme.Glow = (Color)ColorConverter.ConvertFromString("#FF10B981");
+                    break;
+                case ViewMode.Havayolu:
+                    // match ListsView TkHavayoluBaseColor (#F59E0B)
+                    theme.PrimaryStart = (Color)ColorConverter.ConvertFromString("#FFF59E0B");
+                    theme.PrimaryEnd = (Color)ColorConverter.ConvertFromString("#FFF59E0B");
+                    theme.Glow = (Color)ColorConverter.ConvertFromString("#FFF59E0B");
+                    break;
+                case ViewMode.Referans:
+                    // match ListsView TkReferansBaseColor (#EF4444)
+                    theme.PrimaryStart = (Color)ColorConverter.ConvertFromString("#FFEF4444");
+                    theme.PrimaryEnd = (Color)ColorConverter.ConvertFromString("#FFEF4444");
+                    theme.Glow = (Color)ColorConverter.ConvertFromString("#FFEF4444");
+                    break;
+                default:
+                    theme.PrimaryStart = (Color)ColorConverter.ConvertFromString("#FF7C3AED");
+                    theme.PrimaryEnd = (Color)ColorConverter.ConvertFromString("#FF5B21B6");
+                    theme.Glow = (Color)ColorConverter.ConvertFromString("#FF8B5CF6");
+                    break;
+            }
+
+            // apply to page resources (local only)
+            try
+            {
+                this.Resources["PrimaryStartColor"] = theme.PrimaryStart;
+                this.Resources["PrimaryEndColor"] = theme.PrimaryEnd;
+                this.Resources["GlowColor"] = theme.Glow;
+
+                // update brushes if present
+                if (this.Resources.Contains("PrimaryGradient"))
+                {
+                    var grad = new LinearGradientBrush(theme.PrimaryStart, theme.PrimaryEnd, 45);
+                    this.Resources["PrimaryGradient"] = grad;
+                }
+                this.Resources["PrimaryStartBrush"] = new SolidColorBrush(theme.PrimaryStart);
+                this.Resources["PrimaryEndBrush"] = new SolidColorBrush(theme.PrimaryEnd);
+                this.Resources["GlowBrush"] = new SolidColorBrush(theme.Glow);
+            }
+            catch { }
         }
 
         private string GetExportDefaultFileName(string extWithoutDot)
