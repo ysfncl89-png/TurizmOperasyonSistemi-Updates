@@ -630,13 +630,52 @@ namespace TurizmOperasyonSistemi.Views
                 // fallback to all known headers from MapHeaderToProperty
                 headers = new List<string> { "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kan Grubu", "Hastalık durumu" };
             }
+            // For Havayolu mode, export headers should be uppercase and Turkish characters removed
+            try
+            {
+                if (_currentMode == ViewMode.Havayolu)
+                {
+                    return headers.Select(h => TransformForHavayolu(h)).ToList();
+                }
+            }
+            catch { }
             return headers;
         }
 
         private List<Dictionary<string, string>> GetExportRows(List<string> headers)
         {
             var source = ResultsDataGrid.ItemsSource?.Cast<object>().ToList() ?? new List<object>();
-            return source.Select(item => headers.ToDictionary(h => h, h => GetPropertyStringValue(item, MapHeaderToProperty(h)))).ToList();
+            // Map header names from the visual columns (raw) to properties so we don't rely on possibly-transformed header text
+            var visibleCols = ResultsDataGrid.Columns
+                .Where(c => c.Visibility == Visibility.Visible)
+                .OrderBy(c => c.DisplayIndex)
+                .ToList();
+            var rawHeaders = visibleCols.Select(c => c.Header?.ToString() ?? string.Empty).ToList();
+
+            var rows = new List<Dictionary<string, string>>();
+            for (int i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                var dict = new Dictionary<string, string>();
+                for (int colIndex = 0; colIndex < rawHeaders.Count; colIndex++)
+                {
+                    var raw = rawHeaders[colIndex];
+                    var outHeader = (colIndex < headers.Count) ? headers[colIndex] : TransformForHavayolu(raw);
+                    var val = GetPropertyStringValue(item, MapHeaderToProperty(raw)) ?? string.Empty;
+                    if (_currentMode == ViewMode.Havayolu) val = TransformForHavayolu(val);
+                    dict[outHeader] = val;
+                }
+                rows.Add(dict);
+            }
+            return rows;
+        }
+
+        private string TransformForHavayolu(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            // remove/replace Turkish-specific letters then uppercase invariant
+            var t = value.Replace("İ", "I").Replace("ı", "i").Replace("Ş", "S").Replace("ş", "s").Replace("Ğ", "G").Replace("ğ", "g").Replace("Ü", "U").Replace("ü", "u").Replace("Ö", "O").Replace("ö", "o").Replace("Ç", "C").Replace("ç", "c");
+            try { return t.ToUpperInvariant(); } catch { return t.ToUpper(); }
         }
 
         // --- Below: utility methods for building docx/xlsx/pdf adapted from PersonsHealthView ---
@@ -874,6 +913,38 @@ namespace TurizmOperasyonSistemi.Views
                         RemainingDebt = reg.RemainingDebt.ToString("0.##"),
                         Reference = reg.Reference ?? string.Empty
                     };
+                    // If current mode is Havayolu, transform all textual fields to uppercase and remove Turkish characters
+                    if (_currentMode == ViewMode.Havayolu)
+                    {
+                        r.FirstName = TransformForHavayolu(r.FirstName);
+                        r.LastName = TransformForHavayolu(r.LastName);
+                        r.TcKimlikNo = TransformForHavayolu(r.TcKimlikNo);
+                        r.Gender = TransformForHavayolu(r.Gender);
+                        r.BirthDate = TransformForHavayolu(r.BirthDate);
+                        r.PhoneNumber = TransformForHavayolu(r.PhoneNumber);
+                        r.Address = TransformForHavayolu(r.Address);
+                        r.PassportType = TransformForHavayolu(r.PassportType);
+                        r.PassportNumber = TransformForHavayolu(r.PassportNumber);
+                        r.PassportStartDate = TransformForHavayolu(r.PassportStartDate);
+                        r.PassportEndDate = TransformForHavayolu(r.PassportEndDate);
+                        r.BloodType = TransformForHavayolu(r.BloodType);
+                        r.VaccineStatus = TransformForHavayolu(r.VaccineStatus);
+                        r.HealthStatus = TransformForHavayolu(r.HealthStatus);
+                        r.AgeRange = TransformForHavayolu(r.AgeRange);
+                        r.VisaRequest = TransformForHavayolu(r.VisaRequest);
+                        r.TicketRequest = TransformForHavayolu(r.TicketRequest);
+                        r.CargoRequest = TransformForHavayolu(r.CargoRequest);
+                        r.RoomType = TransformForHavayolu(r.RoomType);
+                        r.DepartureCity = TransformForHavayolu(r.DepartureCity);
+                        r.HasTransfer = TransformForHavayolu(r.HasTransfer);
+                        r.TransferCity = TransformForHavayolu(r.TransferCity);
+                        r.District = TransformForHavayolu(r.District);
+                        r.TotalPrice = TransformForHavayolu(r.TotalPrice);
+                        r.Currency = TransformForHavayolu(r.Currency);
+                        r.PaidAmount = TransformForHavayolu(r.PaidAmount);
+                        r.RemainingDebt = TransformForHavayolu(r.RemainingDebt);
+                        r.Reference = TransformForHavayolu(r.Reference);
+                    }
                     rows.Add(r);
                 }
 
