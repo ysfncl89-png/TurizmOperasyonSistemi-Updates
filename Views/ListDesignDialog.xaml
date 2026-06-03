@@ -19,7 +19,10 @@
                        Foreground="White"
                        FontSize="24"
                        FontWeight="Bold"/>
-            <TextBlock Text="Listede Görünmesini istemediğiniz Kolonun işaretini kaldırın . Kırmızı olacak ve Listede görünmeyecek"
+            <TextBlock Text="Listede görünmesini istemediğiniz kolonun işaretini kaldırın . Kırmızı olacak ve KAYDET butonuna tıklayınca listede görünmeyecek"
+                       Foreground="Orange"
+                       Margin="0,4,0,0"/>
+            <TextBlock Text="Ayrıca SÜRÜKLE BIRAK  yöntemiyle kolonların sıralamasını hem bu pencerede hem tabloda değiştirebilirsiniz"
                        Foreground="Orange"
                        Margin="0,4,0,0"/>
         </StackPanel>
