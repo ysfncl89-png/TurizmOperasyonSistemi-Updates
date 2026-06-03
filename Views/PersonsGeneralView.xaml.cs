@@ -79,8 +79,47 @@ namespace TurizmOperasyonSistemi.Views
             };
 
             if (!modeVisibleHeaders.TryGetValue(mode, out var visible)) visible = modeVisibleHeaders[ViewMode.Genel];
+            // If user has a saved template for this mode, prefer that (so custom visibility/order persists)
+            try
+            {
+                var store = new Services.ListTemplateStore();
+                var tpl = store.LoadTemplate(mode.ToString());
+                if (tpl != null && tpl.Count > 0)
+                {
+                    // apply saved template order and visibility
+                    var ordered = tpl.OrderBy(t => t.Order).ToList();
+                    int idx = 0;
+                    string Norm(string s)
+                    {
+                        if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                        var t = s.Trim().ToLowerInvariant();
+                        var sb = new System.Text.StringBuilder();
+                        foreach (var ch in t)
+                        {
+                            if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+                        }
+                        return sb.ToString();
+                    }
 
-            // Update visibility without recreating columns
+                    foreach (var opt in ordered)
+                    {
+                        var key = Norm(opt.Title);
+                        var col = ResultsDataGrid.Columns.FirstOrDefault(c => Norm(c.Header?.ToString() ?? string.Empty) == key);
+                        if (col == null)
+                        {
+                            col = ResultsDataGrid.Columns.FirstOrDefault(c => Norm(c.Header?.ToString() ?? string.Empty).Contains(key) || key.Contains(Norm(c.Header?.ToString() ?? string.Empty)));
+                        }
+                        if (col == null) continue;
+                        col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+                        col.DisplayIndex = idx++;
+                    }
+                    try { ResultsDataGrid.Items.Refresh(); } catch { }
+                    return;
+                }
+            }
+            catch { }
+
+            // Update visibility without recreating columns (fallback to default set)
             int displayIndex = 0;
             foreach (var col in ResultsDataGrid.Columns)
             {
