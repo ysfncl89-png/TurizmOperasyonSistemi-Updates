@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
+using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -1425,7 +1426,7 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var dialog = new ListDesignDialog(ResultsDataGrid.Columns);
+                var dialog = new ListDesignDialog(ResultsDataGrid.Columns, _currentMode.ToString(), ResultsDataGrid);
                 dialog.Owner = Application.Current?.MainWindow;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
@@ -1443,6 +1444,14 @@ namespace TurizmOperasyonSistemi.Views
                     col.DisplayIndex = targetIndex;
                     col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
                 }
+                // save template for this mode automatically
+                try
+                {
+                    var store = new Services.ListTemplateStore();
+                    var list = ordered.Select(o => new Services.ListTemplateStore.ColumnDto { Title = o.Title, Order = o.Order, IsVisible = o.IsVisible }).ToList();
+                    store.SaveTemplate(_currentMode.ToString(), list);
+                }
+                catch { }
             }
             catch (Exception ex)
             {

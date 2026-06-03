@@ -102,6 +102,13 @@
                     Margin="0,0,10,0"
                     Padding="14,8"
                     Click="Cancel_Click"/>
+            <Button Content="Şablonu Kaydet"
+                    Width="140"
+                    Margin="0,0,10,0"
+                    Padding="14,8"
+                    Background="#0B6B3A"
+                    Foreground="White"
+                    Click="SaveTemplateButton_Click"/>
             <Button Content="Uygula"
                     Width="110"
                     Padding="14,8"
