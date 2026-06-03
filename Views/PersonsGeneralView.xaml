@@ -77,6 +77,9 @@
                         <Setter Property="Foreground" Value="#E2F8FF"/>
                         <Setter Property="Background" Value="#0F172A"/>
                         <Setter Property="Padding" Value="8"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Margin" Value="0"/>
                         <Style.Triggers>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Background" Value="#22324A"/>
@@ -311,7 +314,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Button x:Name="FiltersBackButton" Grid.Row="0" Content="← Geri" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,8" Padding="8,6" Click="BackButton_Click" Background="#EC4899" Foreground="White" BorderThickness="0" />
+                <Button x:Name="FiltersBackButton" Grid.Row="0" Content="← Geri" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,8" Padding="8,6" Click="BackButton_Click" Background="{DynamicResource PrimaryGradient}" Foreground="White" BorderBrush="{DynamicResource GlowBrush}" BorderThickness="0" />
 
                 <TextBlock x:Name="FilterTitleTextBlock" Grid.Row="0" Text="Görüntülemek istediğiniz Genel Liste İçin Önce  Kriterleri Sırayla Seçin" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,18"/>
 
