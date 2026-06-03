@@ -34,6 +34,15 @@ namespace TurizmOperasyonSistemi.Views
         public void ConfigureMode(ViewMode mode)
         {
             _currentMode = mode;
+            // update filter title dynamically
+            try
+            {
+                if (FilterTitleTextBlock != null)
+                {
+                    FilterTitleTextBlock.Text = $"Görüntülemek istediğiniz {GetModeTitle()} Listesi İçin Önce Kriterleri Sırayla Seçin";
+                }
+            }
+            catch { }
             // Define which headers should be visible for each mode (case-insensitive match)
             var modeVisibleHeaders = new Dictionary<ViewMode, HashSet<string>>()
             {
@@ -68,6 +77,23 @@ namespace TurizmOperasyonSistemi.Views
         }
 
         private ViewMode _currentMode = ViewMode.Genel;
+
+        private string GetModeTitle()
+        {
+            switch (_currentMode)
+            {
+                case ViewMode.Genel: return "Genel";
+                case ViewMode.Vize: return "Vize";
+                case ViewMode.Pasaport: return "Pasaport";
+                case ViewMode.Havayolu: return "Havayolu";
+                case ViewMode.Aktarma: return "Aktarma";
+                case ViewMode.Bilet: return "Bilet";
+                case ViewMode.Referans: return "Referans";
+                default: return "Genel";
+            }
+        }
+
+        private string CurrentModeName => GetModeTitle();
         private List<GeneralRow> _allRows = new List<GeneralRow>();
         private Button _applyButton;
         private DataGridColumn _editingColumn;
@@ -90,7 +116,7 @@ namespace TurizmOperasyonSistemi.Views
         private string GetExportDefaultFileName(string extWithoutDot)
         {
             // build a friendly default file name from current filters and selections
-            var parts = new List<string> { "Genel Liste" };
+            var parts = new List<string> { CurrentModeName + " Liste" };
             try
             {
                 var tour = CbTourType?.SelectedItem as string;
@@ -422,21 +448,21 @@ namespace TurizmOperasyonSistemi.Views
         {
             var cols = GetExportHeaders();
             var rows = GetExportRows(cols);
-            Services.ExportHelper.ExportWord(filePath, rows, cols, "Genel Liste");
+            Services.ExportHelper.ExportWord(filePath, rows, cols, CurrentModeName + " Liste");
         }
 
         private void ExportExcel(string filePath)
         {
             var cols = GetExportHeaders();
             var rows = GetExportRows(cols);
-            Services.ExportHelper.ExportExcel(filePath, rows, cols, "Genel Liste");
+            Services.ExportHelper.ExportExcel(filePath, rows, cols, CurrentModeName + " Liste");
         }
 
         private void ExportPdf(string filePath)
         {
             var cols = GetExportHeaders();
             var rows = GetExportRows(cols);
-            Services.ExportHelper.ExportPdf(filePath, rows, cols, "Genel Liste");
+            Services.ExportHelper.ExportPdf(filePath, rows, cols, CurrentModeName + " Liste");
         }
 
         private void DeleteIfExists(string filePath)
@@ -1319,7 +1345,8 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ExportCsv_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new SaveFileDialog { Title = "CSV olarak kaydet", Filter = "CSV dosyası (*.csv)|*.csv", FileName = "genel-listesi.csv" };
+            var defaultName = GetExportDefaultFileName("csv");
+            var dlg = new SaveFileDialog { Title = "CSV olarak kaydet", Filter = "CSV dosyası (*.csv)|*.csv", FileName = defaultName };
             if (dlg.ShowDialog() != true) return;
 
             try
