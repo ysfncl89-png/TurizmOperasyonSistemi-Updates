@@ -295,8 +295,8 @@
                 <Button x:Name="DesignButton" Content="Listeyi tasarla" Margin="12,0,0,0" Padding="14,9" Click="DesignButton_Click"
                         Background="#123046" BorderBrush="{DynamicResource GlowBrush}" BorderThickness="1.2" Foreground="White" FontWeight="SemiBold"/>
                 <StackPanel Orientation="Horizontal" Margin="12,8,0,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="CurrentModeLabel" Text="Genel" FontSize="18" FontWeight="SemiBold" Foreground="#FCA311" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                    <TextBlock x:Name="CurrentFilterLabel" Text="" VerticalAlignment="Center" FontSize="30" FontWeight="SemiBold" Foreground="#FCA311" Opacity="0.95">
+                    <TextBlock x:Name="CurrentModeLabel" Text="Genel" FontSize="25" FontWeight="SemiBold" Foreground="#FCA311" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="CurrentFilterLabel" Text="" VerticalAlignment="Center" FontSize="25" FontWeight="SemiBold" Foreground="#FCA311" Opacity="0.95">
                     <TextBlock.Effect>
                         <DropShadowEffect Color="#FCA311" BlurRadius="18" ShadowDepth="0" Opacity="0.35"/>
                     </TextBlock.Effect>
@@ -319,7 +319,17 @@
 
                 <Button x:Name="FiltersBackButton" Grid.Row="0" Content="← Geri" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,8" Padding="8,6" Click="BackButton_Click" Background="{DynamicResource PrimaryGradient}" Foreground="White" BorderBrush="{DynamicResource GlowBrush}" BorderThickness="0" />
 
-                <TextBlock x:Name="FilterTitleTextBlock" Grid.Row="0" Text="Görüntülemek istediğiniz Genel Liste İçin Önce  Kriterleri Sırayla Seçin" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,18"/>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,18" VerticalAlignment="Center">
+                    <TextBlock x:Name="FilterTitlePrefix" Text="Görüntülemek istediğiniz " Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+                    <TextBlock x:Name="ModeInlineText" Text="Genel" Foreground="{DynamicResource PrimaryStartBrush}" FontWeight="ExtraBold" FontSize="30" Margin="6,0,6,0" VerticalAlignment="Center">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="{DynamicResource PrimaryStartColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.35"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                    <TextBlock x:Name="FilterTitleSuffix" Text=" Listesi İçin Önce Kriterleri Sırayla Seçin" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+                </StackPanel>
+                <!-- Backwards-compat placeholder for code-behind references; kept collapsed to avoid duplicate UI -->
+                <TextBlock x:Name="FilterTitleTextBlock" Visibility="Collapsed" />
 
                 <!-- Tur Türü -->
                 <StackPanel Grid.Row="1" Margin="0,6,0,6">

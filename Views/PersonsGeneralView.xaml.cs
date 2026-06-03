@@ -44,12 +44,24 @@ namespace TurizmOperasyonSistemi.Views
                     FilterTitleTextBlock.Text = $"Görüntülemek istediğiniz {GetModeTitle()} Listesi İçin Önce Kriterleri Sırayla Seçin";
                 }
                 var mb = this.FindName("ModeBadge") as TextBlock;
-                // update CurrentModeLabel in TopBar (shows next to Design button)
+                // update inline Run in filter title to highlight current mode
+                var mit = this.FindName("ModeInlineText") as TextBlock;
+                if (mit != null)
+                {
+                    mit.Text = GetModeTitle();
+                    try {
+                        var clr = (Color)FindResource("PrimaryStartColor");
+                        mit.Foreground = new SolidColorBrush(clr);
+                        mit.FontWeight = FontWeights.ExtraBold;
+                        mit.FontSize = CurrentFilterLabel?.FontSize ?? 30;
+                    } catch { }
+                }
+                // also update CurrentModeLabel in TopBar
                 var cml = this.FindName("CurrentModeLabel") as TextBlock;
                 if (cml != null)
                 {
                     cml.Text = GetModeTitle();
-                    try { cml.Foreground = (Brush)FindResource("PrimaryStartBrush"); } catch { }
+                    try { var clr = (Color)FindResource("PrimaryStartColor"); cml.Foreground = new SolidColorBrush(clr); } catch { }
                 }
             }
             catch { }
