@@ -46,6 +46,19 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     tkGenel.Click += Tk_o1_Click;
                 }
+                // other tur kayitlari buttons -> wire to open PersonsGeneralView with specific mode
+                var tkVize = this.FindName("tk_o2") as Button;
+                if (tkVize != null) tkVize.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Vize);
+                var tkBilet = this.FindName("tk_o3") as Button;
+                if (tkBilet != null) tkBilet.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Bilet);
+                var tkAktarma = this.FindName("tk_o4") as Button;
+                if (tkAktarma != null) tkAktarma.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Aktarma);
+                var tkHavayolu = this.FindName("tk_o5") as Button;
+                if (tkHavayolu != null) tkHavayolu.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Havayolu);
+                var tkReferans = this.FindName("tk_o6") as Button;
+                if (tkReferans != null) tkReferans.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Referans);
+                var tkPasaport = this.FindName("tk_o7") as Button;
+                if (tkPasaport != null) tkPasaport.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Pasaport);
             }
             catch
             {
@@ -85,9 +98,15 @@ namespace TurizmOperasyonSistemi.Views
 
         private void Tk_o1_Click(object sender, RoutedEventArgs e)
         {
+            OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Genel);
+        }
+
+        private void OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode mode)
+        {
             try
             {
                 var personsView = new PersonsGeneralView();
+                try { personsView.ConfigureMode(mode); } catch { }
 
                 if (this.NavigationService != null)
                 {
@@ -97,7 +116,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 var win = new Window
                 {
-                    Title = "Tur Kayıtları - Genel",
+                    Title = "Tur Kayıtları - " + mode.ToString(),
                     Content = new Frame { Content = personsView, NavigationUIVisibility = NavigationUIVisibility.Hidden },
                     Width = 1100,
                     Height = 700,

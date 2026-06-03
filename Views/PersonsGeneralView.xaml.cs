@@ -19,6 +19,55 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class PersonsGeneralView : Page
     {
+        public enum ViewMode
+        {
+            Genel,
+            Vize,
+            Pasaport,
+            Bilet,
+            Aktarma,
+            Havayolu,
+            Referans
+        }
+
+        // Configure DataGrid columns according to selected view mode
+        public void ConfigureMode(ViewMode mode)
+        {
+            _currentMode = mode;
+            // Define which headers should be visible for each mode (case-insensitive match)
+            var modeVisibleHeaders = new Dictionary<ViewMode, HashSet<string>>()
+            {
+                [ViewMode.Genel] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Cinsiyet","Doğum Tarihi","Telefon numarası","Adres","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Kan Grubu","Aşı durumu","hastalık durumu","Yaş aralığı","Vize Talebi","Bilet Talebi","Kargo Talebi","Oda tipi","Katılım yapılacak şehir","Aktarma var mı ?","Aktarma şehri","İlçe","Toplam Fiyat","Para Birimi","Ödenen","Kalan","Referans" },
+                [ViewMode.Vize] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Vize Talebi","Telefon numarası","Adres" },
+                [ViewMode.Pasaport] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Telefon numarası","Adres" },
+                [ViewMode.Bilet] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Bilet Talebi","Telefon numarası","Adres","Katılım yapılacak şehir" },
+                [ViewMode.Aktarma] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Aktarma var mı ?","Aktarma şehri","Telefon numarası","Adres","Katılım yapılacak şehir" },
+                [ViewMode.Havayolu] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Katılım yapılacak şehir","Bilet Talebi","Telefon numarası","Adres" },
+                [ViewMode.Referans] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Referans","Telefon numarası","Adres" },
+            };
+
+            if (!modeVisibleHeaders.TryGetValue(mode, out var visible)) visible = modeVisibleHeaders[ViewMode.Genel];
+
+            // Update visibility without recreating columns
+            int displayIndex = 0;
+            foreach (var col in ResultsDataGrid.Columns)
+            {
+                var header = col.Header?.ToString() ?? string.Empty;
+                if (visible.Contains(header))
+                {
+                    col.Visibility = Visibility.Visible;
+                    col.DisplayIndex = displayIndex++;
+                }
+                else
+                {
+                    col.Visibility = Visibility.Collapsed;
+                }
+            }
+            // Refresh grid to reflect changes
+            try { ResultsDataGrid.Items.Refresh(); } catch { }
+        }
+
+        private ViewMode _currentMode = ViewMode.Genel;
         private List<GeneralRow> _allRows = new List<GeneralRow>();
         private Button _applyButton;
         private DataGridColumn _editingColumn;
@@ -26,6 +75,8 @@ namespace TurizmOperasyonSistemi.Views
         public PersonsGeneralView()
         {
             InitializeComponent();
+            // ensure default column projection is applied after InitializeComponent
+            Loaded += (s, e) => ConfigureMode(_currentMode);
             ResultsDataGrid.MouseDoubleClick += ResultsDataGrid_MouseDoubleClick;
             ResultsDataGrid.CellEditEnding += ResultsDataGrid_CellEditEnding;
             ResultsDataGrid.PreparingCellForEdit += ResultsDataGrid_PreparingCellForEdit;
