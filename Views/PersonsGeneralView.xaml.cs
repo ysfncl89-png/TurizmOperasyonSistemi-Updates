@@ -43,6 +43,14 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     FilterTitleTextBlock.Text = $"Görüntülemek istediğiniz {GetModeTitle()} Listesi İçin Önce Kriterleri Sırayla Seçin";
                 }
+                var mb = this.FindName("ModeBadge") as TextBlock;
+                // update CurrentModeLabel in TopBar (shows next to Design button)
+                var cml = this.FindName("CurrentModeLabel") as TextBlock;
+                if (cml != null)
+                {
+                    cml.Text = GetModeTitle();
+                    try { cml.Foreground = (Brush)FindResource("PrimaryStartBrush"); } catch { }
+                }
             }
             catch { }
             // Define which headers should be visible for each mode (case-insensitive match)

@@ -294,11 +294,14 @@
 
                 <Button x:Name="DesignButton" Content="Listeyi tasarla" Margin="12,0,0,0" Padding="14,9" Click="DesignButton_Click"
                         Background="#123046" BorderBrush="{DynamicResource GlowBrush}" BorderThickness="1.2" Foreground="White" FontWeight="SemiBold"/>
-                <TextBlock x:Name="CurrentFilterLabel" Text="" Margin="12,8,0,0" VerticalAlignment="Center" FontSize="30" FontWeight="SemiBold" Foreground="#FCA311" Opacity="0.95">
+                <StackPanel Orientation="Horizontal" Margin="12,8,0,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="CurrentModeLabel" Text="Genel" FontSize="18" FontWeight="SemiBold" Foreground="#FCA311" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="CurrentFilterLabel" Text="" VerticalAlignment="Center" FontSize="30" FontWeight="SemiBold" Foreground="#FCA311" Opacity="0.95">
                     <TextBlock.Effect>
                         <DropShadowEffect Color="#FCA311" BlurRadius="18" ShadowDepth="0" Opacity="0.35"/>
                     </TextBlock.Effect>
-                </TextBlock>
+                    </TextBlock>
+                </StackPanel>
             </StackPanel>
         </StackPanel>
 
