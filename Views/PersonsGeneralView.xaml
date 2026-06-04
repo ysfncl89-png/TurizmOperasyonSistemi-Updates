@@ -81,6 +81,8 @@
 
         <!-- Neon combo box style with ControlTemplate so hover/focus glow is visible -->
         <Style x:Key="NeonCombo" TargetType="ComboBox">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Background" Value="#0F172A" />
             <Setter Property="Foreground" Value="#E2F8FF" />
             <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}" />
@@ -89,6 +91,7 @@
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="ItemContainerStyle" Value="{StaticResource NeonComboBoxItemStyle}" />
             <Setter Property="Effect">
+                
                 <Setter.Value>
                     <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="10" ShadowDepth="0" Opacity="0.18" />
                 </Setter.Value>
@@ -401,9 +404,7 @@
                 <StackPanel Grid.Row="1" Margin="0,6,0,6">
                     <TextBlock Text="Tur Türü" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
                     <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
-                        <Border.Effect>
-                            <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
-                        </Border.Effect>
+
                         <ComboBox x:Name="CbTourType"
                                   Style="{StaticResource NeonCombo}"
                                   SelectionChanged="Filter_Changed"/>
@@ -414,9 +415,7 @@
                 <StackPanel Grid.Row="2" Margin="0,6,0,6">
                     <TextBlock Text="Dönem" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
                     <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
-                        <Border.Effect>
-                            <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
-                        </Border.Effect>
+
                         <ComboBox x:Name="CbPeriod"
                                   Style="{StaticResource NeonCombo}"
                                   SelectionChanged="Filter_Changed"/>
@@ -427,9 +426,7 @@
                 <StackPanel Grid.Row="3" Margin="0,6,0,6">
                     <TextBlock Text="Grup Türü" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
                     <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
-                        <Border.Effect>
-                            <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
-                        </Border.Effect>
+
                         <ComboBox x:Name="CbGroupType"
                                   Style="{StaticResource NeonCombo}"
                                   SelectionChanged="Filter_Changed"/>
@@ -440,9 +437,7 @@
                 <StackPanel Grid.Row="4" Margin="0,6,0,6">
                     <TextBlock Text="Grup Süresi (Gün)" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
                     <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
-                        <Border.Effect>
-                            <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
-                        </Border.Effect>
+
                         <ComboBox x:Name="CbGroupDays"
                                   Style="{StaticResource NeonCombo}"
                                   SelectionChanged="Filter_Changed"/>
