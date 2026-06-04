@@ -426,7 +426,23 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Button Grid.Row="0" Content="← Geri" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,8" Padding="8,6" Click="BackButton_Click" Style="{StaticResource HealthButtonStyle}" />
+                <!-- Row 0: Back button (left) and instruction (right) -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Content="← Geri" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,12,8" Padding="8,6" Click="BackButton_Click" Style="{StaticResource HealthButtonStyle}" />
+
+                    <TextBlock Grid.Column="1" Foreground="#F472B6" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#EC4899" BlurRadius="14" ShadowDepth="0" Opacity="0.42" />
+                        </TextBlock.Effect>
+                        <Run Text="SAĞLIK" Foreground="White" FontWeight="SemiBold" />
+                        <Run Text=" listesini görüntülemek için öncelikle ilgili kriterleri seçin." />
+                    </TextBlock>
+                </Grid>
 
                 <StackPanel Grid.Row="1" Margin="0,6,0,6">
                     <TextBlock Text="Tur Türü" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
