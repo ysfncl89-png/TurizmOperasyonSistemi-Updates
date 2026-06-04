@@ -9,7 +9,7 @@ namespace TurizmOperasyonSistemi.Services
 {
     public class ListTemplateStore
     {
-        public class ColumnDto { public string Title { get; set; } public int Order { get; set; } public bool IsVisible { get; set; } }
+        public class ColumnDto { public string Key { get; set; } public string Title { get; set; } public int Order { get; set; } public bool IsVisible { get; set; } }
 
         private const string SettingTypePrefix = "ListTemplate:";
         private static readonly string AppDataPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TurizmOperasyonSistemi");

@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Globalization;
+using System.ComponentModel;
 using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi.Views
@@ -35,16 +36,118 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     var title = c.Header?.ToString() ?? ("Kolon " + order);
                     var isVisible = c.Visibility == Visibility.Visible;
-                    _columns.Add(new ColumnOption(title, order, isVisible));
+                    // prefer stable key from binding path when possible (e.g., FirstName/LastName)
+                    string key = string.Empty;
+                    try
+                    {
+                        if (c is DataGridBoundColumn bound)
+                        {
+                            // try get binding path
+                            if (bound.Binding is System.Windows.Data.Binding b && b.Path != null)
+                            {
+                                key = (b.Path.Path ?? string.Empty).Trim().ToLowerInvariant();
+                            }
+                        }
+                    }
+                    catch { }
+                    if (string.IsNullOrWhiteSpace(key))
+                    {
+                        // generate a stable key based on original header text
+                        string MakeKey(string s)
+                        {
+                            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                            var t = s.Trim().ToLowerInvariant();
+                            var sb = new StringBuilder();
+                            foreach (var ch in t)
+                            {
+                                if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+                            }
+                            return sb.ToString();
+                        }
+                        key = MakeKey(title);
+                    }
+                    _columns.Add(new ColumnOption(title, order, isVisible, key));
                     order++;
                 }
             }
 
             ColumnsItemsControl.ItemsSource = _columns;
 
+            // expose whether edit button should be visible (only for Havayolu mode)
+            EditButtonVisibility = string.Equals(_modeName, "Havayolu", StringComparison.OrdinalIgnoreCase) ? Visibility.Visible : Visibility.Collapsed;
+
+            // set window-level property as DataContext for binding isn't needed because we bind RelativeSource=Window
+
             // support drag-drop by wiring events
             ColumnsItemsControl.PreviewMouseLeftButtonDown += ColumnsItemsControl_PreviewMouseLeftButtonDown;
             ColumnsItemsControl.MouseMove += ColumnsItemsControl_MouseMove;
+        }
+
+        public Visibility EditButtonVisibility { get; private set; }
+
+        private void EditTitle_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is Button btn)) return;
+                if (!(btn.DataContext is ColumnOption opt)) return;
+
+                var oldTitle = opt.Title;
+                var dlg = new EditTitleDialog(oldTitle) { Owner = this };
+                if (dlg.ShowDialog() == true)
+                {
+                    var newTitle = dlg.EditedTitle ?? oldTitle;
+
+                    // if there is a target grid, try to update the actual column header so Apply/Save can match
+                    try
+                    {
+                        if (_targetGrid != null)
+                        {
+                            DataGridColumn GetMatchingColumn()
+                            {
+                                string GetHeaderText(DataGridColumn c)
+                                {
+                                    if (c == null) return string.Empty;
+                                    if (c.Header == null) return string.Empty;
+                                    if (c.Header is string s) return s;
+                                    if (c.Header is TextBlock tb) return tb.Text ?? string.Empty;
+                                    try { return c.Header.ToString(); } catch { return string.Empty; }
+                                }
+                                string Norm(string s)
+                                {
+                                    if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                                    var t = s.Trim().ToLowerInvariant();
+                                    var sb = new StringBuilder();
+                                    foreach (var ch in t)
+                                    {
+                                        if (char.IsLetterOrDigit(ch) || char.IsWhiteSpace(ch)) sb.Append(ch);
+                                    }
+                                    return sb.ToString().Replace(" ", string.Empty);
+                                }
+
+                                var exact = _targetGrid.Columns.FirstOrDefault(c => string.Equals(GetHeaderText(c).Trim(), oldTitle?.Trim(), StringComparison.OrdinalIgnoreCase));
+                                if (exact != null) return exact;
+                                var normKey = Norm(oldTitle);
+                                var norm = _targetGrid.Columns.FirstOrDefault(c => Norm(GetHeaderText(c)) == normKey);
+                                if (norm != null) return norm;
+                                var contains = _targetGrid.Columns.FirstOrDefault(c => Norm(GetHeaderText(c)).Contains(normKey) || normKey.Contains(Norm(GetHeaderText(c))));
+                                return contains;
+                            }
+
+                            var col = GetMatchingColumn();
+                            if (col != null)
+                            {
+                                col.Header = newTitle;
+                                try { _targetGrid.Items.Refresh(); _targetGrid.UpdateLayout(); } catch { }
+                            }
+                        }
+                    }
+                    catch { }
+
+                    opt.Title = newTitle;
+                }
+            }
+            catch { }
         }
 
         private void SaveTemplateButton_Click(object sender, RoutedEventArgs e)
@@ -59,9 +162,11 @@ namespace TurizmOperasyonSistemi.Views
 
                 SyncUiToModel();
                 var list = _columns.OrderBy(c => c.Order)
-                                   .Select(c => new ListTemplateStore.ColumnDto { Title = c.Title, Order = c.Order, IsVisible = c.IsVisible })
+                                   .Select(c => new ListTemplateStore.ColumnDto { Key = c.Key, Title = c.Title, Order = c.Order, IsVisible = c.IsVisible })
                                    .ToList();
                 _store.SaveTemplate(_modeName, list);
+                // ensure saved template contains stable keys (binding paths) when target grid available
+                try { EnsureSavedTemplateKeys(list); } catch { }
 
                 if (_targetGrid != null)
                 {
@@ -130,12 +235,22 @@ namespace TurizmOperasyonSistemi.Views
                     var tpl = _store.LoadTemplate(_modeName);
                     if (tpl != null && tpl.Count > 0)
                     {
-                        // align existing _columns with saved template
+                        // align existing _columns with saved template using Key when available
                         foreach (var saved in tpl)
                         {
-                            var col = _columns.FirstOrDefault(c => string.Equals(c.Title, saved.Title, StringComparison.OrdinalIgnoreCase));
+                            ColumnOption col = null;
+                            if (!string.IsNullOrWhiteSpace(saved.Key))
+                            {
+                                col = _columns.FirstOrDefault(c => string.Equals(c.Key, saved.Key, StringComparison.OrdinalIgnoreCase));
+                            }
+                            if (col == null)
+                            {
+                                col = _columns.FirstOrDefault(c => string.Equals(c.Title, saved.Title, StringComparison.OrdinalIgnoreCase));
+                            }
                             if (col != null)
                             {
+                                // update title from saved (preserve edited title)
+                                try { col.Title = saved.Title ?? col.Title; } catch { }
                                 col.IsVisible = saved.IsVisible;
                                 col.Order = saved.Order;
                             }
@@ -168,9 +283,10 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     SyncUiToModel();
                     var list = _columns.OrderBy(c => c.Order)
-                                       .Select(c => new ListTemplateStore.ColumnDto { Title = c.Title, Order = c.Order, IsVisible = c.IsVisible })
+                                       .Select(c => new ListTemplateStore.ColumnDto { Key = c.Key, Title = c.Title, Order = c.Order, IsVisible = c.IsVisible })
                                        .ToList();
                     _store.SaveTemplate(_modeName, list);
+                    try { EnsureSavedTemplateKeys(list); } catch { }
                     if (_targetGrid != null)
                     {
                         ApplyToTargetGrid(list);
@@ -222,6 +338,20 @@ namespace TurizmOperasyonSistemi.Views
                     col = _targetGrid.Columns.FirstOrDefault(c => Norm(GetHeaderText(c)).Contains(optKey) || optKey.Contains(Norm(GetHeaderText(c))));
                 }
                 if (col == null) continue;
+                // update header to the new title so edited titles become visible in the grid
+                try
+                {
+                    if (col.Header is TextBlock htb)
+                    {
+                        htb.Text = opt.Title ?? string.Empty;
+                    }
+                    else
+                    {
+                        col.Header = opt.Title ?? string.Empty;
+                    }
+                }
+                catch { }
+
                 col.DisplayIndex = targetIndex;
                 col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
             }
@@ -232,18 +362,99 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
-        public sealed class ColumnOption
+        private void EnsureSavedTemplateKeys(List<ListTemplateStore.ColumnDto> list)
         {
-            public ColumnOption(string title, int order, bool isVisible)
+            if (list == null || _targetGrid == null) return;
+            try
             {
-                Title = title;
-                Order = order;
-                IsVisible = isVisible;
+                bool changed = false;
+                string NormLocal(string s)
+                {
+                    if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                    var t = s.Trim().ToLowerInvariant();
+                    var sb = new StringBuilder();
+                    foreach (var ch in t) if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+                    return sb.ToString();
+                }
+
+                foreach (var item in list)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.Key)) continue;
+                    // try to find matching column by title and extract binding path
+                    var col = _targetGrid.Columns.FirstOrDefault(c => string.Equals((c.Header as string) ?? c.Header?.ToString(), item.Title, StringComparison.OrdinalIgnoreCase));
+                    if (col == null)
+                    {
+                        var key = NormLocal(item.Title ?? string.Empty);
+                        col = _targetGrid.Columns.FirstOrDefault(c => NormLocal((c.Header as string) ?? c.Header?.ToString()) == key);
+                    }
+                    if (col is DataGridBoundColumn dbc)
+                    {
+                        if (dbc.Binding is System.Windows.Data.Binding b && b.Path != null)
+                        {
+                            item.Key = (b.Path.Path ?? string.Empty).Trim().ToLowerInvariant();
+                            changed = true;
+                        }
+                    }
+                }
+                if (changed)
+                {
+                    _store.SaveTemplate(_modeName, list);
+                }
+            }
+            catch { }
+        }
+
+        public sealed class ColumnOption : INotifyPropertyChanged
+        {
+            private string _title;
+            private int _order;
+            private bool _isVisible;
+            private string _key;
+
+            public ColumnOption(string title, int order, bool isVisible, string key = null)
+            {
+                _title = title;
+                _order = order;
+                _isVisible = isVisible;
+                _key = key ?? string.Empty;
             }
 
-            public string Title { get; }
-            public int Order { get; set; }
-            public bool IsVisible { get; set; }
+            public string Title
+            {
+                get => _title;
+                set
+                {
+                    if (_title == value) return;
+                    _title = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Title)));
+                }
+            }
+
+            public int Order
+            {
+                get => _order;
+                set
+                {
+                    if (_order == value) return;
+                    _order = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Order)));
+                }
+            }
+
+            public bool IsVisible
+            {
+                get => _isVisible;
+                set
+                {
+                    if (_isVisible == value) return;
+                    _isVisible = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsVisible)));
+                }
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            public string Key => _key;
         }
 
         // Drag-drop helpers

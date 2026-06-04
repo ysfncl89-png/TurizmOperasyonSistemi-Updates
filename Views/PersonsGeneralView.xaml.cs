@@ -127,19 +127,67 @@ namespace TurizmOperasyonSistemi.Views
                         return sb.ToString();
                     }
 
+                    // Keep track of which existing columns were matched by the template
+                    var matched = new HashSet<DataGridColumn>();
                     foreach (var opt in ordered)
                     {
-                        var key = Norm(opt.Title);
-                        var col = ResultsDataGrid.Columns.FirstOrDefault(c => Norm(c.Header?.ToString() ?? string.Empty) == key);
-                        if (col == null)
+                        // prefer stored Key for stable matching. Try to match against binding path or normalized header
+                        string optKey = !string.IsNullOrWhiteSpace(opt.Key) ? opt.Key : Norm(opt.Title);
+
+                        DataGridColumn FindByBindingPath(string key)
                         {
-                            col = ResultsDataGrid.Columns.FirstOrDefault(c => Norm(c.Header?.ToString() ?? string.Empty).Contains(key) || key.Contains(Norm(c.Header?.ToString() ?? string.Empty)));
+                            try
+                            {
+                                foreach (var c in ResultsDataGrid.Columns)
+                                {
+                                    if (c is DataGridBoundColumn dbc)
+                                    {
+                                        if (dbc.Binding is System.Windows.Data.Binding b && b.Path != null)
+                                        {
+                                            var p = (b.Path.Path ?? string.Empty).Trim().ToLowerInvariant();
+                                            if (p == key) return c;
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                            return null;
                         }
+
+                        DataGridColumn col = null;
+                        // 1) try binding path match
+                        col = FindByBindingPath(optKey);
+                        // 2) try exact normalized header match
+                        if (col == null) col = ResultsDataGrid.Columns.FirstOrDefault(c => Norm(c.Header?.ToString() ?? string.Empty) == optKey);
+                        // 3) try contains
+                        if (col == null) col = ResultsDataGrid.Columns.FirstOrDefault(c => Norm(c.Header?.ToString() ?? string.Empty).Contains(optKey) || optKey.Contains(Norm(c.Header?.ToString() ?? string.Empty)));
                         if (col == null) continue;
+
+                        // update header to stored title so edits persist
+                        try
+                        {
+                            if (col.Header is TextBlock tb) tb.Text = opt.Title ?? string.Empty;
+                            else col.Header = opt.Title ?? string.Empty;
+                        }
+                        catch { }
+
                         col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
                         col.DisplayIndex = idx++;
+                        matched.Add(col);
                     }
-                    try { ResultsDataGrid.Items.Refresh(); } catch { }
+
+                    // After placing matched columns in template order, append any unmatched columns
+                    try
+                    {
+                        var unmatched = ResultsDataGrid.Columns.Except(matched).OrderBy(c => c.DisplayIndex).ToList();
+                        foreach (var c in unmatched)
+                        {
+                            c.DisplayIndex = idx++;
+                        }
+                        try { ResultsDataGrid.Items.Refresh(); } catch { }
+                        try { ResultsDataGrid.UpdateLayout(); } catch { }
+                    }
+                    catch { }
                     return;
                 }
             }
@@ -1650,26 +1698,10 @@ namespace TurizmOperasyonSistemi.Views
                 dialog.Owner = Application.Current?.MainWindow;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
-
-                var options = dialog.ColumnOptions;
-                if (options == null) return;
-
-                // Apply ordering (DisplayIndex) and visibility based on returned options
-                var ordered = options.OrderBy(o => o.Order).ToList();
-                for (int targetIndex = 0; targetIndex < ordered.Count; targetIndex++)
-                {
-                    var opt = ordered[targetIndex];
-                    var col = ResultsDataGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), opt.Title, StringComparison.OrdinalIgnoreCase));
-                    if (col == null) continue;
-                    col.DisplayIndex = targetIndex;
-                    col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
-                }
-                // save template for this mode automatically
+                // Template may have been saved by the dialog; reload/apply the template via ConfigureMode
                 try
                 {
-                    var store = new Services.ListTemplateStore();
-                    var list = ordered.Select(o => new Services.ListTemplateStore.ColumnDto { Title = o.Title, Order = o.Order, IsVisible = o.IsVisible }).ToList();
-                    store.SaveTemplate(_currentMode.ToString(), list);
+                    ConfigureMode(_currentMode);
                 }
                 catch { }
             }

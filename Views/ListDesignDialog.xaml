@@ -80,10 +80,18 @@
                                                    Foreground="White"
                                                    Margin="10,0,0,0"
                                                    VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{Binding Order}"
-                                                   Foreground="#9FB2CB"
-                                                   VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Order}"
+                                                       Foreground="#9FB2CB"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,8,0"/>
+                                            <Button Content="Düzenle"
+                                                    Width="70"
+                                                    Height="26"
+                                                    Click="EditTitle_Click"
+                                                    Visibility="{Binding EditButtonVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    Margin="0,0,0,0"/>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
