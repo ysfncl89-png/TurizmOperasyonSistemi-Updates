@@ -79,6 +79,23 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // If the results/data grid is currently shown, go back to the filters panel (single-step back)
+                try
+                {
+                    if (ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
+                    {
+                        ResultsBorder.Visibility = Visibility.Collapsed;
+                        FiltersPanel.Visibility = Visibility.Visible;
+                        // hide top search bar when returning to filters
+                        if (TopBar != null) TopBar.Visibility = Visibility.Collapsed;
+                        return;
+                    }
+                }
+                catch
+                {
+                    // ignore any visual-tree issues and fall back to navigation behavior below
+                }
+
                 if (this.NavigationService != null && this.NavigationService.CanGoBack)
                 {
                     this.NavigationService.GoBack();
@@ -369,12 +386,32 @@ namespace TurizmOperasyonSistemi.Views
                 if (bloodCandidates.Contains(basePart) && (sign == null || sign == "+" || sign == "-"))
                 {
                     isBlood = true;
-                    // normalize display form like "b+" -> "B+"
+                    // normalize parts
+                    var baseUpper = basePart.ToUpperInvariant();
                     var normalized = (basePart + (sign ?? string.Empty)).ToUpperInvariant().Replace(" ", string.Empty);
-                ResultsDataGrid.ItemsSource = _all.Where(p => !string.IsNullOrWhiteSpace(p.BloodType)
-                                                             && (p.BloodType ?? string.Empty).ToUpperInvariant().Replace(" ", string.Empty).Contains(normalized))
-                                                         .Select(p => new { p.FirstName, p.LastName, p.TcKimlikNo, BloodType = p.BloodType, HealthStatus = p.HealthStatus, VaccineStatus = p.VaccineStatus }).ToList();
-                    return;
+
+                    if (sign != null)
+                    {
+                        // If user specified sign (e.g. B+), require exact match (avoid AB+ matching B+)
+                        ResultsDataGrid.ItemsSource = _all.Where(p => !string.IsNullOrWhiteSpace(p.BloodType)
+                                                                     && string.Equals((p.BloodType ?? string.Empty).ToUpperInvariant().Replace(" ", string.Empty), normalized, System.StringComparison.OrdinalIgnoreCase))
+                                                             .Select(p => new { p.FirstName, p.LastName, p.TcKimlikNo, BloodType = p.BloodType, HealthStatus = p.HealthStatus, VaccineStatus = p.VaccineStatus }).ToList();
+                        return;
+                    }
+                    else
+                    {
+                        // No sign provided (e.g. 'B') match exact base or base with + or - but not substrings (avoid matching 'AB')
+                        var candidatePlus = baseUpper + "+";
+                        var candidateMinus = baseUpper + "-";
+                        ResultsDataGrid.ItemsSource = _all.Where(p =>
+                        {
+                            if (string.IsNullOrWhiteSpace(p.BloodType)) return false;
+                            var bt = (p.BloodType ?? string.Empty).ToUpperInvariant().Replace(" ", string.Empty);
+                            return bt == baseUpper || bt == candidatePlus || bt == candidateMinus;
+                        })
+                        .Select(p => new { p.FirstName, p.LastName, p.TcKimlikNo, BloodType = p.BloodType, HealthStatus = p.HealthStatus, VaccineStatus = p.VaccineStatus }).ToList();
+                        return;
+                    }
                 }
             }
 
