@@ -31,6 +31,65 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        private string GetBindingPathFromTemplate(DataTemplate template)
+        {
+            try
+            {
+                if (template == null) return null;
+                var content = template.LoadContent();
+                // if template contains a TextBlock with Text bound to property
+                if (content is TextBlock tb)
+                {
+                    if (tb.GetBindingExpression(TextBlock.TextProperty) is System.Windows.Data.BindingExpression be && be.ParentBinding?.Path != null)
+                        return be.ParentBinding.Path.Path;
+                }
+                // search visual tree for first FrameworkElement with binding
+                if (content is DependencyObject dob)
+                {
+                    var path = FindBindingPathInVisualTree(dob);
+                    if (!string.IsNullOrWhiteSpace(path)) return path;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private string FindBindingPathInVisualTree(DependencyObject obj)
+        {
+            if (obj == null) return null;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(obj, i);
+                if (child is FrameworkElement fe)
+                {
+                    foreach (var dp in new[] { TextBlock.TextProperty, ComboBox.SelectedValueProperty, ComboBox.TextProperty })
+                    {
+                        try
+                        {
+                            if (fe.GetBindingExpression(dp) is System.Windows.Data.BindingExpression be && be.ParentBinding?.Path != null)
+                                return be.ParentBinding.Path.Path;
+                        }
+                        catch { }
+                    }
+                }
+                var found = FindBindingPathInVisualTree(child);
+                if (!string.IsNullOrWhiteSpace(found)) return found;
+            }
+            return null;
+        }
+
+        private string MapGenderToTitle(string gender)
+        {
+            if (string.IsNullOrWhiteSpace(gender)) return string.Empty;
+            var g = gender.Trim().ToLowerInvariant();
+            if (g == "erkek" || g == "e" || g == "male") return "MR";
+            if (g == "kadın" || g == "kadin" || g == "k" || g == "female") return "MRS";
+            // fallback: if single letter M/F
+            if (g == "m") return "MR";
+            if (g == "f") return "MRS";
+            return gender;
+        }
+
         // Configure DataGrid columns according to selected view mode
         public void ConfigureMode(ViewMode mode)
         {
@@ -606,7 +665,7 @@ namespace TurizmOperasyonSistemi.Views
                 // re-run the results query so the DataGrid is filtered immediately.
                 try
                 {
-                    if (( _currentMode == ViewMode.Vize || _currentMode == ViewMode.Bilet) && ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
+                    if ((_currentMode == ViewMode.Vize || _currentMode == ViewMode.Bilet) && ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
                     {
                         // Only reload when a selection change happened (guard null sender cases)
                         LoadResults();
@@ -770,6 +829,71 @@ namespace TurizmOperasyonSistemi.Views
             var rawHeaders = visibleCols.Select(c => c.Header?.ToString() ?? string.Empty).ToList();
 
             var rows = new List<Dictionary<string, string>>();
+
+            // Precompute value getters for each visible column to avoid relying on header text.
+            var getters = new List<Func<object, string>>();
+            foreach (var col in visibleCols)
+            {
+                Func<object, string> getter = (obj) => string.Empty;
+                try
+                {
+                    if (col is DataGridBoundColumn dbc)
+                    {
+                        if (dbc.Binding is System.Windows.Data.Binding b && b.Path != null && !string.IsNullOrWhiteSpace(b.Path.Path))
+                        {
+                            var propName = b.Path.Path;
+                            getter = (obj) =>
+                            {
+                                try
+                                {
+                                    var p = obj.GetType().GetProperty(propName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                                    if (p == null) return string.Empty;
+                                    var v = p.GetValue(obj);
+                                    return v?.ToString() ?? string.Empty;
+                                }
+                                catch { return string.Empty; }
+                            };
+                            getters.Add(getter);
+                            continue;
+                        }
+                    }
+                    // If template column, try to extract binding path from CellTemplate or CellEditingTemplate
+                    if (col is DataGridTemplateColumn dtc)
+                    {
+                        string bindingPath = null;
+                        try
+                        {
+                            bindingPath = GetBindingPathFromTemplate(dtc.CellTemplate) ?? GetBindingPathFromTemplate(dtc.CellEditingTemplate);
+                        }
+                        catch { bindingPath = null; }
+                        if (!string.IsNullOrWhiteSpace(bindingPath))
+                        {
+                            var propName = bindingPath;
+                            getter = (obj) =>
+                            {
+                                try
+                                {
+                                    var p = obj.GetType().GetProperty(propName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                                    if (p == null) return string.Empty;
+                                    var v = p.GetValue(obj);
+                                    return v?.ToString() ?? string.Empty;
+                                }
+                                catch { return string.Empty; }
+                            };
+                            getters.Add(getter);
+                            continue;
+                        }
+                    }
+                }
+                catch { }
+
+                // fallback: use header->property mapping
+                var raw = col.Header?.ToString() ?? string.Empty;
+                var mapped = MapHeaderToProperty(raw);
+                getter = (obj) => GetPropertyStringValue(obj, mapped ?? raw) ?? string.Empty;
+                getters.Add(getter);
+            }
+
             for (int i = 0; i < source.Count; i++)
             {
                 var item = source[i];
@@ -778,7 +902,8 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     var raw = rawHeaders[colIndex];
                     var outHeader = (colIndex < headers.Count) ? headers[colIndex] : TransformForHavayolu(raw);
-                    var val = GetPropertyStringValue(item, MapHeaderToProperty(raw)) ?? string.Empty;
+                    string val = string.Empty;
+                    try { val = getters[colIndex]?.Invoke(item) ?? string.Empty; } catch (Exception) { val = string.Empty; }
                     if (_currentMode == ViewMode.Havayolu) val = TransformForHavayolu(val);
                     dict[outHeader] = val;
                 }
@@ -1074,10 +1199,11 @@ namespace TurizmOperasyonSistemi.Views
                     // If current mode is Havayolu, transform all textual fields to uppercase and remove Turkish characters
                     if (_currentMode == ViewMode.Havayolu)
                     {
+                        // map gender to MR/MRS first, then transform
+                        r.Gender = TransformForHavayolu(MapGenderToTitle(r.Gender));
                         r.FirstName = TransformForHavayolu(r.FirstName);
                         r.LastName = TransformForHavayolu(r.LastName);
                         r.TcKimlikNo = TransformForHavayolu(r.TcKimlikNo);
-                        r.Gender = TransformForHavayolu(r.Gender);
                         r.BirthDate = TransformForHavayolu(r.BirthDate);
                         r.PhoneNumber = TransformForHavayolu(r.PhoneNumber);
                         r.Address = TransformForHavayolu(r.Address);
@@ -1731,7 +1857,9 @@ namespace TurizmOperasyonSistemi.Views
                     foreach (var col in visibleCols)
                     {
                         var header = col.Header?.ToString() ?? string.Empty;
-                        var val = GetPropertyStringValue(item, header);
+                        var propName = MapHeaderToProperty(header);
+                        var val = GetPropertyStringValue(item, propName);
+                        sw.WriteLine(string.Join(',', vals));
                         vals.Add(EscapeCsv(val));
                     }
                     sw.WriteLine(string.Join(',', vals));
