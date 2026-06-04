@@ -481,7 +481,13 @@
         </StackPanel>
 
         <Border Grid.Row="2" Background="#152234" CornerRadius="12" Padding="12" Visibility="Collapsed" x:Name="ResultsBorder">
-            <DataGrid x:Name="ResultsDataGrid" AutoGenerateColumns="False" IsReadOnly="False" SelectionMode="Single" RowHeight="36" CanUserReorderColumns="True"
+            <StackPanel>
+                <TextBlock x:Name="ResultsSummary" Visibility="Collapsed" Text="" Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="6,2,6,8" TextWrapping="Wrap">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="#EC4899" BlurRadius="12" ShadowDepth="0" Opacity="0.45" />
+                    </TextBlock.Effect>
+                </TextBlock>
+                <DataGrid x:Name="ResultsDataGrid" AutoGenerateColumns="False" IsReadOnly="False" SelectionMode="Single" RowHeight="36" CanUserReorderColumns="True"
                       CellEditEnding="ResultsDataGrid_CellEditEnding" PreviewMouseLeftButtonDown="ResultsDataGrid_PreviewMouseLeftButtonDown" MouseDoubleClick="ResultsDataGrid_MouseDoubleClick">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="180" IsReadOnly="True" />
@@ -532,6 +538,7 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+                </StackPanel>
         </Border>
     </Grid>
 </Page>

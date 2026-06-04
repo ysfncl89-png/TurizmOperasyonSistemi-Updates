@@ -85,6 +85,7 @@ namespace TurizmOperasyonSistemi.Views
                     if (ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
                     {
                         ResultsBorder.Visibility = Visibility.Collapsed;
+                        if (ResultsSummary != null) ResultsSummary.Visibility = Visibility.Collapsed;
                         FiltersPanel.Visibility = Visibility.Visible;
                         // hide top search bar when returning to filters
                         if (TopBar != null) TopBar.Visibility = Visibility.Collapsed;
@@ -672,8 +673,24 @@ namespace TurizmOperasyonSistemi.Views
                 if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") parts.Add(period);
                 var group = CbGroupType?.SelectedItem as string;
                 if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") parts.Add(group);
-                var summary = string.Join(" ", parts);
-                try { /* no CurrentFilterLabel in health view; ignore */ } catch { }
+                var days = CbGroupDays?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") parts.Add(days);
+                var summary = string.Join(", ", parts);
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(summary))
+                    {
+                        // Use Turkish culture so uppercasing respects Turkish characters (İ, I, ı, ş, etc.)
+                        var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+                        var display = (summary + " Sağlık Listesi").ToUpper(tr);
+                        if (ResultsSummary != null)
+                        {
+                            ResultsSummary.Text = display;
+                            ResultsSummary.Visibility = System.Windows.Visibility.Visible;
+                        }
+                    }
+                }
+                catch { }
             }
             catch { }
         }
