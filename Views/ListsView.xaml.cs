@@ -26,7 +26,7 @@ namespace TurizmOperasyonSistemi.Views
         public ListsView()
         {
             InitializeComponent();
-            // attach click handler for iletişim button
+            // attach click handler for m button
             try
             {
                 var btn = this.FindName("kb_opt1") as Button;

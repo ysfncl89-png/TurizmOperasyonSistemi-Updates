@@ -591,7 +591,7 @@ namespace TurizmOperasyonSistemi.Views
         private void ExportWord_Click(object sender, RoutedEventArgs e)
         {
             try { if (ExportPopup != null) ExportPopup.IsOpen = false; } catch { }
-            var path = AskForPath("Word belgesi", "Word dosyası (*.docx)|*.docx", "saglik-listesi.docx");
+            var path = AskForPath("Word belgesi", "Word dosyası (*.docx)|*.docx", GetDefaultFileName(".docx"));
             if (path == null) return;
             ExportWord(NormalizeExtension(path, ".docx"));
         }
@@ -599,7 +599,7 @@ namespace TurizmOperasyonSistemi.Views
         private void ExportExcel_Click(object sender, RoutedEventArgs e)
         {
             try { if (ExportPopup != null) ExportPopup.IsOpen = false; } catch { }
-            var path = AskForPath("Excel çalışma kitabı", "Excel dosyası (*.xlsx)|*.xlsx", "saglik-listesi.xlsx");
+            var path = AskForPath("Excel çalışma kitabı", "Excel dosyası (*.xlsx)|*.xlsx", GetDefaultFileName(".xlsx"));
             if (path == null) return;
             ExportExcel(NormalizeExtension(path, ".xlsx"));
         }
@@ -607,9 +607,31 @@ namespace TurizmOperasyonSistemi.Views
         private void ExportPdf_Click(object sender, RoutedEventArgs e)
         {
             try { if (ExportPopup != null) ExportPopup.IsOpen = false; } catch { }
-            var path = AskForPath("PDF belgesi", "PDF dosyası (*.pdf)|*.pdf", "saglik-listesi.pdf");
+            var path = AskForPath("PDF belgesi", "PDF dosyası (*.pdf)|*.pdf", GetDefaultFileName(".pdf"));
             if (path == null) return;
             ExportPdf(NormalizeExtension(path, ".pdf"));
+        }
+
+        private string GetDefaultFileName(string extension)
+        {
+            try
+            {
+                var baseName = ResultsSummary?.Text ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(baseName)) baseName = "Sağlık Listesi";
+                // sanitize invalid filename chars
+                var invalid = System.IO.Path.GetInvalidFileNameChars();
+                foreach (var c in invalid)
+                {
+                    baseName = baseName.Replace(c.ToString(), "_");
+                }
+                baseName = baseName.Trim();
+                if (baseName.Length > 100) baseName = baseName.Substring(0, 100).Trim();
+                return baseName + extension;
+            }
+            catch
+            {
+                return "saglik-listesi" + extension;
+            }
         }
 
         private void DesignButton_Click(object sender, RoutedEventArgs e)

@@ -185,11 +185,11 @@
 
                         <!-- Option buttons -->
                         <Button x:Name="kb_opt1" Style="{StaticResource OptionButtonStyle}" Background="#8B5CF6" Opacity="0"
-                                HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="İletişim">
+                                HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="10" ToolTip="Telefon">
                             <Button.Content>
                                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                                     <TextBlock Text="📞" FontSize="20" HorizontalAlignment="Center"/>
-                                    <TextBlock x:Name="kb_label1" Text="İletişim" FontSize="14" FontWeight="Bold" Opacity="0" Foreground="#F8FAFC" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                    <TextBlock x:Name="kb_label1" Text="Telefon" FontSize="14" FontWeight="Bold" Opacity="0" Foreground="#F8FAFC" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                                 </StackPanel>
                             </Button.Content>
                             <Button.RenderTransform>
