@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Security;
 using System.Windows;
@@ -19,6 +20,59 @@ namespace TurizmOperasyonSistemi.Views
         {
             public string Header { get; init; }
             public string PropertyName { get; init; }
+        }
+
+        private void ApplySavedTemplate()
+        {
+            try
+            {
+                var store = new Services.ListTemplateStore();
+                var tpl = store.LoadTemplate("Saglik");
+                if (tpl == null || tpl.Count == 0) return;
+
+                var ordered = tpl.OrderBy(t => t.Order).ToList();
+                int idx = 0;
+
+                string NormalizeKey(string s)
+                {
+                    if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                    var t = TransliterateTurkish(s).Trim().ToLowerInvariant();
+                    var sb = new System.Text.StringBuilder();
+                    foreach (var ch in t)
+                    {
+                        if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+                    }
+                    return sb.ToString();
+                }
+
+                string GetHeaderText(DataGridColumn c)
+                {
+                    if (c == null) return string.Empty;
+                    if (c.Header == null) return string.Empty;
+                    if (c.Header is string s) return s;
+                    if (c.Header is System.Windows.Controls.TextBlock tb) return tb.Text ?? string.Empty;
+                    try { return c.Header.ToString(); } catch { return string.Empty; }
+                }
+
+                foreach (var opt in ordered)
+                {
+                    var optKey = NormalizeKey(opt.Title);
+                    DataGridColumn col = null;
+
+                    // 1) exact header string match
+                    col = ResultsDataGrid.Columns.FirstOrDefault(c => string.Equals(GetHeaderText(c).Trim(), opt.Title?.Trim(), System.StringComparison.OrdinalIgnoreCase));
+                    // 2) normalized/transliterated equality
+                    if (col == null) col = ResultsDataGrid.Columns.FirstOrDefault(c => NormalizeKey(GetHeaderText(c)) == optKey);
+                    // 3) contains fallback both ways
+                    if (col == null) col = ResultsDataGrid.Columns.FirstOrDefault(c => NormalizeKey(GetHeaderText(c)).Contains(optKey) || optKey.Contains(NormalizeKey(GetHeaderText(c))));
+
+                    if (col == null) continue;
+                    col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+                    col.DisplayIndex = idx++;
+                }
+                try { ResultsDataGrid.Items.Refresh(); } catch { }
+            }
+            catch { }
         }
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
@@ -52,6 +106,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private List<Person> _all;
         public List<string> BloodOptions { get; private set; }
+        private Button _applyButton;
 
         public PersonsHealthView()
         {
@@ -142,6 +197,49 @@ namespace TurizmOperasyonSistemi.Views
             {
                 // ignore icon assignment errors
             }
+
+            // load filter combobox options
+            try { LoadFilterOptions(); } catch { }
+
+            // apply saved column template for Sağlık mode if present
+            try { ApplySavedTemplate(); } catch { }
+
+            // try to find ApplyFiltersButton if present in XAML
+            try
+            {
+                var named = this.FindName("ApplyFiltersButton") as Button;
+                if (named != null) _applyButton = named;
+            }
+            catch { }
+
+            // ensure initial filter UI state reflects current selections
+            try { Filter_Changed(null, null); } catch { }
+        }
+
+        private void LoadFilterOptions()
+        {
+            try
+            {
+                using var db = new AppDbContext();
+                var all = db.AppSettings.Where(x => x.IsActive).OrderBy(x => x.SortOrder).ToList();
+
+                var tour = all.Where(x => x.Type == "TourType").Select(x => x.Value).ToList();
+                tour.Insert(0, "Seçiniz");
+                if (CbTourType != null) CbTourType.ItemsSource = tour;
+
+                var period = all.Where(x => x.Type == "Dönem").Select(x => x.Value).ToList();
+                period.Insert(0, "Seçiniz");
+                if (CbPeriod != null) CbPeriod.ItemsSource = period;
+
+                var group = all.Where(x => x.Type == "GroupType").Select(x => x.Value).ToList();
+                group.Insert(0, "Seçiniz");
+                if (CbGroupType != null) CbGroupType.ItemsSource = group;
+
+                var days = all.Where(x => x.Type == "Kaç Günlük Grup").Select(x => x.Value).ToList();
+                days.Insert(0, "Seçiniz");
+                if (CbGroupDays != null) CbGroupDays.ItemsSource = days;
+            }
+            catch { }
         }
 
         private void SetExportMenuIcons()
@@ -236,6 +334,7 @@ namespace TurizmOperasyonSistemi.Views
                 _all = db.Persons.OrderByDescending(x => x.Id).ToList();
                 ResultsDataGrid.ItemsSource = _all;
             }
+            try { ApplySavedTemplate(); } catch { }
         }
 
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -348,7 +447,7 @@ namespace TurizmOperasyonSistemi.Views
 
                     db.SaveChanges();
                     Services.NotificationCenter.Publish("PersonUpdated", person.Id);
-                    LoadAll();
+                    RefreshAfterSave();
                 }
             }
             else
@@ -364,9 +463,42 @@ namespace TurizmOperasyonSistemi.Views
                     person.VaccineStatus = string.IsNullOrWhiteSpace(row.VaccineStatus) ? "Belirtmedi" : row.VaccineStatus;
                     db.SaveChanges();
                     Services.NotificationCenter.Publish("PersonUpdated", person.Id);
+                    RefreshAfterSave();
+                }
+            }
+        }
+
+        private bool HasActiveFilters()
+        {
+            try
+            {
+                var tour = CbTourType?.SelectedItem as string;
+                var period = CbPeriod?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") return true;
+                if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") return true;
+                var group = CbGroupType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") return true;
+                var days = CbGroupDays?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") return true;
+            }
+            catch { }
+            return false;
+        }
+
+        private void RefreshAfterSave()
+        {
+            try
+            {
+                if (HasActiveFilters())
+                {
+                    LoadFilteredPersons();
+                }
+                else
+                {
                     LoadAll();
                 }
             }
+            catch { }
         }
 
         private void ResultsDataGrid_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -446,7 +578,8 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var dialog = new ListDesignDialog(ResultsDataGrid.Columns);
+                // pass mode name so templates are stored per-mode and allow applying directly to grid
+                var dialog = new ListDesignDialog(ResultsDataGrid.Columns, "Saglik", ResultsDataGrid);
                 dialog.Owner = Application.Current?.MainWindow;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
@@ -455,20 +588,88 @@ namespace TurizmOperasyonSistemi.Views
                 if (options == null) return;
 
                 // Apply ordering (DisplayIndex) and visibility based on returned options
-                var ordered = options.OrderBy(o => o.Order).ToList();
-                for (int targetIndex = 0; targetIndex < ordered.Count; targetIndex++)
-                {
-                    var opt = ordered[targetIndex];
-                    var col = ResultsDataGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), opt.Title, System.StringComparison.OrdinalIgnoreCase));
-                    if (col == null) continue;
-                    // set visual display index to reflect requested order
-                    col.DisplayIndex = targetIndex;
-                    col.Visibility = opt.IsVisible ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-                }
+                // Apply by using same logic as dialog's Apply (we already passed ResultsDataGrid so saved template will be applied there)
+                var store = new Services.ListTemplateStore();
+                store.SaveTemplate("Saglik", options.OrderBy(o => o.Order).Select(o => new Services.ListTemplateStore.ColumnDto { Title = o.Title, Order = o.Order, IsVisible = o.IsVisible }).ToList());
+                try { ResultsDataGrid.Items.Refresh(); } catch { }
             }
             catch (System.Exception ex)
             {
                 MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void Filter_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                var tourReady = CbTourType?.SelectedItem as string;
+                var periodReady = CbPeriod?.SelectedItem as string;
+                var ready = !string.IsNullOrWhiteSpace(tourReady) && tourReady != "Seçiniz" &&
+                            !string.IsNullOrWhiteSpace(periodReady) && periodReady != "Seçiniz";
+
+                if (_applyButton != null) _applyButton.IsEnabled = ready;
+                if (FilterWarning != null) FilterWarning.Visibility = ready ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+            }
+            catch { }
+        }
+
+        private void ApplyFiltersButton_Click(object sender, RoutedEventArgs e)
+        {
+            // apply filters, load matching persons and show data grid
+            try
+            {
+                LoadFilteredPersons();
+            }
+            catch { }
+            FiltersPanel.Visibility = System.Windows.Visibility.Collapsed;
+            TopBar.Visibility = System.Windows.Visibility.Visible;
+            ResultsBorder.Visibility = System.Windows.Visibility.Visible;
+            try
+            {
+                // show concise summary
+                var parts = new List<string>();
+                var tour = CbTourType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") parts.Add(tour);
+                var period = CbPeriod?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") parts.Add(period);
+                var group = CbGroupType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") parts.Add(group);
+                var summary = string.Join(" ", parts);
+                try { /* no CurrentFilterLabel in health view; ignore */ } catch { }
+            }
+            catch { }
+        }
+
+        private void LoadFilteredPersons()
+        {
+            try
+            {
+                using var db = new AppDbContext();
+                var query = db.Registrations.Include(r => r.Person).AsQueryable();
+
+                var tour = CbTourType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") query = query.Where(r => r.TourType == tour);
+
+                var period = CbPeriod?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") query = query.Where(r => r.Period == period);
+
+                var group = CbGroupType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") query = query.Where(r => r.GroupType == group);
+
+                var days = CbGroupDays?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") query = query.Where(r => r.DaysCount == days);
+
+                var persons = query.Select(r => r.Person).Where(p => p != null).ToList();
+                // ensure distinct persons
+                var distinct = persons.GroupBy(p => p.Id).Select(g => g.First()).ToList();
+                _all = distinct;
+                ResultsDataGrid.ItemsSource = _all;
+                try { ApplySavedTemplate(); } catch { }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show("Filtre uygulanırken hata: " + ex.Message);
             }
         }
         private string AskForPath(string title, string filter, string defaultFileName)

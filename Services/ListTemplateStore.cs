@@ -36,7 +36,7 @@ namespace TurizmOperasyonSistemi.Services
                     existing.IsActive = true;
                 }
                 db.SaveChanges();
-                return;
+                // continue to also write fallback file so template remains available if DB read later fails
             }
             catch
             {
