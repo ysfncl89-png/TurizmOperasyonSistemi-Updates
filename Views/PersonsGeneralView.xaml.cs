@@ -31,6 +31,18 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        private bool TryParseDateFlexible(string s, out DateTime value)
+        {
+            value = default;
+            if (string.IsNullOrWhiteSpace(s)) return false;
+            if (DateTime.TryParse(s, System.Globalization.CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.None, out value)) return true;
+            if (DateTime.TryParse(s, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out value)) return true;
+            // try common formats
+            var formats = new[] { "dd.MM.yyyy", "d.M.yyyy", "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy" };
+            if (DateTime.TryParseExact(s, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out value)) return true;
+            return false;
+        }
+
         private string GetBindingPathFromTemplate(DataTemplate template)
         {
             try
@@ -188,6 +200,7 @@ namespace TurizmOperasyonSistemi.Views
 
                     // Keep track of which existing columns were matched by the template
                     var matched = new HashSet<DataGridColumn>();
+                    var usedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var opt in ordered)
                     {
                         // prefer stored Key for stable matching. Try to match against binding path or normalized header
@@ -222,6 +235,12 @@ namespace TurizmOperasyonSistemi.Views
                         if (col == null) col = ResultsDataGrid.Columns.FirstOrDefault(c => Norm(c.Header?.ToString() ?? string.Empty).Contains(optKey) || optKey.Contains(Norm(c.Header?.ToString() ?? string.Empty)));
                         if (col == null) continue;
 
+                        if (matched.Contains(col))
+                        {
+                            // already mapped by an earlier template entry; skip to avoid duplicate mapping
+                            continue;
+                        }
+
                         // update header to stored title so edits persist
                         try
                         {
@@ -233,6 +252,7 @@ namespace TurizmOperasyonSistemi.Views
                         col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
                         col.DisplayIndex = idx++;
                         matched.Add(col);
+                        usedKeys.Add(optKey);
                     }
 
                     // After placing matched columns in template order, append any unmatched columns
@@ -1249,11 +1269,19 @@ namespace TurizmOperasyonSistemi.Views
                 var cell = FindParent<DataGridCell>(dep);
                 if (cell == null) return;
                 var column = cell.Column;
-                var header = (column.Header?.ToString() ?? string.Empty).Trim();
-                // allowed editable headers
-                var editable = new[] { "telefon numarası", "adres", "pasaport numarası", "aşı durumu", "hastalık durumu", "ilçe", "toplam fiyat", "ödenen", "kalan", "referans",
-                                        "pasaport tipi", "kan grubu", "vize talebi", "bilet talebi", "kargo talebi", "katılım yapılacak şehir", "aktarma var mı ?", "aktarma şehri", "para birimi" };
-                if (!editable.Contains(header.ToLowerInvariant())) return;
+                // Determine the underlying property name for this column (binding path or mapped header)
+                string propName = GetColumnPropertyName(column);
+                if (string.IsNullOrWhiteSpace(propName))
+                {
+                    // fallback to header-based mapping
+                    var header = (column.Header?.ToString() ?? string.Empty).Trim();
+                    propName = MapHeaderToProperty(header);
+                }
+
+                // allowed editable properties (union of person and registration editable fields)
+                var editableProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference",
+                                            "PassportType", "BloodType", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency" };
+                if (!editableProps.Contains(propName, StringComparer.OrdinalIgnoreCase)) return;
 
                 // make only this column editable and begin edit
                 ResultsDataGrid.IsReadOnly = false;
@@ -1282,6 +1310,9 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     var rowItem = e.Row.Item as GeneralRow;
                     var header = e.Column.Header?.ToString() ?? string.Empty;
+                    // determine underlying property name if possible
+                    var inferredProp = GetColumnPropertyName(e.Column);
+                    var propKey = !string.IsNullOrWhiteSpace(inferredProp) ? inferredProp : MapHeaderToProperty(header);
                     string newText = null;
                     try
                     {
@@ -1309,7 +1340,7 @@ namespace TurizmOperasyonSistemi.Views
                     // use dispatcher to ensure binding updated
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        try { SaveEditedValue(rowItem, header, newText); } catch { }
+                        try { SaveEditedValue(rowItem, propKey, newText); } catch { }
                         // restore grid to read-only default
                         ResultsDataGrid.CommitEdit();
                         ResultsDataGrid.IsReadOnly = true;
@@ -1352,6 +1383,10 @@ namespace TurizmOperasyonSistemi.Views
                 var all = db.AppSettings.Where(x => x.IsActive).OrderBy(x => x.SortOrder).ToList();
                 List<string> items = null;
                 var headerKey = header.Trim().ToLowerInvariant();
+                // First try to determine underlying property for this column (binding path or template binding)
+                string propName = null;
+                try { propName = GetColumnPropertyName(e.Column); } catch { propName = null; }
+
                 // Robust matching: normalize Type strings (remove punctuation/spaces, lowercase) to avoid mismatches like 'Aktarma Var mı?' vs 'Aktarma Var mı ?'
                 string NormalizeForCompare(string s)
                 {
@@ -1369,42 +1404,58 @@ namespace TurizmOperasyonSistemi.Views
                 // match headers that contain Turkish letters (ş, ı, ö, ü, etc.).
                 string headerNorm = NormalizeForCompare(TransliterateTurkish(headerKey));
 
-                // mapping: header -> expected setting Type values
+                // mapping: header/property -> expected setting Type values
                 List<string> expectedTypes = null;
-                switch (headerNorm)
+                if (!string.IsNullOrWhiteSpace(propName))
                 {
-                    case var _ when headerNorm.Contains("pasaport"):
-                        expectedTypes = new List<string> { "Pasaport Türü", "Pasaport Tipi", "PassportType" };
-                        break;
-                    case var _ when headerNorm.Contains("kangrub") || headerNorm.Contains("kangrubu") || headerNorm.Contains("kangrubu"):
-                        expectedTypes = new List<string> { "Kan Grubu" };
-                        break;
-                    case var _ when headerNorm.Contains("vize"):
-                        expectedTypes = new List<string> { "Vize Talebi" };
-                        break;
-                    case var _ when headerNorm.Contains("bilet"):
-                        expectedTypes = new List<string> { "Bilet Talebi" };
-                        break;
-                    case var _ when headerNorm.Contains("kargo"):
-                        expectedTypes = new List<string> { "Kargo Talebi" };
-                        break;
-                    // Match only katılım-related headers for DepartureCity to avoid accidentally
-                    // matching any header that contains the substring "sehir" (which would
-                    // also match TransferCity). This prevents wrong AppSettings being used.
-                    case var _ when headerNorm.Contains("katilimmenu") || headerNorm.Contains("katilim"):
-                        expectedTypes = new List<string> { "Katılım Yapılacak Şehir" };
-                        break;
-                    // Specific match for transfer city must come before generic transfer-flag match
-                    // Accept multiple normalized variants (sehir / sehri) to avoid missing Turkish suffix/inflection
-                    case var _ when headerNorm.Contains("aktarmaseh") || headerNorm.Contains("aktarmasehir") || headerNorm.Contains("aktarmasehri"):
-                        expectedTypes = new List<string> { "Aktarma Şehri" };
-                        break;
-                    case var _ when headerNorm.Contains("aktarmavar") || headerNorm.Contains("aktarmavarmi"):
-                        expectedTypes = new List<string> { "Aktarma Var mı ?", "Aktarma Var mı?", "Aktarma Var mı", "Aktarma" };
-                        break;
-                    case var _ when headerNorm.Contains("parabirimi") || headerNorm.Contains("parabirim"):
-                        expectedTypes = new List<string> { "Para Birimi" };
-                        break;
+                    // property-based mapping is more reliable when header was changed by user
+                    switch (propName.Trim().ToLowerInvariant())
+                    {
+                        case "departurecity": expectedTypes = new List<string> { "Katılım Yapılacak Şehir" }; break;
+                        case "hastransfer": expectedTypes = new List<string> { "Aktarma Var mı ?", "Aktarma Var mı?", "Aktarma Var mı", "Aktarma" }; break;
+                        case "transfercity": expectedTypes = new List<string> { "Aktarma Şehri" }; break;
+                        case "ticketrequest": expectedTypes = new List<string> { "Bilet Talebi" }; break;
+                        default: expectedTypes = null; break;
+                    }
+                }
+
+                if (expectedTypes == null)
+                {
+                    switch (headerNorm)
+                    {
+                        case var _ when headerNorm.Contains("pasaport"):
+                            expectedTypes = new List<string> { "Pasaport Türü", "Pasaport Tipi", "PassportType" };
+                            break;
+                        case var _ when headerNorm.Contains("kangrub") || headerNorm.Contains("kangrubu") || headerNorm.Contains("kangrubu"):
+                            expectedTypes = new List<string> { "Kan Grubu" };
+                            break;
+                        case var _ when headerNorm.Contains("vize"):
+                            expectedTypes = new List<string> { "Vize Talebi" };
+                            break;
+                        case var _ when headerNorm.Contains("bilet"):
+                            expectedTypes = new List<string> { "Bilet Talebi" };
+                            break;
+                        case var _ when headerNorm.Contains("kargo"):
+                            expectedTypes = new List<string> { "Kargo Talebi" };
+                            break;
+                        // Match only katılım-related headers for DepartureCity to avoid accidentally
+                        // matching any header that contains the substring "sehir" (which would
+                        // also match TransferCity). This prevents wrong AppSettings being used.
+                        case var _ when headerNorm.Contains("katilimmenu") || headerNorm.Contains("katilim"):
+                            expectedTypes = new List<string> { "Katılım Yapılacak Şehir" };
+                            break;
+                        // Specific match for transfer city must come before generic transfer-flag match
+                        // Accept multiple normalized variants (sehir / sehri) to avoid missing Turkish suffix/inflection
+                        case var _ when headerNorm.Contains("aktarmaseh") || headerNorm.Contains("aktarmasehir") || headerNorm.Contains("aktarmasehri"):
+                            expectedTypes = new List<string> { "Aktarma Şehri" };
+                            break;
+                        case var _ when headerNorm.Contains("aktarmavar") || headerNorm.Contains("aktarmavarmi"):
+                            expectedTypes = new List<string> { "Aktarma Var mı ?", "Aktarma Var mı?", "Aktarma Var mı", "Aktarma" };
+                            break;
+                        case var _ when headerNorm.Contains("parabirimi") || headerNorm.Contains("parabirim"):
+                            expectedTypes = new List<string> { "Para Birimi" };
+                            break;
+                    }
                 }
 
                 if (expectedTypes != null)
@@ -1471,7 +1522,19 @@ namespace TurizmOperasyonSistemi.Views
         private void SaveEditedValue(GeneralRow row, string header, string newText = null)
         {
             if (row == null) return;
-            var propName = MapHeaderToProperty(header);
+            // header may already be a property name (when passed from CellEditEnding as inferred prop)
+            string propName = null;
+            try
+            {
+                // if header corresponds to a property on GeneralRow, treat it as property name
+                var colPropInfo = row.GetType().GetProperty(header, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                if (colPropInfo != null) propName = colPropInfo.Name;
+            }
+            catch { }
+            if (string.IsNullOrWhiteSpace(propName))
+            {
+                propName = MapHeaderToProperty(header);
+            }
             if (string.IsNullOrWhiteSpace(propName)) return;
 
             // find property on row
@@ -1497,7 +1560,7 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using var db = new AppDbContext();
                 // person properties
-                var personProps = new[] { "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "PassportType", "BloodType" };
+                var personProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "PassportType", "BloodType" };
                 // registration properties (including new combobox-backed fields)
                 var registrationProps = new[] { "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency" };
 
@@ -1506,7 +1569,19 @@ namespace TurizmOperasyonSistemi.Views
                     var p = db.Persons.FirstOrDefault(x => x.Id == row.PersonId);
                     if (p == null) return;
                     // assign string properties
-                    if (propName.Equals("PhoneNumber", StringComparison.OrdinalIgnoreCase)) p.PhoneNumber = newVal?.ToString() ?? string.Empty;
+                    if (propName.Equals("FirstName", StringComparison.OrdinalIgnoreCase)) { p.FirstName = newVal?.ToString() ?? string.Empty; row.FirstName = p.FirstName ?? string.Empty; }
+                    else if (propName.Equals("LastName", StringComparison.OrdinalIgnoreCase)) { p.LastName = newVal?.ToString() ?? string.Empty; row.LastName = p.LastName ?? string.Empty; }
+                    else if (propName.Equals("TcKimlikNo", StringComparison.OrdinalIgnoreCase)) { p.TcKimlikNo = newVal?.ToString() ?? string.Empty; row.TcKimlikNo = p.TcKimlikNo ?? string.Empty; }
+                    else if (propName.Equals("Gender", StringComparison.OrdinalIgnoreCase)) { p.Gender = newVal?.ToString() ?? string.Empty; row.Gender = p.Gender ?? string.Empty; }
+                    else if (propName.Equals("BirthDate", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (TryParseDateFlexible(newVal?.ToString(), out var dt))
+                        {
+                            p.BirthDate = dt;
+                            row.BirthDate = dt.ToString("dd.MM.yyyy");
+                        }
+                    }
+                    else if (propName.Equals("PhoneNumber", StringComparison.OrdinalIgnoreCase)) p.PhoneNumber = newVal?.ToString() ?? string.Empty;
                     else if (propName.Equals("Address", StringComparison.OrdinalIgnoreCase)) p.Address = newVal?.ToString() ?? string.Empty;
                     else if (propName.Equals("PassportNumber", StringComparison.OrdinalIgnoreCase)) p.PassportNumber = newVal?.ToString() ?? string.Empty;
                     else if (propName.Equals("VaccineStatus", StringComparison.OrdinalIgnoreCase)) p.VaccineStatus = newVal?.ToString() ?? string.Empty;
@@ -1517,6 +1592,7 @@ namespace TurizmOperasyonSistemi.Views
                     db.SaveChanges();
                     // refresh grid so change is visible
                     try { ResultsDataGrid.Items.Refresh(); } catch { }
+                    try { MessageBox.Show("Kişi bilgisi başarıyla güncellendi.", "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information); } catch { }
                 }
                 else if (registrationProps.Contains(propName, StringComparer.OrdinalIgnoreCase))
                 {
@@ -1567,6 +1643,7 @@ namespace TurizmOperasyonSistemi.Views
                     db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                     db.SaveChanges();
                     try { ResultsDataGrid.Items.Refresh(); } catch { }
+                    try { MessageBox.Show("Kayıt bilgisi başarıyla güncellendi.", "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information); } catch { }
                 }
             }
             catch (Exception ex)
@@ -1920,6 +1997,24 @@ namespace TurizmOperasyonSistemi.Views
                 "referans" => "Reference",
                 _ => header?.Replace(" ", "")
             };
+        }
+
+        private string GetColumnPropertyName(DataGridColumn column)
+        {
+            try
+            {
+                if (column is DataGridBoundColumn dbc && dbc.Binding is System.Windows.Data.Binding b && b.Path != null)
+                {
+                    return b.Path.Path;
+                }
+                if (column is DataGridTemplateColumn dtc)
+                {
+                    var path = GetBindingPathFromTemplate(dtc.CellTemplate) ?? GetBindingPathFromTemplate(dtc.CellEditingTemplate);
+                    if (!string.IsNullOrWhiteSpace(path)) return path;
+                }
+            }
+            catch { }
+            return null;
         }
 
         private string EscapeCsv(string v)

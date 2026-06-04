@@ -66,6 +66,12 @@ namespace TurizmOperasyonSistemi.Views
                         }
                         key = MakeKey(title);
                     }
+                    // To ensure a stable unique key when multiple columns normalize to same key,
+                    // append index when duplicate key already exists in _columns.
+                    if (_columns.Any(c2 => string.Equals(c2.Key, key, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        key = key + "_" + order.ToString();
+                    }
                     _columns.Add(new ColumnOption(title, order, isVisible, key));
                     order++;
                 }
@@ -314,10 +320,12 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             var ordered = list.OrderBy(o => o.Order).ToList();
+            var matchedCols = new HashSet<DataGridColumn>();
             for (int targetIndex = 0; targetIndex < ordered.Count; targetIndex++)
             {
                 var opt = ordered[targetIndex];
-                var optKey = Norm(opt.Title);
+                // prefer stored Key for stable matching when available, otherwise normalize title
+                var optKey = !string.IsNullOrWhiteSpace(opt.Key) ? opt.Key.Trim().ToLowerInvariant() : Norm(opt.Title);
                 // helper to robustly extract header text when Header may be string, TextBlock, etc.
                 string GetHeaderText(DataGridColumn c)
                 {
@@ -327,17 +335,35 @@ namespace TurizmOperasyonSistemi.Views
                     if (c.Header is TextBlock tb) return tb.Text ?? string.Empty;
                     try { return c.Header.ToString(); } catch { return string.Empty; }
                 }
-
-                // 1) try exact header string match (case-insensitive, trimmed)
-                var col = _targetGrid.Columns.FirstOrDefault(c => string.Equals(GetHeaderText(c).Trim(), opt.Title?.Trim(), StringComparison.OrdinalIgnoreCase));
-                // 2) try normalized match
-                if (col == null) col = _targetGrid.Columns.FirstOrDefault(c => Norm(GetHeaderText(c)) == optKey);
-                if (col == null)
+                DataGridColumn col = null;
+                try
                 {
-                    // try contains match as fallback
-                    col = _targetGrid.Columns.FirstOrDefault(c => Norm(GetHeaderText(c)).Contains(optKey) || optKey.Contains(Norm(GetHeaderText(c))));
+                    // 1) if opt.Key present, try to match DataGridBoundColumn binding path first
+                    if (!string.IsNullOrWhiteSpace(opt.Key))
+                    {
+                        foreach (var c in _targetGrid.Columns)
+                        {
+                            if (c is DataGridBoundColumn dbc && dbc.Binding is System.Windows.Data.Binding b && b.Path != null)
+                            {
+                                var p = (b.Path.Path ?? string.Empty).Trim().ToLowerInvariant();
+                                if (p == optKey)
+                                {
+                                    col = c; break;
+                                }
+                            }
+                        }
+                    }
+
+                    // 2) try exact header string match (case-insensitive, trimmed)
+                    if (col == null) col = _targetGrid.Columns.FirstOrDefault(c => string.Equals(GetHeaderText(c).Trim(), opt.Title?.Trim(), StringComparison.OrdinalIgnoreCase));
+                    // 3) try normalized match against header
+                    if (col == null) col = _targetGrid.Columns.FirstOrDefault(c => Norm(GetHeaderText(c)) == optKey);
+                    // 4) contains match fallback
+                    if (col == null) col = _targetGrid.Columns.FirstOrDefault(c => Norm(GetHeaderText(c)).Contains(optKey) || optKey.Contains(Norm(GetHeaderText(c))));
                 }
+                catch { }
                 if (col == null) continue;
+                if (matchedCols.Contains(col)) continue; // avoid assigning same physical column multiple times
                 // update header to the new title so edited titles become visible in the grid
                 try
                 {
@@ -354,12 +380,58 @@ namespace TurizmOperasyonSistemi.Views
 
                 col.DisplayIndex = targetIndex;
                 col.Visibility = opt.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+                matchedCols.Add(col);
             }
             try
             {
                 _targetGrid.Dispatcher.Invoke(() => { _targetGrid.UpdateLayout(); });
             }
             catch { }
+        }
+
+        private string GetBindingPathFromTemplate(DataTemplate template)
+        {
+            try
+            {
+                if (template == null) return null;
+                var content = template.LoadContent();
+                if (content is TextBlock tb)
+                {
+                    if (tb.GetBindingExpression(TextBlock.TextProperty) is System.Windows.Data.BindingExpression be && be.ParentBinding?.Path != null)
+                        return be.ParentBinding.Path.Path;
+                }
+                if (content is DependencyObject dob)
+                {
+                    var path = FindBindingPathInVisualTree(dob);
+                    if (!string.IsNullOrWhiteSpace(path)) return path;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private string FindBindingPathInVisualTree(DependencyObject obj)
+        {
+            if (obj == null) return null;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(obj, i);
+                if (child is FrameworkElement fe)
+                {
+                    foreach (var dp in new[] { TextBlock.TextProperty, ComboBox.SelectedValueProperty, ComboBox.TextProperty })
+                    {
+                        try
+                        {
+                            if (fe.GetBindingExpression(dp) is System.Windows.Data.BindingExpression be && be.ParentBinding?.Path != null)
+                                return be.ParentBinding.Path.Path;
+                        }
+                        catch { }
+                    }
+                }
+                var found = FindBindingPathInVisualTree(child);
+                if (!string.IsNullOrWhiteSpace(found)) return found;
+            }
+            return null;
         }
 
         private void EnsureSavedTemplateKeys(List<ListTemplateStore.ColumnDto> list)
@@ -394,6 +466,31 @@ namespace TurizmOperasyonSistemi.Views
                             item.Key = (b.Path.Path ?? string.Empty).Trim().ToLowerInvariant();
                             changed = true;
                         }
+                        else
+                        {
+                            // if no binding path but we have a header that seems stable, use normalized header as fallback key
+                            item.Key = NormLocal(item.Title ?? string.Empty);
+                            changed = true;
+                        }
+                    }
+                    else if (col is DataGridTemplateColumn dtc)
+                    {
+                        // attempt to extract binding path from template if possible
+                        try
+                        {
+                            var path = GetBindingPathFromTemplate(dtc.CellTemplate) ?? GetBindingPathFromTemplate(dtc.CellEditingTemplate);
+                            if (!string.IsNullOrWhiteSpace(path))
+                            {
+                                item.Key = path.Trim().ToLowerInvariant();
+                                changed = true;
+                            }
+                            else
+                            {
+                                item.Key = NormLocal(item.Title ?? string.Empty);
+                                changed = true;
+                            }
+                        }
+                        catch { item.Key = NormLocal(item.Title ?? string.Empty); changed = true; }
                     }
                 }
                 if (changed)
