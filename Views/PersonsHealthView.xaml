@@ -23,7 +23,7 @@
             <Setter Property="Background" Value="#22324A"/>
             <Setter Property="Foreground" Value="#E2F8FF"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="Padding" Value="12,9"/>
             <Setter Property="BorderBrush" Value="#334155"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
