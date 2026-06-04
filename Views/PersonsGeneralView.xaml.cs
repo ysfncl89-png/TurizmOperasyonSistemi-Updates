@@ -90,6 +90,13 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 // clear selection when leaving Vize mode
                 if (mode != ViewMode.Vize && CbVisaRequest != null) CbVisaRequest.SelectedIndex = 0;
+
+                var ticketPanel = this.FindName("TicketRequestPanel") as FrameworkElement;
+                if (ticketPanel != null)
+                {
+                    ticketPanel.Visibility = (mode == ViewMode.Bilet) ? Visibility.Visible : Visibility.Collapsed;
+                }
+                if (mode != ViewMode.Bilet && CbTicketRequest != null) CbTicketRequest.SelectedIndex = 0;
             }
             catch { }
             // If user has a saved template for this mode, prefer that (so custom visibility/order persists)
@@ -503,6 +510,18 @@ namespace TurizmOperasyonSistemi.Views
                     visa.Insert(0, "Seçiniz");
                 }
                 if (CbVisaRequest != null) CbVisaRequest.ItemsSource = visa;
+
+                var ticket = all.Where(x => x.Type == "BiletTalebi" || x.Type == "TicketRequest" || x.Type == "Bilet Talebi").Select(x => x.Value).ToList();
+                if (ticket == null) ticket = new System.Collections.Generic.List<string>();
+                if (!ticket.Any())
+                {
+                    ticket.AddRange(new[] { "Seçiniz", "Var", "Yok" });
+                }
+                else
+                {
+                    ticket.Insert(0, "Seçiniz");
+                }
+                if (CbTicketRequest != null) CbTicketRequest.ItemsSource = ticket;
             }
             catch { }
         }
@@ -526,7 +545,7 @@ namespace TurizmOperasyonSistemi.Views
                 // re-run the results query so the DataGrid is filtered immediately.
                 try
                 {
-                    if (_currentMode == ViewMode.Vize && ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
+                    if (( _currentMode == ViewMode.Vize || _currentMode == ViewMode.Bilet) && ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
                     {
                         // Only reload when a selection change happened (guard null sender cases)
                         LoadResults();
@@ -917,6 +936,15 @@ namespace TurizmOperasyonSistemi.Views
                         if (!string.IsNullOrWhiteSpace(visaSel) && visaSel != "Seçiniz")
                         {
                             query = query.Where(r => r.VisaRequest == visaSel);
+                        }
+                    }
+                    // If in Bilet mode and a specific TicketRequest is chosen, filter by it
+                    if (_currentMode == ViewMode.Bilet && CbTicketRequest != null)
+                    {
+                        var ticketSel = CbTicketRequest.SelectedItem as string;
+                        if (!string.IsNullOrWhiteSpace(ticketSel) && ticketSel != "Seçiniz")
+                        {
+                            query = query.Where(r => r.TicketRequest == ticketSel);
                         }
                     }
                 }

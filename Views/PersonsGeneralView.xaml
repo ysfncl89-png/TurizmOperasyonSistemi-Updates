@@ -385,6 +385,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <Button x:Name="FiltersBackButton" Grid.Row="0" Content="← Geri" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,8" Padding="8,6" Click="BackButton_Click" Background="{DynamicResource PrimaryGradient}" Foreground="White" BorderBrush="{DynamicResource GlowBrush}" BorderThickness="0" />
@@ -445,8 +446,18 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Bilet Talebi -->
+                <StackPanel x:Name="TicketRequestPanel" Grid.Row="5" Margin="0,6,0,6" Visibility="Collapsed">
+                    <TextBlock Text="Bilet Talebi" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
+                    <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
+                        <ComboBox x:Name="CbTicketRequest"
+                                  Style="{StaticResource NeonCombo}"
+                                  SelectionChanged="Filter_Changed"/>
+                    </Border>
+                </StackPanel>
+
                 <!-- Vize Talebi -->
-                <StackPanel x:Name="VisaRequestPanel" Grid.Row="5" Margin="0,6,0,6" Visibility="Collapsed">
+                <StackPanel x:Name="VisaRequestPanel" Grid.Row="6" Margin="0,6,0,6" Visibility="Collapsed">
                     <TextBlock Text="Vize Talebi" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
                     <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
 
@@ -457,7 +468,7 @@
                 </StackPanel>
 
                 <!-- Action button (moved below comboboxes) -->
-                <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
                     <TextBlock x:Name="FilterWarning" Text="Tur Türü ve Dönem seçilmeden Listeyi Göster devre dışı." Foreground="#FCA311" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="Visible"/>
                     <Button x:Name="ApplyFiltersButton"
                             Content="Listeyi Göster"
