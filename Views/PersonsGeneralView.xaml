@@ -59,50 +59,116 @@
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
         </Style>
 
+        <!-- Neon combo item style used for dropdown rows -->
+        <Style x:Key="NeonComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#E2F8FF" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <!-- semi-transparent glow background using GlowColor rgb (alpha 0x20) -->
+                    <Setter Property="Background" Value="#208B5CF6" />
+                    <Setter Property="Foreground" Value="#FFFFFF" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <!-- stronger semi-transparent background (alpha 0x40) -->
+                    <Setter Property="Background" Value="#408B5CF6" />
+                    <Setter Property="Foreground" Value="#FFFFFF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Neon combo box style with ControlTemplate so hover/focus glow is visible -->
         <Style x:Key="NeonCombo" TargetType="ComboBox">
-            <Setter Property="Background" Value="#0B1220"/>
-            <Setter Property="Foreground" Value="#E2F8FF"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="Margin" Value="0,6,0,6"/>
+            <Setter Property="Background" Value="#0F172A" />
+            <Setter Property="Foreground" Value="#E2F8FF" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="ItemContainerStyle" Value="{StaticResource NeonComboBoxItemStyle}" />
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="6" ShadowDepth="0" Opacity="0.25"/>
+                    <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="10" ShadowDepth="0" Opacity="0.18" />
                 </Setter.Value>
             </Setter>
-            <Setter Property="ItemContainerStyle">
+            <Setter Property="Template">
                 <Setter.Value>
-                    <Style TargetType="ComboBoxItem">
-                        <Setter Property="Foreground" Value="#E2F8FF"/>
-                        <Setter Property="Background" Value="#0F172A"/>
-                        <Setter Property="Padding" Value="8"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="BorderBrush" Value="Transparent"/>
-                        <Setter Property="Margin" Value="0"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="#22324A"/>
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True"
+                                    Effect="{TemplateBinding Effect}">
+                                <ToggleButton x:Name="ToggleButton"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Focusable="False"
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              Cursor="Hand"
+                                              Foreground="{TemplateBinding Foreground}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition Width="28" />
+                                        </Grid.ColumnDefinitions>
+                                        <ContentPresenter x:Name="ContentSite"
+                                                          Content="{TemplateBinding SelectionBoxItem}"
+                                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                          VerticalAlignment="Center"
+                                                          Margin="4,0,6,0"
+                                                          RecognizesAccessKey="True"
+                                                          Grid.Column="0" />
+                                        <TextBlock Text="▾" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="12" Grid.Column="1" />
+                                    </Grid>
+                                </ToggleButton>
+                            </Border>
+
+                            <Popup x:Name="PART_Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="#0B1220" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="6" Effect="{TemplateBinding Effect}">
+                                <ScrollViewer CanContentScroll="True">
+                                    <ItemsPresenter />
+                                </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="PART_Popup" Property="Visibility" Value="Collapsed" />
                             </Trigger>
-                        </Style.Triggers>
-                    </Style>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}" />
+                    <Setter Property="BorderThickness" Value="1.8" />
                     <Setter Property="Effect">
                         <Setter.Value>
-                            <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.55"/>
+                            <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.5" />
                         </Setter.Value>
                     </Setter>
                 </Trigger>
                 <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}" />
+                    <Setter Property="BorderThickness" Value="1.8" />
                     <Setter Property="Effect">
                         <Setter.Value>
-                            <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+                            <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.45" />
                         </Setter.Value>
                     </Setter>
                 </Trigger>
@@ -338,11 +404,9 @@
                         <Border.Effect>
                             <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
                         </Border.Effect>
-						<ComboBox x:Name="CbTourType"
-								  Style="{StaticResource NeonCombo}"
-								  Foreground="Black"
-								  SelectionChanged="Filter_Changed"
-								  Background="White"/>
+                        <ComboBox x:Name="CbTourType"
+                                  Style="{StaticResource NeonCombo}"
+                                  SelectionChanged="Filter_Changed"/>
                     </Border>
                 </StackPanel>
 
@@ -353,11 +417,9 @@
                         <Border.Effect>
                             <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
                         </Border.Effect>
-						<ComboBox x:Name="CbPeriod"
-								  Style="{StaticResource NeonCombo}"
-								  Foreground="Black"
-								  SelectionChanged="Filter_Changed"
-								  Background="White"/>
+                        <ComboBox x:Name="CbPeriod"
+                                  Style="{StaticResource NeonCombo}"
+                                  SelectionChanged="Filter_Changed"/>
                     </Border>
                 </StackPanel>
 
@@ -368,11 +430,9 @@
                         <Border.Effect>
                             <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
                         </Border.Effect>
-						<ComboBox x:Name="CbGroupType"
-								  Style="{StaticResource NeonCombo}"
-								  Foreground="Black"
-								  SelectionChanged="Filter_Changed"
-								  Background="White"/>
+                        <ComboBox x:Name="CbGroupType"
+                                  Style="{StaticResource NeonCombo}"
+                                  SelectionChanged="Filter_Changed"/>
                     </Border>
                 </StackPanel>
 
@@ -383,11 +443,9 @@
                         <Border.Effect>
                             <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
                         </Border.Effect>
-						<ComboBox x:Name="CbGroupDays"
-								  Style="{StaticResource NeonCombo}"
-								  Foreground="Black"
-								  SelectionChanged="Filter_Changed"
-								  Background="White"/>
+                        <ComboBox x:Name="CbGroupDays"
+                                  Style="{StaticResource NeonCombo}"
+                                  SelectionChanged="Filter_Changed"/>
                     </Border>
                 </StackPanel>
 
