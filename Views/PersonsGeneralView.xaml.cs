@@ -94,9 +94,15 @@ namespace TurizmOperasyonSistemi.Views
                 var ticketPanel = this.FindName("TicketRequestPanel") as FrameworkElement;
                 if (ticketPanel != null)
                 {
-                    ticketPanel.Visibility = (mode == ViewMode.Bilet) ? Visibility.Visible : Visibility.Collapsed;
+                    ticketPanel.Visibility = (mode == ViewMode.Bilet || mode == ViewMode.Havayolu) ? Visibility.Visible : Visibility.Collapsed;
                 }
                 if (mode != ViewMode.Bilet && CbTicketRequest != null) CbTicketRequest.SelectedIndex = 0;
+                var hasTransferPanel = this.FindName("HasTransferPanel") as FrameworkElement;
+                if (hasTransferPanel != null)
+                {
+                    hasTransferPanel.Visibility = (mode == ViewMode.Havayolu) ? Visibility.Visible : Visibility.Collapsed;
+                }
+                if (mode != ViewMode.Havayolu && CbHasTransfer != null) CbHasTransfer.SelectedIndex = 0;
             }
             catch { }
             // If user has a saved template for this mode, prefer that (so custom visibility/order persists)
@@ -522,6 +528,13 @@ namespace TurizmOperasyonSistemi.Views
                     ticket.Insert(0, "Seçiniz");
                 }
                 if (CbTicketRequest != null) CbTicketRequest.ItemsSource = ticket;
+
+                // Populate HasTransfer options (Aktarma var mı?) from AppSettings
+                var hasTransfer = all.Where(x => x.Type == "Aktarma Var mı ?" || x.Type == "Aktarma" || x.Type == "HasTransfer").Select(x => x.Value).ToList();
+                if (hasTransfer == null) hasTransfer = new System.Collections.Generic.List<string>();
+                if (!hasTransfer.Any()) hasTransfer.AddRange(new[] { "Seçiniz", "Var", "Yok" });
+                else hasTransfer.Insert(0, "Seçiniz");
+                if (CbHasTransfer != null) CbHasTransfer.ItemsSource = hasTransfer;
             }
             catch { }
         }
@@ -947,6 +960,24 @@ namespace TurizmOperasyonSistemi.Views
                             query = query.Where(r => r.TicketRequest == ticketSel);
                         }
                     }
+                // If in Havayolu mode apply TicketRequest and HasTransfer filters when selected
+                if (_currentMode == ViewMode.Havayolu)
+                {
+                    try
+                    {
+                        if (CbTicketRequest != null)
+                        {
+                            var tsel = CbTicketRequest.SelectedItem as string;
+                            if (!string.IsNullOrWhiteSpace(tsel) && tsel != "Seçiniz") query = query.Where(r => r.TicketRequest == tsel);
+                        }
+                        if (CbHasTransfer != null)
+                        {
+                            var hsel = CbHasTransfer.SelectedItem as string;
+                            if (!string.IsNullOrWhiteSpace(hsel) && hsel != "Seçiniz") query = query.Where(r => r.HasTransfer == hsel);
+                        }
+                    }
+                    catch { }
+                }
                 }
                 catch { }
 
