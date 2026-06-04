@@ -79,6 +79,19 @@ namespace TurizmOperasyonSistemi.Views
             };
 
             if (!modeVisibleHeaders.TryGetValue(mode, out var visible)) visible = modeVisibleHeaders[ViewMode.Genel];
+
+            // Show VisaRequestPanel only when in Vize mode
+            try
+            {
+                var visaPanel = this.FindName("VisaRequestPanel") as FrameworkElement;
+                if (visaPanel != null)
+                {
+                    visaPanel.Visibility = (mode == ViewMode.Vize) ? Visibility.Visible : Visibility.Collapsed;
+                }
+                // clear selection when leaving Vize mode
+                if (mode != ViewMode.Vize && CbVisaRequest != null) CbVisaRequest.SelectedIndex = 0;
+            }
+            catch { }
             // If user has a saved template for this mode, prefer that (so custom visibility/order persists)
             try
             {
@@ -478,6 +491,18 @@ namespace TurizmOperasyonSistemi.Views
                 var days = all.Where(x => x.Type == "Kaç Günlük Grup").Select(x => x.Value).ToList();
                 days.Insert(0, "Seçiniz");
                 if (CbGroupDays != null) CbGroupDays.ItemsSource = days;
+
+                var visa = all.Where(x => x.Type == "VizeTalebi" || x.Type == "VisaRequest" || x.Type == "Vize Talebi").Select(x => x.Value).ToList();
+                if (visa == null) visa = new System.Collections.Generic.List<string>();
+                if (!visa.Any())
+                {
+                    visa.AddRange(new[] { "Seçiniz", "Var", "Yok" });
+                }
+                else
+                {
+                    visa.Insert(0, "Seçiniz");
+                }
+                if (CbVisaRequest != null) CbVisaRequest.ItemsSource = visa;
             }
             catch { }
         }
@@ -496,6 +521,18 @@ namespace TurizmOperasyonSistemi.Views
 
                 if (FilterWarning != null)
                     FilterWarning.Visibility = ready ? Visibility.Collapsed : Visibility.Visible;
+
+                // If we're already showing results and user changes Visa selection while in Vize mode,
+                // re-run the results query so the DataGrid is filtered immediately.
+                try
+                {
+                    if (_currentMode == ViewMode.Vize && ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
+                    {
+                        // Only reload when a selection change happened (guard null sender cases)
+                        LoadResults();
+                    }
+                }
+                catch { }
             }
             catch { }
         }
@@ -870,6 +907,20 @@ namespace TurizmOperasyonSistemi.Views
 
                 var days = CbGroupDays.SelectedItem as string;
                 if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") query = query.Where(r => r.DaysCount == days);
+
+                // If in Vize mode and a specific VisaRequest is chosen, filter by it
+                try
+                {
+                    if (_currentMode == ViewMode.Vize && CbVisaRequest != null)
+                    {
+                        var visaSel = CbVisaRequest.SelectedItem as string;
+                        if (!string.IsNullOrWhiteSpace(visaSel) && visaSel != "Seçiniz")
+                        {
+                            query = query.Where(r => r.VisaRequest == visaSel);
+                        }
+                    }
+                }
+                catch { }
 
                 var list = query.OrderBy(r => r.Id).ToList();
 
