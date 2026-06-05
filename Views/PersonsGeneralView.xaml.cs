@@ -212,13 +212,12 @@ namespace TurizmOperasyonSistemi.Views
                             {
                                 foreach (var c in ResultsDataGrid.Columns)
                                 {
-                                    if (c is DataGridBoundColumn dbc)
+                                    var propName = string.Empty;
+                                    try { propName = GetColumnPropertyName(c) ?? string.Empty; } catch { propName = string.Empty; }
+                                    if (!string.IsNullOrWhiteSpace(propName))
                                     {
-                                        if (dbc.Binding is System.Windows.Data.Binding b && b.Path != null)
-                                        {
-                                            var p = (b.Path.Path ?? string.Empty).Trim().ToLowerInvariant();
-                                            if (p == key) return c;
-                                        }
+                                        var p = propName.Trim().ToLowerInvariant();
+                                        if (p == key) return c;
                                     }
                                 }
                             }

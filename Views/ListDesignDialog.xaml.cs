@@ -143,6 +143,11 @@ namespace TurizmOperasyonSistemi.Views
                             var col = GetMatchingColumn();
                             if (col != null)
                             {
+                                var stableKey = TryGetStableColumnKey(col);
+                                if (!string.IsNullOrWhiteSpace(stableKey))
+                                {
+                                    opt.Key = stableKey;
+                                }
                                 col.Header = newTitle;
                                 try { _targetGrid.Items.Refresh(); _targetGrid.UpdateLayout(); } catch { }
                             }
@@ -170,9 +175,8 @@ namespace TurizmOperasyonSistemi.Views
                 var list = _columns.OrderBy(c => c.Order)
                                    .Select(c => new ListTemplateStore.ColumnDto { Key = c.Key, Title = c.Title, Order = c.Order, IsVisible = c.IsVisible })
                                    .ToList();
+                try { FixTemplateKeysFromTargetGrid(list); } catch { }
                 _store.SaveTemplate(_modeName, list);
-                // ensure saved template contains stable keys (binding paths) when target grid available
-                try { EnsureSavedTemplateKeys(list); } catch { }
 
                 if (_targetGrid != null)
                 {
@@ -291,8 +295,8 @@ namespace TurizmOperasyonSistemi.Views
                     var list = _columns.OrderBy(c => c.Order)
                                        .Select(c => new ListTemplateStore.ColumnDto { Key = c.Key, Title = c.Title, Order = c.Order, IsVisible = c.IsVisible })
                                        .ToList();
+                    try { FixTemplateKeysFromTargetGrid(list); } catch { }
                     _store.SaveTemplate(_modeName, list);
-                    try { EnsureSavedTemplateKeys(list); } catch { }
                     if (_targetGrid != null)
                     {
                         ApplyToTargetGrid(list);
@@ -387,6 +391,85 @@ namespace TurizmOperasyonSistemi.Views
                 _targetGrid.Dispatcher.Invoke(() => { _targetGrid.UpdateLayout(); });
             }
             catch { }
+        }
+
+        private string TryGetStableColumnKey(DataGridColumn col)
+        {
+            try
+            {
+                if (col is DataGridBoundColumn dbc && dbc.Binding is System.Windows.Data.Binding b && b.Path != null)
+                {
+                    var path = (b.Path.Path ?? string.Empty).Trim().ToLowerInvariant();
+                    if (!string.IsNullOrWhiteSpace(path)) return path;
+                }
+
+                if (col is DataGridTemplateColumn dtc)
+                {
+                    var path = GetBindingPathFromTemplate(dtc.CellTemplate) ?? GetBindingPathFromTemplate(dtc.CellEditingTemplate);
+                    if (!string.IsNullOrWhiteSpace(path)) return path.Trim().ToLowerInvariant();
+                }
+            }
+            catch { }
+
+            try
+            {
+                var header = (col?.Header as string) ?? col?.Header?.ToString();
+                if (!string.IsNullOrWhiteSpace(header))
+                {
+                    var normalized = NormalizeStableKey(header);
+                    switch (normalized)
+                    {
+                        case "sira": return "sequence";
+                        case "ad": return "firstname";
+                        case "soyad": return "lastname";
+                        case "tckimlik": return "tckimlikno";
+                        case "cinsiyet": return "gender";
+                        case "dogumtarihi": return "birthdate";
+                        case "telefonnumarasi": return "phonenumber";
+                        case "adres": return "address";
+                        case "pasaporttipi": return "passporttype";
+                        case "pasaportnumarasi": return "passportnumber";
+                        case "pasaportbaslangictarihi": return "passportstartdate";
+                        case "pasaportbitistarihi": return "passportenddate";
+                        case "kangrubu": return "kangrubu";
+                        case "asidurumu": return "vaccinestatus";
+                        case "hastalikdurumu": return "healthstatus";
+                        case "yasaraligi": return "agerange";
+                        case "vizetalebi": return "vizetalebi";
+                        case "bilettalebi": return "bilettalebi";
+                        case "kargotalebi": return "kargotalebi";
+                        case "odatipi": return "roomtype";
+                        case "katilimyapilacaksehir":
+                        case "city": return "departurecity";
+                        case "aktarmavarmi":
+                        case "istransfer": return "hastransfer";
+                        case "aktarmasehri":
+                        case "transfercity": return "transfercity";
+                        case "ilce":
+                        case "district": return "district";
+                        case "toplamfiyat": return "totalprice";
+                        case "parabirimi": return "parabirimi";
+                        case "odenen": return "paidamount";
+                        case "kalan": return "remainingdebt";
+                        case "referans": return "reference";
+                    }
+                    if (!string.IsNullOrWhiteSpace(normalized)) return normalized;
+                }
+            }
+            catch { }
+
+            return string.Empty;
+        }
+
+        private string NormalizeStableKey(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var sb = new StringBuilder();
+            foreach (var ch in text.Trim().ToLowerInvariant())
+            {
+                if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+            }
+            return sb.ToString();
         }
 
         private string GetBindingPathFromTemplate(DataTemplate template)
@@ -551,7 +634,33 @@ namespace TurizmOperasyonSistemi.Views
 
             public event PropertyChangedEventHandler PropertyChanged;
 
-            public string Key => _key;
+            public string Key
+            {
+                get => _key;
+                set => _key = value ?? string.Empty;
+            }
+        }
+
+        private void FixTemplateKeysFromTargetGrid(List<ListTemplateStore.ColumnDto> list)
+        {
+            if (list == null || _targetGrid == null) return;
+            try
+            {
+                foreach (var item in list)
+                {
+                    var col = _targetGrid.Columns.FirstOrDefault(c =>
+                        string.Equals((c.Header as string) ?? c.Header?.ToString(), item.Title, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals((c.Header as string) ?? c.Header?.ToString(), item.Title?.Trim(), StringComparison.OrdinalIgnoreCase));
+                    if (col == null) continue;
+
+                    var key = TryGetStableColumnKey(col);
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        item.Key = key;
+                    }
+                }
+            }
+            catch { }
         }
 
         // Drag-drop helpers

@@ -61,6 +61,18 @@ namespace TurizmOperasyonSistemi.Services
         {
             if (string.IsNullOrWhiteSpace(modeName)) return null;
             var type = SettingTypePrefix + modeName;
+            // Prefer the fallback file because it reflects the latest saved template reliably
+            // when the database write is unavailable or stale.
+            try
+            {
+                if (System.IO.File.Exists(FallbackFile))
+                {
+                    var all = JsonSerializer.Deserialize<Dictionary<string, List<ColumnDto>>>(System.IO.File.ReadAllText(FallbackFile));
+                    if (all != null && all.TryGetValue(type, out var list) && list != null) return list;
+                }
+            }
+            catch { }
+
             try
             {
                 using var db = new AppDbContext();
@@ -72,16 +84,8 @@ namespace TurizmOperasyonSistemi.Services
             }
             catch
             {
-                // ignore and try file fallback
+                // ignore and fall through to null
             }
-
-            try
-            {
-                if (!System.IO.File.Exists(FallbackFile)) return null;
-                var all = JsonSerializer.Deserialize<Dictionary<string, List<ColumnDto>>>(System.IO.File.ReadAllText(FallbackFile));
-                if (all != null && all.TryGetValue(type, out var list) && list != null) return list;
-            }
-            catch { }
             return null;
         }
     }
