@@ -9,7 +9,7 @@ namespace TurizmOperasyonSistemi
     {
         public MainWindow()
         {
-            InitializeComponent();
+            InitializeComponent(); 
 
             MainFrame.Navigate(new HomeView());
         }
