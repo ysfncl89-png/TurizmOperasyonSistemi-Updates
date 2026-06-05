@@ -566,6 +566,17 @@
                                             Binding="{Binding PassportNumber}"
                                             Width="140"/>
 
+                        <DataGridTemplateColumn Header="Pasaport Geldi mi ?" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <RadioButton Content="Evet" IsChecked="{Binding PassportArrived, Mode=TwoWay}" Margin="6,0" Foreground="#E2F8FF" Checked="PassportArrivedRadio_Changed"/>
+                                        <RadioButton Content="Hayır" IsChecked="{Binding PassportArrivedInverse, Mode=TwoWay}" Margin="6,0,6,0" Foreground="#E2F8FF" Checked="PassportArrivedRadio_Changed"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                         <DataGridTextColumn Header="Pasaport Başlangıç tarihi"
                                             Binding="{Binding PassportStartDate}"
                                             Width="140"/>

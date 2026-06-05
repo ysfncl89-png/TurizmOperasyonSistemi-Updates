@@ -36,6 +36,34 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        private void PassportArrivedRadio_Changed(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is FrameworkElement fe)) return;
+                var row = fe.DataContext as GeneralRow;
+                if (row == null) return;
+                // persist to DB when radio changed
+                using var db = new AppDbContext();
+                var reg = db.Registrations.FirstOrDefault(x => x.Id == row.RegistrationId);
+                if (reg != null)
+                {
+                    var prop = reg.GetType().GetProperty("PassportArrived");
+                    if (prop != null && prop.PropertyType == typeof(bool))
+                    {
+                        prop.SetValue(reg, row.PassportArrived);
+                        db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                        db.SaveChanges();
+                        ShowSaveToast("Pasaport durumu güncellendi.");
+                        ResultsDataGrid.Items.Refresh();
+                        return;
+                    }
+                }
+                // If Registration doesn't have field, do not throw - just keep row state
+            }
+            catch { }
+        }
+
         private async void ShowSaveToast(string message, bool isError = false)
         {
             try
@@ -190,7 +218,7 @@ namespace TurizmOperasyonSistemi.Views
             {
                 [ViewMode.Genel] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Cinsiyet","Doğum Tarihi","Telefon numarası","Adres","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Kan Grubu","Aşı durumu","hastalık durumu","Yaş aralığı","Vize Talebi","Bilet Talebi","Kargo Talebi","Oda tipi","Katılım yapılacak şehir","Aktarma var mı ?","Aktarma şehri","İlçe","Toplam Fiyat","Para Birimi","Ödenen","Kalan","Referans" },
                 [ViewMode.Vize] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Vize Talebi","Telefon numarası","Adres" },
-                [ViewMode.Pasaport] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Telefon numarası","Adres" },
+                [ViewMode.Pasaport] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Telefon numarası","Adres","Pasaport Geldi mi ?" },
                 [ViewMode.Bilet] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Bilet Talebi","Telefon numarası","Adres","Katılım yapılacak şehir" },
                 [ViewMode.Aktarma] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Aktarma var mı ?","Aktarma şehri","Telefon numarası","Adres","Katılım yapılacak şehir" },
                 [ViewMode.Havayolu] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Katılım yapılacak şehir","Bilet Talebi","Telefon numarası","Adres" },
@@ -1304,6 +1332,18 @@ namespace TurizmOperasyonSistemi.Views
                         ReferenceRaw = reg.Reference ?? string.Empty,
                         Reference = reg.Reference ?? string.Empty
                     };
+                    // populate PassportArrived from registration if there's a field; fallback false
+                    try
+                    {
+                        // if Registration has a boolean flag 'PassportArrived' use it
+                        var arrivedProp = reg.GetType().GetProperty("PassportArrived");
+                        if (arrivedProp != null)
+                        {
+                            var val = arrivedProp.GetValue(reg);
+                            if (val is bool b) r.PassportArrived = b;
+                        }
+                    }
+                    catch { }
                     // If current mode is Havayolu, transform all textual fields to uppercase and remove Turkish characters
                     if (_currentMode == ViewMode.Havayolu)
                     {
@@ -2196,6 +2236,7 @@ namespace TurizmOperasyonSistemi.Views
                 "pasaport başlangıç tarihi" => "PassportStartDate",
                 "pasaport bitiş tarihi" => "PassportEndDate",
                 "kan grubu" => "BloodType",
+                "pasaport geldi mi ?" => "PassportArrived",
                 "aşı durumu" => "VaccineStatus",
                 "hastalık durumu" => "HealthStatus",
                 "yaş aralığı" => "AgeRange",
@@ -2324,6 +2365,14 @@ namespace TurizmOperasyonSistemi.Views
             }
             public string Reference { get; set; }
             public string ReferenceRaw { get; set; }
+            // Pasaport moduna özel: pasaport geldi mi?
+            public bool PassportArrived { get; set; }
+            // inverse helper for second checkbox binding
+            public bool PassportArrivedInverse
+            {
+                get => !PassportArrived;
+                set { PassportArrived = !value; OnPropertyChanged(nameof(PassportArrived)); OnPropertyChanged(nameof(PassportArrivedInverse)); }
+            }
 
             public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
             private void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
