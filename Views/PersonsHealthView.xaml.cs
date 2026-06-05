@@ -117,6 +117,7 @@ namespace TurizmOperasyonSistemi.Views
             new ExportColumn { Header = "Ad", PropertyName = "FirstName" },
             new ExportColumn { Header = "Soyad", PropertyName = "LastName" },
             new ExportColumn { Header = "TC Kimlik", PropertyName = "TcKimlikNo" },
+            new ExportColumn { Header = "Uyruk", PropertyName = "Nationality" },
             new ExportColumn { Header = "Kan Grubu", PropertyName = "BloodType" },
             new ExportColumn { Header = "Hastalık Durumu", PropertyName = "HealthStatus" },
             new ExportColumn { Header = "Aşı Durumu", PropertyName = "VaccineStatus" }

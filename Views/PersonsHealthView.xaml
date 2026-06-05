@@ -494,6 +494,8 @@
                     <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="180" IsReadOnly="True" />
                     <DataGridTextColumn Header="TC Kimlik" Binding="{Binding TcKimlikNo}" Width="150" IsReadOnly="True" />
 
+                    <DataGridTextColumn Header="Uyruk" Binding="{Binding Nationality}" Width="120" IsReadOnly="True" />
+
                     <!-- Kan Grubu: show as text, edit with ComboBox -->
                     <DataGridTemplateColumn Header="Kan Grubu" Width="110">
                         <DataGridTemplateColumn.CellTemplate>
