@@ -327,6 +327,7 @@ namespace TurizmOperasyonSistemi.Views
             ResultsDataGrid.MouseDoubleClick += ResultsDataGrid_MouseDoubleClick;
             ResultsDataGrid.CellEditEnding += ResultsDataGrid_CellEditEnding;
             ResultsDataGrid.PreparingCellForEdit += ResultsDataGrid_PreparingCellForEdit;
+            ResultsDataGrid.BeginningEdit += ResultsDataGrid_BeginningEdit;
             Loaded += PersonsGeneralView_Loaded;
             LoadFilterOptions();
             // initial state: show filters, hide topbar
@@ -413,6 +414,29 @@ namespace TurizmOperasyonSistemi.Views
                 this.Resources["PrimaryStartBrush"] = new SolidColorBrush(theme.PrimaryStart);
                 this.Resources["PrimaryEndBrush"] = new SolidColorBrush(theme.PrimaryEnd);
                 this.Resources["GlowBrush"] = new SolidColorBrush(theme.Glow);
+            }
+            catch { }
+        }
+
+        private void ResultsDataGrid_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+        {
+            try
+            {
+                // In Havayolu mode, prevent editing of Gender column unless it was enabled by double-click
+                if (_currentMode == ViewMode.Havayolu)
+                {
+                    var col = e.Column;
+                    string propName = GetColumnPropertyName(col);
+                    if (string.IsNullOrWhiteSpace(propName)) propName = MapHeaderToProperty(col.Header?.ToString() ?? string.Empty);
+                    if (string.Equals(propName, "Gender", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // only allow if the editing column was explicitly set (double-click handler sets _editingColumn)
+                        if (!object.ReferenceEquals(_editingColumn, col))
+                        {
+                            e.Cancel = true;
+                        }
+                    }
+                }
             }
             catch { }
         }
@@ -1190,26 +1214,42 @@ namespace TurizmOperasyonSistemi.Views
                         RegistrationId = reg.Id,
                         PersonId = p?.Id ?? 0,
                         Sequence = seq++,
+                        FirstNameRaw = p?.FirstName ?? string.Empty,
+                        LastNameRaw = p?.LastName ?? string.Empty,
+                        TcKimlikNoRaw = p?.TcKimlikNo ?? string.Empty,
                         FirstName = p?.FirstName ?? string.Empty,
                         LastName = p?.LastName ?? string.Empty,
                         TcKimlikNo = p?.TcKimlikNo ?? string.Empty,
                         Gender = p?.Gender ?? string.Empty,
                         BirthDate = p?.BirthDate.ToString("dd.MM.yyyy") ?? string.Empty,
+                        PhoneNumberRaw = p?.PhoneNumber ?? string.Empty,
+                        AddressRaw = p?.Address ?? string.Empty,
                         PhoneNumber = p?.PhoneNumber ?? string.Empty,
                         Address = p?.Address ?? string.Empty,
                         PassportType = p?.PassportType ?? string.Empty,
+                        PassportTypeRaw = p?.PassportType ?? string.Empty,
+                        PassportNumberRaw = p?.PassportNumber ?? string.Empty,
                         PassportNumber = p?.PassportNumber ?? string.Empty,
                         PassportStartDate = p?.PassportStartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                         PassportEndDate = p?.PassportEndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                        BloodTypeRaw = p?.BloodType ?? string.Empty,
+                        VaccineStatusRaw = p?.VaccineStatus ?? string.Empty,
+                        HealthStatusRaw = p?.HealthStatus ?? string.Empty,
                         BloodType = p?.BloodType ?? string.Empty,
                         VaccineStatus = p?.VaccineStatus ?? string.Empty,
                         HealthStatus = p?.HealthStatus ?? string.Empty,
                         AgeRange = p?.AgeRange ?? string.Empty,
 
+                        VisaRequestRaw = reg.VisaRequest ?? string.Empty,
+                        TicketRequestRaw = reg.TicketRequest ?? string.Empty,
+                        CargoRequestRaw = reg.CargoRequest ?? string.Empty,
                         VisaRequest = reg.VisaRequest ?? string.Empty,
                         TicketRequest = reg.TicketRequest ?? string.Empty,
                         CargoRequest = reg.CargoRequest ?? string.Empty,
                         RoomType = reg.RoomType ?? string.Empty,
+                        DepartureCityRaw = reg.DepartureCity ?? string.Empty,
+                        HasTransferRaw = reg.HasTransfer ?? string.Empty,
+                        TransferCityRaw = reg.TransferCity ?? string.Empty,
                         DepartureCity = reg.DepartureCity ?? string.Empty,
                         HasTransfer = reg.HasTransfer ?? string.Empty,
                         TransferCity = reg.TransferCity ?? string.Empty,
@@ -1218,6 +1258,7 @@ namespace TurizmOperasyonSistemi.Views
                         Currency = reg.Currency ?? string.Empty,
                         PaidAmount = reg.PaidAmount.ToString("0.##"),
                         RemainingDebt = reg.RemainingDebt.ToString("0.##"),
+                        ReferenceRaw = reg.Reference ?? string.Empty,
                         Reference = reg.Reference ?? string.Empty
                     };
                     // If current mode is Havayolu, transform all textual fields to uppercase and remove Turkish characters
@@ -1225,33 +1266,34 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         // map gender to MR/MRS first, then transform
                         r.Gender = TransformForHavayolu(MapGenderToTitle(r.Gender));
-                        r.FirstName = TransformForHavayolu(r.FirstName);
-                        r.LastName = TransformForHavayolu(r.LastName);
-                        r.TcKimlikNo = TransformForHavayolu(r.TcKimlikNo);
+                        // Preserve raw originals in separate fields; display fields get transformed
+                        r.FirstName = TransformForHavayolu(r.FirstNameRaw);
+                        r.LastName = TransformForHavayolu(r.LastNameRaw);
+                        r.TcKimlikNo = TransformForHavayolu(r.TcKimlikNoRaw);
                         r.BirthDate = TransformForHavayolu(r.BirthDate);
-                        r.PhoneNumber = TransformForHavayolu(r.PhoneNumber);
-                        r.Address = TransformForHavayolu(r.Address);
-                        r.PassportType = TransformForHavayolu(r.PassportType);
-                        r.PassportNumber = TransformForHavayolu(r.PassportNumber);
+                        r.PhoneNumber = TransformForHavayolu(r.PhoneNumberRaw);
+                        r.Address = TransformForHavayolu(r.AddressRaw);
+                        r.PassportType = TransformForHavayolu(r.PassportTypeRaw);
+                        r.PassportNumber = TransformForHavayolu(r.PassportNumberRaw);
                         r.PassportStartDate = TransformForHavayolu(r.PassportStartDate);
                         r.PassportEndDate = TransformForHavayolu(r.PassportEndDate);
-                        r.BloodType = TransformForHavayolu(r.BloodType);
-                        r.VaccineStatus = TransformForHavayolu(r.VaccineStatus);
-                        r.HealthStatus = TransformForHavayolu(r.HealthStatus);
+                        r.BloodType = TransformForHavayolu(r.BloodTypeRaw);
+                        r.VaccineStatus = TransformForHavayolu(r.VaccineStatusRaw);
+                        r.HealthStatus = TransformForHavayolu(r.HealthStatusRaw);
                         r.AgeRange = TransformForHavayolu(r.AgeRange);
-                        r.VisaRequest = TransformForHavayolu(r.VisaRequest);
-                        r.TicketRequest = TransformForHavayolu(r.TicketRequest);
-                        r.CargoRequest = TransformForHavayolu(r.CargoRequest);
+                        r.VisaRequest = TransformForHavayolu(r.VisaRequestRaw);
+                        r.TicketRequest = TransformForHavayolu(r.TicketRequestRaw);
+                        r.CargoRequest = TransformForHavayolu(r.CargoRequestRaw);
                         r.RoomType = TransformForHavayolu(r.RoomType);
-                        r.DepartureCity = TransformForHavayolu(r.DepartureCity);
-                        r.HasTransfer = TransformForHavayolu(r.HasTransfer);
-                        r.TransferCity = TransformForHavayolu(r.TransferCity);
+                        r.DepartureCity = TransformForHavayolu(r.DepartureCityRaw);
+                        r.HasTransfer = TransformForHavayolu(r.HasTransferRaw);
+                        r.TransferCity = TransformForHavayolu(r.TransferCityRaw);
                         r.District = TransformForHavayolu(r.District);
                         r.TotalPrice = TransformForHavayolu(r.TotalPrice);
                         r.Currency = TransformForHavayolu(r.Currency);
                         r.PaidAmount = TransformForHavayolu(r.PaidAmount);
                         r.RemainingDebt = TransformForHavayolu(r.RemainingDebt);
-                        r.Reference = TransformForHavayolu(r.Reference);
+                        r.Reference = TransformForHavayolu(r.ReferenceRaw);
                     }
                     rows.Add(r);
                 }
@@ -1280,6 +1322,12 @@ namespace TurizmOperasyonSistemi.Views
                     // fallback to header-based mapping
                     var header = (column.Header?.ToString() ?? string.Empty).Trim();
                     propName = MapHeaderToProperty(header);
+                }
+
+                // If in Havayolu mode, do not allow double-click editing on Gender column
+                if (_currentMode == ViewMode.Havayolu && string.Equals(propName, "Gender", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
                 }
 
                 // allowed editable properties (union of person and registration editable fields)
@@ -1510,6 +1558,49 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
+        // When preparing a cell for edit, if we're in Havayolu mode and the underlying
+        // property has a corresponding Raw storage on the row, populate the editing
+        // control with the Raw value so edits affect the source (not the transformed display).
+        private void EnsureEditingElementHasRawValue(DataGridPreparingCellForEditEventArgs e)
+        {
+            try
+            {
+                if (_currentMode != ViewMode.Havayolu) return;
+                var row = e.Row.Item as GeneralRow;
+                if (row == null) return;
+                var header = e.Column.Header?.ToString() ?? string.Empty;
+                var propName = GetColumnPropertyName(e.Column) ?? MapHeaderToProperty(header);
+                if (string.IsNullOrWhiteSpace(propName)) return;
+                var rawProp = row.GetType().GetProperty(propName + "Raw", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                if (rawProp == null) return;
+                var rawVal = rawProp.GetValue(row)?.ToString() ?? string.Empty;
+
+                // If editing element is TextBox, set its Text to raw
+                if (e.EditingElement is TextBox tb)
+                {
+                    tb.Text = rawVal;
+                    return;
+                }
+                // If ComboBox, try to select the raw value
+                var cb = e.EditingElement as ComboBox ?? FindVisualChild<ComboBox>(e.EditingElement);
+                if (cb != null)
+                {
+                    // if items contain rawVal, select it; otherwise leave as is
+                    foreach (var it in cb.Items)
+                    {
+                        if (it != null && string.Equals(it.ToString(), rawVal, StringComparison.OrdinalIgnoreCase))
+                        {
+                            cb.SelectedItem = it;
+                            return;
+                        }
+                    }
+                    // if rawVal not in items, try to set Text
+                    try { cb.Text = rawVal; } catch { }
+                }
+            }
+            catch { }
+        }
+
         private static TChild FindVisualChild<TChild>(DependencyObject obj) where TChild : DependencyObject
         {
             if (obj == null) return null;
@@ -1602,6 +1693,61 @@ namespace TurizmOperasyonSistemi.Views
                     else if (propName.Equals("BloodType", StringComparison.OrdinalIgnoreCase)) p.BloodType = newVal?.ToString() ?? string.Empty;
                     db.Entry(p).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                     db.SaveChanges();
+                    // update raw/display fields on the row so Havayolu mode keeps transformed view
+                    try
+                    {
+                        if (propName.Equals("FirstName", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.FirstNameRaw = p.FirstName ?? string.Empty;
+                            row.FirstName = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.FirstNameRaw) : row.FirstNameRaw;
+                        }
+                        else if (propName.Equals("LastName", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.LastNameRaw = p.LastName ?? string.Empty;
+                            row.LastName = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.LastNameRaw) : row.LastNameRaw;
+                        }
+                        else if (propName.Equals("TcKimlikNo", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.TcKimlikNoRaw = p.TcKimlikNo ?? string.Empty;
+                            row.TcKimlikNo = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.TcKimlikNoRaw) : row.TcKimlikNoRaw;
+                        }
+                        else if (propName.Equals("PhoneNumber", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.PhoneNumberRaw = p.PhoneNumber ?? string.Empty;
+                            row.PhoneNumber = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.PhoneNumberRaw) : row.PhoneNumberRaw;
+                        }
+                        else if (propName.Equals("Address", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.AddressRaw = p.Address ?? string.Empty;
+                            row.Address = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.AddressRaw) : row.AddressRaw;
+                        }
+                        else if (propName.Equals("PassportNumber", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.PassportNumberRaw = p.PassportNumber ?? string.Empty;
+                            row.PassportNumber = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.PassportNumberRaw) : row.PassportNumberRaw;
+                        }
+                        else if (propName.Equals("VaccineStatus", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.VaccineStatusRaw = p.VaccineStatus ?? string.Empty;
+                            row.VaccineStatus = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.VaccineStatusRaw) : row.VaccineStatusRaw;
+                        }
+                        else if (propName.Equals("HealthStatus", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.HealthStatusRaw = p.HealthStatus ?? string.Empty;
+                            row.HealthStatus = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.HealthStatusRaw) : row.HealthStatusRaw;
+                        }
+                        else if (propName.Equals("PassportType", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.PassportTypeRaw = p.PassportType ?? string.Empty;
+                            row.PassportType = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.PassportTypeRaw) : row.PassportTypeRaw;
+                        }
+                        else if (propName.Equals("BloodType", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row.BloodTypeRaw = p.BloodType ?? string.Empty;
+                            row.BloodType = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.BloodTypeRaw) : row.BloodTypeRaw;
+                        }
+                    }
+                    catch { }
                     // refresh grid so change is visible
                     try { ResultsDataGrid.Items.Refresh(); } catch { }
                     ShowSaveToast("Kişi bilgisi güncellendi.");
@@ -1612,12 +1758,12 @@ namespace TurizmOperasyonSistemi.Views
                     if (reg == null) return;
                     if (propName.Equals("District", StringComparison.OrdinalIgnoreCase)) { reg.District = newVal?.ToString() ?? string.Empty; }
                     else if (propName.Equals("Reference", StringComparison.OrdinalIgnoreCase)) { reg.Reference = newVal?.ToString() ?? string.Empty; }
-                    else if (propName.Equals("VisaRequest", StringComparison.OrdinalIgnoreCase)) { reg.VisaRequest = newVal?.ToString() ?? string.Empty; row.VisaRequest = reg.VisaRequest ?? string.Empty; }
-                    else if (propName.Equals("TicketRequest", StringComparison.OrdinalIgnoreCase)) { reg.TicketRequest = newVal?.ToString() ?? string.Empty; row.TicketRequest = reg.TicketRequest ?? string.Empty; }
-                    else if (propName.Equals("CargoRequest", StringComparison.OrdinalIgnoreCase)) { reg.CargoRequest = newVal?.ToString() ?? string.Empty; row.CargoRequest = reg.CargoRequest ?? string.Empty; }
-                    else if (propName.Equals("DepartureCity", StringComparison.OrdinalIgnoreCase)) { reg.DepartureCity = newVal?.ToString() ?? string.Empty; row.DepartureCity = reg.DepartureCity ?? string.Empty; }
-                    else if (propName.Equals("HasTransfer", StringComparison.OrdinalIgnoreCase)) { reg.HasTransfer = newVal?.ToString() ?? string.Empty; row.HasTransfer = reg.HasTransfer ?? string.Empty; }
-                    else if (propName.Equals("TransferCity", StringComparison.OrdinalIgnoreCase)) { reg.TransferCity = newVal?.ToString() ?? string.Empty; row.TransferCity = reg.TransferCity ?? string.Empty; }
+                    else if (propName.Equals("VisaRequest", StringComparison.OrdinalIgnoreCase)) { reg.VisaRequest = newVal?.ToString() ?? string.Empty; row.VisaRequestRaw = reg.VisaRequest ?? string.Empty; row.VisaRequest = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.VisaRequestRaw) : row.VisaRequestRaw; }
+                    else if (propName.Equals("TicketRequest", StringComparison.OrdinalIgnoreCase)) { reg.TicketRequest = newVal?.ToString() ?? string.Empty; row.TicketRequestRaw = reg.TicketRequest ?? string.Empty; row.TicketRequest = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.TicketRequestRaw) : row.TicketRequestRaw; }
+                    else if (propName.Equals("CargoRequest", StringComparison.OrdinalIgnoreCase)) { reg.CargoRequest = newVal?.ToString() ?? string.Empty; row.CargoRequestRaw = reg.CargoRequest ?? string.Empty; row.CargoRequest = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.CargoRequestRaw) : row.CargoRequestRaw; }
+                    else if (propName.Equals("DepartureCity", StringComparison.OrdinalIgnoreCase)) { reg.DepartureCity = newVal?.ToString() ?? string.Empty; row.DepartureCityRaw = reg.DepartureCity ?? string.Empty; row.DepartureCity = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.DepartureCityRaw) : row.DepartureCityRaw; }
+                    else if (propName.Equals("HasTransfer", StringComparison.OrdinalIgnoreCase)) { reg.HasTransfer = newVal?.ToString() ?? string.Empty; row.HasTransferRaw = reg.HasTransfer ?? string.Empty; row.HasTransfer = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.HasTransferRaw) : row.HasTransferRaw; }
+                    else if (propName.Equals("TransferCity", StringComparison.OrdinalIgnoreCase)) { reg.TransferCity = newVal?.ToString() ?? string.Empty; row.TransferCityRaw = reg.TransferCity ?? string.Empty; row.TransferCity = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.TransferCityRaw) : row.TransferCityRaw; }
                     else if (propName.Equals("Currency", StringComparison.OrdinalIgnoreCase)) { reg.Currency = newVal?.ToString() ?? string.Empty; row.Currency = reg.Currency ?? string.Empty; }
                     else if (propName.Equals("TotalPrice", StringComparison.OrdinalIgnoreCase))
                     {
@@ -2044,26 +2190,43 @@ namespace TurizmOperasyonSistemi.Views
             public int Sequence { get; set; }
             public string FirstName { get; set; }
             public string LastName { get; set; }
+            // Raw backing fields to preserve original DB values separate from Havayolu display transform
+            public string FirstNameRaw { get; set; }
+            public string LastNameRaw { get; set; }
+            public string TcKimlikNoRaw { get; set; }
             public string TcKimlikNo { get; set; }
             public string Gender { get; set; }
             public string BirthDate { get; set; }
             public string PhoneNumber { get; set; }
+            public string PhoneNumberRaw { get; set; }
             public string Address { get; set; }
+            public string AddressRaw { get; set; }
             public string PassportType { get; set; }
+            public string PassportTypeRaw { get; set; }
             public string PassportNumber { get; set; }
+            public string PassportNumberRaw { get; set; }
             public string PassportStartDate { get; set; }
             public string PassportEndDate { get; set; }
             public string BloodType { get; set; }
+            public string BloodTypeRaw { get; set; }
             public string VaccineStatus { get; set; }
+            public string VaccineStatusRaw { get; set; }
             public string HealthStatus { get; set; }
+            public string HealthStatusRaw { get; set; }
             public string AgeRange { get; set; }
             public string VisaRequest { get; set; }
+            public string VisaRequestRaw { get; set; }
             public string TicketRequest { get; set; }
+            public string TicketRequestRaw { get; set; }
             public string CargoRequest { get; set; }
+            public string CargoRequestRaw { get; set; }
             public string RoomType { get; set; }
             public string DepartureCity { get; set; }
+            public string DepartureCityRaw { get; set; }
             public string HasTransfer { get; set; }
+            public string HasTransferRaw { get; set; }
             public string TransferCity { get; set; }
+            public string TransferCityRaw { get; set; }
             public string District { get; set; }
             private string _totalPrice;
             public string TotalPrice
@@ -2101,6 +2264,7 @@ namespace TurizmOperasyonSistemi.Views
                 set { if (_remainingDebt != value) { _remainingDebt = value; OnPropertyChanged(nameof(RemainingDebt)); } }
             }
             public string Reference { get; set; }
+            public string ReferenceRaw { get; set; }
 
             public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
             private void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
