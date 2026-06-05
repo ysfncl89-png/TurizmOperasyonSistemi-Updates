@@ -534,7 +534,8 @@
 
                         <DataGridTextColumn Header="Cinsiyet"
                                             Binding="{Binding Gender}"
-                                            Width="100"/>
+                                            Width="100"
+                                            IsReadOnly="True"/>
 
                         <DataGridTextColumn Header="Doğum Tarihi"
                                             Binding="{Binding BirthDate}"

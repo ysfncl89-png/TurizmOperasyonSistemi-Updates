@@ -1407,8 +1407,8 @@ namespace TurizmOperasyonSistemi.Views
                     propName = MapHeaderToProperty(header);
                 }
 
-                // In Genel mode, do not allow double-click editing on Gender column
-                if (_currentMode == ViewMode.Genel && string.Equals(propName, "Gender", StringComparison.OrdinalIgnoreCase))
+                // Do not allow double-click editing on Gender column in any mode
+                if (string.Equals(propName, "Gender", StringComparison.OrdinalIgnoreCase))
                 {
                     return;
                 }
