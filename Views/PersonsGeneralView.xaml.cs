@@ -218,7 +218,7 @@ namespace TurizmOperasyonSistemi.Views
             {
                 [ViewMode.Genel] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Cinsiyet","Doğum Tarihi","Telefon numarası","Adres","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Kan Grubu","Aşı durumu","hastalık durumu","Yaş aralığı","Vize Talebi","Bilet Talebi","Kargo Talebi","Oda tipi","Katılım yapılacak şehir","Aktarma var mı ?","Aktarma şehri","İlçe","Toplam Fiyat","Para Birimi","Ödenen","Kalan","Referans" },
                 [ViewMode.Vize] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Vize Talebi","Telefon numarası","Adres" },
-                [ViewMode.Pasaport] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Telefon numarası","Adres","Pasaport Geldi mi ?" },
+                [ViewMode.Pasaport] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Telefon numarası","Adres" },
                 [ViewMode.Bilet] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Bilet Talebi","Telefon numarası","Adres","Katılım yapılacak şehir" },
                 [ViewMode.Aktarma] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Aktarma var mı ?","Aktarma şehri","Telefon numarası","Adres","Katılım yapılacak şehir" },
                 [ViewMode.Havayolu] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Katılım yapılacak şehir","Bilet Talebi","Telefon numarası","Adres" },
@@ -2242,7 +2242,6 @@ namespace TurizmOperasyonSistemi.Views
                 "pasaport bitiş tarihi" => "PassportEndDate",
                 "kan grubu" => "BloodType",
                 "uyruk" => "Nationality",
-                "pasaport geldi mi ?" => "PassportArrived",
                 "aşı durumu" => "VaccineStatus",
                 "hastalık durumu" => "HealthStatus",
                 "yaş aralığı" => "AgeRange",
