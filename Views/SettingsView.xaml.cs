@@ -53,17 +53,10 @@ namespace TurizmOperasyonSistemi.Views
                     // Ensure Uyruk settings contain only the two new options (TC, Yabancı).
                     // If legacy country list exists, replace it with the minimal two-choice set.
                     var uyrukValues = db.AppSettings.Where(x => x.Type == "Uyruk").Select(x => x.Value).ToList();
-                    var desired = new[] { "TC", "Yabancı" };
-                    bool needsReplace = uyrukValues.Count == 0 || uyrukValues.Any(v => !desired.Contains(v));
-                    if (needsReplace)
+                    // Only seed default Uyruk values when none exist. Do not replace user-added nationalities.
+                    if (uyrukValues.Count == 0)
                     {
-                        var existing = db.AppSettings.Where(x => x.Type == "Uyruk").ToList();
-                        if (existing.Any())
-                        {
-                            db.AppSettings.RemoveRange(existing);
-                            db.SaveChanges();
-                        }
-
+                        var desired = new[] { "TC", "Yabancı" };
                         int sort = 1;
                         foreach (var val in desired)
                         {
