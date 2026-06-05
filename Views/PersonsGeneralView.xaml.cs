@@ -36,6 +36,49 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        private async void ShowSaveToast(string message, bool isError = false)
+        {
+            try
+            {
+                var border = SaveToastBorder;
+                var text = SaveToastTextBlock;
+                if (border == null || text == null)
+                {
+                    // fallback to MessageBox if UI not ready
+                    if (isError) MessageBox.Show(message, "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    else MessageBox.Show(message);
+                    return;
+                }
+
+                var origBg = border.Background;
+                var origBorderBrush = border.BorderBrush;
+                var origTextBrush = text.Foreground;
+
+                if (isError)
+                {
+                    border.Background = new SolidColorBrush(Color.FromRgb(80, 10, 10));
+                    border.BorderBrush = new SolidColorBrush(Color.FromRgb(220, 50, 50));
+                    text.Foreground = new SolidColorBrush(Colors.White);
+                }
+                else
+                {
+                    // ensure normal look (use resource if available)
+                    try { border.Background = (Brush)FindResource("ResultsBorder") ?? origBg; } catch { border.Background = origBg; }
+                }
+
+                text.Text = message;
+                border.Visibility = Visibility.Visible;
+
+                await Task.Delay(2400);
+
+                border.Visibility = Visibility.Collapsed;
+
+                // restore
+                try { border.Background = origBg; border.BorderBrush = origBorderBrush; text.Foreground = origTextBrush; } catch { }
+            }
+            catch { }
+        }
+
         private bool TryParseDateFlexible(string s, out DateTime value)
         {
             value = default;
@@ -1613,15 +1656,7 @@ namespace TurizmOperasyonSistemi.Views
             }
             return null;
         }
-        private async void ShowSaveToast(string message)
-        {
-            SaveToastTextBlock.Text = message;
-            SaveToastBorder.Visibility = Visibility.Visible;
 
-            await Task.Delay(2500);
-
-            SaveToastBorder.Visibility = Visibility.Collapsed;
-        }
         private void SaveEditedValue(GeneralRow row, string header, string newText = null)
         {
             if (row == null) return;
@@ -1674,7 +1709,31 @@ namespace TurizmOperasyonSistemi.Views
                     // assign string properties
                     if (propName.Equals("FirstName", StringComparison.OrdinalIgnoreCase)) { p.FirstName = newVal?.ToString() ?? string.Empty; row.FirstName = p.FirstName ?? string.Empty; }
                     else if (propName.Equals("LastName", StringComparison.OrdinalIgnoreCase)) { p.LastName = newVal?.ToString() ?? string.Empty; row.LastName = p.LastName ?? string.Empty; }
-                    else if (propName.Equals("TcKimlikNo", StringComparison.OrdinalIgnoreCase)) { p.TcKimlikNo = newVal?.ToString() ?? string.Empty; row.TcKimlikNo = p.TcKimlikNo ?? string.Empty; }
+                    else if (propName.Equals("TcKimlikNo", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var candidate = newVal?.ToString() ?? string.Empty;
+                        // validation: must be exactly 11 digits and contain no letters
+                        var digitsOnly = new string(candidate.Where(char.IsDigit).ToArray());
+                        if (digitsOnly.Length != 11 || digitsOnly != candidate)
+                        {
+                            // show inline error toast instead of blocking MessageBox
+                            try { ShowSaveToast("Geçersiz TC Kimlik numarası. TC Kimlik 11 rakamdan oluşmalı ve harf içeremez.", true); } catch { }
+                            // restore displayed value from raw (do not save invalid value) and cancel edit
+                            try
+                            {
+                                row.TcKimlikNo = row.TcKimlikNoRaw ?? string.Empty;
+                                // Cancel current edit to revert binding
+                                ResultsDataGrid.CancelEdit();
+                                ResultsDataGrid.Items.Refresh();
+                            }
+                            catch { }
+                            return;
+                        }
+
+                        p.TcKimlikNo = candidate;
+                        row.TcKimlikNoRaw = p.TcKimlikNo ?? string.Empty;
+                        row.TcKimlikNo = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.TcKimlikNoRaw) : row.TcKimlikNoRaw;
+                    }
                     else if (propName.Equals("Gender", StringComparison.OrdinalIgnoreCase)) { p.Gender = newVal?.ToString() ?? string.Empty; row.Gender = p.Gender ?? string.Empty; }
                     else if (propName.Equals("BirthDate", StringComparison.OrdinalIgnoreCase))
                     {
