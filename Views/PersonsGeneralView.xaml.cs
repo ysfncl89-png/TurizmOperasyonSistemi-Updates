@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
 using System.IO.Compression;
 using System.Reflection;
@@ -12,14 +12,19 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 using TurizmOperasyonSistemi.Services;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace TurizmOperasyonSistemi.Views
 {
     public partial class PersonsGeneralView : Page
     {
+        private readonly DispatcherTimer _saveToastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.2) };
+
         public enum ViewMode
         {
             Genel,
@@ -160,20 +165,20 @@ namespace TurizmOperasyonSistemi.Views
                     visaPanel.Visibility = (mode == ViewMode.Vize) ? Visibility.Visible : Visibility.Collapsed;
                 }
                 // clear selection when leaving Vize mode
-                if (mode != ViewMode.Vize && CbVisaRequest != null) CbVisaRequest.SelectedIndex = 0;
+                if (mode != ViewMode.Vize && CbVisaRequest != null) CbVisaRequest.SelectedIndex = -1;
 
                 var ticketPanel = this.FindName("TicketRequestPanel") as FrameworkElement;
                 if (ticketPanel != null)
                 {
                     ticketPanel.Visibility = (mode == ViewMode.Bilet || mode == ViewMode.Havayolu) ? Visibility.Visible : Visibility.Collapsed;
                 }
-                if (mode != ViewMode.Bilet && CbTicketRequest != null) CbTicketRequest.SelectedIndex = 0;
+                if (mode != ViewMode.Bilet && CbTicketRequest != null) CbTicketRequest.SelectedIndex = -1;
                 var hasTransferPanel = this.FindName("HasTransferPanel") as FrameworkElement;
                 if (hasTransferPanel != null)
                 {
                     hasTransferPanel.Visibility = (mode == ViewMode.Havayolu) ? Visibility.Visible : Visibility.Collapsed;
                 }
-                if (mode != ViewMode.Havayolu && CbHasTransfer != null) CbHasTransfer.SelectedIndex = 0;
+                if (mode != ViewMode.Havayolu && CbHasTransfer != null) CbHasTransfer.SelectedIndex = -1;
             }
             catch { }
             // If user has a saved template for this mode, prefer that (so custom visibility/order persists)
@@ -1517,7 +1522,15 @@ namespace TurizmOperasyonSistemi.Views
             }
             return null;
         }
+        private async void ShowSaveToast(string message)
+        {
+            SaveToastTextBlock.Text = message;
+            SaveToastBorder.Visibility = Visibility.Visible;
 
+            await Task.Delay(2500);
+
+            SaveToastBorder.Visibility = Visibility.Collapsed;
+        }
         private void SaveEditedValue(GeneralRow row, string header, string newText = null)
         {
             if (row == null) return;
@@ -1591,7 +1604,7 @@ namespace TurizmOperasyonSistemi.Views
                     db.SaveChanges();
                     // refresh grid so change is visible
                     try { ResultsDataGrid.Items.Refresh(); } catch { }
-                    try { MessageBox.Show("Kişi bilgisi başarıyla güncellendi.", "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information); } catch { }
+                    ShowSaveToast("Kişi bilgisi güncellendi.");
                 }
                 else if (registrationProps.Contains(propName, StringComparer.OrdinalIgnoreCase))
                 {
@@ -1642,7 +1655,7 @@ namespace TurizmOperasyonSistemi.Views
                     db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                     db.SaveChanges();
                     try { ResultsDataGrid.Items.Refresh(); } catch { }
-                    try { MessageBox.Show("Kayıt bilgisi başarıyla güncellendi.", "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information); } catch { }
+                    ShowSaveToast("Kayıt bilgisi güncellendi.");
                 }
             }
             catch (Exception ex)
