@@ -97,6 +97,20 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+
+                    <!-- Yeni eklenen Pasaport geldi mi kolonunu tasarım penceresine eklemek için sabit öğe -->
+                    <Border BorderBrush="#223047" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <CheckBox IsChecked="True" VerticalAlignment="Center" IsEnabled="False"/>
+                            <TextBlock Grid.Column="1" Text="Pasaportu Geldi mi ?" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="--" Foreground="#9FB2CB" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                        </Grid>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </Border>

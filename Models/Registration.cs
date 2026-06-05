@@ -37,7 +37,7 @@ namespace TurizmOperasyonSistemi.Models
 
         // Pasaport geldi mi? (Evet/Hayır seçenekleri Ayarlar modülünden alınır)
         [Column("PassportArrived")]
-        public string PassportArrived { get; set; }
+        public int? PassportArrived { get; set; }
 
         // 4. ADIM: Kargo Talebi
         [Column("CargoStatus")]

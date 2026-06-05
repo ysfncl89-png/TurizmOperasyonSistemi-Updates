@@ -171,6 +171,12 @@ namespace TurizmOperasyonSistemi.Views
                             }
                         }
 
+                        string passportArrivedStr = string.Empty;
+                        if (x.PassportArrived.HasValue)
+                        {
+                            passportArrivedStr = x.PassportArrived.Value != 0 ? "Evet" : "Hayır";
+                        }
+
                         return new RegistrationListItem
                         {
                             Id = x.Id,
@@ -183,7 +189,7 @@ namespace TurizmOperasyonSistemi.Views
                             VisaRequest = x.VisaRequest ?? string.Empty,
                             TicketRequest = x.TicketRequest ?? string.Empty,
                             CargoRequest = x.CargoRequest ?? string.Empty,
-                            PassportArrived = x.PassportArrived ?? string.Empty,
+                            PassportArrived = passportArrivedStr,
                             RoomType = x.RoomType ?? string.Empty,
                             DepartureCity = x.DepartureCity ?? string.Empty,
                             TransferStatus = x.HasTransfer ?? string.Empty,
@@ -553,12 +559,13 @@ namespace TurizmOperasyonSistemi.Views
                 DaysCountComboBox.SelectedItem = registration.DaysCount;
                 VisaRequestComboBox.SelectedItem = registration.VisaRequest;
                 TicketRequestComboBox.SelectedItem = registration.TicketRequest;
-                if (!string.IsNullOrWhiteSpace(registration.PassportArrived))
+                // PassportArrived is stored as int? (1 = Evet, 0 = Hayır, null = unspecified)
+                PassportArrivedYesRadio.IsChecked = false;
+                PassportArrivedNoRadio.IsChecked = false;
+                if (registration.PassportArrived.HasValue)
                 {
-                    if (registration.PassportArrived.Equals("Evet", StringComparison.CurrentCultureIgnoreCase))
-                        PassportArrivedYesRadio.IsChecked = true;
-                    else if (registration.PassportArrived.Equals("Hayır", StringComparison.CurrentCultureIgnoreCase) || registration.PassportArrived.Equals("Hayir", StringComparison.CurrentCultureIgnoreCase))
-                        PassportArrivedNoRadio.IsChecked = true;
+                    PassportArrivedYesRadio.IsChecked = registration.PassportArrived.Value != 0;
+                    PassportArrivedNoRadio.IsChecked = registration.PassportArrived.Value == 0;
                 }
                 CargoRequestComboBox.SelectedItem = registration.CargoRequest;
                 RoomTypeComboBox.SelectedItem = registration.RoomType;
@@ -1153,7 +1160,10 @@ namespace TurizmOperasyonSistemi.Views
                         registration.DaysCount = selectedDaysCount;
                         registration.VisaRequest = visaRequest;
                         registration.TicketRequest = ticketRequest;
-                        registration.PassportArrived = PassportArrivedYesRadio.IsChecked == true ? "Evet" : (PassportArrivedNoRadio.IsChecked == true ? "Hayır" : "");
+                        // Store as integer-compatible value: 1 for Evet, 0 for Hayır, null for unspecified
+                        if (PassportArrivedYesRadio.IsChecked == true) registration.PassportArrived = 1;
+                        else if (PassportArrivedNoRadio.IsChecked == true) registration.PassportArrived = 0;
+                        else registration.PassportArrived = null;
                         registration.CargoRequest = cargoRequest;
                         registration.RoomType = roomType;
                         registration.DepartureCity = departureCity;

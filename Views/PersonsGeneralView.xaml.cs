@@ -49,14 +49,44 @@ namespace TurizmOperasyonSistemi.Views
                 if (reg != null)
                 {
                     var prop = reg.GetType().GetProperty("PassportArrived");
-                    if (prop != null && prop.PropertyType == typeof(bool))
+                    if (prop != null)
                     {
-                        prop.SetValue(reg, row.PassportArrived);
-                        db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-                        db.SaveChanges();
-                        ShowSaveToast("Pasaport durumu güncellendi.");
-                        ResultsDataGrid.Items.Refresh();
-                        return;
+                        try
+                        {
+                            object valueToSet = null;
+                            var targetType = prop.PropertyType;
+                            if (targetType == typeof(bool))
+                            {
+                                valueToSet = row.PassportArrived;
+                            }
+                            else if (targetType == typeof(string))
+                            {
+                                // store as "1"/"0" for compatibility with integer-backed storage saved as string
+                                valueToSet = row.PassportArrived ? "1" : "0";
+                            }
+                            else if (targetType.IsPrimitive || (Nullable.GetUnderlyingType(targetType)?.IsPrimitive == true))
+                            {
+                                // numeric types: convert 1/0 to the target numeric type
+                                var numeric = row.PassportArrived ? 1 : 0;
+                                try { valueToSet = Convert.ChangeType(numeric, Nullable.GetUnderlyingType(targetType) ?? targetType); } catch { valueToSet = Convert.ChangeType(numeric, typeof(int)); }
+                            }
+                            else
+                            {
+                                // fallback: attempt to set boolean or string representation
+                                valueToSet = row.PassportArrived;
+                            }
+
+                            if (valueToSet != null)
+                            {
+                                prop.SetValue(reg, valueToSet);
+                                db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                                db.SaveChanges();
+                                ShowSaveToast("Pasaport durumu güncellendi.");
+                                ResultsDataGrid.Items.Refresh();
+                                return;
+                            }
+                        }
+                        catch { /* ignore persistence errors and keep UI state */ }
                     }
                 }
                 // If Registration doesn't have field, do not throw - just keep row state
@@ -1337,12 +1367,29 @@ namespace TurizmOperasyonSistemi.Views
                     // populate PassportArrived from registration if there's a field; fallback false
                     try
                     {
-                        // if Registration has a boolean flag 'PassportArrived' use it
                         var arrivedProp = reg.GetType().GetProperty("PassportArrived");
                         if (arrivedProp != null)
                         {
                             var val = arrivedProp.GetValue(reg);
                             if (val is bool b) r.PassportArrived = b;
+                            else if (val is int ix) r.PassportArrived = ix != 0;
+                            else if (val is long lx) r.PassportArrived = lx != 0L;
+                            else if (val is short sx) r.PassportArrived = sx != 0;
+                            else if (val is byte bx) r.PassportArrived = bx != 0;
+                            else if (val is decimal dec) r.PassportArrived = dec != 0m;
+                            else if (val is string sv)
+                            {
+                                var s = sv?.Trim().ToLowerInvariant() ?? string.Empty;
+                                if (int.TryParse(s, out var ni)) r.PassportArrived = ni != 0;
+                                else if (bool.TryParse(s, out var nb)) r.PassportArrived = nb;
+                                else if (s == "var" || s == "evet" || s == "yes" || s == "1") r.PassportArrived = true;
+                                else r.PassportArrived = false;
+                            }
+                            else
+                            {
+                                // fallback: treat any non-null as true
+                                r.PassportArrived = val != null;
+                            }
                         }
                     }
                     catch { }
@@ -2100,6 +2147,10 @@ namespace TurizmOperasyonSistemi.Views
             return string.Join(" ", parts);
         }
 
+        // Helper converter-aware binding inversion used by XAML via ConverterParameter
+        // Converter is defined in XAML as BoolToVis; when ConverterParameter == "invert" we invert the boolean
+        // This method used by Code-Behind only if needed; main logic handled in XAML via converter parameter string.
+
         private Func<GeneralRow, string> GetSelectorForHeader(string headerKey)
         {
             // headerKey burada TransliterateTurkish(...).ToLowerInvariant() olacak şekilde çağrılıyor
@@ -2221,12 +2272,44 @@ namespace TurizmOperasyonSistemi.Views
             }
             if (prop == null) return string.Empty;
             var val = prop.GetValue(item);
-            return val?.ToString() ?? string.Empty;
+            if (val == null) return string.Empty;
+            // Special-case PassportArrived boolean/integer representation to localized Turkish values
+            if (val is bool bv)
+            {
+                return bv ? "Evet" : "Hayır";
+            }
+            if (val is int iv)
+            {
+                return iv != 0 ? "Evet" : "Hayır";
+            }
+            if (val is long lv)
+            {
+                return lv != 0L ? "Evet" : "Hayır";
+            }
+            if (val is short sv)
+            {
+                return sv != 0 ? "Evet" : "Hayır";
+            }
+            if (val is byte byv)
+            {
+                return byv != 0 ? "Evet" : "Hayır";
+            }
+            if (val is decimal dec)
+            {
+                return dec != 0m ? "Evet" : "Hayır";
+            }
+            // Fallback to string
+            return val.ToString() ?? string.Empty;
         }
 
         private string MapHeaderToProperty(string header)
         {
-            return header?.Trim().ToLowerInvariant() switch
+            // Normalize header for robust matching (remove surrounding whitespace and lower-case)
+            try
+            {
+                var raw = header ?? string.Empty;
+                var key = raw.Trim().ToLowerInvariant();
+                return key switch
             {
                 "sıra" => "Sequence",
                 "ad" => "FirstName",
@@ -2259,7 +2342,15 @@ namespace TurizmOperasyonSistemi.Views
                 "kalan" => "RemainingDebt",
                 "referans" => "Reference",
                 _ => header?.Replace(" ", "")
-            };
+                };
+            }
+            catch
+            {
+                // Fallback simple replacement
+                if (header == null) return null;
+                var s = header.Replace(" ", "");
+                return s;
+            }
         }
 
         private string GetColumnPropertyName(DataGridColumn column)
