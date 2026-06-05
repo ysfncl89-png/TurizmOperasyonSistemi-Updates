@@ -115,6 +115,9 @@ namespace TurizmOperasyonSistemi.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Nationality")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TcKimlikNo")
                         .IsRequired()
                         .HasColumnType("TEXT");

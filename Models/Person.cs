@@ -37,5 +37,8 @@ namespace TurizmOperasyonSistemi.Models
         public bool IsActive { get; set; } = true;
 
         public string AgeRange { get; set; }
+
+        // Yeni alan: Uyruk (Nationality)
+        public string? Nationality { get; set; }
     }
 }

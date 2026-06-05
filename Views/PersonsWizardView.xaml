@@ -461,6 +461,7 @@
                                             <DataGridTextColumn Header="Kan Grubu" Binding="{Binding BloodType}" Width="90"/>
                                             <DataGridTextColumn Header="Hastalık Durumu" Binding="{Binding HealthStatus}" Width="150"/>
                                             <DataGridTextColumn Header="Aşı Durumu" Binding="{Binding VaccineStatus}" Width="130"/>
+                                            <DataGridTextColumn Header="Uyruk" Binding="{Binding Nationality}" Width="120"/>
                                             <DataGridCheckBoxColumn Header="Aktif" Binding="{Binding IsActive}" Width="70"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
@@ -568,6 +569,15 @@
                                                FontSize="13"/>
                                     <ComboBox x:Name="AgeRangeComboBox"
                                               Height="36"/>
+
+                                    <TextBlock Text="Uyruk"
+                                               Foreground="#F8FAFC"
+                                               FontWeight="SemiBold"
+                                               FontSize="13"/>
+                                    <ComboBox x:Name="NationalityComboBox"
+                                              Height="36">
+                                        <ComboBoxItem IsSelected="True" Tag="{x:Null}">Seçiniz</ComboBoxItem>
+                                    </ComboBox>
                                 </StackPanel>
                             </Border>
 

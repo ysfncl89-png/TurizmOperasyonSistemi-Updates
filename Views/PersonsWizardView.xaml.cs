@@ -101,6 +101,8 @@ namespace TurizmOperasyonSistemi.Views
             LoadComboBox(AgeRangeComboBox, "Yaş Aralığı");
             LoadComboBox(BloodComboBox, "Kan Grubu");
             LoadComboBox(PassportTypeComboBox, "Pasaport Türü");
+            // Uyruk combobox'u AppSettings'ten al
+            LoadComboBox(NationalityComboBox, "Uyruk");
 
             // Ensure clicking the combo box surface (not only the arrow) opens the dropdown
             GenderComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
@@ -121,6 +123,7 @@ namespace TurizmOperasyonSistemi.Views
             LastNameTextBox.TextChanged += RequiredField_TextChanged;
             TcTextBox.TextChanged += RequiredField_TextChanged;
             GenderComboBox.SelectionChanged += GenderComboBox_SelectionChanged;
+            NationalityComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
             ApplyLiveRequiredHighlights();
 
             _noMatchScrollTimer = new System.Windows.Threading.DispatcherTimer
@@ -300,6 +303,8 @@ namespace TurizmOperasyonSistemi.Views
         {
             using (var db = new AppDbContext())
             {
+                // Eğer veritabanında Nationality sütunu eksikse, runtime'da ekle (kullanıcıya veritabanı işlemi yaptırmamak için)
+                db.EnsureNationalityColumnExists();
                 var list = db.Persons
                     .OrderByDescending(x => x.Id)
                     .ToList();
@@ -364,8 +369,15 @@ namespace TurizmOperasyonSistemi.Views
 
                 values.Insert(0, "Seçiniz");
 
+                // Eğer XAML veya başka kod tarafından ComboBox.Items doldurulmuşsa, ItemsSource ayarlamadan önce temizle
+                if (comboBox.Items != null && comboBox.Items.Count > 0)
+                {
+                    comboBox.Items.Clear();
+                }
+
                 comboBox.ItemsSource = values;
-                comboBox.SelectedIndex = 0;
+                if (values.Count > 0)
+                    comboBox.SelectedIndex = 0;
             }
         }
 
@@ -605,6 +617,7 @@ namespace TurizmOperasyonSistemi.Views
             AgeRangeComboBox.Text = string.IsNullOrWhiteSpace(person.AgeRange) ? "Seçiniz" : person.AgeRange;
             BloodComboBox.Text = string.IsNullOrWhiteSpace(person.BloodType) ? "Seçiniz" : person.BloodType;
             PassportTypeComboBox.Text = string.IsNullOrWhiteSpace(person.PassportType) ? "Seçiniz" : person.PassportType;
+            NationalityComboBox.Text = string.IsNullOrWhiteSpace(person.Nationality) ? "Seçiniz" : person.Nationality;
         }
 
         private void PersonsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -679,7 +692,8 @@ namespace TurizmOperasyonSistemi.Views
                 "\nPASAPORT TÜRÜ : " + PassportTypeComboBox.Text +
                 "\nPASAPORT NO : " + PassportTextBox.Text +
                 "\nPASAPORT BAŞLANGIÇ : " + PassportStartPicker.SelectedDate?.ToShortDateString() +
-                "\nPASAPORT BİTİŞ : " + PassportEndPicker.SelectedDate?.ToShortDateString();
+                    "\nPASAPORT BİTİŞ : " + PassportEndPicker.SelectedDate?.ToShortDateString() +
+                    "\nUYRUK : " + (string.Equals(NationalityComboBox.Text, "Seçiniz", StringComparison.OrdinalIgnoreCase) ? string.Empty : NationalityComboBox.Text);
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -795,6 +809,9 @@ namespace TurizmOperasyonSistemi.Views
                     person.Gender = GenderComboBox.Text;
                     person.BirthDate = BirthDatePicker.SelectedDate ?? DateTime.Now;
                     person.AgeRange = AgeRangeComboBox.Text;
+                    person.Nationality = string.Equals(NationalityComboBox.Text, "Seçiniz", StringComparison.OrdinalIgnoreCase)
+                        ? null
+                        : NationalityComboBox.Text;
                     person.PhoneNumber = PhoneTextBox.Text;
                     person.Address = AddressTextBox.Text;
                     person.BloodType = BloodComboBox.Text;
