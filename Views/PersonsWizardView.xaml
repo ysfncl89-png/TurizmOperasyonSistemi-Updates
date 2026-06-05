@@ -448,8 +448,8 @@
                                             <DataGridTextColumn Header="Id" Binding="{Binding Id}" Visibility="Collapsed"/>
                                             <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="150"/>
                                             <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="150"/>
-                                            <DataGridTextColumn Header="Uyruk" Binding="{Binding Nationality}" Width="120"/>
                                             <DataGridTextColumn Header="TC Kimlik No" Binding="{Binding TcKimlikNo}" Width="150"/>
+                                            <DataGridTextColumn Header="Uyruk" Binding="{Binding Nationality}" Width="120"/>
                                             <DataGridTextColumn Header="Cinsiyet" Binding="{Binding Gender}" Width="90" IsReadOnly="True"/>
                                             <DataGridTextColumn Header="Doğum Tarihi" Binding="{Binding BirthDate, StringFormat=d}" Width="120"/>
                                             <DataGridTextColumn Header="Yaş Aralığı" Binding="{Binding AgeRange}" Width="100"/>

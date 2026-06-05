@@ -436,6 +436,7 @@ namespace TurizmOperasyonSistemi.Views
                         case "hastalikdurumu": return "healthstatus";
                         case "yasaraligi": return "agerange";
                         case "vizetalebi": return "vizetalebi";
+                        case "uyruk": return "nationality";
                         case "bilettalebi": return "bilettalebi";
                         case "kargotalebi": return "kargotalebi";
                         case "odatipi": return "roomtype";

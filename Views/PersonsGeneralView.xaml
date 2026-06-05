@@ -532,6 +532,10 @@
                                             Binding="{Binding TcKimlikNo}"
                                             Width="150"/>
 
+                        <DataGridTextColumn Header="Uyruk"
+                                            Binding="{Binding Nationality}"
+                                            Width="120"/>
+
                         <DataGridTextColumn Header="Cinsiyet"
                                             Binding="{Binding Gender}"
                                             Width="100"

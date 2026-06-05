@@ -1299,6 +1299,9 @@ namespace TurizmOperasyonSistemi.Views
                         Address = p?.Address ?? string.Empty,
                         PassportType = p?.PassportType ?? string.Empty,
                         PassportTypeRaw = p?.PassportType ?? string.Empty,
+                        // Nationality from person table
+                        Nationality = p?.Nationality ?? string.Empty,
+                        NationalityRaw = p?.Nationality ?? string.Empty,
                         PassportNumberRaw = p?.PassportNumber ?? string.Empty,
                         PassportNumber = p?.PassportNumber ?? string.Empty,
                         PassportStartDate = p?.PassportStartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
@@ -1310,7 +1313,6 @@ namespace TurizmOperasyonSistemi.Views
                         VaccineStatus = p?.VaccineStatus ?? string.Empty,
                         HealthStatus = p?.HealthStatus ?? string.Empty,
                         AgeRange = p?.AgeRange ?? string.Empty,
-
                         VisaRequestRaw = reg.VisaRequest ?? string.Empty,
                         TicketRequestRaw = reg.TicketRequest ?? string.Empty,
                         CargoRequestRaw = reg.CargoRequest ?? string.Empty,
@@ -1358,6 +1360,7 @@ namespace TurizmOperasyonSistemi.Views
                         r.Address = TransformForHavayolu(r.AddressRaw);
                         r.PassportType = TransformForHavayolu(r.PassportTypeRaw);
                         r.PassportNumber = TransformForHavayolu(r.PassportNumberRaw);
+                        r.Nationality = TransformForHavayolu(r.NationalityRaw);
                         r.PassportStartDate = TransformForHavayolu(r.PassportStartDate);
                         r.PassportEndDate = TransformForHavayolu(r.PassportEndDate);
                         r.BloodType = TransformForHavayolu(r.BloodTypeRaw);
@@ -1737,8 +1740,8 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 using var db = new AppDbContext();
-                // person properties
-                var personProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "PassportType", "BloodType" };
+                // person properties (include Nationality)
+                var personProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "PassportType", "BloodType", "Nationality" };
                 // registration properties (including new combobox-backed fields)
                 var registrationProps = new[] { "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency" };
 
@@ -1790,6 +1793,7 @@ namespace TurizmOperasyonSistemi.Views
                     else if (propName.Equals("HealthStatus", StringComparison.OrdinalIgnoreCase)) p.HealthStatus = newVal?.ToString() ?? string.Empty;
                     else if (propName.Equals("PassportType", StringComparison.OrdinalIgnoreCase)) p.PassportType = newVal?.ToString() ?? string.Empty;
                     else if (propName.Equals("BloodType", StringComparison.OrdinalIgnoreCase)) p.BloodType = newVal?.ToString() ?? string.Empty;
+                    else if (propName.Equals("Nationality", StringComparison.OrdinalIgnoreCase)) { p.Nationality = newVal?.ToString() ?? string.Empty; row.NationalityRaw = p.Nationality ?? string.Empty; row.Nationality = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.NationalityRaw) : row.NationalityRaw; }
                     db.Entry(p).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                     db.SaveChanges();
                     // update raw/display fields on the row so Havayolu mode keeps transformed view
@@ -2111,6 +2115,7 @@ namespace TurizmOperasyonSistemi.Views
                 case "tc kimlik":
                 case "tckimlik": return r => r.TcKimlikNo;
                 case "cinsiyet": return r => r.Gender;
+                case "uyruk": return r => r.Nationality;
                 case "telefon":
                 case "telefonno":
                 case "telefonnumarasi": return r => r.PhoneNumber;
@@ -2236,6 +2241,7 @@ namespace TurizmOperasyonSistemi.Views
                 "pasaport başlangıç tarihi" => "PassportStartDate",
                 "pasaport bitiş tarihi" => "PassportEndDate",
                 "kan grubu" => "BloodType",
+                "uyruk" => "Nationality",
                 "pasaport geldi mi ?" => "PassportArrived",
                 "aşı durumu" => "VaccineStatus",
                 "hastalık durumu" => "HealthStatus",
@@ -2303,6 +2309,8 @@ namespace TurizmOperasyonSistemi.Views
             public string AddressRaw { get; set; }
             public string PassportType { get; set; }
             public string PassportTypeRaw { get; set; }
+            public string Nationality { get; set; }
+            public string NationalityRaw { get; set; }
             public string PassportNumber { get; set; }
             public string PassportNumberRaw { get; set; }
             public string PassportStartDate { get; set; }
