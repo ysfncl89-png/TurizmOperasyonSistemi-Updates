@@ -34,6 +34,8 @@ namespace TurizmOperasyonSistemi.Views
         public RegistrationsWizardView()
         {
             InitializeComponent();
+            // Ensure database has PassportArrived column
+            try { new AppDbContext().EnsureRegistrationPassportArrivedColumnExists(); } catch { }
             LoadPersons();
             LoadRegistrations();
             LoadSettingsToComboBoxes();
@@ -181,6 +183,7 @@ namespace TurizmOperasyonSistemi.Views
                             VisaRequest = x.VisaRequest ?? string.Empty,
                             TicketRequest = x.TicketRequest ?? string.Empty,
                             CargoRequest = x.CargoRequest ?? string.Empty,
+                            PassportArrived = x.PassportArrived ?? string.Empty,
                             RoomType = x.RoomType ?? string.Empty,
                             DepartureCity = x.DepartureCity ?? string.Empty,
                             TransferStatus = x.HasTransfer ?? string.Empty,
@@ -550,6 +553,13 @@ namespace TurizmOperasyonSistemi.Views
                 DaysCountComboBox.SelectedItem = registration.DaysCount;
                 VisaRequestComboBox.SelectedItem = registration.VisaRequest;
                 TicketRequestComboBox.SelectedItem = registration.TicketRequest;
+                if (!string.IsNullOrWhiteSpace(registration.PassportArrived))
+                {
+                    if (registration.PassportArrived.Equals("Evet", StringComparison.CurrentCultureIgnoreCase))
+                        PassportArrivedYesRadio.IsChecked = true;
+                    else if (registration.PassportArrived.Equals("Hayır", StringComparison.CurrentCultureIgnoreCase) || registration.PassportArrived.Equals("Hayir", StringComparison.CurrentCultureIgnoreCase))
+                        PassportArrivedNoRadio.IsChecked = true;
+                }
                 CargoRequestComboBox.SelectedItem = registration.CargoRequest;
                 RoomTypeComboBox.SelectedItem = registration.RoomType;
                 JoinCityComboBox.SelectedItem = registration.DepartureCity;
@@ -716,6 +726,15 @@ namespace TurizmOperasyonSistemi.Views
                 QuickGenderComboBox.ItemsSource = activeSettings.Where(x => x.Type == "Cinsiyet").ToList();
                 QuickBloodTypeComboBox.ItemsSource = activeSettings.Where(x => x.Type == "Kan Grubu").ToList();
                 QuickAgeRangeComboBox.ItemsSource = activeSettings.Where(x => x.Type == "Yaş Aralığı").ToList();
+                // Pasaportu geldi mi? ayarları (Evet/Hayır seçenekleri) genelde AppSettings içinde tutuluyorsa buradan alınabilir
+                // Ancak burada doğrudan SettingsView'deki karttan alınacak. Wizard içine yalnızca seçenekleri yüklemek için AppSettings'te "Pasaportu Geldi mi ?" tipi aranır
+                var passportOptions = activeSettings.Where(x => x.Type == "Pasaportu Geldi mi ?").OrderBy(x => x.SortOrder).Select(x => x.Value).ToList();
+                // Eğer AppSettings içinde yoksa fallback olarak Evet/Hayır ekleyelim
+                if (passportOptions == null || passportOptions.Count == 0)
+                {
+                    passportOptions = new List<string> { "Evet", "Hayır" };
+                }
+                // No direct ComboBox for passport options in quick add; handled in main wizard load
             }
         }
 
@@ -948,6 +967,8 @@ namespace TurizmOperasyonSistemi.Views
             DaysCountComboBox.SelectedIndex = -1;
             VisaRequestComboBox.SelectedIndex = -1;
             TicketRequestComboBox.SelectedIndex = -1;
+            PassportArrivedYesRadio.IsChecked = false;
+            PassportArrivedNoRadio.IsChecked = false;
             CargoRequestComboBox.SelectedIndex = -1;
             RoomTypeComboBox.SelectedIndex = -1;
             JoinCityComboBox.SelectedIndex = -1;
@@ -1132,6 +1153,7 @@ namespace TurizmOperasyonSistemi.Views
                         registration.DaysCount = selectedDaysCount;
                         registration.VisaRequest = visaRequest;
                         registration.TicketRequest = ticketRequest;
+                        registration.PassportArrived = PassportArrivedYesRadio.IsChecked == true ? "Evet" : (PassportArrivedNoRadio.IsChecked == true ? "Hayır" : "");
                         registration.CargoRequest = cargoRequest;
                         registration.RoomType = roomType;
                         registration.DepartureCity = departureCity;
@@ -1595,6 +1617,7 @@ namespace TurizmOperasyonSistemi.Views
             public string VisaRequest { get; set; }
             public string TicketRequest { get; set; }
             public string CargoRequest { get; set; }
+            public string PassportArrived { get; set; }
             public string RoomType { get; set; }
             public string DepartureCity { get; set; }
             public string TransferStatus { get; set; }

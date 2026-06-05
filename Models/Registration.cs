@@ -35,6 +35,10 @@ namespace TurizmOperasyonSistemi.Models
         [Column("TicketStatus")]
         public string TicketRequest { get; set; }  // Bilet Talebi
 
+        // Pasaport geldi mi? (Evet/Hayır seçenekleri Ayarlar modülünden alınır)
+        [Column("PassportArrived")]
+        public string PassportArrived { get; set; }
+
         // 4. ADIM: Kargo Talebi
         [Column("CargoStatus")]
         public string CargoRequest { get; set; }   // Kargo Talebi

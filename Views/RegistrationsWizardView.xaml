@@ -494,6 +494,42 @@
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
+
+                                    <!-- Cell style for PassportArrived column only (Evet -> green neon, Hayır -> red neon) -->
+                                    <Style x:Key="PassportArrivedCellStyle" TargetType="DataGridCell">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="{StaticResource InputForegroundBrush}"/>
+                                        <Setter Property="Padding" Value="8,6"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding PassportArrived}" Value="Evet">
+                                                <Setter Property="Background" Value="#053D1A"/>
+                                                <Setter Property="Foreground" Value="#E6FFFA"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#10B981" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding PassportArrived}" Value="Hayır">
+                                                <Setter Property="Background" Value="#3A1216"/>
+                                                <Setter Property="Foreground" Value="#FFE6E6"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#EF4444" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding PassportArrived}" Value="Hayir">
+                                                <Setter Property="Background" Value="#3A1216"/>
+                                                <Setter Property="Foreground" Value="#FFE6E6"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#EF4444" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
                                 </DataGrid.Resources>
 
                                 <DataGrid.ContextMenu>
@@ -526,6 +562,43 @@
                                     <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="100"/>
                                     <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="110"/>
                                     <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="110"/>
+                                    <DataGridTextColumn Header="Pasaportu Geldi mi" Binding="{Binding PassportArrived}" Width="120">
+                                        <DataGridTextColumn.CellStyle>
+                                            <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="{StaticResource InputForegroundBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="Evet">
+                                                        <Setter Property="Background" Value="#053D1A"/>
+                                                        <Setter Property="Foreground" Value="#E6FFFA"/>
+                                                        <Setter Property="Effect">
+                                                            <Setter.Value>
+                                                                <DropShadowEffect Color="#10B981" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="Hayır">
+                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                        <Setter Property="Foreground" Value="#FFE6E6"/>
+                                                        <Setter Property="Effect">
+                                                            <Setter.Value>
+                                                                <DropShadowEffect Color="#EF4444" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="Hayir">
+                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                        <Setter Property="Foreground" Value="#FFE6E6"/>
+                                                        <Setter Property="Effect">
+                                                            <Setter.Value>
+                                                                <DropShadowEffect Color="#EF4444" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGridTextColumn.CellStyle>
+                                    </DataGridTextColumn>
                                     <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="110"/>
                                     <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="110"/>
                                     <DataGridTextColumn Header="Katılım Şehri" Binding="{Binding DepartureCity}" Width="120"/>
@@ -1140,6 +1213,17 @@
                                   Foreground="White"
                                   BorderBrush="#374151"
                                   Padding="8"/>
+
+                        <TextBlock Text="Pasaportu Geldi mi ?"
+                                   Foreground="#E6FCFF"
+                                   FontWeight="SemiBold"
+                                   FontSize="13"
+                                   Margin="0,10,0,6"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <RadioButton x:Name="PassportArrivedYesRadio" Content="Evet" GroupName="PassportArrivedGroup" Margin="0,0,18,0" Foreground="#E6FCFF" FontWeight="SemiBold" FontSize="13" />
+                            <RadioButton x:Name="PassportArrivedNoRadio" Content="Hayır" GroupName="PassportArrivedGroup" Foreground="#E6FCFF" FontWeight="SemiBold" FontSize="13" />
+                        </StackPanel>
 
                     </StackPanel>
 

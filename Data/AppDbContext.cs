@@ -21,6 +21,52 @@ namespace TurizmOperasyonSistemi.Data
             optionsBuilder.UseSqlite(@"Data Source=C:\TurizmDB\turizm.db");
         }
 
+        // Eğer Registrations tablosunda PassportArrived sütunu yoksa ekleyen yardımcı metot
+        public void EnsureRegistrationPassportArrivedColumnExists()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                bool hasColumn = false;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "PRAGMA table_info('Registrations');";
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            try
+                            {
+                                var colName = reader.GetString(1);
+                                if (string.Equals(colName, "PassportArrived", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    hasColumn = true;
+                                    break;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                }
+
+                if (!hasColumn)
+                {
+                    using (var addCmd = conn.CreateCommand())
+                    {
+                        addCmd.CommandText = "ALTER TABLE Registrations ADD COLUMN PassportArrived TEXT;";
+                        addCmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsureRegistrationPassportArrivedColumnExists hata: {ex.Message}");
+            }
+        }
+
         // Eğer Persons tablosunda Nationality sütunu yoksa ekleyen yardımcı metot
         public void EnsureNationalityColumnExists()
         {
