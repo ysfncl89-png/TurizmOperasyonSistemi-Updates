@@ -448,6 +448,7 @@
                                             <DataGridTextColumn Header="Id" Binding="{Binding Id}" Visibility="Collapsed"/>
                                             <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="150"/>
                                             <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="150"/>
+                                            <DataGridTextColumn Header="Uyruk" Binding="{Binding Nationality}" Width="120"/>
                                             <DataGridTextColumn Header="TC Kimlik No" Binding="{Binding TcKimlikNo}" Width="150"/>
                                             <DataGridTextColumn Header="Cinsiyet" Binding="{Binding Gender}" Width="90" IsReadOnly="True"/>
                                             <DataGridTextColumn Header="Doğum Tarihi" Binding="{Binding BirthDate, StringFormat=d}" Width="120"/>
@@ -523,28 +524,45 @@
                                                FontWeight="SemiBold"
                                                FontSize="13"/>
                                     <TextBox x:Name="FirstNameTextBox"
-                                             Height="36"/>
+                                             Height="36"
+                                             TextChanged="RequiredField_TextChanged"/>
 
                                     <TextBlock Text="Soyad"
                                                Foreground="#F8FAFC"
                                                FontWeight="SemiBold"
                                                FontSize="13"/>
                                     <TextBox x:Name="LastNameTextBox"
-                                             Height="36"/>
+                                             Height="36"
+                                             TextChanged="RequiredField_TextChanged"/>
+                                    <TextBlock Text="Uyruk"
+                                               Foreground="#F8FAFC"
+                                               FontWeight="SemiBold"
+                                               FontSize="13"/>
+                                    <ItemsControl x:Name="NationalityOptionsPanel">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                    <!-- Backwards-compatibility hidden combo (some code still expects NationalityComboBox) -->
+                                    <ComboBox x:Name="NationalityComboBox" Visibility="Collapsed"/>
 
                                     <TextBlock Text="TC Kimlik No"
                                                Foreground="#F8FAFC"
                                                FontWeight="SemiBold"
                                                FontSize="13"/>
                                     <TextBox x:Name="TcTextBox"
-                                             Height="36"/>
+                                             Height="36"
+                                             TextChanged="RequiredField_TextChanged"/>
 
                                     <TextBlock Text="Cinsiyet"
                                                Foreground="#F8FAFC"
                                                FontWeight="SemiBold"
                                                FontSize="13"/>
                                     <ComboBox x:Name="GenderComboBox"
-                                              Height="36"/>
+                                              Height="36"
+                                              SelectionChanged="GenderComboBox_SelectionChanged"/>
 
                                     <TextBlock Text="Doğum Tarihi"
                                                Foreground="#F8FAFC"
@@ -569,15 +587,6 @@
                                                FontSize="13"/>
                                     <ComboBox x:Name="AgeRangeComboBox"
                                               Height="36"/>
-
-                                    <TextBlock Text="Uyruk"
-                                               Foreground="#F8FAFC"
-                                               FontWeight="SemiBold"
-                                               FontSize="13"/>
-                                    <ComboBox x:Name="NationalityComboBox"
-                                              Height="36">
-                                        <ComboBoxItem IsSelected="True" Tag="{x:Null}">Seçiniz</ComboBoxItem>
-                                    </ComboBox>
                                 </StackPanel>
                             </Border>
 

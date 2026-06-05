@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using TurizmOperasyonSistemi.Data;
+using TurizmOperasyonSistemi.Models;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -49,6 +50,34 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using (var db = new AppDbContext())
                 {
+                    // Ensure Uyruk settings contain only the two new options (TC, Yabancı).
+                    // If legacy country list exists, replace it with the minimal two-choice set.
+                    var uyrukValues = db.AppSettings.Where(x => x.Type == "Uyruk").Select(x => x.Value).ToList();
+                    var desired = new[] { "TC", "Yabancı" };
+                    bool needsReplace = uyrukValues.Count == 0 || uyrukValues.Any(v => !desired.Contains(v));
+                    if (needsReplace)
+                    {
+                        var existing = db.AppSettings.Where(x => x.Type == "Uyruk").ToList();
+                        if (existing.Any())
+                        {
+                            db.AppSettings.RemoveRange(existing);
+                            db.SaveChanges();
+                        }
+
+                        int sort = 1;
+                        foreach (var val in desired)
+                        {
+                            db.AppSettings.Add(new AppSetting
+                            {
+                                Type = "Uyruk",
+                                Value = val,
+                                IsActive = true,
+                                SortOrder = sort++
+                            });
+                        }
+                        db.SaveChanges();
+                    }
+
                     var allSettings = db.AppSettings.ToList();
 
                     // 1. Zaten Gelenler (Tur, Grup, Oda, Dönem, Gün, Otel)

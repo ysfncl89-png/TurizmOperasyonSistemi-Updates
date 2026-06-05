@@ -28,6 +28,104 @@ namespace TurizmOperasyonSistemi.Views
             Editing
         }
 
+        private string currentNationalityValue = string.Empty;
+
+        private void LoadNationalityRadioOptions()
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var options = db.AppSettings.Where(x => x.Type == "Uyruk" && x.IsActive).OrderBy(x => x.SortOrder).Select(x => x.Value).ToList();
+                    var panel = FindName("NationalityOptionsPanel") as ItemsControl;
+                    if (panel == null) return;
+
+                    panel.Items.Clear();
+
+                    foreach (var opt in options)
+                    {
+                        var rb = new RadioButton
+                        {
+                            Content = opt,
+                            Margin = new Thickness(4, 0, 8, 0),
+                            Tag = opt,
+                            GroupName = "NationalityGroup"
+                        };
+
+                        rb.Checked += (s, e) =>
+                        {
+                            currentNationalityValue = (s as RadioButton)?.Tag as string ?? string.Empty;
+                            ApplyLiveRequiredHighlights();
+                        };
+
+                        panel.Items.Add(rb);
+                    }
+
+                    // Eğer 'TC' seçeneği varsa varsayılan olarak seçili yapalım
+                    var defaultRb = panel.Items.Cast<object>().OfType<RadioButton>().FirstOrDefault(r => string.Equals((r.Tag as string)?.Trim(), "TC", StringComparison.OrdinalIgnoreCase));
+                    if (defaultRb != null)
+                    {
+                        defaultRb.IsChecked = true;
+                        currentNationalityValue = defaultRb.Tag as string ?? string.Empty;
+                        ApplyLiveRequiredHighlights();
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // suppress recursion when we modify TcTextBox.Text programmatically
+        private bool _suppressTcTextChanged = false;
+
+        private bool RequiresTcForCurrentNationality()
+        {
+            return GetNationalityMode() == NationalityMode.Turkey;
+        }
+
+        private enum NationalityMode
+        {
+            Unknown,
+            Turkey,
+            Foreign
+        }
+
+        private NationalityMode GetNationalityMode()
+        {
+            var nat = !string.IsNullOrWhiteSpace(currentNationalityValue) ? currentNationalityValue : (NationalityComboBox?.Text ?? string.Empty);
+            if (string.IsNullOrWhiteSpace(nat) || string.Equals(nat, "Seçiniz", StringComparison.OrdinalIgnoreCase))
+                return NationalityMode.Unknown;
+
+            // normalize and remove diacritics
+            var s = nat.Trim().ToLowerInvariant();
+            string normalized = RemoveDiacritics(s).Replace(" ", string.Empty);
+
+            // recognize TC and Turkish variants
+            if (normalized == "tc" || normalized.Contains("turkiye") || normalized.Contains("turkey") || normalized.StartsWith("tur") || normalized.Contains("turk"))
+                return NationalityMode.Turkey;
+
+            // recognize yabanci (yabancı) and foreign variants
+            if (normalized.Contains("yabanci") || normalized.Contains("foreign"))
+                return NationalityMode.Foreign;
+
+            return NationalityMode.Foreign;
+        }
+
+        private static string RemoveDiacritics(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            var formD = text.Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder();
+            foreach (var ch in formD)
+            {
+                var uc = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch);
+                if (uc != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(ch);
+                }
+            }
+            return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
+        }
+
         private void DeleteSelectedButton_Click(object sender, RoutedEventArgs e)
         {
             if (!(PersonsDataGrid.SelectedItem is Person person))
@@ -110,20 +208,26 @@ namespace TurizmOperasyonSistemi.Views
             BloodComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
             PassportTypeComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
 
+            // Uyruk seçeneklerini radyo butonları olarak yükle
+            LoadNationalityRadioOptions();
+
             LoadPersons();
             ResetModuleToEntryState();
             UpdateSteps();
 
             Loaded += PersonsWizardView_Loaded;
             Loaded += PersonsWizardView_PostLoad;
+            SettingDialog.OnSettingsChanged += LoadNationalityRadioOptions;
             // subscribe to notifications from other modules (like Lists/Health edits)
             Services.NotificationCenter.Subscribe(OnNotification);
             Unloaded += (s, e) => Services.NotificationCenter.Unsubscribe(OnNotification);
             FirstNameTextBox.TextChanged += RequiredField_TextChanged;
             LastNameTextBox.TextChanged += RequiredField_TextChanged;
             TcTextBox.TextChanged += RequiredField_TextChanged;
+            PassportTextBox.TextChanged += RequiredField_TextChanged;
             GenderComboBox.SelectionChanged += GenderComboBox_SelectionChanged;
             NationalityComboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
+            NationalityComboBox.SelectionChanged += NationalityComboBox_SelectionChanged;
             ApplyLiveRequiredHighlights();
 
             _noMatchScrollTimer = new System.Windows.Threading.DispatcherTimer
@@ -383,22 +487,71 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ClearRequiredHighlights()
         {
+            // Eğer UI kontrolleri henüz oluşturulmadıysa çık
+            if (FirstNameTextBox == null && LastNameTextBox == null && TcTextBox == null && PassportTextBox == null && GenderComboBox == null)
+            {
+                return;
+            }
             FirstNameTextBox.Tag = null;
             LastNameTextBox.Tag = null;
             TcTextBox.Tag = null;
+            PassportTextBox.Tag = null;
             GenderComboBox.Tag = null;
         }
 
         private void ApplyLiveRequiredHighlights()
         {
-            FirstNameTextBox.Tag = string.IsNullOrWhiteSpace(FirstNameTextBox.Text) ? "RequiredError" : null;
-            LastNameTextBox.Tag = string.IsNullOrWhiteSpace(LastNameTextBox.Text) ? "RequiredError" : null;
-            TcTextBox.Tag = string.IsNullOrWhiteSpace(TcTextBox.Text) ? "RequiredError" : null;
-            GenderComboBox.Tag = GenderComboBox.SelectedIndex <= 0 ? "RequiredError" : null;
+            // UI öğeleri mevcut değilse (ör. constructor sırasında) güvenli çıkış
+            if (FirstNameTextBox == null)
+            {
+                return;
+            }
+            if (FirstNameTextBox != null) FirstNameTextBox.Tag = string.IsNullOrWhiteSpace(FirstNameTextBox.Text) ? "RequiredError" : null;
+            if (LastNameTextBox != null) LastNameTextBox.Tag = string.IsNullOrWhiteSpace(LastNameTextBox.Text) ? "RequiredError" : null;
+            if (GenderComboBox != null) GenderComboBox.Tag = GenderComboBox.SelectedIndex <= 0 ? "RequiredError" : null;
+
+            // TC veya Pasaport zorunluluğunu uyruk durumuna göre ayarla
+            var mode = GetNationalityMode();
+
+            // Her iki alan da düzenlenebilir kalsın; sadece zorunluluk Tag'leri uyruk durumuna göre ayarlansın
+            // TC yalnızca Türkiye seçiliyse düzenlenebilir; yabancıysa devre dışı bırakarak giriş engelle
+            if (TcTextBox != null)
+            {
+                // TC kutusu sadece yabancıysa kapatılsın; unknown (seçiniz) ve Türkiye durumunda yazılabilir olsun
+                TcTextBox.IsEnabled = mode != NationalityMode.Foreign;
+                if (mode == NationalityMode.Turkey)
+                {
+                    TcTextBox.Tag = string.IsNullOrWhiteSpace(TcTextBox.Text) ? "RequiredError" : null;
+                }
+                else
+                {
+                    TcTextBox.Tag = null;
+                }
+            }
+
+            // Pasaport her zaman düzenlenebilir olsun; fakat yabancıysa zorunlu etiketi konur
+            if (PassportTextBox != null)
+            {
+                PassportTextBox.IsEnabled = true;
+                if (mode == NationalityMode.Foreign)
+                {
+                    PassportTextBox.Tag = string.IsNullOrWhiteSpace(PassportTextBox.Text) ? "RequiredError" : null;
+                }
+                else
+                {
+                    PassportTextBox.Tag = null;
+                }
+            }
         }
 
         private bool HighlightMissingRequiredFields()
         {
+            // Eğer UI oluşturulmadıysa hata yokmuş gibi davran
+            if (FirstNameTextBox == null)
+            {
+                return false;
+            }
+
             ApplyLiveRequiredHighlights();
 
             bool hasError = false;
@@ -415,15 +568,27 @@ namespace TurizmOperasyonSistemi.Views
                 hasError = true;
             }
 
-            if (string.IsNullOrWhiteSpace(TcTextBox.Text))
+            var mode = GetNationalityMode();
+            if (mode == NationalityMode.Turkey)
             {
-                TcTextBox.Tag = "RequiredError";
-                hasError = true;
+                if (TcTextBox == null || string.IsNullOrWhiteSpace(TcTextBox.Text))
+                {
+                    if (TcTextBox != null) TcTextBox.Tag = "RequiredError";
+                    hasError = true;
+                }
+            }
+            else if (mode == NationalityMode.Foreign)
+            {
+                if (PassportTextBox == null || string.IsNullOrWhiteSpace(PassportTextBox.Text))
+                {
+                    if (PassportTextBox != null) PassportTextBox.Tag = "RequiredError";
+                    hasError = true;
+                }
             }
 
-            if (GenderComboBox.SelectedIndex <= 0 || string.Equals(GenderComboBox.Text, "Seçiniz", StringComparison.OrdinalIgnoreCase))
+            if (GenderComboBox == null || GenderComboBox.SelectedIndex <= 0 || string.Equals(GenderComboBox.Text, "Seçiniz", StringComparison.OrdinalIgnoreCase))
             {
-                GenderComboBox.Tag = "RequiredError";
+                if (GenderComboBox != null) GenderComboBox.Tag = "RequiredError";
                 hasError = true;
             }
 
@@ -706,39 +871,53 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     MessageBox.Show("Zorunlu alanları doldurun.");
 
-                    // Eksik alan hangi adımda ise kullanıcıyı o adıma taşıyalım ve ilgili kontrole odak verelim
+                    // Öncelikle 1. adımda (kimlik) eksik alanlar varsa kullanıcıyı oraya taşı
                     try
                     {
-                        // Kimlik bilgileri adımı (Step 1)
-                        if (FirstNameTextBox.Tag as string == "RequiredError" ||
-                            LastNameTextBox.Tag as string == "RequiredError" ||
-                            TcTextBox.Tag as string == "RequiredError" ||
-                            GenderComboBox.Tag as string == "RequiredError")
+                        var mode = GetNationalityMode();
+                        bool missingStep1 = (FirstNameTextBox != null && FirstNameTextBox.Tag as string == "RequiredError")
+                                            || (LastNameTextBox != null && LastNameTextBox.Tag as string == "RequiredError")
+                                            || (mode == NationalityMode.Turkey && TcTextBox != null && TcTextBox.Tag as string == "RequiredError")
+                                            || (GenderComboBox != null && GenderComboBox.Tag as string == "RequiredError");
+
+                        if (missingStep1)
                         {
                             currentStep = 1;
                             UpdateSteps();
 
                             // İlk eksik alanı bulup odak ver
-                            if (FirstNameTextBox.Tag as string == "RequiredError")
+                            if (FirstNameTextBox != null && FirstNameTextBox.Tag as string == "RequiredError")
                             {
                                 FirstNameTextBox.Focus();
                                 FirstNameTextBox.BringIntoView();
                             }
-                            else if (LastNameTextBox.Tag as string == "RequiredError")
+                            else if (LastNameTextBox != null && LastNameTextBox.Tag as string == "RequiredError")
                             {
                                 LastNameTextBox.Focus();
                                 LastNameTextBox.BringIntoView();
                             }
-                            else if (TcTextBox.Tag as string == "RequiredError")
+                            else if (mode == NationalityMode.Turkey && TcTextBox != null && TcTextBox.Tag as string == "RequiredError")
                             {
                                 TcTextBox.Focus();
                                 TcTextBox.BringIntoView();
                             }
-                            else if (GenderComboBox.Tag as string == "RequiredError")
+                            else if (GenderComboBox != null && GenderComboBox.Tag as string == "RequiredError")
                             {
                                 GenderComboBox.Focus();
                                 GenderComboBox.BringIntoView();
                             }
+
+                            return;
+                        }
+
+                        // Eğer 1.adım tamamsa ama pasaport gerekli ve eksikse pasaport adımına götür
+                        if (PassportTextBox != null && PassportTextBox.Tag as string == "RequiredError")
+                        {
+                            currentStep = 4;
+                            UpdateSteps();
+                            PassportTextBox.Focus();
+                            PassportTextBox.BringIntoView();
+                            return;
                         }
                     }
                     catch
@@ -749,36 +928,42 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
-                if (TcTextBox.Text.Length != 11)
+                // TC uzunluğunu yalnızca Türkiye vatandaşı için kontrol et (sadece rakamlar sayılır)
+                if (GetNationalityMode() == NationalityMode.Turkey)
                 {
-                    TcTextBox.Tag = "RequiredError";
-                    MessageBox.Show("TC Kimlik No 11 haneli olmalıdır.");
-                    try
+                    var digitsOnly = new string((TcTextBox.Text ?? string.Empty).Where(char.IsDigit).ToArray());
+                    if (digitsOnly.Length != 11)
                     {
-                        // Kullanıcıyı kimlik adımına getir ve TC textbox'a odak ver
-                        currentStep = 1;
-                        UpdateSteps();
-                        TcTextBox.Focus();
-                        TcTextBox.BringIntoView();
+                        TcTextBox.Tag = "RequiredError";
+                        MessageBox.Show("TC Kimlik No 11 haneli olmalıdır.");
+                        try
+                        {
+                            currentStep = 1;
+                            UpdateSteps();
+                            TcTextBox.Focus();
+                            TcTextBox.BringIntoView();
+                        }
+                        catch { }
+                        return;
                     }
-                    catch
-                    {
-                        // ignore
-                    }
-                    return;
                 }
 
                 using (var db = new AppDbContext())
                 {
-                    bool exists = selectedPersonId > 0
-                        ? db.Persons.Any(x => x.TcKimlikNo == TcTextBox.Text && x.Id != selectedPersonId)
-                        : db.Persons.Any(x => x.TcKimlikNo == TcTextBox.Text);
-
-                    if (exists)
+                    bool exists = false;
+                    if (GetNationalityMode() == NationalityMode.Turkey && !string.IsNullOrWhiteSpace(TcTextBox.Text))
                     {
-                        TcTextBox.Tag = "RequiredError";
-                        MessageBox.Show("Bu TC zaten kayıtlı.");
-                        return;
+                        var digitsOnly = new string(TcTextBox.Text.Where(char.IsDigit).ToArray());
+                        exists = selectedPersonId > 0
+                            ? db.Persons.Any(x => x.TcKimlikNo == digitsOnly && x.Id != selectedPersonId)
+                            : db.Persons.Any(x => x.TcKimlikNo == digitsOnly);
+
+                        if (exists)
+                        {
+                            TcTextBox.Tag = "RequiredError";
+                            MessageBox.Show("Bu TC zaten kayıtlı.");
+                            return;
+                        }
                     }
 
                     Person person;
@@ -805,13 +990,12 @@ namespace TurizmOperasyonSistemi.Views
 
                     person.FirstName = FirstNameTextBox.Text;
                     person.LastName = LastNameTextBox.Text;
-                    person.TcKimlikNo = TcTextBox.Text;
+                    person.TcKimlikNo = new string((TcTextBox.Text ?? string.Empty).Where(char.IsDigit).ToArray());
                     person.Gender = GenderComboBox.Text;
                     person.BirthDate = BirthDatePicker.SelectedDate ?? DateTime.Now;
                     person.AgeRange = AgeRangeComboBox.Text;
-                    person.Nationality = string.Equals(NationalityComboBox.Text, "Seçiniz", StringComparison.OrdinalIgnoreCase)
-                        ? null
-                        : NationalityComboBox.Text;
+                    var natValue = !string.IsNullOrWhiteSpace(currentNationalityValue) ? currentNationalityValue : NationalityComboBox.Text;
+                    person.Nationality = string.Equals(natValue, "Seçiniz", StringComparison.OrdinalIgnoreCase) ? null : natValue;
                     person.PhoneNumber = PhoneTextBox.Text;
                     person.Address = AddressTextBox.Text;
                     person.BloodType = BloodComboBox.Text;
@@ -852,7 +1036,64 @@ namespace TurizmOperasyonSistemi.Views
         {
             if (sender is TextBox textBox)
             {
+                // Öntanımlı davranış: boşsa RequiredError
                 textBox.Tag = string.IsNullOrWhiteSpace(textBox.Text) ? "RequiredError" : null;
+
+                if (textBox == TcTextBox)
+                {
+                    if (_suppressTcTextChanged) return;
+
+                    // Sadece rakamlara izin ver: bütün boşlukları ve harfleri çıkart
+                    var original = TcTextBox.Text ?? string.Empty;
+                    var digitsOnly = new string(original.Where(char.IsDigit).ToArray());
+
+                    if (digitsOnly != original)
+                    {
+                        try
+                        {
+                            _suppressTcTextChanged = true;
+                            var caret = TcTextBox.CaretIndex;
+                            TcTextBox.Text = digitsOnly;
+                            TcTextBox.CaretIndex = Math.Min(caret, TcTextBox.Text.Length);
+                        }
+                        finally
+                        {
+                            _suppressTcTextChanged = false;
+                        }
+                    }
+
+                    // Tag güncellemesi: 11 rakam değilse RequiredError
+                    TcTextBox.Tag = digitsOnly.Length == 11 ? null : "RequiredError";
+                    ApplyLiveRequiredHighlights();
+                    return;
+                }
+
+                // Eğer Pasaport alanı değiştiyse gereksinimleri tekrar uygula
+                if (textBox == PassportTextBox)
+                {
+                    ApplyLiveRequiredHighlights();
+                }
+            }
+        }
+
+        private void NationalityComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Uyruk değiştiğinde hangi alanın zorunlu olduğunu güncelle
+            ApplyLiveRequiredHighlights();
+
+            // Eğer yabancı seçildiyse TC'yi temizle ve devre dışı bırak (güvenlik)
+            var mode = GetNationalityMode();
+            if (mode == NationalityMode.Foreign)
+            {
+                if (TcTextBox != null)
+                {
+                    try
+                    {
+                        _suppressTcTextChanged = true;
+                        TcTextBox.Text = string.Empty;
+                    }
+                    finally { _suppressTcTextChanged = false; }
+                }
             }
         }
 
