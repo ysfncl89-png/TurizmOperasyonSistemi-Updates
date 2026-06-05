@@ -1367,8 +1367,8 @@ namespace TurizmOperasyonSistemi.Views
                     propName = MapHeaderToProperty(header);
                 }
 
-                // If in Havayolu mode, do not allow double-click editing on Gender column
-                if (_currentMode == ViewMode.Havayolu && string.Equals(propName, "Gender", StringComparison.OrdinalIgnoreCase))
+                // In Genel mode, do not allow double-click editing on Gender column
+                if (_currentMode == ViewMode.Genel && string.Equals(propName, "Gender", StringComparison.OrdinalIgnoreCase))
                 {
                     return;
                 }
