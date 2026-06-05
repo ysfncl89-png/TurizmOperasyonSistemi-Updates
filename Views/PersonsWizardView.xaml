@@ -462,7 +462,6 @@
                                             <DataGridTextColumn Header="Kan Grubu" Binding="{Binding BloodType}" Width="90"/>
                                             <DataGridTextColumn Header="Hastalık Durumu" Binding="{Binding HealthStatus}" Width="150"/>
                                             <DataGridTextColumn Header="Aşı Durumu" Binding="{Binding VaccineStatus}" Width="130"/>
-                                            <DataGridTextColumn Header="Uyruk" Binding="{Binding Nationality}" Width="120"/>
                                             <DataGridCheckBoxColumn Header="Aktif" Binding="{Binding IsActive}" Width="70"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
