@@ -139,36 +139,62 @@ namespace TurizmOperasyonSistemi.Views
         {
             using (var db = new AppDbContext())
             {
-                
+                // Load registrations with related Person to decide whether to show TC or Pasaport
+                var regs = db.Registrations
+                    .Include(r => r.Person)
+                    .ToList();
 
-                _registrationItems = db.Registrations
-                    .Select(x => new RegistrationListItem
+                _registrationItems = regs
+                    .Select(x =>
                     {
-                        Id = x.Id,
-                        PersonFullName = x.Person != null
+                        string personFullName = x.Person != null
                             ? ((x.Person.FirstName ?? "") + " " + (x.Person.LastName ?? "")).Trim()
-                            : $"Kişi #{x.PersonId}",
-                        PersonTc = x.Person != null ? (x.Person.TcKimlikNo ?? "") : "",
-                        TourType = x.TourType ?? "",
-                        Period = x.Period ?? "",
-                        GroupType = x.GroupType ?? "",
-                        DaysCount = x.DaysCount ?? "",
-                        VisaRequest = x.VisaRequest ?? "",
-                        TicketRequest = x.TicketRequest ?? "",
-                        CargoRequest = x.CargoRequest ?? "",
-                        RoomType = x.RoomType ?? "",
-                        DepartureCity = x.DepartureCity ?? "",
-                        TransferStatus = x.HasTransfer ?? "",
-                        TransferCity = x.TransferCity ?? "",
-                        District = x.District ?? "",
-                        TotalPrice = x.TotalPrice,
-                        PaidAmount = x.PaidAmount,
-                        RemainingDebt = x.RemainingDebt,
-                        Currency = x.Currency ?? "",
-                        Reference = x.Reference ?? "",
-                        CreatedDate = x.CreatedDate,
-                        IsActive = x.IsActive,
-                        Status = string.IsNullOrWhiteSpace(x.Status) ? "Aktif" : x.Status
+                            : $"Kişi #{x.PersonId}";
+
+                        string personTcOrPassport = "";
+                        if (x.Person != null)
+                        {
+                            var nat = (x.Person.Nationality ?? string.Empty).Trim();
+                            var normalized = nat.ToLowerInvariant().Replace(" ", string.Empty)
+                                .Replace("ı","i").Replace("ğ","g").Replace("ü","u").Replace("ş","s").Replace("ö","o").Replace("ç","c");
+                            bool isTurkey = normalized == "tc" || normalized.Contains("turkiye") || normalized.Contains("turkey") || normalized.StartsWith("tur") || normalized.Contains("turk");
+
+                            if (isTurkey)
+                            {
+                                personTcOrPassport = x.Person.TcKimlikNo ?? string.Empty;
+                            }
+                            else
+                            {
+                                personTcOrPassport = x.Person.PassportNumber ?? string.Empty;
+                            }
+                        }
+
+                        return new RegistrationListItem
+                        {
+                            Id = x.Id,
+                            PersonFullName = personFullName,
+                            PersonTc = personTcOrPassport,
+                            TourType = x.TourType ?? string.Empty,
+                            Period = x.Period ?? string.Empty,
+                            GroupType = x.GroupType ?? string.Empty,
+                            DaysCount = x.DaysCount ?? string.Empty,
+                            VisaRequest = x.VisaRequest ?? string.Empty,
+                            TicketRequest = x.TicketRequest ?? string.Empty,
+                            CargoRequest = x.CargoRequest ?? string.Empty,
+                            RoomType = x.RoomType ?? string.Empty,
+                            DepartureCity = x.DepartureCity ?? string.Empty,
+                            TransferStatus = x.HasTransfer ?? string.Empty,
+                            TransferCity = x.TransferCity ?? string.Empty,
+                            District = x.District ?? string.Empty,
+                            TotalPrice = x.TotalPrice,
+                            PaidAmount = x.PaidAmount,
+                            RemainingDebt = x.RemainingDebt,
+                            Currency = x.Currency ?? string.Empty,
+                            Reference = x.Reference ?? string.Empty,
+                            CreatedDate = x.CreatedDate,
+                            IsActive = x.IsActive,
+                            Status = string.IsNullOrWhiteSpace(x.Status) ? "Aktif" : x.Status
+                        };
                     })
                     .OrderByDescending(x => x.Id)
                     .ToList();

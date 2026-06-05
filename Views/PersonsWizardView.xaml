@@ -547,7 +547,7 @@
                                     <!-- Backwards-compatibility hidden combo (some code still expects NationalityComboBox) -->
                                     <ComboBox x:Name="NationalityComboBox" Visibility="Collapsed"/>
 
-                                    <TextBlock Text="TC Kimlik No"
+                                    <TextBlock x:Name="TcLabel" Text="TC Kimlik No"
                                                Foreground="#F8FAFC"
                                                FontWeight="SemiBold"
                                                FontSize="13"/>

@@ -56,6 +56,18 @@ namespace TurizmOperasyonSistemi.Views
                         {
                             currentNationalityValue = (s as RadioButton)?.Tag as string ?? string.Empty;
                             ApplyLiveRequiredHighlights();
+                            try
+                            {
+                                var lbl = FindName("TcLabel") as TextBlock;
+                                if (lbl != null)
+                                {
+                                    lbl.Text = GetNationalityMode() == NationalityMode.Foreign ? "Pasaport numarası" : "TC Kimlik No";
+                                }
+                            }
+                            catch
+                            {
+                                // ignore
+                            }
                         };
 
                         panel.Items.Add(rb);
@@ -513,6 +525,20 @@ namespace TurizmOperasyonSistemi.Views
             // TC veya Pasaport zorunluluğunu uyruk durumuna göre ayarla
             var mode = GetNationalityMode();
 
+            // Güncelle: TC etiketini uyruk durumuna göre göster
+            try
+            {
+                var lbl = FindName("TcLabel") as TextBlock;
+                if (lbl != null)
+                {
+                    lbl.Text = mode == NationalityMode.Foreign ? "Pasaport numarası" : "TC Kimlik No";
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+
             // Her iki alan da düzenlenebilir kalsın; sadece zorunluluk Tag'leri uyruk durumuna göre ayarlansın
             // TC yalnızca Türkiye seçiliyse düzenlenebilir; yabancıysa devre dışı bırakarak giriş engelle
             if (TcTextBox != null)
@@ -842,9 +868,12 @@ namespace TurizmOperasyonSistemi.Views
 
         private void LoadPreview()
         {
+            var tcLabelText = "TC";
+            try { var lbl = FindName("TcLabel") as TextBlock; if (lbl != null) tcLabelText = lbl.Text; } catch { }
+
             PreviewTextBlock.Text =
                 "AD SOYAD : " + FirstNameTextBox.Text + " " + LastNameTextBox.Text +
-                "\nTC : " + TcTextBox.Text +
+                "\n" + tcLabelText + " : " + TcTextBox.Text +
                 "\nCİNSİYET : " + GenderComboBox.Text +
                 "\nDOĞUM TARİHİ : " + BirthDatePicker.SelectedDate?.ToShortDateString() +
                 "\nYAŞ : " + AgeTextBox.Text +
@@ -1094,6 +1123,19 @@ namespace TurizmOperasyonSistemi.Views
                     }
                     finally { _suppressTcTextChanged = false; }
                 }
+            }
+            // Ayrıca TC label'ını güncelle: yabancıysa "Pasaport numarası" göster
+            try
+            {
+                var lbl = FindName("TcLabel") as TextBlock;
+                if (lbl != null)
+                {
+                    lbl.Text = mode == NationalityMode.Foreign ? "Pasaport numarası" : "TC Kimlik No";
+                }
+            }
+            catch
+            {
+                // ignore
             }
         }
 
