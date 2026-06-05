@@ -89,9 +89,21 @@
            FontWeight="Bold"
            Foreground="White"
            Margin="0,0,0,25"/>
+
+            <DockPanel Margin="0,0,0,20">
+                <TextBox x:Name="SearchTextBox"
+                         Width="400"
+                         Height="36"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Left"
+                         Background="#0F172A"
+                         Foreground="White"
+                         Padding="8"
+                         TextChanged="SearchTextBox_TextChanged"/>
+            </DockPanel>
             
 
-            <WrapPanel ItemWidth="220"
+            <WrapPanel x:Name="SettingsWrapPanel" ItemWidth="220"
                        ItemHeight="120">
                 
 
@@ -111,6 +123,22 @@
                         Click="SettingButton_Click"/>
 
                 <Button Content="Pasaport Türü"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
+                <Button Content="Uyruk"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
+                <Button Content="Vize Durumu"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
+                <Button Content="Pasaportu Geldi mi ?"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
+                <Button Content="Bilet Durumu"
                         Style="{StaticResource SettingCardStyle}"
                         Click="SettingButton_Click"/>
 

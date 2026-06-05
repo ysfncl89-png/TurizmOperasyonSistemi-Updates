@@ -28,6 +28,20 @@ namespace TurizmOperasyonSistemi.Views
             LoadExistingSettingsIntoUi();
         }
 
+        private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string q = (SearchTextBox.Text ?? string.Empty).Trim().ToLower();
+
+            foreach (var child in SettingsWrapPanel.Children)
+            {
+                if (child is Button b)
+                {
+                    string text = (b.Content ?? string.Empty).ToString().ToLower();
+                    b.Visibility = string.IsNullOrEmpty(q) || text.Contains(q) ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
+        }
+
         // VERİTABANINDAN VERİLERİ ÇEKİP XAML'DEKİ LİSTELERE DOLDURAN SİHİRLİ METOT
         private void LoadExistingSettingsIntoUi()
         {
@@ -81,6 +95,18 @@ namespace TurizmOperasyonSistemi.Views
 
                     if (FindName("TransferCityListControl") is ItemsControl transferCityList)
                         transferCityList.ItemsSource = allSettings.Where(x => x.Type == "Aktarma Şehri").Select(x => x.Value).ToList();
+
+                    if (FindName("NationalityListControl") is ItemsControl nationalityList)
+                        nationalityList.ItemsSource = allSettings.Where(x => x.Type == "Uyruk").Select(x => x.Value).ToList();
+
+                    if (FindName("VisaStatusListControl") is ItemsControl visaStatusList)
+                        visaStatusList.ItemsSource = allSettings.Where(x => x.Type == "Vize Durumu").Select(x => x.Value).ToList();
+
+                    if (FindName("PassportArrivedListControl") is ItemsControl passportList)
+                        passportList.ItemsSource = allSettings.Where(x => x.Type == "Pasaportu Geldi mi ?").Select(x => x.Value).ToList();
+
+                    if (FindName("TicketStatusListControl") is ItemsControl ticketStatusList)
+                        ticketStatusList.ItemsSource = allSettings.Where(x => x.Type == "Bilet Durumu").Select(x => x.Value).ToList();
                 }
             }
             catch (Exception ex)
@@ -156,6 +182,12 @@ namespace TurizmOperasyonSistemi.Views
                     if (settingName.Contains("Otel")) settingType = "Otel Ekle";
                     else settingType = settingName;
                     break;
+            }
+
+            // Uyruk için özel isim eşlemesi
+            if (settingType == "Uyruk")
+            {
+                settingType = "Uyruk";
             }
 
             if (settingType == "Dönem")
