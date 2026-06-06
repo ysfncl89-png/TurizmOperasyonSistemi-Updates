@@ -33,6 +33,7 @@
             <Setter Property="IsReadOnly" Value="True"/>
         </Style>
         <conv:InverseBooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:StatusToBrushConverter x:Key="StatusToBrush" />
         <Style x:Key="ExportPopupButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#123046"/>
             <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}"/>
@@ -515,6 +516,19 @@
                           SelectionMode="Single"
                           RowHeight="36"
                           CanUserReorderColumns="True">
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <!-- keep selection subtle so cell templates (badges) remain visible -->
+                                    <Setter Property="Background" Value="#0B2432" />
+                                    <Setter Property="Foreground" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
 
                     <DataGrid.Columns>
 
@@ -572,7 +586,9 @@
                         <DataGridTemplateColumn Header="Bilet Durumu" Width="110">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding TicketStatusChoice}"/>
+                                    <Border x:Name="TicketBadge" CornerRadius="6" Padding="6" Margin="6,4" Background="{Binding TicketStatusChoice, Converter={StaticResource StatusToBrush}}" BorderBrush="{Binding TicketStatusChoice, Converter={StaticResource StatusToBrush}}" BorderThickness="1.6" MinHeight="34" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TicketStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                    </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
@@ -583,10 +599,12 @@
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="Vize Durumu" Width="110">
+                        <DataGridTemplateColumn Header="Vize Durumu" Width="140">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding VisaStatusChoice}"/>
+                                    <Border x:Name="VisaBadge" CornerRadius="6" Padding="6" Margin="6,4" Background="{Binding VisaStatusChoice, Converter={StaticResource StatusToBrush}}" BorderBrush="{Binding VisaStatusChoice, Converter={StaticResource StatusToBrush}}" BorderThickness="1.6" MinHeight="34" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding VisaStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                    </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
