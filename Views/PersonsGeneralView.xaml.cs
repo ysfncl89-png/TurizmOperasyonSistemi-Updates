@@ -81,6 +81,8 @@ namespace TurizmOperasyonSistemi.Views
                                 prop.SetValue(reg, valueToSet);
                                 db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                                 db.SaveChanges();
+                                // update localized text on the row for UI and export
+                                try { row.PassportArrivedText = row.PassportArrived ? "Evet" : "Hayır"; } catch { row.PassportArrivedText = string.Empty; }
                                 ShowSaveToast("Pasaport durumu güncellendi.");
                                 ResultsDataGrid.Items.Refresh();
                                 return;
@@ -90,14 +92,18 @@ namespace TurizmOperasyonSistemi.Views
                     }
                 }
                 // If Registration doesn't have field, do not throw - just keep row state
-                    }
+            }
             catch { }
-                    // Also expose a localized text property for export/printing
-                    try
-                    {
-                        r.PassportArrivedText = r.PassportArrived ? "Evet" : "Hayır";
-                    }
-                    catch { r.PassportArrivedText = string.Empty; }
+            // Also expose a localized text property for export/printing
+            try
+            {
+                if (sender is FrameworkElement fe2)
+                {
+                    var row2 = fe2.DataContext as GeneralRow;
+                    if (row2 != null) row2.PassportArrivedText = row2.PassportArrived ? "Evet" : "Hayır";
+                }
+            }
+            catch { }
         }
 
         private async void ShowSaveToast(string message, bool isError = false)
@@ -1060,6 +1066,20 @@ namespace TurizmOperasyonSistemi.Views
                     string val = string.Empty;
                     try { val = getters[colIndex]?.Invoke(item) ?? string.Empty; } catch (Exception) { val = string.Empty; }
                     if (_currentMode == ViewMode.Havayolu) val = TransformForHavayolu(val);
+                    // If exported value for PassportArrived is empty, try to derive it from the object's PassportArrived property
+                    if (string.IsNullOrWhiteSpace(val))
+                    {
+                        try
+                        {
+                            var mappedProp = MapHeaderToProperty(raw);
+                            if (string.Equals(mappedProp, "PassportArrived", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var fallback = GetPropertyStringValue(item, "PassportArrived");
+                                if (!string.IsNullOrWhiteSpace(fallback)) val = fallback;
+                            }
+                        }
+                        catch { }
+                    }
                     dict[outHeader] = val;
                 }
                 rows.Add(dict);
@@ -1399,6 +1419,8 @@ namespace TurizmOperasyonSistemi.Views
                         }
                     }
                     catch { }
+                    // ensure localized text is explicitly set for both true and false
+                    try { r.PassportArrivedText = r.PassportArrived ? "Evet" : "Hayır"; } catch { r.PassportArrivedText = string.Empty; }
                     // If current mode is Havayolu, transform all textual fields to uppercase and remove Turkish characters
                     if (_currentMode == ViewMode.Havayolu)
                     {
@@ -2182,6 +2204,9 @@ namespace TurizmOperasyonSistemi.Views
                 case "pasaporttipi":
                 case "pasaporttur":
                 case "passporttype": return r => r.PassportType;
+                case "pasaportu geldi":
+                case "pasaportugeldimi":
+                case "pasaportugeldi": return r => r.PassportArrivedText;
                 case "pasaportno":
                 case "pasaportnumarasi":
                 case "passport": return r => r.PassportNumber;
@@ -2270,7 +2295,39 @@ namespace TurizmOperasyonSistemi.Views
         private string GetPropertyStringValue(object item, string header)
         {
             if (item == null) return string.Empty;
-            var prop = item.GetType().GetProperties().FirstOrDefault(p => string.Equals(p.Name, MapHeaderToProperty(header), StringComparison.OrdinalIgnoreCase));
+            var mapped = MapHeaderToProperty(header);
+            // Special-case PassportArrived: prefer PassportArrivedText then boolean property
+            if (string.Equals(mapped, "PassportArrived", StringComparison.OrdinalIgnoreCase))
+            {
+                var txtProp = item.GetType().GetProperty("PassportArrivedText", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                if (txtProp != null)
+                {
+                    var tv = txtProp.GetValue(item)?.ToString();
+                    if (!string.IsNullOrWhiteSpace(tv)) return tv;
+                }
+                var bprop = item.GetType().GetProperty("PassportArrived", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                if (bprop != null)
+                {
+                    var rawValX = bprop.GetValue(item);
+                    if (rawValX is bool boolVal) return boolVal ? "Evet" : "Hayır";
+                    if (rawValX is int intVal2) return intVal2 != 0 ? "Evet" : "Hayır";
+                    if (rawValX is long longVal2) return longVal2 != 0L ? "Evet" : "Hayır";
+                    if (rawValX is short shortVal2) return shortVal2 != 0 ? "Evet" : "Hayır";
+                    if (rawValX is byte byteVal2) return byteVal2 != 0 ? "Evet" : "Hayır";
+                    if (rawValX is decimal decVal2) return decVal2 != 0m ? "Evet" : "Hayır";
+                    if (rawValX is string strVal2)
+                    {
+                        var s2 = strVal2?.Trim().ToLowerInvariant() ?? string.Empty;
+                        if (int.TryParse(s2, out var ni2)) return ni2 != 0 ? "Evet" : "Hayır";
+                        if (bool.TryParse(s2, out var nb2)) return nb2 ? "Evet" : "Hayır";
+                        if (s2 == "var" || s2 == "evet" || s2 == "yes" || s2 == "1") return "Evet";
+                        return "Hayır";
+                    }
+                }
+                return string.Empty;
+            }
+
+            var prop = item.GetType().GetProperties().FirstOrDefault(p => string.Equals(p.Name, mapped, StringComparison.OrdinalIgnoreCase));
             if (prop == null)
             {
                 // fallback: try by header name
@@ -2327,6 +2384,8 @@ namespace TurizmOperasyonSistemi.Views
                 "adres" => "Address",
                 "pasaport tipi" => "PassportType",
                 "pasaport numarası" => "PassportNumber",
+                "pasaportu geldi mi ?" => "PassportArrived",
+                "pasaportu geldi" => "PassportArrived",
                 "pasaport başlangıç tarihi" => "PassportStartDate",
                 "pasaport bitiş tarihi" => "PassportEndDate",
                 "kan grubu" => "BloodType",
@@ -2470,9 +2529,36 @@ namespace TurizmOperasyonSistemi.Views
             public string Reference { get; set; }
             public string ReferenceRaw { get; set; }
             // Pasaport moduna özel: pasaport geldi mi?
-            public bool PassportArrived { get; set; }
+            private bool _passportArrived;
+            public bool PassportArrived
+            {
+                get => _passportArrived;
+                set
+                {
+                    if (_passportArrived != value)
+                    {
+                        _passportArrived = value;
+                        // update localized text when boolean changes
+                        PassportArrivedText = _passportArrived ? "Evet" : "Hayır";
+                        OnPropertyChanged(nameof(PassportArrived));
+                        OnPropertyChanged(nameof(PassportArrivedInverse));
+                    }
+                }
+            }
             // Localized text for export/display
-            public string PassportArrivedText { get; set; }
+            private string _passportArrivedText;
+            public string PassportArrivedText
+            {
+                get => _passportArrivedText;
+                set
+                {
+                    if (_passportArrivedText != value)
+                    {
+                        _passportArrivedText = value;
+                        OnPropertyChanged(nameof(PassportArrivedText));
+                    }
+                }
+            }
             // inverse helper for second checkbox binding
             public bool PassportArrivedInverse
             {

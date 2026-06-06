@@ -622,7 +622,7 @@
                                             </Style>
                                         </Border.Style>
                                         <Grid>
-                                            <TextBlock Text="{Binding PassportArrivedText}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding PassportArrivedText, FallbackValue=Hayır, TargetNullValue=Hayır}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
