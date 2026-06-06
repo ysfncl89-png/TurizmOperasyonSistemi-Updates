@@ -1472,6 +1472,8 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // debug: indicate double-click handler fired
+                try { ShowSaveToast("Çift tıklama algılandı"); } catch { }
                 var dep = (DependencyObject)e.OriginalSource;
                 var cell = FindParent<DataGridCell>(dep);
                 if (cell == null) return;
@@ -1483,6 +1485,8 @@ namespace TurizmOperasyonSistemi.Views
                     // fallback to header-based mapping
                     var header = (column.Header?.ToString() ?? string.Empty).Trim();
                     propName = MapHeaderToProperty(header);
+                    // debug: show detected property name so we can see why editing is blocked
+                    try { ShowSaveToast($"Düzenleme hedefi: {propName ?? "(null)"}"); } catch { }
                 }
 
                 // Do not allow double-click editing on Gender column in any mode
@@ -1493,8 +1497,10 @@ namespace TurizmOperasyonSistemi.Views
 
                 // allowed editable properties (union of person and registration editable fields)
                 var editableProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference",
-                                            "PassportType", "BloodType", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency" };
-                if (!editableProps.Contains(propName, StringComparer.OrdinalIgnoreCase)) return;
+                                            "PassportType", "BloodType", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency", "PassportArrived", "PassportArrivedText" };
+                var canEdit = editableProps.Contains(propName, StringComparer.OrdinalIgnoreCase) || editableProps.Contains((propName ?? string.Empty).Replace(" ", ""), StringComparer.OrdinalIgnoreCase);
+                try { ShowSaveToast($"Düzenlenebilir mi: {canEdit}"); } catch { }
+                if (!canEdit) return;
 
                 // make only this column editable and begin edit
                 ResultsDataGrid.IsReadOnly = false;
@@ -1507,7 +1513,38 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     ResultsDataGrid.SelectedItem = cell.DataContext;
                     ResultsDataGrid.CurrentCell = new DataGridCellInfo(cell.DataContext, column);
-                    ResultsDataGrid.BeginEdit();
+                    try { ResultsDataGrid.Focus(); } catch { }
+                    // debug: before BeginEdit
+                    try { ShowSaveToast($"BeginEdit öncesi: {column.Header}"); } catch { }
+                    var started = ResultsDataGrid.BeginEdit();
+                    try { ShowSaveToast(started ? "Edit başladı" : "BeginEdit başarısız"); } catch { }
+                    // If editing PassportArrived column, try to focus and open the ComboBox dropdown after edit begins
+                    try
+                    {
+                        var propKeyLower = propName?.Trim().ToLowerInvariant() ?? string.Empty;
+                        if (string.Equals(propKeyLower, "passportarrived", StringComparison.OrdinalIgnoreCase) || string.Equals(propKeyLower, "pasaportugeldi", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                try
+                                {
+                                    var content = column.GetCellContent(ResultsDataGrid.SelectedItem);
+                                    if (content != null)
+                                    {
+                                        var editCb = FindVisualChild<ComboBox>(content);
+                                        if (editCb != null)
+                                        {
+                                            editCb.Focus();
+                                            // open dropdown so user sees options immediately
+                                            editCb.IsDropDownOpen = true;
+                                        }
+                                    }
+                                }
+                                catch { }
+                            }), System.Windows.Threading.DispatcherPriority.Input);
+                        }
+                    }
+                    catch { }
                 }
             }
             catch { }
@@ -1592,6 +1629,17 @@ namespace TurizmOperasyonSistemi.Views
                     catch { }
                 }
                 if (cb == null) return;
+                // When preparing for edit, try to set initial selection to the row's current PassportArrivedText
+                try
+                {
+                    var row = e.Row.Item as GeneralRow;
+                    if (row != null)
+                    {
+                        // ensure items source is assigned before selecting
+                        // we will set SelectedItem after ItemsSource assigned below
+                    }
+                }
+                catch { }
                 using var db = new AppDbContext();
                 var all = db.AppSettings.Where(x => x.IsActive).OrderBy(x => x.SortOrder).ToList();
                 List<string> items = null;
@@ -1634,8 +1682,12 @@ namespace TurizmOperasyonSistemi.Views
 
                 if (expectedTypes == null)
                 {
-                    switch (headerNorm)
+                switch (headerNorm)
                     {
+                    // specific match for "Pasaportu Geldi mi" column must come before generic 'pasaport' match
+                    case var _ when headerNorm.Contains("pasaportugeld") || headerNorm.Contains("pasaportugeldimi") || headerNorm.Contains("pasaportugeldi"):
+                        expectedTypes = new List<string> { "Pasaportu Geldi mi", "Pasaport Geldi mi", "PassportArrived", "PasaportDurumu" };
+                        break;
                         case var _ when headerNorm.Contains("pasaport"):
                             expectedTypes = new List<string> { "Pasaport Türü", "Pasaport Tipi", "PassportType" };
                             break;
@@ -1695,6 +1747,29 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 // ensure items list is not null
                 if (items == null) items = new List<string>();
+                // If editing PassportArrived column, allow AppSettings type mapping to supply values, but also ensure boolean localized options exist
+                try
+                {
+                    var hnorm = header.Trim().ToLowerInvariant();
+                    if (hnorm.Contains("pasaportugeld") || hnorm.Contains("pasaportugeldimi") || hnorm.Contains("pasaportugeldi") || hnorm.Contains("pasaportugeldi"))
+                    {
+                        // prioritize any AppSettings-provided values but ensure default localized boolean options
+                        var defaults = new List<string> { "Seçiniz", "Evet", "Hayır" };
+                        var normalizedItems = new List<string>();
+                        foreach (var it in items)
+                        {
+                            if (string.IsNullOrWhiteSpace(it)) continue;
+                            var t = it.Trim();
+                            if (!normalizedItems.Contains(t, StringComparer.OrdinalIgnoreCase)) normalizedItems.Add(t);
+                        }
+                        foreach (var d in defaults)
+                        {
+                            if (!normalizedItems.Any(x => string.Equals(x, d, StringComparison.OrdinalIgnoreCase))) normalizedItems.Add(d);
+                        }
+                        items = normalizedItems;
+                    }
+                }
+                catch { }
                 // IMPORTANT: only use values coming from AppSettings for the mapped Types.
                 // If no values exist for the expected Type(s), do not populate unrelated options.
                 if (items.Count == 0)
@@ -1715,6 +1790,31 @@ namespace TurizmOperasyonSistemi.Views
                 if (!normalized.Any()) normalized.Add("Seçiniz");
                 if (!normalized.Contains("Seçiniz", StringComparer.OrdinalIgnoreCase)) normalized.Insert(0, "Seçiniz");
                 cb.ItemsSource = normalized;
+                // set initial selection for PassportArrived combobox to current localized text
+                try
+                {
+                    var row = e.Row.Item as GeneralRow;
+                    if (row != null && (header.Trim().ToLowerInvariant().Contains("pasaportugeld") || header.Trim().ToLowerInvariant().Contains("pasaportugeldimi") || header.Trim().ToLowerInvariant().Contains("pasaportugeldi")))
+                    {
+                        // prefer exact match ignoring case
+                        var match = normalized.FirstOrDefault(x => string.Equals(x, row.PassportArrivedText, StringComparison.OrdinalIgnoreCase));
+                        if (match != null) cb.SelectedItem = match;
+                        else cb.SelectedIndex = 0;
+                        // open dropdown so user immediately sees options
+                        try { Dispatcher.BeginInvoke(new Action(() => { cb.Focus(); cb.IsDropDownOpen = true; }), System.Windows.Threading.DispatcherPriority.Input); } catch { }
+                    }
+                    else
+                    {
+                        // for other fields attempt to select current value if present
+                        try
+                        {
+                            var dtc = e.Column as DataGridTemplateColumn;
+                            var val = GetBindingPathFromTemplate(dtc?.CellEditingTemplate) ?? GetBindingPathFromTemplate(dtc?.CellTemplate);
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
             }
             catch { }
         }
@@ -1815,10 +1915,68 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 using var db = new AppDbContext();
+                // Special handling when editing PassportArrivedText (ComboBox binds to PassportArrivedText)
+                if (string.Equals(propName, "PassportArrivedText", StringComparison.OrdinalIgnoreCase) || string.Equals(propName, "PassportArrived", StringComparison.OrdinalIgnoreCase))
+                {
+                    // determine boolean from newVal string
+                    bool boolVal = false;
+                    try
+                    {
+                        if (!string.IsNullOrWhiteSpace(newVal))
+                        {
+                            var s = newVal.Trim().ToLowerInvariant();
+                            if (s == "evet" || s == "var" || s == "yes" || s == "1" || s == "true") boolVal = true;
+                            else boolVal = false;
+                        }
+                        else
+                        {
+                            boolVal = row.PassportArrived;
+                        }
+                    }
+                    catch { boolVal = row.PassportArrived; }
+
+                    // update row UI state
+                    try { row.PassportArrived = boolVal; row.PassportArrivedText = boolVal ? "Evet" : "Hayır"; } catch { }
+
+                    // persist to DB if registration has the field
+                    try
+                    {
+                        var reg = db.Registrations.FirstOrDefault(x => x.Id == row.RegistrationId);
+                        if (reg != null)
+                        {
+                            var regProp = reg.GetType().GetProperty("PassportArrived");
+                            if (regProp != null)
+                            {
+                                object valueToSet = null;
+                                var targetType = regProp.PropertyType;
+                                if (targetType == typeof(bool) || targetType == typeof(bool?)) valueToSet = boolVal;
+                                else if (targetType == typeof(string)) valueToSet = boolVal ? "1" : "0";
+                                else if (targetType.IsPrimitive || (Nullable.GetUnderlyingType(targetType)?.IsPrimitive == true))
+                                {
+                                    try { valueToSet = Convert.ChangeType(boolVal ? 1 : 0, Nullable.GetUnderlyingType(targetType) ?? targetType); } catch { valueToSet = Convert.ChangeType(boolVal ? 1 : 0, typeof(int)); }
+                                }
+                                else valueToSet = boolVal;
+
+                                if (valueToSet != null)
+                                {
+                                    try { regProp.SetValue(reg, valueToSet); db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified; db.SaveChanges(); }
+                                    catch { }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+
+                    try { ResultsDataGrid.Items.Refresh(); } catch { }
+                    ShowSaveToast("Pasaport durumu güncellendi.");
+                    return;
+                }
                 // person properties (include Nationality)
                 var personProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "PassportType", "BloodType", "Nationality" };
                 // registration properties (including new combobox-backed fields)
                 var registrationProps = new[] { "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency" };
+                // Accept both PassportArrived and PassportArrivedText bindings as editable
+                var additionalEditable = new[] { "PassportArrived", "PassportArrivedText" };
 
                 if (personProps.Contains(propName, StringComparer.OrdinalIgnoreCase))
                 {
@@ -1980,6 +2138,15 @@ namespace TurizmOperasyonSistemi.Views
                     db.SaveChanges();
                     try { ResultsDataGrid.Items.Refresh(); } catch { }
                     ShowSaveToast("Kayıt bilgisi güncellendi.");
+                    // If the edited property was PassportArrived, also show an explicit save toast
+                    try
+                    {
+                        if (string.Equals(propName, "PassportArrived", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ShowSaveToast("Pasaport durumu güncellendi.");
+                        }
+                    }
+                    catch { }
                 }
             }
             catch (Exception ex)

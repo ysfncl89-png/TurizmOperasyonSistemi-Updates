@@ -627,6 +627,12 @@
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox x:Name="Cb_PassportArrived"
+                                              SelectedItem="{Binding PassportArrivedText, Mode=TwoWay}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
                         <DataGridTextColumn Header="Pasaport Başlangıç tarihi"
