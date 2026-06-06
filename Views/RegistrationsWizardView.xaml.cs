@@ -18,7 +18,8 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class RegistrationsWizardView
     {
-        private const int MaxStep = 9;
+        private bool _isApplyingAutoSelection = false;
+        private const int MaxStep = 10;
         private int currentStep = 1;
         private int selectedPersonId = 0;
         private int editingRegistrationId = 0;
@@ -932,6 +933,7 @@ namespace TurizmOperasyonSistemi.Views
             Step7Grid.Visibility = Visibility.Collapsed;
             Step8Grid.Visibility = Visibility.Collapsed;
             Step9Grid.Visibility = Visibility.Collapsed;
+            Step10Grid.Visibility = Visibility.Collapsed;
             BackButton.Visibility = Visibility.Collapsed;
             ToggleActiveButton.Visibility = Visibility.Collapsed;
             NextButton.Visibility = Visibility.Collapsed;
@@ -1082,13 +1084,14 @@ namespace TurizmOperasyonSistemi.Views
                 case 6: Step6Grid.Visibility = Visibility.Visible; break;
                 case 7: Step7Grid.Visibility = Visibility.Visible; break;
                 case 8: Step8Grid.Visibility = Visibility.Visible; break;
-                case 9:
-                    Step9Grid.Visibility = Visibility.Visible;
+                case 9: Step9Grid.Visibility = Visibility.Visible; break;
+                case 10:
+                    Step10Grid.Visibility = Visibility.Visible;
                     break;
             }
 
-            var stepBorders = new[] { Step1Border, Step2Border, Step3Border, Step4Border, Step5Border, Step6Border, Step7Border, Step8Border, Step9Border };
-            var stepTexts = new[] { Step1Text, Step2Text, Step3Text, Step4Text, Step5Text, Step6Text, Step7Text, Step8Text, Step9Text };
+            var stepBorders = new[] { Step1Border, Step2Border, Step3Border, Step4Border, Step5Border, Step6Border, Step7Border, Step8Border, Step9Border, Step10Border };
+            var stepTexts = new[] { Step1Text, Step2Text, Step3Text, Step4Text, Step5Text, Step6Text, Step7Text, Step8Text, Step9Text, Step10Text };
 
             for (int i = 0; i < stepBorders.Length; i++)
             {
@@ -1411,8 +1414,8 @@ namespace TurizmOperasyonSistemi.Views
                 }
             }
 
-            // ✅ 8. adımdan 9. adıma geçerken önizleme oluştur
-            if (currentStep == 8)
+            // ✅ 9. adımdan 10. adıma geçerken önizleme oluştur
+            if (currentStep == 9)
             {
                 string selectedPersonName = "Seçilmedi";
 
@@ -1493,7 +1496,7 @@ namespace TurizmOperasyonSistemi.Views
                     $"👉 Lütfen bilgilerin doğruluğunu onaylayın. " +
                     $"'Kaydet' butonuna bastığınızda bu operasyon listeye eklenecektir.";
 
-                SwitchToStep(9);
+                SwitchToStep(10);
                 NextButton.Content = "💾 Kaydet ve Bitir";
 
                 return;
@@ -1662,13 +1665,126 @@ namespace TurizmOperasyonSistemi.Views
                         FontSize = 13
                     };
 
-                    rb.Checked += (s, e) => { /* handled when saving */ };
+                    rb.Checked += PassportArrivedRadio_Checked;
                     PassportArrivedOptionsPanel.Children.Add(rb);
                 }
             }
             catch
             {
                 // ignore
+            }
+        }
+
+        private void PassportArrivedRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            // When passport arrival selection changes, evaluate visa/passport related rules
+            EvaluateVisaPassportRules();
+        }
+
+        private void VisaRequestComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            EvaluateVisaPassportRules();
+        }
+
+        private string NormalizeForComparison(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            return input.Trim().ToLowerInvariant()
+                .Replace('ı','i').Replace('ğ','g').Replace('ü','u').Replace('ş','s').Replace('ö','o').Replace('ç','c');
+        }
+
+        private void EvaluateVisaPassportRules()
+        {
+            if (_isApplyingAutoSelection) return;
+
+            try
+            {
+                _isApplyingAutoSelection = true;
+
+                var visaReq = VisaRequestComboBox?.SelectedItem?.ToString() ?? string.Empty;
+                var visaReqNorm = NormalizeForComparison(visaReq);
+
+                // find currently selected passport option
+                var selectedPassportRb = PassportArrivedOptionsPanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true);
+                var passportText = selectedPassportRb?.Content?.ToString() ?? string.Empty;
+                var passportNorm = NormalizeForComparison(passportText);
+
+                // helper: set visa status radio by contains match
+                void SetVisaStatusContains(params string[] candidates)
+                {
+                    foreach (var c in candidates)
+                    {
+                        var found = VisaStatusOptionsPanel.Children.OfType<RadioButton>()
+                            .FirstOrDefault(r => NormalizeForComparison(r.Content?.ToString() ?? string.Empty).Contains(NormalizeForComparison(c)));
+
+                        if (found != null)
+                        {
+                            found.IsChecked = true;
+                            return;
+                        }
+                    }
+                }
+
+                // helper: set passport radio by contains match
+                void SetPassportContains(params string[] candidates)
+                {
+                    foreach (var c in candidates)
+                    {
+                        var found = PassportArrivedOptionsPanel.Children.OfType<RadioButton>()
+                            .FirstOrDefault(r => NormalizeForComparison(r.Content?.ToString() ?? string.Empty).Contains(NormalizeForComparison(c)));
+                        if (found != null)
+                        {
+                            found.IsChecked = true;
+                            return;
+                        }
+                    }
+                }
+
+                // RULE 3: Visa will be taken by traveler themself -> force set both passport and visa status when matched
+                if (!string.IsNullOrWhiteSpace(visaReqNorm) && (visaReqNorm.Contains("kendisi") || visaReqNorm.Contains("kendi")))
+                {
+                    // set passport option to 'pasaport vermeyecek' if available
+                    SetPassportContains("vermeyecek", "pasaport vermeyecek", "verme");
+                    // force set visa status to 'vizeyi kendisi alacak' if available
+                    SetVisaStatusContains("kendisi", "vizeyi kendisi", "kendis", "vizeyi kendisi alacak");
+                    return;
+                }
+
+                // If visa request indicates we will take the visa (alacagiz / alacağız)
+                if (!string.IsNullOrWhiteSpace(visaReqNorm) && visaReqNorm.Contains("alac") && visaReqNorm.Contains("vize"))
+                {
+                    // If passport not arrived -> set visa status to 'Pasaport bekleniyor'
+                    if (!string.IsNullOrWhiteSpace(passportNorm) && passportNorm.Contains("hay"))
+                    {
+                        // only auto-select if no visa status already chosen
+                        var anyVisaChecked = VisaStatusOptionsPanel.Children.OfType<RadioButton>().Any(r => r.IsChecked == true);
+                        if (!anyVisaChecked)
+                        {
+                            SetVisaStatusContains("pasaport beklen", "pasaport bekleniyor", "bekleniyor", "pasaport bekleniyor");
+                        }
+                        return;
+                    }
+
+                    // If passport arrived -> set visa status to 'Vizesi Alınıyor' (allow user to change)
+                    if (!string.IsNullOrWhiteSpace(passportNorm) && passportNorm.Contains("evet"))
+                    {
+                        // only auto-select if no visa status already chosen
+                        var anyVisaChecked = VisaStatusOptionsPanel.Children.OfType<RadioButton>().Any(r => r.IsChecked == true);
+                        if (!anyVisaChecked)
+                        {
+                            SetVisaStatusContains("aliniyor", "alınıyor", "vizesi aliniyor", "vize aliniyor", "aliniyor");
+                        }
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                _isApplyingAutoSelection = false;
             }
         }
 

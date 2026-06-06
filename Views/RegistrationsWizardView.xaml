@@ -261,7 +261,7 @@
                     Padding="15,8"
                     Margin="5">
                 <TextBlock x:Name="Step3Text"
-                           Text="3. Vize Bilet"
+                           Text="3. Vize"
                            Foreground="#9CA3AF"/>
             </Border>
 
@@ -271,7 +271,7 @@
                     Padding="15,8"
                     Margin="5">
                 <TextBlock x:Name="Step4Text"
-                           Text="4. Kargo"
+                           Text="4. Bilet"
                            Foreground="#9CA3AF"/>
             </Border>
 
@@ -281,7 +281,7 @@
                     Padding="15,8"
                     Margin="5">
                 <TextBlock x:Name="Step5Text"
-                           Text="5. Oda Türü"
+                           Text="5. Kargo"
                            Foreground="#9CA3AF"/>
             </Border>
 
@@ -291,7 +291,7 @@
                     Padding="15,8"
                     Margin="5">
                 <TextBlock x:Name="Step6Text"
-                           Text="6. Katılım Şehri"
+                           Text="6. Oda Türü"
                            Foreground="#9CA3AF"/>
             </Border>
 
@@ -301,9 +301,8 @@
                     Padding="15,8"
                     Margin="5">
                 <TextBlock x:Name="Step7Text"
-                           Text="7. Fiyat Ödeme"
+                           Text="7. Katılım Şehri"
                            Foreground="#9CA3AF"/>
-               
             </Border>
 
             <Border x:Name="Step8Border"
@@ -312,7 +311,7 @@
                     Padding="15,8"
                     Margin="5">
                 <TextBlock x:Name="Step8Text"
-                           Text="8. Referans"
+                           Text="8. Fiyat Ödeme"
                            Foreground="#9CA3AF"/>
             </Border>
 
@@ -322,7 +321,17 @@
                     Padding="15,8"
                     Margin="5">
                 <TextBlock x:Name="Step9Text"
-                           Text="9. Önizleme"
+                           Text="9. Referans"
+                           Foreground="#9CA3AF"/>
+            </Border>
+
+            <Border x:Name="Step10Border"
+                    Background="#1F2937"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Margin="5">
+                <TextBlock x:Name="Step10Text"
+                           Text="10. Önizleme"
                            Foreground="#9CA3AF"/>
             </Border>
 
@@ -1328,7 +1337,7 @@
 
                     <StackPanel>
 
-                        <TextBlock Text="🛂 Vize ve Bilet Bilgileri"
+                        <TextBlock Text="🛂 Vize Bilgileri"
                                    Foreground="#06B6D4"
                                    FontSize="18"
                                    FontWeight="Bold"
@@ -1343,16 +1352,8 @@
                                   Foreground="White"
                                   BorderBrush="#374151"
                                   Padding="8"
-                                  Margin="0,5,0,15"/>
-
-                        <TextBlock Text="Bilet Talebi"
-                                   Foreground="#9CA3AF"/>
-
-                        <ComboBox x:Name="TicketRequestComboBox"
-                                  Background="#111827"
-                                  Foreground="White"
-                                  BorderBrush="#374151"
-                                  Padding="8"/>
+                                  Margin="0,5,0,15"
+                                  SelectionChanged="VisaRequestComboBox_SelectionChanged"/>
 
                         <TextBlock Text="Pasaportu Geldi mi ?"
                                    Foreground="#E6FCFF"
@@ -1375,6 +1376,40 @@
                                     Orientation="Horizontal"
                                     Margin="0,0,0,15"/>
 
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+            <Grid x:Name="Step4Grid" Visibility="Collapsed">
+
+                <Border Background="#1F2937"
+                        CornerRadius="8"
+                        Padding="25"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Center"
+                        Width="560">
+
+                    <StackPanel>
+
+                        <TextBlock Text="🎫 Bilet Bilgileri"
+                                   Foreground="#06B6D4"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Bilet Talebi"
+                                   Foreground="#9CA3AF"/>
+
+                        <ComboBox x:Name="TicketRequestComboBox"
+                                  Background="#111827"
+                                  Foreground="White"
+                                  BorderBrush="#374151"
+                                  Padding="8"
+                                  Margin="0,5,0,15"/>
+
                         <TextBlock Text="Bilet Durumu"
                                    Foreground="#E6FCFF"
                                    FontWeight="SemiBold"
@@ -1390,7 +1425,7 @@
 
             </Grid>
 
-            <Grid x:Name="Step4Grid" Visibility="Collapsed">
+            <Grid x:Name="Step5Grid" Visibility="Collapsed">
 
                 <Border Background="#1F2937"
                         CornerRadius="8"
@@ -1423,7 +1458,7 @@
 
             </Grid>
 
-            <Grid x:Name="Step5Grid" Visibility="Collapsed">
+            <Grid x:Name="Step6Grid" Visibility="Collapsed">
 
                 <Border Background="#1F2937"
                         CornerRadius="8"
@@ -1456,7 +1491,7 @@
 
             </Grid>
 
-            <Grid x:Name="Step6Grid" Visibility="Collapsed">
+            <Grid x:Name="Step7Grid" Visibility="Collapsed">
 
                 <Border Background="#1F2937"
                         CornerRadius="8"
@@ -1482,8 +1517,6 @@
           BorderBrush="#374151"
           Padding="8"
           Margin="0,5,0,15"/>
-
-                        
 
                         <TextBlock Text="Aktarma Var mı?"
                                    Foreground="#9CA3AF"/>
@@ -1526,7 +1559,7 @@
 
             </Grid>
 
-            <Grid x:Name="Step7Grid" Visibility="Collapsed">
+            <Grid x:Name="Step8Grid" Visibility="Collapsed">
 
                 <Border Background="#1F2937"
                         CornerRadius="8"
@@ -1592,7 +1625,7 @@
 
             </Grid>
 
-            <Grid x:Name="Step8Grid" Visibility="Collapsed">
+            <Grid x:Name="Step9Grid" Visibility="Collapsed">
 
                 <Border Background="#1F2937"
                         CornerRadius="8"
@@ -1625,7 +1658,7 @@
 
             </Grid>
 
-            <Grid x:Name="Step9Grid" Visibility="Collapsed">
+            <Grid x:Name="Step10Grid" Visibility="Collapsed">
 
                 <Border Background="#1F2937"
                         CornerRadius="8"
