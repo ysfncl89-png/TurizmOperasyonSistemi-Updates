@@ -192,7 +192,11 @@ namespace TurizmOperasyonSistemi.Views
                 if (x.PassportArrived.HasValue)
                 {
                     // Try to resolve stored integer to AppSetting value when possible
-                    var setting = db.AppSettings.FirstOrDefault(s => s.Id == x.PassportArrived.Value);
+                    // IMPORTANT: restrict lookup to the specific AppSetting type so we don't
+                    // accidentally pick an AppSetting from another type (e.g. Cinsiyet) that
+                    // happens to share the same Id. This was causing values like "Erkek"
+                    // to appear in the Pasaportu Geldi mi column.
+                    var setting = db.AppSettings.FirstOrDefault(s => s.Id == x.PassportArrived.Value && s.Type == "Pasaportu Geldi mi ?");
                     if (setting != null)
                     {
                         passportArrivedStr = setting.Value ?? string.Empty;
