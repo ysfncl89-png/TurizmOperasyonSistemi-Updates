@@ -34,6 +34,10 @@ namespace TurizmOperasyonSistemi.Models
         public string VisaRequest { get; set; }    // Vize Talebi
         [Column("TicketStatus")]
         public string TicketRequest { get; set; }  // Bilet Talebi
+        [Column("VisaStatusChoice")]
+        public string VisaStatusChoice { get; set; }   // Vize Durumu
+        [Column("TicketStatusChoice")]
+        public string TicketStatusChoice { get; set; } // Bilet Durumu
 
         // Pasaport geldi mi? (Evet/Hayır seçenekleri Ayarlar modülünden alınır)
         [Column("PassportArrived")]

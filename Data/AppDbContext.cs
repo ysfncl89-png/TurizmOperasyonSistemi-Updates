@@ -68,6 +68,143 @@ namespace TurizmOperasyonSistemi.Data
         }
 
         // Eğer Persons tablosunda Nationality sütunu yoksa ekleyen yardımcı metot
+        public void EnsureRegistrationStatusChoiceColumnsExist()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                EnsureColumnExists(conn, "Registrations", "VisaStatusChoice", "TEXT");
+                EnsureColumnExists(conn, "Registrations", "TicketStatusChoice", "TEXT");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsureRegistrationStatusChoiceColumnsExist hata: {ex.Message}");
+            }
+        }
+
+        public void NormalizeRegistrationNullValues()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                EnsureValue(conn, "Registrations", "TourType", "");
+                EnsureValue(conn, "Registrations", "Period", "");
+                EnsureValue(conn, "Registrations", "GroupType", "");
+                EnsureValue(conn, "Registrations", "DayCount", "");
+                EnsureValue(conn, "Registrations", "VisaStatus", "");
+                EnsureValue(conn, "Registrations", "TicketStatus", "");
+                EnsureValue(conn, "Registrations", "VisaStatusChoice", "");
+                EnsureValue(conn, "Registrations", "TicketStatusChoice", "");
+                EnsureValue(conn, "Registrations", "CargoStatus", "");
+                EnsureValue(conn, "Registrations", "RoomType", "");
+                EnsureValue(conn, "Registrations", "JoinCity", "");
+                EnsureValue(conn, "Registrations", "TransferStatus", "");
+                EnsureValue(conn, "Registrations", "TransferCity", "");
+                EnsureValue(conn, "Registrations", "District", "");
+                EnsureValue(conn, "Registrations", "CurrencyType", "");
+                EnsureValue(conn, "Registrations", "Reference", "");
+                EnsureValue(conn, "Registrations", "Status", "Aktif");
+                EnsureNumericValue(conn, "Registrations", "TourPrice", "0");
+                EnsureNumericValue(conn, "Registrations", "PaidAmount", "0");
+                EnsureNumericValue(conn, "Registrations", "RemainingDebt", "0");
+                EnsureDateValue(conn, "Registrations", "RegistrationDate");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"NormalizeRegistrationNullValues hata: {ex.Message}");
+            }
+        }
+
+        private void EnsureValue(DbConnection conn, string tableName, string columnName, string defaultValue)
+        {
+            if (!HasColumn(conn, tableName, columnName))
+                return;
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = $"UPDATE {tableName} SET {columnName} = @value WHERE {columnName} IS NULL;";
+                var param = cmd.CreateParameter();
+                param.ParameterName = "@value";
+                param.Value = defaultValue;
+                cmd.Parameters.Add(param);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void EnsureNumericValue(DbConnection conn, string tableName, string columnName, string defaultValue)
+        {
+            if (!HasColumn(conn, tableName, columnName))
+                return;
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = $"UPDATE {tableName} SET {columnName} = @value WHERE {columnName} IS NULL;";
+                var param = cmd.CreateParameter();
+                param.ParameterName = "@value";
+                param.Value = defaultValue;
+                cmd.Parameters.Add(param);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void EnsureDateValue(DbConnection conn, string tableName, string columnName)
+        {
+            if (!HasColumn(conn, tableName, columnName))
+                return;
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = $"UPDATE {tableName} SET {columnName} = CURRENT_TIMESTAMP WHERE {columnName} IS NULL;";
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private bool HasColumn(DbConnection conn, string tableName, string columnName)
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = $"PRAGMA table_info('{tableName}');";
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        try
+                        {
+                            var colName = reader.GetString(1);
+                            if (string.Equals(colName, columnName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
+                        }
+                        catch
+                        {
+                            // ignore malformed row
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private void EnsureColumnExists(DbConnection conn, string tableName, string columnName, string columnType)
+        {
+            if (!HasColumn(conn, tableName, columnName))
+            {
+                using (var addCmd = conn.CreateCommand())
+                {
+                    addCmd.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnType};";
+                    addCmd.ExecuteNonQuery();
+                }
+            }
+        }
+
         public void EnsureNationalityColumnExists()
         {
             try

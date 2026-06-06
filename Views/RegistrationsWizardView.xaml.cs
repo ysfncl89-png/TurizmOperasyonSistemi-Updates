@@ -29,13 +29,24 @@ namespace TurizmOperasyonSistemi.Views
         private List<RegistrationListItem> _registrationItems = new();
         private readonly BlurEffect _registrationBrowserBlur = new BlurEffect { Radius = 10 };
         private bool _isSyncingRegistrationPeriodGuide = false;
+        private string _selectedVisaStatusChoice = string.Empty;
+        private string _selectedTicketStatusChoice = string.Empty;
 
 
         public RegistrationsWizardView()
         {
             InitializeComponent();
             // Ensure database has PassportArrived column
-            try { new AppDbContext().EnsureRegistrationPassportArrivedColumnExists(); } catch { }
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    db.EnsureRegistrationPassportArrivedColumnExists();
+                    db.EnsureRegistrationStatusChoiceColumnsExist();
+                    db.NormalizeRegistrationNullValues();
+                }
+            }
+            catch { }
             LoadPersons();
             LoadRegistrations();
             LoadSettingsToComboBoxes();
@@ -188,6 +199,8 @@ namespace TurizmOperasyonSistemi.Views
                             DaysCount = x.DaysCount ?? string.Empty,
                             VisaRequest = x.VisaRequest ?? string.Empty,
                             TicketRequest = x.TicketRequest ?? string.Empty,
+                            VisaStatusChoice = x.VisaStatusChoice ?? string.Empty,
+                            TicketStatusChoice = x.TicketStatusChoice ?? string.Empty,
                             CargoRequest = x.CargoRequest ?? string.Empty,
                             PassportArrived = passportArrivedStr,
                             RoomType = x.RoomType ?? string.Empty,
@@ -567,6 +580,8 @@ namespace TurizmOperasyonSistemi.Views
                     PassportArrivedYesRadio.IsChecked = registration.PassportArrived.Value != 0;
                     PassportArrivedNoRadio.IsChecked = registration.PassportArrived.Value == 0;
                 }
+                SelectRadioButtonInPanel(VisaStatusOptionsPanel, registration.VisaStatusChoice);
+                SelectRadioButtonInPanel(TicketStatusOptionsPanel, registration.TicketStatusChoice);
                 CargoRequestComboBox.SelectedItem = registration.CargoRequest;
                 RoomTypeComboBox.SelectedItem = registration.RoomType;
                 JoinCityComboBox.SelectedItem = registration.DepartureCity;
@@ -976,6 +991,10 @@ namespace TurizmOperasyonSistemi.Views
             TicketRequestComboBox.SelectedIndex = -1;
             PassportArrivedYesRadio.IsChecked = false;
             PassportArrivedNoRadio.IsChecked = false;
+            ClearRadioButtons(VisaStatusOptionsPanel);
+            ClearRadioButtons(TicketStatusOptionsPanel);
+            _selectedVisaStatusChoice = string.Empty;
+            _selectedTicketStatusChoice = string.Empty;
             CargoRequestComboBox.SelectedIndex = -1;
             RoomTypeComboBox.SelectedIndex = -1;
             JoinCityComboBox.SelectedIndex = -1;
@@ -1093,6 +1112,8 @@ namespace TurizmOperasyonSistemi.Views
                     bool isEditMode = editingRegistrationId > 0;
                     string visaRequest = VisaRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
                     string ticketRequest = TicketRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
+                    string visaStatusChoice = _selectedVisaStatusChoice;
+                    string ticketStatusChoice = _selectedTicketStatusChoice;
                     string cargoRequest = CargoRequestComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
                     string roomType = RoomTypeComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
                     string departureCity = JoinCityComboBox.SelectedItem?.ToString() ?? "Seçilmedi";
@@ -1160,6 +1181,8 @@ namespace TurizmOperasyonSistemi.Views
                         registration.DaysCount = selectedDaysCount;
                         registration.VisaRequest = visaRequest;
                         registration.TicketRequest = ticketRequest;
+                        registration.VisaStatusChoice = string.IsNullOrWhiteSpace(visaStatusChoice) ? "Seçilmedi" : visaStatusChoice;
+                        registration.TicketStatusChoice = string.IsNullOrWhiteSpace(ticketStatusChoice) ? "Seçilmedi" : ticketStatusChoice;
                         // Store as integer-compatible value: 1 for Evet, 0 for Hayır, null for unspecified
                         if (PassportArrivedYesRadio.IsChecked == true) registration.PassportArrived = 1;
                         else if (PassportArrivedNoRadio.IsChecked == true) registration.PassportArrived = 0;
@@ -1512,6 +1535,8 @@ namespace TurizmOperasyonSistemi.Views
                         .Select(x => x.Value)
                         .ToList();
 
+                    LoadRegistrationStatusRadioOptions(db);
+
                     CargoRequestComboBox.ItemsSource = db.AppSettings
                         .Where(x => (x.Type == "Kargo Talebi" || x.Type == "CargoType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
@@ -1551,6 +1576,108 @@ namespace TurizmOperasyonSistemi.Views
                     "Hata",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
+            }
+        }
+
+        private void LoadRegistrationStatusRadioOptions(AppDbContext db)
+        {
+            _selectedVisaStatusChoice = string.Empty;
+            _selectedTicketStatusChoice = string.Empty;
+
+            var visaStatusOptions = db.AppSettings
+                .Where(x => (x.Type == "Vize Durumu" || x.Type == "VisaStatus") && x.IsActive)
+                .OrderBy(x => x.SortOrder)
+                .Select(x => x.Value)
+                .ToList();
+
+            if (!visaStatusOptions.Any())
+            {
+                visaStatusOptions = new List<string> { "Vize Çıktı", "Vize Çıkmadı" };
+            }
+
+            PopulateRadioButtonPanel(VisaStatusOptionsPanel, visaStatusOptions, "VisaStatusGroup", VisaStatusRadio_Checked);
+
+            var ticketStatusOptions = db.AppSettings
+                .Where(x => (x.Type == "Bilet Durumu" || x.Type == "TicketStatus") && x.IsActive)
+                .OrderBy(x => x.SortOrder)
+                .Select(x => x.Value)
+                .ToList();
+
+            if (!ticketStatusOptions.Any())
+            {
+                ticketStatusOptions = new List<string> { "Bileti geldi", "Bileti henüz gelmedi" };
+            }
+
+            PopulateRadioButtonPanel(TicketStatusOptionsPanel, ticketStatusOptions, "TicketStatusGroup", TicketStatusRadio_Checked);
+        }
+
+        private void PopulateRadioButtonPanel(StackPanel panel, IEnumerable<string> options, string groupName, RoutedEventHandler checkedHandler)
+        {
+            if (panel == null)
+                return;
+
+            panel.Children.Clear();
+
+            foreach (var option in options.Where(x => !string.IsNullOrWhiteSpace(x)))
+            {
+                var radioButton = new RadioButton
+                {
+                    Content = option,
+                    GroupName = groupName,
+                    Margin = new Thickness(0, 0, 18, 0),
+                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E6FCFF")),
+                    FontWeight = FontWeights.SemiBold,
+                    FontSize = 13
+                };
+
+                radioButton.Checked += checkedHandler;
+                panel.Children.Add(radioButton);
+            }
+        }
+
+        private void VisaStatusRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            _selectedVisaStatusChoice = (sender as RadioButton)?.Content?.ToString() ?? string.Empty;
+        }
+
+        private void TicketStatusRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            _selectedTicketStatusChoice = (sender as RadioButton)?.Content?.ToString() ?? string.Empty;
+        }
+
+        private void ClearRadioButtons(StackPanel panel)
+        {
+            if (panel == null)
+                return;
+
+            foreach (var radioButton in panel.Children.OfType<RadioButton>())
+            {
+                radioButton.IsChecked = false;
+            }
+        }
+
+        private void SelectRadioButtonInPanel(StackPanel panel, string selectedValue)
+        {
+            if (panel == null)
+                return;
+
+            foreach (var radioButton in panel.Children.OfType<RadioButton>())
+            {
+                bool isMatch = string.Equals(radioButton.Content?.ToString(), selectedValue, StringComparison.CurrentCultureIgnoreCase);
+                radioButton.IsChecked = isMatch;
+
+                if (isMatch)
+                {
+                    var normalizedValue = selectedValue?.Trim() ?? string.Empty;
+                    if (panel == VisaStatusOptionsPanel)
+                    {
+                        _selectedVisaStatusChoice = normalizedValue;
+                    }
+                    else if (panel == TicketStatusOptionsPanel)
+                    {
+                        _selectedTicketStatusChoice = normalizedValue;
+                    }
+                }
             }
         }
 
@@ -1626,6 +1753,8 @@ namespace TurizmOperasyonSistemi.Views
             public string DaysCount { get; set; }
             public string VisaRequest { get; set; }
             public string TicketRequest { get; set; }
+            public string VisaStatusChoice { get; set; }
+            public string TicketStatusChoice { get; set; }
             public string CargoRequest { get; set; }
             public string PassportArrived { get; set; }
             public string RoomType { get; set; }

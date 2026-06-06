@@ -562,6 +562,8 @@
                                     <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="100"/>
                                     <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="110"/>
                                     <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="110"/>
+                                    <DataGridTextColumn Header="Vize Durumu" Binding="{Binding VisaStatusChoice}" Width="120"/>
+                                    <DataGridTextColumn Header="Bilet Durumu" Binding="{Binding TicketStatusChoice}" Width="120"/>
                                     <DataGridTextColumn Header="Pasaportu Geldi mi" Binding="{Binding PassportArrived}" Width="120">
                                         <DataGridTextColumn.CellStyle>
                                             <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
@@ -1184,7 +1186,7 @@
                         Padding="25"
                         VerticalAlignment="Top"
                         HorizontalAlignment="Center"
-                        Width="500">
+                        Width="560">
 
                     <StackPanel>
 
@@ -1224,6 +1226,25 @@
                             <RadioButton x:Name="PassportArrivedYesRadio" Content="Evet" GroupName="PassportArrivedGroup" Margin="0,0,18,0" Foreground="#E6FCFF" FontWeight="SemiBold" FontSize="13" />
                             <RadioButton x:Name="PassportArrivedNoRadio" Content="Hayır" GroupName="PassportArrivedGroup" Foreground="#E6FCFF" FontWeight="SemiBold" FontSize="13" />
                         </StackPanel>
+
+                        <TextBlock Text="Vize Durumu"
+                                   Foreground="#E6FCFF"
+                                   FontWeight="SemiBold"
+                                   FontSize="13"
+                                   Margin="0,0,0,6"/>
+
+                        <StackPanel x:Name="VisaStatusOptionsPanel"
+                                    Orientation="Horizontal"
+                                    Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Bilet Durumu"
+                                   Foreground="#E6FCFF"
+                                   FontWeight="SemiBold"
+                                   FontSize="13"
+                                   Margin="0,0,0,6"/>
+
+                        <StackPanel x:Name="TicketStatusOptionsPanel"
+                                    Orientation="Horizontal"/>
 
                     </StackPanel>
 
