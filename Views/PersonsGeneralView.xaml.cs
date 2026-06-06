@@ -1394,37 +1394,70 @@ namespace TurizmOperasyonSistemi.Views
                         ReferenceRaw = reg.Reference ?? string.Empty,
                         Reference = reg.Reference ?? string.Empty
                     };
-                    // populate PassportArrived from registration if there's a field; fallback false
+                    // populate PassportArrived from registration if there's a field; support AppSetting-backed values
                     try
                     {
                         var arrivedProp = reg.GetType().GetProperty("PassportArrived");
                         if (arrivedProp != null)
                         {
                             var val = arrivedProp.GetValue(reg);
-                            if (val is bool b) r.PassportArrived = b;
-                            else if (val is int ix) r.PassportArrived = ix != 0;
-                            else if (val is long lx) r.PassportArrived = lx != 0L;
-                            else if (val is short sx) r.PassportArrived = sx != 0;
-                            else if (val is byte bx) r.PassportArrived = bx != 0;
-                            else if (val is decimal dec) r.PassportArrived = dec != 0m;
-                            else if (val is string sv)
+                            // If stored as an integer that references AppSettings.Id, prefer showing the AppSetting.Value
+                            int? numeric = null;
+                            if (val is int ix) numeric = ix;
+                            else if (val is long lx) numeric = (int)lx;
+                            else if (val is short sx) numeric = sx;
+                            else if (val is byte bx) numeric = bx;
+                            else if (val is decimal dec) numeric = (int)dec;
+                            else if (val is string sv && int.TryParse(sv, out var si)) numeric = si;
+
+                            if (numeric.HasValue)
                             {
-                                var s = sv?.Trim().ToLowerInvariant() ?? string.Empty;
-                                if (int.TryParse(s, out var ni)) r.PassportArrived = ni != 0;
-                                else if (bool.TryParse(s, out var nb)) r.PassportArrived = nb;
-                                else if (s == "var" || s == "evet" || s == "yes" || s == "1") r.PassportArrived = true;
-                                else r.PassportArrived = false;
+                                var setting = db.AppSettings.FirstOrDefault(s => s.Id == numeric.Value);
+                                if (setting != null)
+                                {
+                                    r.PassportArrivedText = setting.Value ?? string.Empty;
+                                    var s = (setting.Value ?? string.Empty).Trim().ToLowerInvariant();
+                                    r.PassportArrived = (s == "evet" || s == "var" || s == "yes" || s == "1");
+                                }
+                                else
+                                {
+                                    r.PassportArrived = numeric.Value != 0;
+                                    r.PassportArrivedText = r.PassportArrived ? "Evet" : "Hayır";
+                                }
+                            }
+                            else if (val is bool b)
+                            {
+                                r.PassportArrived = b;
+                                r.PassportArrivedText = b ? "Evet" : "Hayır";
+                            }
+                            else if (val is string sv2)
+                            {
+                                var s = sv2?.Trim() ?? string.Empty;
+                                // try to resolve string to AppSetting.Value first
+                                var setting = db.AppSettings.FirstOrDefault(sx => string.Equals(sx.Value, s, StringComparison.CurrentCultureIgnoreCase));
+                                if (setting != null)
+                                {
+                                    r.PassportArrivedText = setting.Value ?? string.Empty;
+                                    var sl = (setting.Value ?? string.Empty).Trim().ToLowerInvariant();
+                                    r.PassportArrived = (sl == "evet" || sl == "var" || sl == "yes" || sl == "1");
+                                }
+                                else
+                                {
+                                    var sl = s.ToLowerInvariant();
+                                    if (int.TryParse(sl, out var ni)) { r.PassportArrived = ni != 0; r.PassportArrivedText = r.PassportArrived ? "Evet" : "Hayır"; }
+                                    else if (bool.TryParse(sl, out var nb)) { r.PassportArrived = nb; r.PassportArrivedText = nb ? "Evet" : "Hayır"; }
+                                    else if (sl == "evet" || sl == "var" || sl == "yes") { r.PassportArrived = true; r.PassportArrivedText = "Evet"; }
+                                    else { r.PassportArrived = false; r.PassportArrivedText = "Hayır"; }
+                                }
                             }
                             else
                             {
-                                // fallback: treat any non-null as true
                                 r.PassportArrived = val != null;
+                                r.PassportArrivedText = r.PassportArrived ? "Evet" : "Hayır";
                             }
                         }
                     }
                     catch { }
-                    // ensure localized text is explicitly set for both true and false
-                    try { r.PassportArrivedText = r.PassportArrived ? "Evet" : "Hayır"; } catch { r.PassportArrivedText = string.Empty; }
                     // If current mode is Havayolu, transform all textual fields to uppercase and remove Turkish characters
                     if (_currentMode == ViewMode.Havayolu)
                     {
@@ -1957,15 +1990,35 @@ namespace TurizmOperasyonSistemi.Views
                             var regProp = reg.GetType().GetProperty("PassportArrived");
                             if (regProp != null)
                             {
+                                // Prefer to persist AppSetting.Id when the selected text matches an AppSetting.Value
                                 object valueToSet = null;
-                                var targetType = regProp.PropertyType;
-                                if (targetType == typeof(bool) || targetType == typeof(bool?)) valueToSet = boolVal;
-                                else if (targetType == typeof(string)) valueToSet = boolVal ? "1" : "0";
-                                else if (targetType.IsPrimitive || (Nullable.GetUnderlyingType(targetType)?.IsPrimitive == true))
+                                var selectedText = row.PassportArrivedText ?? (boolVal ? "Evet" : "Hayır");
+                                // try to find AppSetting by Value (case-insensitive)
+                                var setting = db.AppSettings.FirstOrDefault(s => s.IsActive && string.Equals(s.Value, selectedText, StringComparison.CurrentCultureIgnoreCase));
+                                if (setting != null)
                                 {
-                                    try { valueToSet = Convert.ChangeType(boolVal ? 1 : 0, Nullable.GetUnderlyingType(targetType) ?? targetType); } catch { valueToSet = Convert.ChangeType(boolVal ? 1 : 0, typeof(int)); }
+                                    // set numeric id into registration
+                                    var targetType = regProp.PropertyType;
+                                    if (targetType == typeof(int) || targetType == typeof(int?)) valueToSet = setting.Id;
+                                    else if (targetType == typeof(string)) valueToSet = setting.Id.ToString();
+                                    else if (targetType.IsPrimitive || (Nullable.GetUnderlyingType(targetType)?.IsPrimitive == true))
+                                    {
+                                        try { valueToSet = Convert.ChangeType(setting.Id, Nullable.GetUnderlyingType(targetType) ?? targetType); } catch { valueToSet = setting.Id; }
+                                    }
+                                    else valueToSet = setting.Id;
                                 }
-                                else valueToSet = boolVal;
+                                else
+                                {
+                                    // fallback: store as boolean/numeric as before
+                                    var targetType = regProp.PropertyType;
+                                    if (targetType == typeof(bool) || targetType == typeof(bool?)) valueToSet = boolVal;
+                                    else if (targetType == typeof(string)) valueToSet = boolVal ? "1" : "0";
+                                    else if (targetType.IsPrimitive || (Nullable.GetUnderlyingType(targetType)?.IsPrimitive == true))
+                                    {
+                                        try { valueToSet = Convert.ChangeType(boolVal ? 1 : 0, Nullable.GetUnderlyingType(targetType) ?? targetType); } catch { valueToSet = Convert.ChangeType(boolVal ? 1 : 0, typeof(int)); }
+                                    }
+                                    else valueToSet = boolVal;
+                                }
 
                                 if (valueToSet != null)
                                 {

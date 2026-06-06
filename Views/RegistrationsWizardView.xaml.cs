@@ -182,11 +182,21 @@ namespace TurizmOperasyonSistemi.Views
                             }
                         }
 
-                        string passportArrivedStr = string.Empty;
-                        if (x.PassportArrived.HasValue)
-                        {
-                            passportArrivedStr = x.PassportArrived.Value != 0 ? "Evet" : "Hayır";
-                        }
+                string passportArrivedStr = string.Empty;
+                if (x.PassportArrived.HasValue)
+                {
+                    // Try to resolve stored integer to AppSetting value when possible
+                    var setting = db.AppSettings.FirstOrDefault(s => s.Id == x.PassportArrived.Value);
+                    if (setting != null)
+                    {
+                        passportArrivedStr = setting.Value ?? string.Empty;
+                    }
+                    else
+                    {
+                        // Fallback to legacy boolean mapping: non-zero => Evet, zero => Hayır
+                        passportArrivedStr = x.PassportArrived.Value != 0 ? "Evet" : "Hayır";
+                    }
+                }
 
                         return new RegistrationListItem
                         {
@@ -573,12 +583,34 @@ namespace TurizmOperasyonSistemi.Views
                 VisaRequestComboBox.SelectedItem = registration.VisaRequest;
                 TicketRequestComboBox.SelectedItem = registration.TicketRequest;
                 // PassportArrived is stored as int? (1 = Evet, 0 = Hayır, null = unspecified)
-                PassportArrivedYesRadio.IsChecked = false;
-                PassportArrivedNoRadio.IsChecked = false;
+                ClearRadioButtons(PassportArrivedOptionsPanel);
                 if (registration.PassportArrived.HasValue)
                 {
-                    PassportArrivedYesRadio.IsChecked = registration.PassportArrived.Value != 0;
-                    PassportArrivedNoRadio.IsChecked = registration.PassportArrived.Value == 0;
+                    // Try to match by logical boolean first: 1 -> any option containing 'evet', 0 -> any containing 'hay' ; otherwise match by stored int Id if possible
+                    int val = registration.PassportArrived.Value;
+                    bool matched = false;
+                    foreach (var rb in PassportArrivedOptionsPanel.Children.OfType<RadioButton>())
+                    {
+                        var content = (rb.Content ?? string.Empty).ToString();
+                        if (val == 1 && content.IndexOf("evet", StringComparison.CurrentCultureIgnoreCase) >= 0)
+                        {
+                            rb.IsChecked = true; matched = true; break;
+                        }
+                        if (val == 0 && content.IndexOf("hay", StringComparison.CurrentCultureIgnoreCase) >= 0)
+                        {
+                            rb.IsChecked = true; matched = true; break;
+                        }
+                    }
+                    if (!matched)
+                    {
+                        foreach (var rb in PassportArrivedOptionsPanel.Children.OfType<RadioButton>())
+                        {
+                            if (rb.Tag != null && int.TryParse(rb.Tag.ToString(), out int id) && id == val)
+                            {
+                                rb.IsChecked = true; break;
+                            }
+                        }
+                    }
                 }
                 SelectRadioButtonInPanel(VisaStatusOptionsPanel, registration.VisaStatusChoice);
                 SelectRadioButtonInPanel(TicketStatusOptionsPanel, registration.TicketStatusChoice);
@@ -989,8 +1021,7 @@ namespace TurizmOperasyonSistemi.Views
             DaysCountComboBox.SelectedIndex = -1;
             VisaRequestComboBox.SelectedIndex = -1;
             TicketRequestComboBox.SelectedIndex = -1;
-            PassportArrivedYesRadio.IsChecked = false;
-            PassportArrivedNoRadio.IsChecked = false;
+            ClearRadioButtons(PassportArrivedOptionsPanel);
             ClearRadioButtons(VisaStatusOptionsPanel);
             ClearRadioButtons(TicketStatusOptionsPanel);
             _selectedVisaStatusChoice = string.Empty;
@@ -1183,10 +1214,25 @@ namespace TurizmOperasyonSistemi.Views
                         registration.TicketRequest = ticketRequest;
                         registration.VisaStatusChoice = string.IsNullOrWhiteSpace(visaStatusChoice) ? "Seçilmedi" : visaStatusChoice;
                         registration.TicketStatusChoice = string.IsNullOrWhiteSpace(ticketStatusChoice) ? "Seçilmedi" : ticketStatusChoice;
-                        // Store as integer-compatible value: 1 for Evet, 0 for Hayır, null for unspecified
-                        if (PassportArrivedYesRadio.IsChecked == true) registration.PassportArrived = 1;
-                        else if (PassportArrivedNoRadio.IsChecked == true) registration.PassportArrived = 0;
-                        else registration.PassportArrived = null;
+                        // Store PassportArrived as integer-compatible value using selected option's Tag (if present) or heuristic mapping
+                        registration.PassportArrived = null;
+                        var selectedPassportRb = PassportArrivedOptionsPanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true);
+                        if (selectedPassportRb != null)
+                        {
+                            // Prefer Tag numeric id when available
+                            if (selectedPassportRb.Tag != null && int.TryParse(selectedPassportRb.Tag.ToString(), out int numericId))
+                            {
+                                registration.PassportArrived = numericId;
+                            }
+                            else
+                            {
+                                var txt = (selectedPassportRb.Content ?? string.Empty).ToString();
+                                if (txt.IndexOf("evet", StringComparison.CurrentCultureIgnoreCase) >= 0)
+                                    registration.PassportArrived = 1;
+                                else if (txt.IndexOf("hay", StringComparison.CurrentCultureIgnoreCase) >= 0)
+                                    registration.PassportArrived = 0;
+                            }
+                        }
                         registration.CargoRequest = cargoRequest;
                         registration.RoomType = roomType;
                         registration.DepartureCity = departureCity;
@@ -1537,6 +1583,9 @@ namespace TurizmOperasyonSistemi.Views
 
                     LoadRegistrationStatusRadioOptions(db);
 
+                    // Load PassportArrived options from AppSettings
+                    LoadPassportArrivedOptions(db);
+
                     CargoRequestComboBox.ItemsSource = db.AppSettings
                         .Where(x => (x.Type == "Kargo Talebi" || x.Type == "CargoType") && x.IsActive)
                         .OrderBy(x => x.SortOrder)
@@ -1576,6 +1625,50 @@ namespace TurizmOperasyonSistemi.Views
                     "Hata",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
+            }
+
+        }
+
+        private void LoadPassportArrivedOptions(AppDbContext db)
+        {
+            try
+            {
+                var settings = db.AppSettings
+                    .Where(x => x.Type == "Pasaportu Geldi mi ?" && x.IsActive)
+                    .OrderBy(x => x.SortOrder)
+                    .ThenBy(x => x.Id)
+                    .ToList();
+
+                var options = settings.Select(x => (Id: x.Id, Value: x.Value)).ToList();
+
+                PassportArrivedOptionsPanel.Children.Clear();
+
+                if (!options.Any())
+                {
+                    // fallback
+                    options = new List<(int Id, string Value)> { (1, "Evet"), (0, "Hayır") };
+                }
+
+                foreach (var opt in options)
+                {
+                    var rb = new RadioButton
+                    {
+                        Content = opt.Value,
+                        Tag = opt.Id,
+                        GroupName = "PassportArrivedGroup",
+                        Margin = new Thickness(0, 0, 18, 0),
+                        Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E6FCFF")),
+                        FontWeight = FontWeights.SemiBold,
+                        FontSize = 13
+                    };
+
+                    rb.Checked += (s, e) => { /* handled when saving */ };
+                    PassportArrivedOptionsPanel.Children.Add(rb);
+                }
+            }
+            catch
+            {
+                // ignore
             }
         }
 

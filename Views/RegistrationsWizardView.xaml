@@ -1360,10 +1360,10 @@
                                    FontSize="13"
                                    Margin="0,10,0,6"/>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <RadioButton x:Name="PassportArrivedYesRadio" Content="Evet" GroupName="PassportArrivedGroup" Margin="0,0,18,0" Foreground="#E6FCFF" FontWeight="SemiBold" FontSize="13" />
-                            <RadioButton x:Name="PassportArrivedNoRadio" Content="Hayır" GroupName="PassportArrivedGroup" Foreground="#E6FCFF" FontWeight="SemiBold" FontSize="13" />
-                        </StackPanel>
+                        <!-- Dynamic radio options loaded from AppSettings (Type = "Pasaportu Geldi mi ?") -->
+                        <StackPanel x:Name="PassportArrivedOptionsPanel"
+                                    Orientation="Horizontal"
+                                    Margin="0,0,0,15" />
 
                         <TextBlock Text="Vize Durumu"
                                    Foreground="#E6FCFF"
