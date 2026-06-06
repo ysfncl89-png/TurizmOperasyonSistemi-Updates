@@ -622,61 +622,18 @@
                         <DataGridTemplateColumn Header="Pasaportu Geldi mi ?" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="PassportCellBorder" CornerRadius="6" Padding="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="4,2">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#0B1220" />
-                                                <Setter Property="BorderThickness" Value="0" />
-                                                <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Setter Property="SnapsToDevicePixels" Value="True" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="True">
-                                                        <Setter Property="Background">
-                                                            <Setter.Value>
-                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                                    <GradientStop Color="#08331E" Offset="0" />
-                                                                    <GradientStop Color="#0B7A52" Offset="1" />
-                                                                </LinearGradientBrush>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Setter Property="BorderBrush" Value="#0B7A52" />
-                                                        <Setter Property="BorderThickness" Value="1.2" />
-                                                        <Setter Property="Effect">
-                                                            <Setter.Value>
-                                                                <DropShadowEffect Color="{DynamicResource GlowColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.7" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="False">
-                                                        <Setter Property="Background">
-                                                            <Setter.Value>
-                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                                    <GradientStop Color="#4A0F12" Offset="0" />
-                                                                    <GradientStop Color="#7F1D1D" Offset="1" />
-                                                                </LinearGradientBrush>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Setter Property="BorderBrush" Value="#7F1D1D" />
-                                                        <Setter Property="BorderThickness" Value="1.2" />
-                                                        <Setter Property="Effect">
-                                                            <Setter.Value>
-                                                                <DropShadowEffect Color="#7F1D1D" BlurRadius="12" ShadowDepth="0" Opacity="0.5" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <Grid>
-                                            <TextBlock Text="{Binding PassportArrivedText, FallbackValue=Hayır, TargetNullValue=Hayır}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
-                                        </Grid>
+                                    <Border CornerRadius="6" Padding="6" Margin="6,4" MinHeight="34" VerticalAlignment="Center"
+                                            Background="{Binding PassportArrivedText, Converter={StaticResource StatusToBrush}}"
+                                            BorderBrush="{Binding PassportArrivedText, Converter={StaticResource StatusToBrush}}"
+                                            BorderThickness="1.6">
+                                        <TextBlock Text="{Binding PassportArrivedText, FallbackValue=Hayır, TargetNullValue=Hayır}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
                                     <ComboBox x:Name="Cb_PassportArrived"
-                                              SelectedItem="{Binding PassportArrivedText, Mode=TwoWay}" />
+                                              SelectedItem="{Binding PassportArrivedText, Mode=TwoWay}" Style="{StaticResource NeonCombo}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
