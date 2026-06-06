@@ -22,6 +22,7 @@ namespace TurizmOperasyonSistemi.Views
         private const int MaxStep = 10;
         private List<AppSetting> _passportArrivedOptionsAll = new();
         private List<string> _visaStatusOptionsAll = new();
+        private List<string> _ticketStatusOptionsAll = new();
         private int currentStep = 1;
         private int selectedPersonId = 0;
         private int editingRegistrationId = 0;
@@ -48,6 +49,8 @@ namespace TurizmOperasyonSistemi.Views
                     db.EnsureRegistrationStatusChoiceColumnsExist();
                     db.NormalizeRegistrationNullValues();
                 }
+
+
             }
             catch { }
             LoadPersons();
@@ -1591,6 +1594,10 @@ namespace TurizmOperasyonSistemi.Views
                         .Select(x => x.Value)
                         .ToList();
 
+                    // attach handler so ticket request changes filter ticket status options
+                    TicketRequestComboBox.SelectionChanged -= TicketRequestComboBox_SelectionChanged;
+                    TicketRequestComboBox.SelectionChanged += TicketRequestComboBox_SelectionChanged;
+
                     LoadRegistrationStatusRadioOptions(db);
 
                     // Load PassportArrived options from AppSettings
@@ -1716,6 +1723,21 @@ namespace TurizmOperasyonSistemi.Views
 
                 // update which options are visible based on current selections
                 ApplyDynamicVisaPassportOptionFiltering(visaReqNorm, passportNorm);
+
+                // If user changed visa request away from 'kendisi', clear any visa status that was auto-selected as 'kendisi'
+                if (!(string.IsNullOrWhiteSpace(visaReqNorm) && visaReqNorm.Length == 0))
+                {
+                    if (!visaReqNorm.Contains("kendisi") && !visaReqNorm.Contains("kendi"))
+                    {
+                        var curVisa = VisaStatusComboBox?.SelectedItem?.ToString() ?? string.Empty;
+                        if (!string.IsNullOrWhiteSpace(curVisa) && NormalizeForComparison(curVisa).Contains("kendisi"))
+                        {
+                            // clear previous kendisi selection so it doesn't persist when switching to other modes
+                            VisaStatusComboBox.SelectedIndex = -1;
+                            _selectedVisaStatusChoice = string.Empty;
+                        }
+                    }
+                }
 
                 // helper: set visa status combo selection by contains match
                 void SetVisaStatusContains(params string[] candidates)
@@ -1892,8 +1914,9 @@ namespace TurizmOperasyonSistemi.Views
                 ticketStatusOptions = new List<string> { "Bileti geldi", "Bileti henüz gelmedi" };
             }
 
-            // populate TicketStatusComboBox
-            TicketStatusComboBox.ItemsSource = ticketStatusOptions;
+            // populate TicketStatusComboBox and keep full list for filtering
+            _ticketStatusOptionsAll = ticketStatusOptions.ToList();
+            TicketStatusComboBox.ItemsSource = _ticketStatusOptionsAll;
         }
 
         private void PopulateRadioButtonPanel(StackPanel panel, IEnumerable<string> options, string groupName, RoutedEventHandler checkedHandler)
@@ -1934,6 +1957,63 @@ namespace TurizmOperasyonSistemi.Views
         private void TicketStatusComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedTicketStatusChoice = TicketStatusComboBox?.SelectedItem?.ToString() ?? string.Empty;
+        }
+
+        private void TicketRequestComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                var ticketReq = TicketRequestComboBox?.SelectedItem?.ToString() ?? string.Empty;
+                var norm = NormalizeForComparison(ticketReq);
+                // Inline filtering: show limited TicketStatus options based on ticket request
+                try
+                {
+                    if (_isApplyingAutoSelection) return;
+                    _isApplyingAutoSelection = true;
+
+                    var ticketList = _ticketStatusOptionsAll ?? new List<string>();
+
+                    if (!string.IsNullOrWhiteSpace(norm) && (norm.Contains("kendisi") || norm.Contains("kendi")))
+                    {
+                        ticketList = ticketList.Where(v => NormalizeForComparison(v ?? string.Empty).Contains("kendisi") || NormalizeForComparison(v ?? string.Empty).Contains("kendi")).ToList();
+                    }
+                    else if (!string.IsNullOrWhiteSpace(norm) && norm.Contains("alac"))
+                    {
+                        ticketList = ticketList.Where(v =>
+                        {
+                            var n = NormalizeForComparison(v ?? string.Empty);
+                            return n.Contains("geld") || n.Contains("gelm") || n.Contains("alin") || n.Contains("aliniyor") || n.Contains("cikti");
+                        }).ToList();
+                    }
+
+                    if (TicketStatusComboBox != null)
+                    {
+                        TicketStatusComboBox.ItemsSource = ticketList;
+                        if (TicketStatusComboBox.SelectedItem != null && (TicketStatusComboBox.SelectedItem.ToString() == null || !ticketList.Contains(TicketStatusComboBox.SelectedItem.ToString())))
+                        {
+                            TicketStatusComboBox.SelectedIndex = -1;
+                        }
+                        // If the ticket request implies the person will take the ticket themself, auto-select matching ticket status
+                        if (!string.IsNullOrWhiteSpace(norm) && (norm.Contains("kendisi") || norm.Contains("kendi")))
+                        {
+                            var auto = ticketList.FirstOrDefault(v => NormalizeForComparison(v ?? string.Empty).Contains("kendisi") || NormalizeForComparison(v ?? string.Empty).Contains("kendi"));
+                            if (auto != null)
+                            {
+                                TicketStatusComboBox.SelectedItem = auto;
+                                _selectedTicketStatusChoice = auto ?? string.Empty;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    _isApplyingAutoSelection = false;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void ClearRadioButtons(StackPanel panel)
