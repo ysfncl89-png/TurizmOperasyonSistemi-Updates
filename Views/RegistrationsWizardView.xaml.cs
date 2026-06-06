@@ -611,7 +611,12 @@ namespace TurizmOperasyonSistemi.Views
                     VisaStatusComboBox.SelectedItem = registration.VisaStatusChoice;
                     _selectedVisaStatusChoice = registration.VisaStatusChoice;
                 }
-                SelectRadioButtonInPanel(TicketStatusOptionsPanel, registration.TicketStatusChoice);
+                // Ticket status now a ComboBox
+                if (TicketStatusComboBox != null)
+                {
+                    TicketStatusComboBox.SelectedItem = registration.TicketStatusChoice;
+                    _selectedTicketStatusChoice = registration.TicketStatusChoice;
+                }
                 CargoRequestComboBox.SelectedItem = registration.CargoRequest;
                 RoomTypeComboBox.SelectedItem = registration.RoomType;
                 JoinCityComboBox.SelectedItem = registration.DepartureCity;
@@ -1024,7 +1029,9 @@ namespace TurizmOperasyonSistemi.Views
                 PassportArrivedComboBox.SelectedIndex = -1;
             if (VisaStatusComboBox != null)
                 VisaStatusComboBox.SelectedIndex = -1;
-            ClearRadioButtons(TicketStatusOptionsPanel);
+            if (TicketStatusComboBox != null)
+                TicketStatusComboBox.SelectedIndex = -1;
+            _selectedTicketStatusChoice = string.Empty;
             _selectedVisaStatusChoice = string.Empty;
             _selectedTicketStatusChoice = string.Empty;
             CargoRequestComboBox.SelectedIndex = -1;
@@ -1215,7 +1222,10 @@ namespace TurizmOperasyonSistemi.Views
                         registration.VisaRequest = visaRequest;
                         registration.TicketRequest = ticketRequest;
                         registration.VisaStatusChoice = string.IsNullOrWhiteSpace(visaStatusChoice) ? "Seçilmedi" : visaStatusChoice;
-                        registration.TicketStatusChoice = string.IsNullOrWhiteSpace(ticketStatusChoice) ? "Seçilmedi" : ticketStatusChoice;
+                // Ticket status now from TicketStatusComboBox
+                registration.TicketStatusChoice = string.IsNullOrWhiteSpace(ticketStatusChoice)
+                    ? (TicketStatusComboBox?.SelectedItem?.ToString() ?? "Seçilmedi")
+                    : ticketStatusChoice;
                         // Store PassportArrived using PassportArrivedComboBox.SelectedValue (AppSetting Id) or heuristic mapping
                         registration.PassportArrived = null;
                         if (PassportArrivedComboBox?.SelectedItem is AppSetting sel)
@@ -1882,7 +1892,8 @@ namespace TurizmOperasyonSistemi.Views
                 ticketStatusOptions = new List<string> { "Bileti geldi", "Bileti henüz gelmedi" };
             }
 
-            PopulateRadioButtonPanel(TicketStatusOptionsPanel, ticketStatusOptions, "TicketStatusGroup", TicketStatusRadio_Checked);
+            // populate TicketStatusComboBox
+            TicketStatusComboBox.ItemsSource = ticketStatusOptions;
         }
 
         private void PopulateRadioButtonPanel(StackPanel panel, IEnumerable<string> options, string groupName, RoutedEventHandler checkedHandler)
@@ -1920,6 +1931,11 @@ namespace TurizmOperasyonSistemi.Views
             _selectedTicketStatusChoice = (sender as RadioButton)?.Content?.ToString() ?? string.Empty;
         }
 
+        private void TicketStatusComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _selectedTicketStatusChoice = TicketStatusComboBox?.SelectedItem?.ToString() ?? string.Empty;
+        }
+
         private void ClearRadioButtons(StackPanel panel)
         {
             if (panel == null)
@@ -1941,14 +1957,8 @@ namespace TurizmOperasyonSistemi.Views
                 bool isMatch = string.Equals(radioButton.Content?.ToString(), selectedValue, StringComparison.CurrentCultureIgnoreCase);
                 radioButton.IsChecked = isMatch;
 
-                if (isMatch)
-                {
-                    var normalizedValue = selectedValue?.Trim() ?? string.Empty;
-                if (panel == TicketStatusOptionsPanel)
-                {
-                    _selectedTicketStatusChoice = normalizedValue;
-                }
-                }
+                // If a radio button is matched, do not attempt to infer ticket combo state here.
+                // Ticket status is now stored in TicketStatusComboBox; keep this helper focused on radio panels.
             }
         }
 
