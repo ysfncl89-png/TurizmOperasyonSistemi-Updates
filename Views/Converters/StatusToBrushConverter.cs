@@ -65,9 +65,10 @@ namespace TurizmOperasyonSistemi.Views.Converters
                 {
                     if (_visaValues.Contains(s))
                     {
-                        // decide positive or negative based on common words in the value
-                        if (s.Contains("gel") || s.Contains("cik") || s.Contains("cikti") || s.Contains("geldi") || s.Contains("evet") || s.Contains("var")) positive = true;
-                        else if (s.Contains("gelmedi") || s.Contains("yok") || s.Contains("hayir") || s.Contains("secilmedi") || s.Contains("bekliyor")) negative = true;
+                        // decide negative or positive based on common words in the value
+                        // check negative forms first (e.g. "çıkmadı" -> normalized contains "cikm")
+                        if (s.Contains("gelmedi") || s.Contains("cikm") || s.Contains("yok") || s.Contains("hayir") || s.Contains("secilmedi") || s.Contains("bekliyor")) negative = true;
+                        else if (s.Contains("gel") || s.Contains("cik") || s.Contains("cikti") || s.Contains("geldi") || s.Contains("evet") || s.Contains("var")) positive = true;
                     }
                     else
                     {
@@ -84,8 +85,9 @@ namespace TurizmOperasyonSistemi.Views.Converters
                 {
                     if (_ticketValues.Contains(s))
                     {
-                        if (s.Contains("gel") || s.Contains("geldi") || s.Contains("evet") || s.Contains("var")) positive = true;
-                        else if (s.Contains("gelmedi") || s.Contains("yok") || s.Contains("hayir") || s.Contains("secilmedi")) negative = true;
+                        // negative checks first to avoid matching short positive substrings inside negatives (eg. "cikmadi")
+                        if (s.Contains("gelmedi") || s.Contains("cikm") || s.Contains("yok") || s.Contains("hayir") || s.Contains("secilmedi")) negative = true;
+                        else if (s.Contains("gel") || s.Contains("geldi") || s.Contains("evet") || s.Contains("var")) positive = true;
                     }
                     else
                     {
@@ -102,8 +104,9 @@ namespace TurizmOperasyonSistemi.Views.Converters
             // final fallback to simple heuristics if no AppSettings hit
             if (!positive && !negative)
             {
-                if (s.Contains("cik") || s.Contains("cikti") || s.Contains("geldi") || s.Contains("evet") || s.Contains("var") || s.Contains("alac") || s.Contains("alindi") || s.Contains("alin")) positive = true;
-                if (s.Contains("gelmedi") || s.Contains("yok") || s.Contains("hayir") || s.Contains("hayır") || s.Contains("bekliyor") || s.Contains("secilmedi")) negative = true;
+                // negative patterns first (e.g. "cikmadi" contains "cikm")
+                if (s.Contains("gelmedi") || s.Contains("cikm") || s.Contains("yok") || s.Contains("hayir") || s.Contains("hayır") || s.Contains("bekliyor") || s.Contains("secilmedi")) negative = true;
+                else if (s.Contains("cik") || s.Contains("cikti") || s.Contains("geldi") || s.Contains("evet") || s.Contains("var") || s.Contains("alac") || s.Contains("alindi") || s.Contains("alin")) positive = true;
             }
 
             if (positive && !negative)
