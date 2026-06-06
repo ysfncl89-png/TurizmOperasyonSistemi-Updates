@@ -1371,6 +1371,10 @@ namespace TurizmOperasyonSistemi.Views
                         AgeRange = p?.AgeRange ?? string.Empty,
                         VisaRequestRaw = reg.VisaRequest ?? string.Empty,
                         TicketRequestRaw = reg.TicketRequest ?? string.Empty,
+                        VisaStatusChoice = reg.VisaStatusChoice ?? string.Empty,
+                        VisaStatusChoiceRaw = reg.VisaStatusChoice ?? string.Empty,
+                        TicketStatusChoice = reg.TicketStatusChoice ?? string.Empty,
+                        TicketStatusChoiceRaw = reg.TicketStatusChoice ?? string.Empty,
                         CargoRequestRaw = reg.CargoRequest ?? string.Empty,
                         VisaRequest = reg.VisaRequest ?? string.Empty,
                         TicketRequest = reg.TicketRequest ?? string.Empty,
@@ -1497,7 +1501,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 // allowed editable properties (union of person and registration editable fields)
                 var editableProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference",
-                                            "PassportType", "BloodType", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency", "PassportArrived", "PassportArrivedText" };
+                                            "PassportType", "BloodType", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency", "PassportArrived", "PassportArrivedText", "VisaStatusChoice", "TicketStatusChoice" };
                 var canEdit = editableProps.Contains(propName, StringComparer.OrdinalIgnoreCase) || editableProps.Contains((propName ?? string.Empty).Replace(" ", ""), StringComparer.OrdinalIgnoreCase);
                 try { ShowSaveToast($"Düzenlenebilir mi: {canEdit}"); } catch { }
                 if (!canEdit) return;
@@ -1980,7 +1984,7 @@ namespace TurizmOperasyonSistemi.Views
                 // person properties (include Nationality)
                 var personProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "PassportType", "BloodType", "Nationality" };
                 // registration properties (including new combobox-backed fields)
-                var registrationProps = new[] { "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency" };
+                var registrationProps = new[] { "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency", "VisaStatusChoice", "TicketStatusChoice" };
                 // Accept both PassportArrived and PassportArrivedText bindings as editable
                 var additionalEditable = new[] { "PassportArrived", "PassportArrivedText" };
 
