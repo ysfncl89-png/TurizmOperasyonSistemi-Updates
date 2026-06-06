@@ -1694,8 +1694,14 @@ namespace TurizmOperasyonSistemi.Views
                         case var _ when headerNorm.Contains("kangrub") || headerNorm.Contains("kangrubu") || headerNorm.Contains("kangrubu"):
                             expectedTypes = new List<string> { "Kan Grubu" };
                             break;
+                        case var _ when headerNorm.Contains("vizedur") || headerNorm.Contains("vizedurumu") || headerNorm.Contains("vizedurum"):
+                            expectedTypes = new List<string> { "Vize Durumu", "VizeDurumu", "VisaStatus" };
+                            break;
                         case var _ when headerNorm.Contains("vize"):
                             expectedTypes = new List<string> { "Vize Talebi" };
+                            break;
+                        case var _ when headerNorm.Contains("biletdur") || headerNorm.Contains("biletdurumu"):
+                            expectedTypes = new List<string> { "Bilet Durumu", "BiletDurumu", "TicketStatus" };
                             break;
                         case var _ when headerNorm.Contains("bilet"):
                             expectedTypes = new List<string> { "Bilet Talebi" };
@@ -2092,6 +2098,32 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     var reg = db.Registrations.FirstOrDefault(x => x.Id == row.RegistrationId);
                     if (reg == null) return;
+                    // Handle VisaStatusChoice and TicketStatusChoice explicitly
+                    if (propName.Equals("VisaStatusChoice", StringComparison.OrdinalIgnoreCase))
+                    {
+                        reg.VisaStatusChoice = newVal?.ToString() ?? string.Empty;
+                        row.VisaRequestRaw = reg.VisaRequest ?? string.Empty;
+                        row.VisaRequest = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.VisaRequestRaw) : row.VisaRequestRaw;
+                        // also update display property if present
+                        try { var pr = row.GetType().GetProperty("VisaStatusChoice"); if (pr != null) pr.SetValue(row, reg.VisaStatusChoice); } catch { }
+                        db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                        db.SaveChanges();
+                        try { ResultsDataGrid.Items.Refresh(); } catch { }
+                        ShowSaveToast("Vize durumu güncellendi.");
+                        return;
+                    }
+                    if (propName.Equals("TicketStatusChoice", StringComparison.OrdinalIgnoreCase))
+                    {
+                        reg.TicketStatusChoice = newVal?.ToString() ?? string.Empty;
+                        row.TicketRequestRaw = reg.TicketRequest ?? string.Empty;
+                        row.TicketRequest = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.TicketRequestRaw) : row.TicketRequestRaw;
+                        try { var pr = row.GetType().GetProperty("TicketStatusChoice"); if (pr != null) pr.SetValue(row, reg.TicketStatusChoice); } catch { }
+                        db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                        db.SaveChanges();
+                        try { ResultsDataGrid.Items.Refresh(); } catch { }
+                        ShowSaveToast("Bilet durumu güncellendi.");
+                        return;
+                    }
                     if (propName.Equals("District", StringComparison.OrdinalIgnoreCase)) { reg.District = newVal?.ToString() ?? string.Empty; }
                     else if (propName.Equals("Reference", StringComparison.OrdinalIgnoreCase)) { reg.Reference = newVal?.ToString() ?? string.Empty; }
                     else if (propName.Equals("VisaRequest", StringComparison.OrdinalIgnoreCase)) { reg.VisaRequest = newVal?.ToString() ?? string.Empty; row.VisaRequestRaw = reg.VisaRequest ?? string.Empty; row.VisaRequest = (_currentMode == ViewMode.Havayolu) ? TransformForHavayolu(row.VisaRequestRaw) : row.VisaRequestRaw; }
@@ -2386,6 +2418,11 @@ namespace TurizmOperasyonSistemi.Views
                 case "vize talebi": return r => r.VisaRequest;
                 case "bilet":
                 case "bilet talebi": return r => r.TicketRequest;
+                case "vize durumu":
+                case "vizedurumu":
+                case "visastatus": return r => r.VisaStatusChoice;
+                case "bilet durumu":
+                case "biletdurumu": return r => r.TicketStatusChoice;
                 case "kargo":
                 case "kargo talebi": return r => r.CargoRequest;
                 case "oda tipi":
@@ -2562,6 +2599,8 @@ namespace TurizmOperasyonSistemi.Views
                 "yaş aralığı" => "AgeRange",
                 "vize talebi" => "VisaRequest",
                 "bilet talebi" => "TicketRequest",
+                "vize durumu" => "VisaStatusChoice",
+                "bilet durumu" => "TicketStatusChoice",
                 "kargo talebi" => "CargoRequest",
                 "oda tipi" => "RoomType",
                 "katılım yapılacak şehir" => "DepartureCity",
@@ -2648,6 +2687,11 @@ namespace TurizmOperasyonSistemi.Views
             public string VisaRequestRaw { get; set; }
             public string TicketRequest { get; set; }
             public string TicketRequestRaw { get; set; }
+            // Yeni: Vize/Bilet durum seçimleri (Ayarlar -> Vize Durumu / Bilet Durumu)
+            public string VisaStatusChoice { get; set; }
+            public string VisaStatusChoiceRaw { get; set; }
+            public string TicketStatusChoice { get; set; }
+            public string TicketStatusChoiceRaw { get; set; }
             public string CargoRequest { get; set; }
             public string CargoRequestRaw { get; set; }
             public string RoomType { get; set; }

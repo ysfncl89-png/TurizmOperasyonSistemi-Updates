@@ -569,6 +569,34 @@
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
+                        <DataGridTemplateColumn Header="Bilet Durumu" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding TicketStatusChoice}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox x:Name="Cb_BiletDurumu"
+                                              SelectedItem="{Binding TicketStatusChoice, Mode=TwoWay}" Style="{StaticResource NeonCombo}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="Vize Durumu" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding VisaStatusChoice}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox x:Name="Cb_VizeDurumu"
+                                              SelectedItem="{Binding VisaStatusChoice, Mode=TwoWay}" Style="{StaticResource NeonCombo}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
                         <DataGridTextColumn Header="Pasaport numarası"
                                             Binding="{Binding PassportNumber}"
                                             Width="140"/>
