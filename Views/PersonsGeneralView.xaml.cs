@@ -90,8 +90,14 @@ namespace TurizmOperasyonSistemi.Views
                     }
                 }
                 // If Registration doesn't have field, do not throw - just keep row state
-            }
+                    }
             catch { }
+                    // Also expose a localized text property for export/printing
+                    try
+                    {
+                        r.PassportArrivedText = r.PassportArrived ? "Evet" : "Hayır";
+                    }
+                    catch { r.PassportArrivedText = string.Empty; }
         }
 
         private async void ShowSaveToast(string message, bool isError = false)
@@ -2465,6 +2471,8 @@ namespace TurizmOperasyonSistemi.Views
             public string ReferenceRaw { get; set; }
             // Pasaport moduna özel: pasaport geldi mi?
             public bool PassportArrived { get; set; }
+            // Localized text for export/display
+            public string PassportArrivedText { get; set; }
             // inverse helper for second checkbox binding
             public bool PassportArrivedInverse
             {

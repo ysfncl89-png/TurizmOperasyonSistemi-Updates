@@ -622,10 +622,7 @@
                                             </Style>
                                         </Border.Style>
                                         <Grid>
-                                            <TextBlock x:Name="YesText" Text="Evet" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold"
-                                                       Visibility="{Binding PassportArrived, Converter={StaticResource BoolToVis}}"/>
-                                            <TextBlock x:Name="NoText" Text="Hayır" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold"
-                                                       Visibility="{Binding PassportArrived, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
+                                            <TextBlock Text="{Binding PassportArrivedText}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
