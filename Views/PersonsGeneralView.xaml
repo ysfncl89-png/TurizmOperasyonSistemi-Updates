@@ -567,7 +567,7 @@
                           SelectionMode="Single"
                           RowHeight="36"
                           CanUserReorderColumns="True"
-                          ColumnWidth="SizeToCells"
+                          ColumnWidth="Auto"
                           EnableColumnVirtualization="False"
                           CanUserResizeColumns="True"
                           FrozenColumnCount="3">
@@ -589,27 +589,27 @@
 
                         <DataGridTextColumn Header="Sıra"
                                             Binding="{Binding Sequence}"
-                                            Width="60"/>
+                                            Width="Auto"/>
 
                         <DataGridTextColumn Header="Ad"
                                             Binding="{Binding FirstName}"
-                                            Width="160"/>
+                                            Width="Auto"/>
 
                         <DataGridTextColumn Header="Soyad"
                                             Binding="{Binding LastName}"
-                                            Width="160"/>
+                                            Width="Auto"/>
 
                         <DataGridTextColumn Header="TC Kimlik"
                                             Binding="{Binding TcKimlikNo}"
-                                            Width="150"/>
+                                            Width="Auto"/>
 
                         <DataGridTextColumn Header="Uyruk"
                                             Binding="{Binding Nationality}"
-                                            Width="120"/>
+                                            Width="Auto"/>
 
                         <DataGridTextColumn Header="Cinsiyet"
                                             Binding="{Binding Gender}"
-                                            Width="100"
+                                            Width="Auto"
                                             IsReadOnly="True"/>
 
                         <DataGridTextColumn Header="Doğum Tarihi"
@@ -622,7 +622,7 @@
 
                         <DataGridTextColumn Header="Adres"
                                             Binding="{Binding Address}"
-                                            Width="240"/>
+                                            Width="Auto"/>
 
                         <DataGridTemplateColumn Header="Pasaport tipi" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
@@ -680,7 +680,7 @@
 
                         <DataGridTextColumn Header="Pasaport numarası"
                                             Binding="{Binding PassportNumber}"
-                                            Width="140"/>
+                                            Width="Auto"/>
 
                         <DataGridTemplateColumn Header="Pasaportu Geldi mi ?" Width="SizeToCells" MinWidth="120">
                             <DataGridTemplateColumn.CellTemplate>
@@ -704,11 +704,11 @@
 
                         <DataGridTextColumn Header="Pasaport Başlangıç tarihi"
                                             Binding="{Binding PassportStartDate}"
-                                            Width="140"/>
+                                            Width="Auto"/>
 
                         <DataGridTextColumn Header="Pasaport bitiş tarihi"
                                             Binding="{Binding PassportEndDate}"
-                                            Width="140"/>
+                                            Width="Auto"/>
 
                         <DataGridTemplateColumn Header="Kan Grubu" Width="110">
                             <DataGridTemplateColumn.CellTemplate>
@@ -726,15 +726,15 @@
 
                         <DataGridTextColumn Header="Aşı durumu"
                                             Binding="{Binding VaccineStatus}"
-                                            Width="120"/>
+                                            Width="Auto"/>
 
                         <DataGridTextColumn Header="hastalık durumu"
                                             Binding="{Binding HealthStatus}"
-                                            Width="160"/>
+                                            Width="Auto"/>
 
                         <DataGridTextColumn Header="Yaş aralığı"
                                             Binding="{Binding AgeRange}"
-                                            Width="110"/>
+                                            Width="Auto"/>
 
                         <DataGridTemplateColumn Header="Vize Talebi" Width="110">
                             <DataGridTemplateColumn.CellTemplate>
