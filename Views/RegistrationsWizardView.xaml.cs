@@ -176,16 +176,21 @@ namespace TurizmOperasyonSistemi.Views
                             var nat = (x.Person.Nationality ?? string.Empty).Trim();
                             var normalized = nat.ToLowerInvariant().Replace(" ", string.Empty)
                                 .Replace("ı","i").Replace("ğ","g").Replace("ü","u").Replace("ş","s").Replace("ö","o").Replace("ç","c");
+
+                            // Consider Turkey if nationality explicitly mentions Türkiye/Turkey or Turkish variants
                             bool isTurkey = normalized == "tc" || normalized.Contains("turkiye") || normalized.Contains("turkey") || normalized.StartsWith("tur") || normalized.Contains("turk");
 
-                            if (isTurkey)
+                            // If nationality is not set but TcKimlikNo looks like a valid Turkish ID (11 digits), prefer TC
+                            if (!isTurkey && string.IsNullOrWhiteSpace(normalized))
                             {
-                                personTcOrPassport = x.Person.TcKimlikNo ?? string.Empty;
+                                var tc = x.Person.TcKimlikNo ?? string.Empty;
+                                if (!string.IsNullOrWhiteSpace(tc) && tc.All(char.IsDigit) && tc.Length == 11)
+                                {
+                                    isTurkey = true;
+                                }
                             }
-                            else
-                            {
-                                personTcOrPassport = x.Person.PassportNumber ?? string.Empty;
-                            }
+
+                            personTcOrPassport = isTurkey ? (x.Person.TcKimlikNo ?? string.Empty) : (x.Person.PassportNumber ?? string.Empty);
                         }
 
                 string passportArrivedStr = string.Empty;
