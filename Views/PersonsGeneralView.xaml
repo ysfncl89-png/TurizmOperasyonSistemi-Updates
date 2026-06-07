@@ -587,7 +587,11 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border x:Name="TicketBadge" CornerRadius="6" Padding="6" Margin="6,4" Background="{Binding TicketStatusChoice, Converter={StaticResource StatusToBrush}}" BorderBrush="{Binding TicketStatusChoice, Converter={StaticResource StatusToBrush}}" BorderThickness="1.6" MinHeight="34" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding TicketStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock Text="{Binding TicketStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="White">
+                                            <TextBlock.Effect>
+                                                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="0" Opacity="0.35" />
+                                            </TextBlock.Effect>
+                                        </TextBlock>
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -603,7 +607,11 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border x:Name="VisaBadge" CornerRadius="6" Padding="6" Margin="6,4" Background="{Binding VisaStatusChoice, Converter={StaticResource StatusToBrush}}" BorderBrush="{Binding VisaStatusChoice, Converter={StaticResource StatusToBrush}}" BorderThickness="1.6" MinHeight="34" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding VisaStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock Text="{Binding VisaStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="White">
+                                            <TextBlock.Effect>
+                                                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="0" Opacity="0.35" />
+                                            </TextBlock.Effect>
+                                        </TextBlock>
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -626,7 +634,11 @@
                                             Background="{Binding PassportArrivedText, Converter={StaticResource StatusToBrush}}"
                                             BorderBrush="{Binding PassportArrivedText, Converter={StaticResource StatusToBrush}}"
                                             BorderThickness="1.6">
-                                        <TextBlock Text="{Binding PassportArrivedText, FallbackValue=Hayır, TargetNullValue=Hayır}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock Text="{Binding PassportArrivedText, FallbackValue=Hayır, TargetNullValue=Hayır}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="White">
+                                            <TextBlock.Effect>
+                                                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="0" Opacity="0.35" />
+                                            </TextBlock.Effect>
+                                        </TextBlock>
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
