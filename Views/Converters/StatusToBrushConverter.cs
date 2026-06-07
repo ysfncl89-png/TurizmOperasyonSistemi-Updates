@@ -201,8 +201,8 @@ namespace TurizmOperasyonSistemi.Views.Converters
             var brush = new LinearGradientBrush();
             brush.StartPoint = new System.Windows.Point(0, 0);
             brush.EndPoint = new System.Windows.Point(0, 1);
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(12, 92, 60), 0));
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(16, 185, 129), 1));
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(6, 46, 30), 0));
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(12, 140, 98), 1));
             brush.Freeze();
             return brush;
         }
@@ -212,8 +212,8 @@ namespace TurizmOperasyonSistemi.Views.Converters
             var brush = new LinearGradientBrush();
             brush.StartPoint = new System.Windows.Point(0, 0);
             brush.EndPoint = new System.Windows.Point(0, 1);
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(139, 18, 20), 0));
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 79, 79), 1));
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(88, 12, 14), 0));
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(200, 60, 60), 1));
             brush.Freeze();
             return brush;
         }
@@ -223,8 +223,9 @@ namespace TurizmOperasyonSistemi.Views.Converters
             var brush = new LinearGradientBrush();
             brush.StartPoint = new System.Windows.Point(0, 0);
             brush.EndPoint = new System.Windows.Point(0, 1);
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(180, 130, 0), 0));
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 200, 60), 1));
+            // Softer amber/gold tuned for dark background (less saturated)
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(110, 85, 25), 0));
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(210, 170, 80), 1));
             brush.Freeze();
             return brush;
         }
@@ -234,10 +235,48 @@ namespace TurizmOperasyonSistemi.Views.Converters
             var brush = new LinearGradientBrush();
             brush.StartPoint = new System.Windows.Point(0, 0);
             brush.EndPoint = new System.Windows.Point(0, 1);
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(200, 80, 0), 0));
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 140, 0), 1));
+            // Deeper, more distinct orange with warm tone
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(140, 60, 10), 0));
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(230, 100, 20), 1));
             brush.Freeze();
             return brush;
+        }
+    }
+
+    // Converter that maps status text to a neon Color used for glow effects
+    public class StatusToGlowColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var s = (value ?? string.Empty).ToString().Trim().ToLowerInvariant();
+            s = s.Replace("ı", "i").Replace("ş", "s").Replace("ğ", "g").Replace("ü", "u").Replace("ö", "o").Replace("ç", "c");
+
+            if (s.Contains("evet") || s.Contains("geldi") || s.Contains("cikti") || s.Contains("var"))
+            {
+                return Color.FromArgb(0xE6, 0x00, 0xFF, 0x6A); // semi-transparent neon green
+            }
+            if (s.Contains("bekliyor") || s.Contains("alin") || s.Contains("aliniyor"))
+            {
+                return Color.FromArgb(0xE6, 0xE6, 0xB8, 0x12); // softer semi-transparent amber
+            }
+            if (s.Contains("pasaportu bekleniyor") || s.Contains("bekleniyor") || s.Contains("pasaport"))
+            {
+                return Color.FromArgb(0xE6, 0xFF, 0x9A, 0x1A); // warmer semi-transparent orange
+            }
+            if (s.Contains("hayir") || s.Contains("gelmedi") || s.Contains("cikm"))
+            {
+                return Color.FromArgb(0xE6, 0xFF, 0x17, 0x44); // semi-transparent neon red
+            }
+            if (string.IsNullOrWhiteSpace(s) || s.Contains("secilmedi") || s.Contains("sec"))
+            {
+                return Color.FromArgb(0xD0, 0x9C, 0xA3, 0xAF); // semi-transparent disabled neon gray
+            }
+            return Color.FromArgb(0xF0, 0xFF, 0xFF, 0xFF); // slightly transparent neon white
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
         }
     }
 }

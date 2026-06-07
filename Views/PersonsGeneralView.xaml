@@ -34,6 +34,57 @@
         </Style>
         <conv:InverseBooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:StatusToBrushConverter x:Key="StatusToBrush" />
+        <conv:StatusToGlowColorConverter x:Key="StatusToGlowColor" />
+        <conv:ForegroundContrastConverter x:Key="ForegroundContrast" />
+
+        <!-- Neon badge button style used for status cells (capsule, neon border + glow) -->
+        <Style x:Key="NeonBadgeButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0B1220"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="0"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Border.Effect>
+                                <DropShadowEffect Color="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" BlurRadius="20" ShadowDepth="0" Opacity="0.7" />
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" BlurRadius="40" ShadowDepth="0" Opacity="1.0" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" BlurRadius="50" ShadowDepth="0" Opacity="1.0" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Opacity" Value="0.98" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="ExportPopupButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#123046"/>
             <Setter Property="BorderBrush" Value="{DynamicResource GlowBrush}"/>
@@ -515,7 +566,10 @@
                           IsReadOnly="True"
                           SelectionMode="Single"
                           RowHeight="36"
-                          CanUserReorderColumns="True">
+                          CanUserReorderColumns="True"
+                          ColumnWidth="SizeToCells"
+                          EnableColumnVirtualization="False"
+                          CanUserResizeColumns="True">
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="Background" Value="Transparent" />
@@ -583,16 +637,16 @@
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="Bilet Durumu" Width="110">
+                        <DataGridTemplateColumn Header="Bilet Durumu" Width="SizeToCells" MinWidth="140">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="TicketBadge" CornerRadius="6" Padding="6" Margin="6,4" Background="{Binding TicketStatusChoice, Converter={StaticResource StatusToBrush}}" BorderBrush="{Binding TicketStatusChoice, Converter={StaticResource StatusToBrush}}" BorderThickness="1.6" MinHeight="34" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding TicketStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="White">
-                                            <TextBlock.Effect>
-                                                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="0" Opacity="0.35" />
-                                            </TextBlock.Effect>
-                                        </TextBlock>
-                                    </Border>
+                                    <Button Style="{StaticResource NeonBadgeButtonStyle}"
+                                            Background="{Binding TicketStatusChoice, Converter={StaticResource StatusToBrush}}"
+                                            BorderBrush="{Binding TicketStatusChoice, Converter={StaticResource StatusToBrush}}"
+                                            Tag="{Binding TicketStatusChoice, Converter={StaticResource StatusToGlowColor}}"
+                                            Margin="6,4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TicketStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{Binding Background, RelativeSource={RelativeSource AncestorType=Button}, Converter={StaticResource ForegroundContrast}}" FontWeight="SemiBold" FontSize="13"/>
+                                    </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
@@ -603,16 +657,16 @@
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="Vize Durumu" Width="140">
+                        <DataGridTemplateColumn Header="Vize Durumu" Width="SizeToCells" MinWidth="160">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="VisaBadge" CornerRadius="6" Padding="6" Margin="6,4" Background="{Binding VisaStatusChoice, Converter={StaticResource StatusToBrush}}" BorderBrush="{Binding VisaStatusChoice, Converter={StaticResource StatusToBrush}}" BorderThickness="1.6" MinHeight="34" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding VisaStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="White">
-                                            <TextBlock.Effect>
-                                                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="0" Opacity="0.35" />
-                                            </TextBlock.Effect>
-                                        </TextBlock>
-                                    </Border>
+                                    <Button Style="{StaticResource NeonBadgeButtonStyle}"
+                                            Background="{Binding VisaStatusChoice, Converter={StaticResource StatusToBrush}}"
+                                            BorderBrush="{Binding VisaStatusChoice, Converter={StaticResource StatusToBrush}}"
+                                            Tag="{Binding VisaStatusChoice, Converter={StaticResource StatusToGlowColor}}"
+                                            Margin="6,4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding VisaStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{Binding Background, RelativeSource={RelativeSource AncestorType=Button}, Converter={StaticResource ForegroundContrast}}" FontWeight="SemiBold" FontSize="13"/>
+                                    </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
@@ -627,19 +681,16 @@
                                             Binding="{Binding PassportNumber}"
                                             Width="140"/>
 
-                        <DataGridTemplateColumn Header="Pasaportu Geldi mi ?" Width="120">
+                        <DataGridTemplateColumn Header="Pasaportu Geldi mi ?" Width="SizeToCells" MinWidth="120">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border CornerRadius="6" Padding="6" Margin="6,4" MinHeight="34" VerticalAlignment="Center"
+                                    <Button Style="{StaticResource NeonBadgeButtonStyle}"
                                             Background="{Binding PassportArrivedText, Converter={StaticResource StatusToBrush}}"
                                             BorderBrush="{Binding PassportArrivedText, Converter={StaticResource StatusToBrush}}"
-                                            BorderThickness="1.6">
-                                        <TextBlock Text="{Binding PassportArrivedText, FallbackValue=Hayır, TargetNullValue=Hayır}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="White">
-                                            <TextBlock.Effect>
-                                                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="0" Opacity="0.35" />
-                                            </TextBlock.Effect>
-                                        </TextBlock>
-                                    </Border>
+                                            Tag="{Binding PassportArrivedText, Converter={StaticResource StatusToGlowColor}}"
+                                            Margin="6,4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding PassportArrivedText, FallbackValue=Hayır, TargetNullValue=Hayır}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{Binding Background, RelativeSource={RelativeSource AncestorType=Button}, Converter={StaticResource ForegroundContrast}}" FontWeight="SemiBold" FontSize="13"/>
+                                    </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
