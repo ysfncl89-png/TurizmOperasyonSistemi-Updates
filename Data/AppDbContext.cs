@@ -98,6 +98,7 @@ namespace TurizmOperasyonSistemi.Data
                 EnsureValue(conn, "Registrations", "GroupType", "");
                 EnsureValue(conn, "Registrations", "DayCount", "");
                 EnsureValue(conn, "Registrations", "VisaStatus", "");
+                EnsureValue(conn, "Registrations", "PassportArrived", "-1");
                 EnsureValue(conn, "Registrations", "TicketStatus", "");
                 EnsureValue(conn, "Registrations", "VisaStatusChoice", "");
                 EnsureValue(conn, "Registrations", "TicketStatusChoice", "");

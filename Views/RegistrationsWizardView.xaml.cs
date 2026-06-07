@@ -191,20 +191,28 @@ namespace TurizmOperasyonSistemi.Views
                 string passportArrivedStr = string.Empty;
                 if (x.PassportArrived.HasValue)
                 {
-                    // Try to resolve stored integer to AppSetting value when possible
-                    // IMPORTANT: restrict lookup to the specific AppSetting type so we don't
-                    // accidentally pick an AppSetting from another type (e.g. Cinsiyet) that
-                    // happens to share the same Id. This was causing values like "Erkek"
-                    // to appear in the Pasaportu Geldi mi column.
-                    var setting = db.AppSettings.FirstOrDefault(s => s.Id == x.PassportArrived.Value && s.Type == "Pasaportu Geldi mi ?");
-                    if (setting != null)
+                    // Treat negative sentinel as "Belirtilmedi" (unspecified)
+                    if (x.PassportArrived.Value < 0)
                     {
-                        passportArrivedStr = setting.Value ?? string.Empty;
+                        passportArrivedStr = "Belirtilmedi";
                     }
                     else
                     {
-                        // Fallback to legacy boolean mapping: non-zero => Evet, zero => Hayır
-                        passportArrivedStr = x.PassportArrived.Value != 0 ? "Evet" : "Hayır";
+                        // Try to resolve stored integer to AppSetting value when possible
+                        // IMPORTANT: restrict lookup to the specific AppSetting type so we don't
+                        // accidentally pick an AppSetting from another type (e.g. Cinsiyet) that
+                        // happens to share the same Id. This was causing values like "Erkek"
+                        // to appear in the Pasaportu Geldi mi column.
+                        var setting = db.AppSettings.FirstOrDefault(s => s.Id == x.PassportArrived.Value && s.Type == "Pasaportu Geldi mi ?");
+                        if (setting != null)
+                        {
+                            passportArrivedStr = setting.Value ?? string.Empty;
+                        }
+                        else
+                        {
+                            // Fallback to legacy boolean mapping: non-zero => Evet, zero => Hayır
+                            passportArrivedStr = x.PassportArrived.Value != 0 ? "Evet" : "Hayır";
+                        }
                     }
                 }
 
@@ -592,9 +600,9 @@ namespace TurizmOperasyonSistemi.Views
                 DaysCountComboBox.SelectedItem = registration.DaysCount;
                 VisaRequestComboBox.SelectedItem = registration.VisaRequest;
                 TicketRequestComboBox.SelectedItem = registration.TicketRequest;
-                // PassportArrived is stored as int? (1 = Evet, 0 = Hayır, null = unspecified)
+                // PassportArrived is stored as int? (1 = Evet, 0 = Hayır, -1 = Belirtilmedi/unspecified)
                 // Passport arrived now set via PassportArrivedComboBox
-                if (registration.PassportArrived.HasValue && PassportArrivedComboBox != null)
+                if (registration.PassportArrived.HasValue && PassportArrivedComboBox != null && registration.PassportArrived.Value >= 0)
                 {
                     int val = registration.PassportArrived.Value;
                     // try to find matching AppSetting by Id
@@ -1234,7 +1242,8 @@ namespace TurizmOperasyonSistemi.Views
                     ? (TicketStatusComboBox?.SelectedItem?.ToString() ?? "Seçilmedi")
                     : ticketStatusChoice;
                         // Store PassportArrived using PassportArrivedComboBox.SelectedValue (AppSetting Id) or heuristic mapping
-                        registration.PassportArrived = null;
+                        // Use -1 as sentinel for unspecified so existing DB NOT NULL constraints are not violated
+                        registration.PassportArrived = -1;
                         if (PassportArrivedComboBox?.SelectedItem is AppSetting sel)
                         {
                             registration.PassportArrived = sel.Id;
