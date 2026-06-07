@@ -782,8 +782,15 @@
                                                     <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Kendisi Alacak">
                                                         <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
                                                     </DataTrigger>
+                                                    <!-- Yellow/Orange statuses: use dark text for readability -->
                                                     <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Alınıyor">
-                                                        <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="White"/>
+                                                        <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Aliniyor">
+                                                        <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti alınıyor">
+                                                        <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
                                                     </DataTrigger>
                                                 </DataTemplate.Triggers>
                                             </DataTemplate>
