@@ -569,7 +569,8 @@
                           CanUserReorderColumns="True"
                           ColumnWidth="SizeToCells"
                           EnableColumnVirtualization="False"
-                          CanUserResizeColumns="True">
+                          CanUserResizeColumns="True"
+                          FrozenColumnCount="3">
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="Background" Value="Transparent" />

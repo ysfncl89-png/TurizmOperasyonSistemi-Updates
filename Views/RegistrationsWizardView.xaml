@@ -462,7 +462,7 @@
                             </Grid>
 
                         <Grid Grid.Row="1">
-                            <DataGrid x:Name="RegistrationsDataGrid"
+                            <DataGrid x:Name="RegistrationsDataGrid" FrozenColumnCount="3"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
                                       MinHeight="360"
@@ -555,9 +555,9 @@
                                 </DataGrid.ContextMenu>
 
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Kayıt No" Binding="{Binding Id}" Width="90"/>
-                                    <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="180"/>
-                                    <DataGridTextColumn Header="TC / Pasaport" Binding="{Binding PersonTc}" Width="120">
+                                    <DataGridTextColumn Header="Kayıt No" Binding="{Binding Id}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="Auto"/>
+                                    <DataGridTextColumn Header="TC / Pasaport" Binding="{Binding PersonTc}" Width="Auto">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#F59E0B"/>
@@ -565,13 +565,13 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="130"/>
-                                    <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="130"/>
-                                    <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="120"/>
-                                    <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="100"/>
-                                    <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="110"/>
-                                    <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="110"/>
-                                    <DataGridTemplateColumn Header="Vize Durumu" Width="120">
+                                    <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="Auto"/>
+                                    <DataGridTemplateColumn Header="Vize Durumu" Width="Auto">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Border x:Name="VisaStatusBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
@@ -684,7 +684,7 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Bilet Durumu" Width="120">
+                                    <DataGridTemplateColumn Header="Bilet Durumu" Width="Auto">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Border x:Name="TicketStatusBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
@@ -796,7 +796,7 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Pasaportu Geldi mi" Width="120">
+                                    <DataGridTemplateColumn Header="Pasaportu Geldi mi" Width="Auto">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Border x:Name="PassportArrivedBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
@@ -861,20 +861,20 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="110"/>
-                                    <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="110"/>
-                                    <DataGridTextColumn Header="Katılım Şehri" Binding="{Binding DepartureCity}" Width="120"/>
-                                    <DataGridTextColumn Header="Aktarma" Binding="{Binding TransferStatus}" Width="90"/>
-                                    <DataGridTextColumn Header="Aktarma Şehri" Binding="{Binding TransferCity}" Width="120"/>
-                                    <DataGridTextColumn Header="İlçe" Binding="{Binding District}" Width="110"/>
-                                    <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="130"/>
-                                    <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmountDisplay}" Width="120"/>
-                                    <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebtDisplay}" Width="120"/>
-                                    <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="100"/>
-                                    <DataGridTextColumn Header="Referans" Binding="{Binding Reference}" Width="140"/>
-                                    <DataGridTextColumn Header="Kayıt Tarihi" Binding="{Binding CreatedDateDisplay}" Width="130"/>
-                                    <DataGridTextColumn Header="Aktiflik" Binding="{Binding IsActiveDisplay}" Width="90"/>
-                                    <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="110"/>
+                                    <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Katılım Şehri" Binding="{Binding DepartureCity}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Aktarma" Binding="{Binding TransferStatus}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Aktarma Şehri" Binding="{Binding TransferCity}" Width="Auto"/>
+                                    <DataGridTextColumn Header="İlçe" Binding="{Binding District}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmountDisplay}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebtDisplay}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Referans" Binding="{Binding Reference}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Kayıt Tarihi" Binding="{Binding CreatedDateDisplay}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Aktiflik" Binding="{Binding IsActiveDisplay}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="Auto"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
