@@ -80,6 +80,8 @@
                                                    VerticalAlignment="Center"/>
                                     </Border>
                                 </Grid>
+
+
                             </Border>
 
                             <ToggleButton Background="Transparent"
@@ -392,6 +394,8 @@
                             </Grid>
                         </StackPanel>
 
+                        <!-- Placeholder removed; NoMatchActionPanel is shown inside sonuç paneline taşındı -->
+
                         <Grid Grid.Row="1"
                               Margin="0,22,0,22">
                             <Border x:Name="ResultsPanel"
@@ -399,6 +403,31 @@
                                     CornerRadius="18"
                                     Padding="18">
                                 <StackPanel>
+                                    <!-- Eğer arama sonucu tam eşleşme değilse kullanıcıya açık buton göster (ortalanmış) -->
+                                    <Border x:Name="NoMatchActionPanel"
+                                            HorizontalAlignment="Center"
+                                            Margin="0,0,0,12"
+                                            Padding="10"
+                                            Background="#0F243244"
+                                            CornerRadius="10"
+                                            MaxWidth="520"
+                                            Visibility="Collapsed">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="Aradığım kişi listede yok"
+                                                       Foreground="#FBBF24"
+                                                       VerticalAlignment="Center"
+                                                       FontWeight="SemiBold"
+                                                       Margin="0,0,12,0"/>
+                                            <Button x:Name="NewPersonButton"
+                                                    Content="Yeni Kişi Kaydı Yap"
+                                                    Height="34"
+                                                    MinWidth="160"
+                                                    Background="#10B981"
+                                                    Foreground="White"
+                                                    FontWeight="Bold"
+                                                    Click="NewPersonButton_Click"/>
+                                        </StackPanel>
+                                    </Border>
                                     <TextBlock Text="Kişi Sonuçları"
                                                Foreground="#22D3EE"
                                                FontSize="20"

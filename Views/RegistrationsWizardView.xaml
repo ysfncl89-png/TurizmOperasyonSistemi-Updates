@@ -365,7 +365,7 @@
                         <!-- Non-blurred area: description and search (user requested to exclude these from blur) -->
                         <StackPanel Grid.Row="1" Margin="0,0,0,8">
                             <Grid Margin="0,4,0,8">
-                                
+
 
                                 <!-- Ön plan net neon metin -->
                                 <TextBlock Foreground="#E6FCFF"
@@ -461,8 +461,8 @@
                                         IsEnabled="False"/>
                             </Grid>
 
-                        <Grid Grid.Row="1">
-                            <DataGrid x:Name="RegistrationsDataGrid" MouseDoubleClick="RegistrationsDataGrid_MouseDoubleClick"
+                            <Grid Grid.Row="1">
+                                <DataGrid x:Name="RegistrationsDataGrid" MouseDoubleClick="RegistrationsDataGrid_MouseDoubleClick"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
                                       MinHeight="360"
@@ -479,420 +479,420 @@
                                       SelectionChanged="RegistrationsDataGrid_SelectionChanged"
                                       FrozenColumnCount="3"
                                       ColumnWidth="Auto">
-                                <DataGrid.Resources>
-                                    <Style TargetType="DataGridColumnHeader">
-                                        <Setter Property="Background" Value="#1E293B"/>
-                                        <Setter Property="Foreground" Value="#F8FAFC"/>
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                        <Setter Property="BorderBrush" Value="#475569"/>
-                                        <Setter Property="Padding" Value="10,8"/>
-                                        <Setter Property="ContentTemplate">
-                                            <Setter.Value>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" TextTrimming="None" HorizontalAlignment="Center"/>
-                                                </DataTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
+                                    <DataGrid.Resources>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="Background" Value="#1E293B"/>
+                                            <Setter Property="Foreground" Value="#F8FAFC"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="BorderBrush" Value="#475569"/>
+                                            <Setter Property="Padding" Value="10,8"/>
+                                            <Setter Property="ContentTemplate">
+                                                <Setter.Value>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" TextTrimming="None" HorizontalAlignment="Center"/>
+                                                    </DataTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
 
-                                    <!-- Default TextBlock inside DataGrid (cells) should trim long text but stay vertically centered -->
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                    </Style>
-                                    <Style TargetType="DataGridRow">
-                                        <Setter Property="FontSize" Value="12.5"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#162033"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Status}" Value="Pasif">
-                                                <Setter Property="Background" Value="#2B3240"/>
-                                                <Setter Property="Foreground" Value="#9CA3AF"/>
-                                                <Setter Property="Opacity" Value="0.72"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="İptal">
-                                                <Setter Property="Background" Value="#3A1F24"/>
-                                                <Setter Property="Foreground" Value="#FCA5A5"/>
-                                                <Setter Property="Opacity" Value="0.82"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
+                                        <!-- Default TextBlock inside DataGrid (cells) should trim long text but stay vertically centered -->
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                        <Style TargetType="DataGridRow">
+                                            <Setter Property="FontSize" Value="12.5"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#162033"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="Pasif">
+                                                    <Setter Property="Background" Value="#2B3240"/>
+                                                    <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                    <Setter Property="Opacity" Value="0.72"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="İptal">
+                                                    <Setter Property="Background" Value="#3A1F24"/>
+                                                    <Setter Property="Foreground" Value="#FCA5A5"/>
+                                                    <Setter Property="Opacity" Value="0.82"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
 
-                                    <!-- Cell style for PassportArrived column only (Evet -> green neon, Hayır -> red neon) -->
-                                    <Style x:Key="PassportArrivedCellStyle" TargetType="DataGridCell">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Foreground" Value="{StaticResource InputForegroundBrush}"/>
-                                        <Setter Property="Padding" Value="8,6"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding PassportArrived}" Value="Evet">
-                                                <Setter Property="Background" Value="#053D1A"/>
-                                                <Setter Property="Foreground" Value="#E6FFFA"/>
-                                                <Setter Property="Effect">
-                                                    <Setter.Value>
-                                                        <DropShadowEffect Color="#10B981" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding PassportArrived}" Value="Hayır">
-                                                <Setter Property="Background" Value="#3A1216"/>
-                                                <Setter Property="Foreground" Value="#FFE6E6"/>
-                                                <Setter Property="Effect">
-                                                    <Setter.Value>
-                                                        <DropShadowEffect Color="#EF4444" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding PassportArrived}" Value="Hayir">
-                                                <Setter Property="Background" Value="#3A1216"/>
-                                                <Setter Property="Foreground" Value="#FFE6E6"/>
-                                                <Setter Property="Effect">
-                                                    <Setter.Value>
-                                                        <DropShadowEffect Color="#EF4444" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DataGrid.Resources>
+                                        <!-- Cell style for PassportArrived column only (Evet -> green neon, Hayır -> red neon) -->
+                                        <Style x:Key="PassportArrivedCellStyle" TargetType="DataGridCell">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Foreground" Value="{StaticResource InputForegroundBrush}"/>
+                                            <Setter Property="Padding" Value="8,6"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PassportArrived}" Value="Evet">
+                                                    <Setter Property="Background" Value="#053D1A"/>
+                                                    <Setter Property="Foreground" Value="#E6FFFA"/>
+                                                    <Setter Property="Effect">
+                                                        <Setter.Value>
+                                                            <DropShadowEffect Color="#10B981" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding PassportArrived}" Value="Hayır">
+                                                    <Setter Property="Background" Value="#3A1216"/>
+                                                    <Setter Property="Foreground" Value="#FFE6E6"/>
+                                                    <Setter Property="Effect">
+                                                        <Setter.Value>
+                                                            <DropShadowEffect Color="#EF4444" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding PassportArrived}" Value="Hayir">
+                                                    <Setter Property="Background" Value="#3A1216"/>
+                                                    <Setter Property="Foreground" Value="#FFE6E6"/>
+                                                    <Setter Property="Effect">
+                                                        <Setter.Value>
+                                                            <DropShadowEffect Color="#EF4444" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.Resources>
 
-                                <DataGrid.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Kaydı Düzenle"
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Kaydı Düzenle"
                                                   Click="EditRegistrationMenuItem_Click"/>
-                                        <MenuItem x:Name="SetRegistrationPassiveMenuItem"
+                                            <MenuItem x:Name="SetRegistrationPassiveMenuItem"
                                                   Header="Pasif Yap"
                                                   Click="SetRegistrationPassiveMenuItem_Click"/>
-                                        <MenuItem x:Name="DeleteRegistrationMenuItem"
+                                            <MenuItem x:Name="DeleteRegistrationMenuItem"
                                                   Header="Kaydı Sil"
                                                   Click="DeleteRegistrationMenuItem_Click"/>
-                                    </ContextMenu>
-                                </DataGrid.ContextMenu>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
 
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Kayıt No" Binding="{Binding Id}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="Auto"/>
-                                    <DataGridTextColumn Header="TC / Pasaport" Binding="{Binding PersonTc}" Width="Auto">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#F59E0B"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="Auto"/>
-                                    <DataGridTemplateColumn Header="Vize Durumu" Width="160" MinWidth="160">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Border x:Name="VisaStatusBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#0B1220"/>
-                                                            <Setter Property="BorderBrush" Value="#1E293B"/>
-                                                            <Setter Property="BorderThickness" Value="1"/>
-                                                            <Setter Property="Effect">
-                                                                <Setter.Value>
-                                                                    <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vize Çıktı">
-                                                                    <Setter Property="Background" Value="#053D1A"/>
-                                                                    <Setter Property="BorderBrush" Value="#10B981"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizesi çıktı">
-                                                                    <Setter Property="Background" Value="#053D1A"/>
-                                                                    <Setter Property="BorderBrush" Value="#10B981"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vize Çıkmadı">
-                                                                    <Setter Property="Background" Value="#3A1216"/>
-                                                                    <Setter Property="BorderBrush" Value="#EF4444"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizesi çıkmadı">
-                                                                    <Setter Property="Background" Value="#3A1216"/>
-                                                                    <Setter Property="BorderBrush" Value="#EF4444"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <!-- Vizesi Alınıyor -> Daha parlak sarı (daha belirgin) -->
-                                                                <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizesi Alınıyor">
-                                                                    <Setter Property="Background" Value="#FFD700"/>
-                                                                    <Setter Property="BorderBrush" Value="#B8860B"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#FFD700" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <!-- Pasaport bekleniyor -> Daha belirgin turuncu -->
-                                                                <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Pasaport bekleniyor">
-                                                                    <Setter Property="Background" Value="#FF6A00"/>
-                                                                    <Setter Property="BorderBrush" Value="#C2410C"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#FF6A00" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Pasaport Bekleniyor">
-                                                                    <Setter Property="Background" Value="#FB923C"/>
-                                                                    <Setter Property="BorderBrush" Value="#C2410C"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#FB923C" BlurRadius="12" ShadowDepth="0" Opacity="0.8"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <!-- Vizeyi Kendisi alacak -> Beyaz arka plan -->
-                                                                <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizeyi Kendisi Alacak">
-                                                                    <Setter Property="Background" Value="#FFFFFF"/>
-                                                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <TextBlock x:Name="VisaStatusText" Text="{Binding VisaStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
-                                                </Border>
-                                                <DataTemplate.Triggers>
-                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizeyi Kendisi Alacak">
-                                                        <Setter TargetName="VisaStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizesi Alınıyor">
-                                                        <!-- koyu metin sarı üzerinde daha okunaklı -->
-                                                        <Setter TargetName="VisaStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Pasaport bekleniyor">
-                                                        <Setter TargetName="VisaStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Pasaport Bekleniyor">
-                                                        <Setter TargetName="VisaStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                </DataTemplate.Triggers>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Bilet Durumu" Width="Auto">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Border x:Name="TicketStatusBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#0B1220"/>
-                                                            <Setter Property="BorderBrush" Value="#1E293B"/>
-                                                            <Setter Property="BorderThickness" Value="1"/>
-                                                            <Setter Property="Effect">
-                                                                <Setter.Value>
-                                                                    <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti geldi">
-                                                                    <Setter Property="Background" Value="#053D1A"/>
-                                                                    <Setter Property="BorderBrush" Value="#10B981"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bilet geldi">
-                                                                    <Setter Property="Background" Value="#053D1A"/>
-                                                                    <Setter Property="BorderBrush" Value="#10B981"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti henüz gelmedi">
-                                                                    <Setter Property="Background" Value="#3A1216"/>
-                                                                    <Setter Property="BorderBrush" Value="#EF4444"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bilet henüz gelmedi">
-                                                                    <Setter Property="Background" Value="#3A1216"/>
-                                                                    <Setter Property="BorderBrush" Value="#EF4444"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Gelmedi">
-                                                                    <Setter Property="Background" Value="#3A1216"/>
-                                                                    <Setter Property="BorderBrush" Value="#EF4444"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti gelmedi">
-                                                                    <Setter Property="Background" Value="#3A1216"/>
-                                                                    <Setter Property="BorderBrush" Value="#EF4444"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <!-- Bileti Alınıyor -> Daha parlak sarı -->
-                                                                <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Alınıyor">
-                                                                    <Setter Property="Background" Value="#FFD700"/>
-                                                                    <Setter Property="BorderBrush" Value="#B8860B"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#FFD700" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <!-- Bileti Kendisi Alacak -> Beyaz -->
-                                                                <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Kendisi Alacak">
-                                                                    <Setter Property="Background" Value="#FFFFFF"/>
-                                                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <TextBlock x:Name="TicketStatusText" Text="{Binding TicketStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
-                                                </Border>
-                                                <DataTemplate.Triggers>
-                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Kendisi Alacak">
-                                                        <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                    <!-- Yellow/Orange statuses: use dark text for readability -->
-                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Alınıyor">
-                                                        <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Aliniyor">
-                                                        <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti alınıyor">
-                                                        <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                </DataTemplate.Triggers>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Pasaportu Geldi mi" Width="Auto">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Border x:Name="PassportArrivedBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#0B1220"/>
-                                                            <Setter Property="BorderBrush" Value="#1E293B"/>
-                                                            <Setter Property="BorderThickness" Value="1"/>
-                                                            <Setter Property="Effect">
-                                                                <Setter.Value>
-                                                                    <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding PassportArrived}" Value="Evet">
-                                                                    <Setter Property="Background" Value="#053D1A"/>
-                                                                    <Setter Property="BorderBrush" Value="#10B981"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding PassportArrived}" Value="Hayır">
-                                                                    <Setter Property="Background" Value="#3A1216"/>
-                                                                    <Setter Property="BorderBrush" Value="#EF4444"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding PassportArrived}" Value="Hayir">
-                                                                    <Setter Property="Background" Value="#3A1216"/>
-                                                                    <Setter Property="BorderBrush" Value="#EF4444"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <!-- Pasaport Vermeyecek -> Beyaz -->
-                                                                <DataTrigger Binding="{Binding PassportArrived}" Value="Pasaport Vermeyecek">
-                                                                    <Setter Property="Background" Value="#FFFFFF"/>
-                                                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <TextBlock x:Name="PassportArrivedText" Text="{Binding PassportArrived, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
-                                                </Border>
-                                                <DataTemplate.Triggers>
-                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="Pasaport Vermeyecek">
-                                                        <Setter TargetName="PassportArrivedText" Property="TextBlock.Foreground" Value="#0B1220"/>
-                                                    </DataTrigger>
-                                                </DataTemplate.Triggers>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Katılım Şehri" Binding="{Binding DepartureCity}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Aktarma" Binding="{Binding TransferStatus}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Aktarma Şehri" Binding="{Binding TransferCity}" Width="Auto"/>
-                                    <DataGridTextColumn Header="İlçe" Binding="{Binding District}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmountDisplay}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebtDisplay}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Referans" Binding="{Binding Reference}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Kayıt Tarihi" Binding="{Binding CreatedDateDisplay}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Aktiflik" Binding="{Binding IsActiveDisplay}" Width="Auto"/>
-                                    <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="Auto"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Kayıt No" Binding="{Binding Id}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Yolcu Adı" Binding="{Binding PersonFullName}" Width="Auto"/>
+                                        <DataGridTextColumn Header="TC / Pasaport" Binding="{Binding PersonTc}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#F59E0B"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Tur Türü" Binding="{Binding TourType}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="Auto"/>
+                                        <DataGridTemplateColumn Header="Vize Durumu" Width="160" MinWidth="160">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border x:Name="VisaStatusBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#0B1220"/>
+                                                                <Setter Property="BorderBrush" Value="#1E293B"/>
+                                                                <Setter Property="BorderThickness" Value="1"/>
+                                                                <Setter Property="Effect">
+                                                                    <Setter.Value>
+                                                                        <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vize Çıktı">
+                                                                        <Setter Property="Background" Value="#053D1A"/>
+                                                                        <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizesi çıktı">
+                                                                        <Setter Property="Background" Value="#053D1A"/>
+                                                                        <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vize Çıkmadı">
+                                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizesi çıkmadı">
+                                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <!-- Vizesi Alınıyor -> Daha parlak sarı (daha belirgin) -->
+                                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizesi Alınıyor">
+                                                                        <Setter Property="Background" Value="#FFD700"/>
+                                                                        <Setter Property="BorderBrush" Value="#B8860B"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#FFD700" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <!-- Pasaport bekleniyor -> Daha belirgin turuncu -->
+                                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Pasaport bekleniyor">
+                                                                        <Setter Property="Background" Value="#FF6A00"/>
+                                                                        <Setter Property="BorderBrush" Value="#C2410C"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#FF6A00" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Pasaport Bekleniyor">
+                                                                        <Setter Property="Background" Value="#FB923C"/>
+                                                                        <Setter Property="BorderBrush" Value="#C2410C"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#FB923C" BlurRadius="12" ShadowDepth="0" Opacity="0.8"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <!-- Vizeyi Kendisi alacak -> Beyaz arka plan -->
+                                                                    <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizeyi Kendisi Alacak">
+                                                                        <Setter Property="Background" Value="#FFFFFF"/>
+                                                                        <Setter Property="BorderBrush" Value="#E5E7EB"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock x:Name="VisaStatusText" Text="{Binding VisaStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                                    </Border>
+                                                    <DataTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizeyi Kendisi Alacak">
+                                                            <Setter TargetName="VisaStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Vizesi Alınıyor">
+                                                            <!-- koyu metin sarı üzerinde daha okunaklı -->
+                                                            <Setter TargetName="VisaStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Pasaport bekleniyor">
+                                                            <Setter TargetName="VisaStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding VisaStatusChoice}" Value="Pasaport Bekleniyor">
+                                                            <Setter TargetName="VisaStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="Bilet Durumu" Width="Auto">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border x:Name="TicketStatusBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#0B1220"/>
+                                                                <Setter Property="BorderBrush" Value="#1E293B"/>
+                                                                <Setter Property="BorderThickness" Value="1"/>
+                                                                <Setter Property="Effect">
+                                                                    <Setter.Value>
+                                                                        <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti geldi">
+                                                                        <Setter Property="Background" Value="#053D1A"/>
+                                                                        <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bilet geldi">
+                                                                        <Setter Property="Background" Value="#053D1A"/>
+                                                                        <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti henüz gelmedi">
+                                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bilet henüz gelmedi">
+                                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Gelmedi">
+                                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti gelmedi">
+                                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <!-- Bileti Alınıyor -> Daha parlak sarı -->
+                                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Alınıyor">
+                                                                        <Setter Property="Background" Value="#FFD700"/>
+                                                                        <Setter Property="BorderBrush" Value="#B8860B"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#FFD700" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <!-- Bileti Kendisi Alacak -> Beyaz -->
+                                                                    <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Kendisi Alacak">
+                                                                        <Setter Property="Background" Value="#FFFFFF"/>
+                                                                        <Setter Property="BorderBrush" Value="#E5E7EB"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock x:Name="TicketStatusText" Text="{Binding TicketStatusChoice, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                                    </Border>
+                                                    <DataTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Kendisi Alacak">
+                                                            <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                        <!-- Yellow/Orange statuses: use dark text for readability -->
+                                                        <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Alınıyor">
+                                                            <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti Aliniyor">
+                                                            <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding TicketStatusChoice}" Value="Bileti alınıyor">
+                                                            <Setter TargetName="TicketStatusText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="Pasaportu Geldi mi" Width="Auto">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border x:Name="PassportArrivedBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#0B1220"/>
+                                                                <Setter Property="BorderBrush" Value="#1E293B"/>
+                                                                <Setter Property="BorderThickness" Value="1"/>
+                                                                <Setter Property="Effect">
+                                                                    <Setter.Value>
+                                                                        <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="Evet">
+                                                                        <Setter Property="Background" Value="#053D1A"/>
+                                                                        <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="Hayır">
+                                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="Hayir">
+                                                                        <Setter Property="Background" Value="#3A1216"/>
+                                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#EF4444" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <!-- Pasaport Vermeyecek -> Beyaz -->
+                                                                    <DataTrigger Binding="{Binding PassportArrived}" Value="Pasaport Vermeyecek">
+                                                                        <Setter Property="Background" Value="#FFFFFF"/>
+                                                                        <Setter Property="BorderBrush" Value="#E5E7EB"/>
+                                                                        <Setter Property="Effect">
+                                                                            <Setter.Value>
+                                                                                <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock x:Name="PassportArrivedText" Text="{Binding PassportArrived, FallbackValue=Seçilmedi, TargetNullValue=Seçilmedi}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                                    </Border>
+                                                    <DataTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding PassportArrived}" Value="Pasaport Vermeyecek">
+                                                            <Setter TargetName="PassportArrivedText" Property="TextBlock.Foreground" Value="#0B1220"/>
+                                                        </DataTrigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="Kargo Talebi" Binding="{Binding CargoRequest}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Oda Türü" Binding="{Binding RoomType}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Katılım Şehri" Binding="{Binding DepartureCity}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Aktarma" Binding="{Binding TransferStatus}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Aktarma Şehri" Binding="{Binding TransferCity}" Width="Auto"/>
+                                        <DataGridTextColumn Header="İlçe" Binding="{Binding District}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Toplam Fiyat" Binding="{Binding TotalPriceDisplay}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmountDisplay}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebtDisplay}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Referans" Binding="{Binding Reference}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Kayıt Tarihi" Binding="{Binding CreatedDateDisplay}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Aktiflik" Binding="{Binding IsActiveDisplay}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Kayıt Durumu" Binding="{Binding Status}" Width="Auto"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
                         </Grid>
                     </Grid>
                 </Border>
@@ -1150,22 +1150,22 @@
 
                                     <Grid>
 
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="15"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="15"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="15"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="15"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0">
+                                        <StackPanel Grid.Column="0">
 
-                                    <TextBlock Text="TC Kimlik No"
+                                            <TextBlock Text="TC Kimlik No"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <TextBox x:Name="QuickTcTextBox"
+                                            <TextBox x:Name="QuickTcTextBox"
                                              Background="#111827"
                                              Foreground="White"
                                              BorderBrush="#374151"
@@ -1173,75 +1173,75 @@
                                              Margin="0,0,0,10"
                                              MaxLength="11"/>
 
-                                    <TextBlock Text="Adı"
+                                            <TextBlock Text="Adı"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <TextBox x:Name="QuickFirstNameTextBox"
+                                            <TextBox x:Name="QuickFirstNameTextBox"
                                              Background="#111827"
                                              Foreground="White"
                                              BorderBrush="#374151"
                                              Padding="5"
                                              Margin="0,0,0,10"/>
 
-                                    <TextBlock Text="Soyadı"
+                                            <TextBlock Text="Soyadı"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <TextBox x:Name="QuickLastNameTextBox"
+                                            <TextBox x:Name="QuickLastNameTextBox"
                                              Background="#111827"
                                              Foreground="White"
                                              BorderBrush="#374151"
                                              Padding="5"
                                              Margin="0,0,0,10"/>
 
-                                    <TextBlock Text="Telefon Numarası"
+                                            <TextBlock Text="Telefon Numarası"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <TextBox x:Name="QuickPhoneTextBox"
+                                            <TextBox x:Name="QuickPhoneTextBox"
                                              Background="#111827"
                                              Foreground="White"
                                              BorderBrush="#374151"
                                              Padding="5"
                                              Margin="0,0,0,10"/>
 
-                                    <TextBlock Text="Doğum Tarihi"
+                                            <TextBlock Text="Doğum Tarihi"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <DatePicker x:Name="QuickBirthDatePicker"
+                                            <DatePicker x:Name="QuickBirthDatePicker"
                                                 Background="#111827"
                                                 BorderBrush="#374151"
                                                 Margin="0,0,0,10"
                                                 Padding="3"
                                                 SelectedDateChanged="QuickBirthDatePicker_SelectedDateChanged"/>
-                                </StackPanel>
+                                        </StackPanel>
 
-                                <StackPanel Grid.Column="2">
+                                        <StackPanel Grid.Column="2">
 
-                                    <TextBlock Text="Pasaport Numarası"
+                                            <TextBlock Text="Pasaport Numarası"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <TextBox x:Name="QuickPassportNumberTextBox"
+                                            <TextBox x:Name="QuickPassportNumberTextBox"
                                              Background="#111827"
                                              Foreground="White"
                                              BorderBrush="#374151"
                                              Padding="5"
                                              Margin="0,0,0,10"/>
 
-                                    <TextBlock Text="Pasaport Türü"
+                                            <TextBlock Text="Pasaport Türü"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <ComboBox x:Name="QuickPassportTypeComboBox"
+                                            <ComboBox x:Name="QuickPassportTypeComboBox"
                                               Background="#111827"
                                               Foreground="White"
                                               BorderBrush="#374151"
@@ -1250,49 +1250,49 @@
                                               DisplayMemberPath="Value"
                                               SelectedValuePath="Value"/>
 
-                                    <TextBlock Text="Pasaport Başlangıç Tarihi"
+                                            <TextBlock Text="Pasaport Başlangıç Tarihi"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <DatePicker x:Name="QuickPassportStartDatePicker"
+                                            <DatePicker x:Name="QuickPassportStartDatePicker"
                                                 Background="#111827"
                                                 BorderBrush="#374151"
                                                 Margin="0,0,0,10"
                                                 Padding="3"/>
 
-                                    <TextBlock Text="Pasaport Bitiş Tarihi"
+                                            <TextBlock Text="Pasaport Bitiş Tarihi"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <DatePicker x:Name="QuickPassportEndDatePicker"
+                                            <DatePicker x:Name="QuickPassportEndDatePicker"
                                                 Background="#111827"
                                                 BorderBrush="#374151"
                                                 Margin="0,0,0,10"
                                                 Padding="3"/>
 
-                                    <TextBlock Text="Adres"
+                                            <TextBlock Text="Adres"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <TextBox x:Name="QuickAddressTextBox"
+                                            <TextBox x:Name="QuickAddressTextBox"
                                              Background="#111827"
                                              Foreground="White"
                                              BorderBrush="#374151"
                                              Padding="5"
                                              Margin="0,0,0,10"/>
-                                </StackPanel>
+                                        </StackPanel>
 
-                                <StackPanel Grid.Column="4">
+                                        <StackPanel Grid.Column="4">
 
-                                    <TextBlock Text="Cinsiyet"
+                                            <TextBlock Text="Cinsiyet"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <ComboBox x:Name="QuickGenderComboBox"
+                                            <ComboBox x:Name="QuickGenderComboBox"
                                               Background="#111827"
                                               Foreground="White"
                                               BorderBrush="#374151"
@@ -1301,12 +1301,12 @@
                                               DisplayMemberPath="Value"
                                               SelectedValuePath="Value"/>
 
-                                    <TextBlock Text="Yaş Aralığı"
+                                            <TextBlock Text="Yaş Aralığı"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <ComboBox x:Name="QuickAgeRangeComboBox"
+                                            <ComboBox x:Name="QuickAgeRangeComboBox"
                                               Background="#111827"
                                               Foreground="White"
                                               BorderBrush="#374151"
@@ -1315,12 +1315,12 @@
                                               DisplayMemberPath="Value"
                                               SelectedValuePath="Value"/>
 
-                                    <TextBlock Text="Kan Grubu"
+                                            <TextBlock Text="Kan Grubu"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <ComboBox x:Name="QuickBloodTypeComboBox"
+                                            <ComboBox x:Name="QuickBloodTypeComboBox"
                                               Background="#111827"
                                               Foreground="White"
                                               BorderBrush="#374151"
@@ -1329,32 +1329,32 @@
                                               DisplayMemberPath="Value"
                                               SelectedValuePath="Value"/>
 
-                                    <TextBlock Text="Sağlık Durumu"
+                                            <TextBlock Text="Sağlık Durumu"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <TextBox x:Name="QuickHealthStatusTextBox"
+                                            <TextBox x:Name="QuickHealthStatusTextBox"
                                              Background="#111827"
                                              Foreground="White"
                                              BorderBrush="#374151"
                                              Padding="5"
                                              Margin="0,0,0,10"/>
 
-                                    <TextBlock Text="Aşı Durumu"
+                                            <TextBlock Text="Aşı Durumu"
                                                Foreground="#9CA3AF"
                                                Margin="0,0,0,3"
                                                FontWeight="SemiBold"/>
 
-                                    <TextBox x:Name="QuickVaccineStatusTextBox"
+                                            <TextBox x:Name="QuickVaccineStatusTextBox"
                                              Background="#111827"
                                              Foreground="White"
                                              BorderBrush="#374151"
                                              Padding="5"
                                              Margin="0,0,0,10"/>
-                                </StackPanel>
+                                        </StackPanel>
 
-                            </Grid>
+                                    </Grid>
 
                                     <Button x:Name="SaveQuickPersonButton"
                                             Content="👁️ Bilgileri Önizle ve Kaydet"

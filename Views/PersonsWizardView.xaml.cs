@@ -28,6 +28,27 @@ namespace TurizmOperasyonSistemi.Views
             Editing
         }
 
+        private void NewPersonButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Yeni kayıt akışını başlat
+                selectedPersonId = 0;
+                ClearForm();
+                SetStepOneState(StepOneState.NewPerson);
+                currentStep = 1;
+                UpdateSteps();
+
+                // Forma kaydır ve ilk alanı odakla
+                RootScrollViewer?.ScrollToVerticalOffset(FormPanel.TranslatePoint(new Point(0, 0), RootScrollViewer).Y - 10);
+                FirstNameTextBox?.Focus();
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         private string currentNationalityValue = string.Empty;
 
         private void LoadNationalityRadioOptions()
@@ -330,6 +351,52 @@ namespace TurizmOperasyonSistemi.Views
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
+            // Eğer 1. adımda ve yeni kişi formundaysak veya düzenleme modundaysak,
+            // geri ile arama sonuçlarına dönsün (kullanıcı vazgeçebilsin)
+            if (currentStep == 1 && (_stepOneState == StepOneState.NewPerson || _stepOneState == StepOneState.Editing))
+            {
+                try
+                {
+                    SetStepOneState(StepOneState.SearchResults);
+                    // Arama durumuna göre NoMatchActionPanel görünürlüğünü güncelle
+                    EvaluateSearchState();
+                    // Seçili öğe varsa seçimi koru ama formu temizlemeden önce Save/Güncelle metnini ve butonları ayarla
+                    if (PersonsDataGrid.SelectedItem is Person sel)
+                    {
+                        // Formda düzenleme görünümündeyken geri gelindiği için form alanlarına dokunma; sadece buton görünürlüğünü ayarla
+                        EditSelectedButton.Visibility = Visibility.Visible;
+                        DeleteSelectedButton.Visibility = Visibility.Visible;
+                        SaveButton.Content = "Güncelle";
+                    }
+                    UpdateSteps();
+                    // Sonuç paneline kaydır
+                    RootScrollViewer?.ScrollToVerticalOffset(ResultsPanel.TranslatePoint(new Point(0, 0), RootScrollViewer).Y - 10);
+                }
+                catch
+                {
+                    // ignore
+                    UpdateSteps();
+                }
+
+                // Eğer DataGrid'de bir seçim varsa, geri döndüğümüzde Düzenle/Sil butonlarını görünür yap
+                try
+                {
+                    if (PersonsDataGrid.SelectedItem is Person sel)
+                    {
+                        selectedPersonId = sel.Id;
+                        EditSelectedButton.Visibility = Visibility.Visible;
+                        DeleteSelectedButton.Visibility = Visibility.Visible;
+                        SaveButton.Content = "Güncelle";
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                return;
+            }
+
             if (currentStep > 1)
             {
                 currentStep--;
@@ -379,7 +446,9 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             NextButton.Visibility = currentStep == 5 ? Visibility.Collapsed : Visibility.Visible;
-            BackButton.IsEnabled = currentStep > 1;
+            // Normalde geri düğmesi sadece adımlar arasında gezinme içindir
+            // Ancak 1. adımda "Yeni Kişi" formundaysa, kullanıcı geri ile arama sonuçlarına dönebilmelidir
+            BackButton.IsEnabled = currentStep > 1 || (currentStep == 1 && (_stepOneState == StepOneState.NewPerson || _stepOneState == StepOneState.Editing));
             UpdateStepOneVisualState();
         }
 
@@ -662,6 +731,32 @@ namespace TurizmOperasyonSistemi.Views
                 NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                 // Herhangi bir zamanlayıcı varsa durdur
                 _noMatchScrollTimer?.Stop();
+                // Eğer sonuçlar varsa:
+                // - Kullanıcı TC (rakam içeren) arıyorsa, yalnızca TC eşleşmesi varsa "tam eşleşme" kabul et.
+                // - Kullanıcı isimle arıyorsa, isim benzerliği yeni kayıt yapmayı engellemesin; bu durumda
+                //   her zaman "Aradığım kişi listede yok" butonunu göstererek kullanıcıya yeni kayıt hakkı ver.
+                try
+                {
+                    var digitQuery = new string((SearchTextBox.Text ?? string.Empty).Where(char.IsDigit).ToArray());
+                    var matches = _personsView?.Cast<object>().OfType<Person>().ToList() ?? new System.Collections.Generic.List<Person>();
+
+                    if (!string.IsNullOrWhiteSpace(digitQuery) && digitQuery.Length >= 3)
+                    {
+                        // TC araması: eşleşen TC varsa butonu gizle
+                        bool tcMatch = matches.Any(p => !string.IsNullOrWhiteSpace(p.TcKimlikNo) && new string(p.TcKimlikNo.Where(char.IsDigit).ToArray()).Contains(digitQuery));
+                        NoMatchActionPanel.Visibility = tcMatch ? Visibility.Collapsed : Visibility.Visible;
+                    }
+                    else
+                    {
+                        // İsim araması: her durumda yeni kayıt butonunu erişilebilir tut
+                        NoMatchActionPanel.Visibility = Visibility.Visible;
+                    }
+                }
+                catch
+                {
+                    try { NoMatchActionPanel.Visibility = Visibility.Visible; } catch { }
+                }
+
                 return;
             }
 
@@ -686,6 +781,11 @@ namespace TurizmOperasyonSistemi.Views
         {
             _stepOneState = state;
             UpdateStepOneVisualState();
+            // UpdateSteps ile footer (Geri/İleri) butonlarının durumu güncellensin
+            if (currentStep == 1)
+            {
+                UpdateSteps();
+            }
         }
 
         private void UpdateStepOneVisualState()
@@ -712,6 +812,7 @@ namespace TurizmOperasyonSistemi.Views
                     FormCaptionTextBlock.Text = "Yeni kişi kaydı oluşturmak ya da seçili kişiyi güncellemek için bu alanı kullanın.";
                     SearchStateTextBlock.Text = "Aramayı başlatın. Sistem tüm eşleşmeleri sonuçlarda gösterecek.Kişi kaydı yoksa kayıt formu otomatik açılacak.";
                     NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
+                    try { NoMatchActionPanel.Visibility = Visibility.Collapsed; } catch { }
                     break;
 
                 case StepOneState.SearchResults:
@@ -734,6 +835,8 @@ namespace TurizmOperasyonSistemi.Views
 
                     FormPanel.Effect = null;
                     FormOverlay.Visibility = Visibility.Collapsed;
+                    // "Aradığım kişi listede yok" aksiyon panelini göster
+                    try { NoMatchActionPanel.Visibility = Visibility.Visible; } catch { }
                     FormCaptionTextBlock.Text = "Bu kişi sistemde bulunamadı. Aşağıdaki alanları doldurup adımlarda ilerleyebilirsiniz.";
                     NoPersonNoticeTextBlock.Visibility = Visibility.Visible;
                     break;
