@@ -54,6 +54,43 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
+        private void ScrollToAndFocus(FrameworkElement element)
+        {
+            if (element == null)
+            {
+                return;
+            }
+
+            try
+            {
+                // Use BeginInvoke so layout updates settle before measuring
+                element.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        element.Focus();
+                        element.UpdateLayout();
+
+                        if (RootScrollViewer != null)
+                        {
+                            // Transform element position relative to ScrollViewer
+                            var transform = element.TransformToAncestor(RootScrollViewer) as GeneralTransform;
+                            if (transform != null)
+                            {
+                                var pt = transform.Transform(new Point(0, 0));
+                                // Calculate offset so element is slightly below top
+                                double offset = pt.Y + RootScrollViewer.VerticalOffset - 24;
+                                if (double.IsNaN(offset) || double.IsInfinity(offset)) offset = 0;
+                                RootScrollViewer.ScrollToVerticalOffset(Math.Max(0, offset));
+                            }
+                        }
+                    }
+                    catch { }
+                }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            }
+            catch { }
+        }
+
 
 
         private void NewPersonButton_Click(object sender, RoutedEventArgs e)
@@ -61,8 +98,13 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 // Yeni kayıt akışını başlat
+                // Eğer listede bir seçim varsa bunu temizle ki Düzenle/Sil butonları görünmesin
+                try { PersonsDataGrid.SelectedItem = null; } catch { }
                 selectedPersonId = 0;
                 ClearForm();
+                // ek güvenlik: butonları gizle
+                try { EditSelectedButton.Visibility = Visibility.Collapsed; DeleteSelectedButton.Visibility = Visibility.Collapsed; if (ToggleActiveButton!=null) ToggleActiveButton.Visibility = Visibility.Collapsed; } catch { }
+                try { NotifyPersonSelectionChanged(null); } catch { }
                 SetStepOneState(StepOneState.NewPerson);
                 currentStep = 1;
                 UpdateSteps();
