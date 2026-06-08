@@ -1,10 +1,12 @@
 <Page x:Class="TurizmOperasyonSistemi.Views.PersonsWizardView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="clr-namespace:TurizmOperasyonSistemi.Views"
       Title="PersonsWizardView"
       Background="#111827">
 
     <Page.Resources>
+        <local:TagRequiredToVisibilityConverter x:Key="TagReqToVis" />
         <!-- Footer button stills: daha modern, yuvarlak ve gölgeli butonlar -->
         <Style x:Key="FooterButtonBase" TargetType="Button">
             <Setter Property="Height" Value="45"/>
@@ -569,7 +571,7 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel>
-                            <TextBlock Text="Veritabanında kişi kaydını bulmak için önce arama yapın."
+                            <TextBlock Text="Kişinin KİMLİK BİLGİSİ kaydını veritabanında bulmak için önce arama yapın."
                                        Foreground="#22D3EE"
                                        FontSize="24"
                                        FontWeight="Bold"/>
@@ -782,25 +784,49 @@
                                                Margin="0,0,0,8"
                                                Visibility="Collapsed"/>
 
-                                    <TextBlock Text="Ad"
-                                               Foreground="#F8FAFC"
-                                               FontWeight="SemiBold"
-                                               FontSize="13"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Ad"
+                                                   Foreground="#F8FAFC"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="13"/>
+                                        <TextBlock Text="  (Doldurmanız zorunludur)"
+                                                   Foreground="#FF4D6D"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center"
+                                                   Visibility="{Binding ElementName=FirstNameTextBox, Path=Tag, Converter={StaticResource TagReqToVis}}"
+                                                   Margin="8,0,0,0"/>
+                                    </StackPanel>
                                     <TextBox x:Name="FirstNameTextBox"
                                              Height="36"
                                              TextChanged="RequiredField_TextChanged"/>
 
-                                    <TextBlock Text="Soyad"
-                                               Foreground="#F8FAFC"
-                                               FontWeight="SemiBold"
-                                               FontSize="13"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Soyad"
+                                                   Foreground="#F8FAFC"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="13"/>
+                                        <TextBlock Text="  (Doldurmanız zorunludur)"
+                                                   Foreground="#FF4D6D"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center"
+                                                   Visibility="{Binding ElementName=LastNameTextBox, Path=Tag, Converter={StaticResource TagReqToVis}}"
+                                                   Margin="8,0,0,0"/>
+                                    </StackPanel>
                                     <TextBox x:Name="LastNameTextBox"
                                              Height="36"
                                              TextChanged="RequiredField_TextChanged"/>
-                                    <TextBlock Text="Uyruk"
-                                               Foreground="#F8FAFC"
-                                               FontWeight="SemiBold"
-                                               FontSize="13"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Uyruk"
+                                                   Foreground="#F8FAFC"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="13"/>
+                                        <TextBlock Text="  (Doldurmanız zorunludur)"
+                                                   Foreground="#FF4D6D"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center"
+                                                   Visibility="{Binding ElementName=NationalityComboBox, Path=Tag, Converter={StaticResource TagReqToVis}}"
+                                                   Margin="8,0,0,0"/>
+                                    </StackPanel>
                                     <ItemsControl x:Name="NationalityOptionsPanel">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
@@ -819,10 +845,18 @@
                                              Height="36"
                                              TextChanged="RequiredField_TextChanged"/>
 
-                                    <TextBlock Text="Cinsiyet"
-                                               Foreground="#F8FAFC"
-                                               FontWeight="SemiBold"
-                                               FontSize="13"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Cinsiyet"
+                                                   Foreground="#F8FAFC"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="13"/>
+                                        <TextBlock Text="  (Doldurmanız zorunludur)"
+                                                   Foreground="#FF4D6D"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center"
+                                                   Visibility="{Binding ElementName=GenderComboBox, Path=Tag, Converter={StaticResource TagReqToVis}}"
+                                                   Margin="8,0,0,0"/>
+                                    </StackPanel>
                                     <ComboBox x:Name="GenderComboBox"
                                               Height="36"
                                               SelectionChanged="GenderComboBox_SelectionChanged"/>
