@@ -1532,6 +1532,55 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
+                // If user double-clicked one of the Visa/Ticket/Passport related columns,
+                // open the shared RegistrationCellEditorWindow as a modal instead of inline edit.
+                try
+                {
+                    var headerText = (column.Header?.ToString() ?? string.Empty).Trim();
+                    var headerNorm = headerText.ToLowerInvariant();
+
+                    bool isVisaColumn = false;
+                    bool isTicketColumn = false;
+                    if (!string.IsNullOrWhiteSpace(propName))
+                    {
+                        var pn = propName.Trim().ToLowerInvariant();
+                        // Only treat explicit registration fields as Visa-related
+                        if (pn.Contains("visa") || pn.Contains("vizerequest") || pn.Contains("visastatus") || pn.Contains("visastatuschoice") || pn == "visarequest" || pn == "visastatuschoice") isVisaColumn = true;
+                        // Only treat explicit registration fields as Ticket-related
+                        if (pn.Contains("ticket") || pn.Contains("ticketrequest") || pn.Contains("ticketstatus") || pn.Contains("ticketstatuschoice")) isTicketColumn = true;
+                        // Do NOT treat generic 'passport' property as Visa column here; passport-related popup is only for 'PassportArrived' semantics
+                        if (pn.Contains("passportarrived") || pn.Contains("passportarrivedtext") || pn == "passportarrived") isVisaColumn = true;
+                    }
+
+                    if (!isVisaColumn && !isTicketColumn)
+                    {
+                        // Header-based fallbacks: match explicit 'vize' or 'pasaportu geldi' text only
+                        if (headerNorm.Contains("vize") || headerNorm.Contains("pasaportugeld") || headerNorm.Contains("pasaportugeldimi") || headerNorm.Contains("pasaportugeldi")) isVisaColumn = true;
+                        if (headerNorm.Contains("bilet")) isTicketColumn = true;
+                    }
+
+                    if (isVisaColumn || isTicketColumn)
+                    {
+                        var row = cell.DataContext as GeneralRow;
+                        if (row == null) return;
+                        var regId = row.RegistrationId;
+                        var mode = RegistrationCellEditorWindow.EditorMode.Both;
+                        if (isVisaColumn && !isTicketColumn) mode = RegistrationCellEditorWindow.EditorMode.VisaOnly;
+                        else if (isTicketColumn && !isVisaColumn) mode = RegistrationCellEditorWindow.EditorMode.TicketOnly;
+
+                        var editor = new RegistrationCellEditorWindow(regId, mode) { Owner = Window.GetWindow(this) };
+                        var res = editor.ShowDialog();
+                        if (res == true)
+                        {
+                            // reload fresh data from DB so changes are visible
+                            try { LoadResults(); } catch { ResultsDataGrid.Items.Refresh(); }
+                            try { ShowSaveToast("Kayıt güncellendi."); } catch { }
+                        }
+                        return;
+                    }
+                }
+                catch { }
+
                 // allowed editable properties (union of person and registration editable fields)
                 var editableProps = new[] { "FirstName", "LastName", "TcKimlikNo", "Gender", "BirthDate", "PhoneNumber", "Address", "PassportNumber", "VaccineStatus", "HealthStatus", "District", "TotalPrice", "PaidAmount", "RemainingDebt", "Reference",
                                             "PassportType", "BloodType", "VisaRequest", "TicketRequest", "CargoRequest", "DepartureCity", "HasTransfer", "TransferCity", "Currency", "PassportArrived", "PassportArrivedText", "VisaStatusChoice", "TicketStatusChoice" };
