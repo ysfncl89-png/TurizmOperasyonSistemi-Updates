@@ -38,6 +38,14 @@
             </Style.Triggers>
         </Style>
 
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="4,0,8,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
         <Style TargetType="ComboBox">
             <Setter Property="Background" Value="#1E293B"/>
             <Setter Property="Foreground" Value="#0F172A"/>

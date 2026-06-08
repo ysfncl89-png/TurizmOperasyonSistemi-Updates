@@ -77,19 +77,12 @@ namespace TurizmOperasyonSistemi.Views
                         {
                             currentNationalityValue = (s as RadioButton)?.Tag as string ?? string.Empty;
                             ApplyLiveRequiredHighlights();
-                            try
-                            {
-                                var lbl = FindName("TcLabel") as TextBlock;
-                                if (lbl != null)
-                                {
-                                    lbl.Text = GetNationalityMode() == NationalityMode.Foreign ? "Pasaport numarası" : "TC Kimlik No";
-                                }
-                            }
-                            catch
-                            {
-                                // ignore
-                            }
+                            // Not changing label text here; label remains 'TC Kimlik No' even if TC textbox is disabled.
                         };
+
+                        // Ensure radio button text is visible on dark theme
+                        rb.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F8FAFC"));
+                        rb.FontWeight = FontWeights.SemiBold;
 
                         panel.Items.Add(rb);
                     }
@@ -594,19 +587,7 @@ namespace TurizmOperasyonSistemi.Views
             // TC veya Pasaport zorunluluğunu uyruk durumuna göre ayarla
             var mode = GetNationalityMode();
 
-            // Güncelle: TC etiketini uyruk durumuna göre göster
-            try
-            {
-                var lbl = FindName("TcLabel") as TextBlock;
-                if (lbl != null)
-                {
-                    lbl.Text = mode == NationalityMode.Foreign ? "Pasaport numarası" : "TC Kimlik No";
-                }
-            }
-            catch
-            {
-                // ignore
-            }
+            // Keep TC label text constant ("TC Kimlik No") even if TC textbox is disabled for foreign nationals.
 
             // Her iki alan da düzenlenebilir kalsın; sadece zorunluluk Tag'leri uyruk durumuna göre ayarlansın
             // TC yalnızca Türkiye seçiliyse düzenlenebilir; yabancıysa devre dışı bırakarak giriş engelle
@@ -1227,19 +1208,7 @@ namespace TurizmOperasyonSistemi.Views
                     finally { _suppressTcTextChanged = false; }
                 }
             }
-            // Ayrıca TC label'ını güncelle: yabancıysa "Pasaport numarası" göster
-            try
-            {
-                var lbl = FindName("TcLabel") as TextBlock;
-                if (lbl != null)
-                {
-                    lbl.Text = mode == NationalityMode.Foreign ? "Pasaport numarası" : "TC Kimlik No";
-                }
-            }
-            catch
-            {
-                // ignore
-            }
+            // Not changing the TC label text here - keep it as "TC Kimlik No" even if the textbox is disabled.
         }
 
         private void GenderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
