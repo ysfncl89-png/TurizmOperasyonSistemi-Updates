@@ -214,7 +214,7 @@
                         FontSize="16"
                         Click="ListsButton_Click">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📋" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="🔎" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <TextBlock Text="Listeler" FontSize="14" VerticalAlignment="Center" Foreground="White"
                                    Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </StackPanel>
@@ -230,7 +230,7 @@
                         FontSize="16"
                         Click="SettingsButton_Click">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="⚙️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="🔧" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <TextBlock Text="Ayarlar" FontSize="14" VerticalAlignment="Center" Foreground="White"
                                    Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </StackPanel>

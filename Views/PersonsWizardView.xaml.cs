@@ -233,7 +233,7 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
-            var confirm = NeonMessageBoxWindow.Show($"{person.FirstName} {person.LastName} adlı kişiyi silmek istediğinize emin misiniz?", "Onay", true);
+            var confirm = NeonMessageBoxWindow.Show($"{person.FirstName} {person.LastName} adlı kişiyi veri tabanından KALICI OLARAK silmek istediğinize emin misiniz?", "Onay", true);
             if (confirm != true)
             {
                 return;
