@@ -12,6 +12,8 @@ namespace TurizmOperasyonSistemi
             InitializeComponent(); 
 
             MainFrame.Navigate(new HomeView());
+            // Varsayılan olarak Anasayfa seçili görünmeli
+            HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C1A15"));
         }
 
         private void ResetMenuColors()
@@ -29,14 +31,14 @@ namespace TurizmOperasyonSistemi
         private void HomeButton_Click(object sender, RoutedEventArgs e)
         {
             ResetMenuColors();
-            HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#06B6D4"));
+            HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C1A15"));
             MainFrame.Navigate(new HomeView());
         }
 
         private void PersonsButton_Click(object sender, RoutedEventArgs e)
         {
             ResetMenuColors();
-            PersonsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
+            PersonsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF06B6D4"));
             MainFrame.Navigate(new PersonsWizardView());
         }
 
@@ -76,7 +78,7 @@ namespace TurizmOperasyonSistemi
         public void NavigateToHome()
         {
             ResetMenuColors();
-            HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#06B6D4"));
+            HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C1A15"));
             MainFrame.Navigate(new HomeView());
         }
     }

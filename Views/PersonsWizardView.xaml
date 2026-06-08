@@ -571,7 +571,7 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel>
-                            <TextBlock Text="Kişinin KİMLİK BİLGİSİ kaydını veritabanında bulmak için önce arama yapın."
+                            <TextBlock Text="Kişinin KİMLİK BİLGİSİ kaydını veritabanında bulmak için önce arama yapınız."
                                        Foreground="#22D3EE"
                                        FontSize="24"
                                        FontWeight="Bold"/>

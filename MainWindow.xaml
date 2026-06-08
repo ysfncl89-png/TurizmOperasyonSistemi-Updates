@@ -187,7 +187,7 @@
                         FontSize="16"
                         Click="RegistrationButton_Click">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📝" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="✚" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <TextBlock Text="Tur Kayıt" FontSize="14" VerticalAlignment="Center" Foreground="White"
                                    Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </StackPanel>
