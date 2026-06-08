@@ -850,7 +850,7 @@ namespace TurizmOperasyonSistemi.Views
             {
                 ClearForm();
                 SetStepOneState(StepOneState.SearchResults);
-                SearchStateTextBlock.Text = "Kayıt bulundu . Kişiyi düzenleyecek ya da tamamen silecekseniz listeden kişiyi seçin.";
+                SearchStateTextBlock.Text = "Kayıt bulundu . Kişi bilgilerini güncellemek ya da tamamen silmek isterseniz listeden kişiyi seçin . Ardından Düzenle ya da Sil butonlarına tıklayın . Eğer aradığınız kişi listede yoksa Yeni Kişi Kaydı Yap butonuna tıklayın. ";
                 // Arama sonucu bulunduğunda "kayıt bulunamadı" uyarısını gizle
                 NoPersonNoticeTextBlock.Visibility = Visibility.Collapsed;
                 // Herhangi bir zamanlayıcı varsa durdur
