@@ -1,40 +1,74 @@
 <Window x:Class="TurizmOperasyonSistemi.Views.RegistrationCellEditorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Kayıt Düzenle" Height="360" Width="520" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
-    <Grid Background="#111827" Margin="12">
+        Title="Kayıt Düzenle" Height="420" Width="520" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent">
+    <Window.Resources>
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="#0F172A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#475569"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="#182235"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#2563EB"/></Trigger>
+                <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#0EA5E9"/></Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Border CornerRadius="14" Background="#1F2937" Padding="8" SnapsToDevicePixels="True">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" BlurRadius="18" ShadowDepth="6" Opacity="0.28"/>
+        </Border.Effect>
+        <Grid Background="#111827" Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Operasyon Talep / Durum Düzenle" Foreground="#06B6D4" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4"/>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Operasyon Talep / Durum Düzenle" Foreground="#06B6D4" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,6"/>
+            <Button Grid.Column="1" Width="36" Height="28" Margin="0,6,8,6" Click="CancelButton_Click" ToolTip="Kapat"
+                    Background="#0F172A" Foreground="#E6FCFF" BorderBrush="#374151" Padding="4">
+                <TextBlock Text="✕" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
+            </Button>
+        </Grid>
 
         <StackPanel Grid.Row="1" Margin="8" VerticalAlignment="Top">
-            <StackPanel x:Name="VisaPanel">
-                <TextBlock Text="Vize Talebi" Foreground="#E6FCFF"/>
-                <ComboBox x:Name="VisaRequestComboBox" Margin="0,6,0,10"/>
+        <StackPanel x:Name="VisaPanel">
+                <TextBlock Text="Vize Talebi" Foreground="#E6FCFF" FontWeight="SemiBold" Margin="4,6,0,2" />
+                <ComboBox x:Name="VisaRequestComboBox" Margin="0,6,0,10" Background="#0F172A" BorderBrush="#475569" Padding="8" FontSize="14" Foreground="#0B1220"/>
 
-                <TextBlock Text="Pasaportu Geldi mi ?" Foreground="#E6FCFF"/>
-                <ComboBox x:Name="PassportArrivedComboBox" Margin="0,6,0,10" DisplayMemberPath="Value"/>
+                <TextBlock Text="Pasaportu Geldi mi ?" Foreground="#E6FCFF" FontWeight="SemiBold" Margin="4,6,0,2" />
+                <ComboBox x:Name="PassportArrivedComboBox" Margin="0,6,0,10" DisplayMemberPath="Value" Background="#0F172A" BorderBrush="#475569" Padding="8" FontSize="14" Foreground="#0B1220"/>
 
-                <TextBlock Text="Vize Durumu" Foreground="#E6FCFF"/>
-                <ComboBox x:Name="VisaStatusComboBox" Margin="0,6,0,10"/>
+                <TextBlock Text="Vize Durumu" Foreground="#E6FCFF" FontWeight="SemiBold" Margin="4,6,0,2" />
+                <ComboBox x:Name="VisaStatusComboBox" Margin="0,6,0,10" Background="#0F172A" BorderBrush="#475569" Padding="8" FontSize="14" Foreground="#0B1220"/>
             </StackPanel>
 
             <StackPanel x:Name="TicketPanel" Visibility="Collapsed">
-                <TextBlock Text="Bilet Talebi" Foreground="#E6FCFF"/>
-                <ComboBox x:Name="TicketRequestComboBox" Margin="0,6,0,10"/>
+                <TextBlock Text="Bilet Talebi" Foreground="#E6FCFF" FontWeight="SemiBold" Margin="4,6,0,2" />
+                <ComboBox x:Name="TicketRequestComboBox" Margin="0,6,0,10" Background="#0F172A" BorderBrush="#475569" Padding="8" FontSize="14" Foreground="#0B1220"/>
 
-                <TextBlock Text="Bilet Durumu" Foreground="#E6FCFF"/>
-                <ComboBox x:Name="TicketStatusComboBox" Margin="0,6,0,10"/>
+                <TextBlock Text="Bilet Durumu" Foreground="#E6FCFF" FontWeight="SemiBold" Margin="4,6,0,2" />
+                <ComboBox x:Name="TicketStatusComboBox" Margin="0,6,0,10" Background="#0F172A" BorderBrush="#475569" Padding="8" FontSize="14" Foreground="#0B1220"/>
             </StackPanel>
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button x:Name="CancelButton" Content="İptal" Width="100" Margin="0,0,8,0" Click="CancelButton_Click"/>
-            <Button x:Name="SaveButton" Content="Kaydet" Width="120" Click="SaveButton_Click"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,10">
+            <Button x:Name="CancelButton" Content="İptal" Width="100" Margin="0,0,8,0" Click="CancelButton_Click" Background="#374151" Foreground="White"/>
+            <Button x:Name="SaveButton" Content="Kaydet" Width="120" Click="SaveButton_Click" Background="#10B981" Foreground="White"/>
         </StackPanel>
     </Grid>
+    </Border>
 </Window>

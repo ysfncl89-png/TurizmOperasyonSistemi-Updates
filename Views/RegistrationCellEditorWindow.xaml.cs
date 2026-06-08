@@ -29,10 +29,14 @@ namespace TurizmOperasyonSistemi.Views
             _registrationId = registrationId;
             _mode = mode;
             LoadOptions();
-            LoadExistingValues();
+            // Attach handlers before loading existing values so runtime changes are handled
             AttachHandlers();
-
             ApplyModeVisibility();
+            LoadExistingValues();
+
+            // Ensure filters are applied for initial state
+            EvaluateVisaPassportRules();
+            ApplyTicketFiltering();
         }
 
         private void ApplyModeVisibility()
@@ -57,8 +61,15 @@ namespace TurizmOperasyonSistemi.Views
         private void AttachHandlers()
         {
             VisaRequestComboBox.SelectionChanged += (s,e) => EvaluateVisaPassportRules();
+            VisaRequestComboBox.DropDownOpened += (s,e) => EvaluateVisaPassportRules();
+            VisaRequestComboBox.Loaded += (s,e) => EvaluateVisaPassportRules();
+
             PassportArrivedComboBox.SelectionChanged += (s,e) => EvaluateVisaPassportRules();
+            PassportArrivedComboBox.DropDownOpened += (s,e) => EvaluateVisaPassportRules();
+
             TicketRequestComboBox.SelectionChanged += (s,e) => ApplyTicketFiltering();
+            TicketRequestComboBox.DropDownOpened += (s,e) => ApplyTicketFiltering();
+            TicketRequestComboBox.Loaded += (s,e) => ApplyTicketFiltering();
         }
 
         private void LoadOptions()
@@ -234,6 +245,26 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // Validation: if visible panels require selections, disallow saving when any required ComboBox is empty
+                var missing = new List<string>();
+                if (_mode == EditorMode.Both || _mode == EditorMode.VisaOnly)
+                {
+                    if (VisaRequestComboBox.SelectedItem == null) missing.Add("Vize Talebi");
+                    if (PassportArrivedComboBox.SelectedItem == null) missing.Add("Pasaportu Geldi mi ?");
+                    if (VisaStatusComboBox.SelectedItem == null) missing.Add("Vize Durumu");
+                }
+
+                if (_mode == EditorMode.Both || _mode == EditorMode.TicketOnly)
+                {
+                    if (TicketRequestComboBox.SelectedItem == null) missing.Add("Bilet Talebi");
+                    if (TicketStatusComboBox.SelectedItem == null) missing.Add("Bilet Durumu");
+                }
+
+                if (missing.Count > 0)
+                {
+                    MessageBox.Show("Lütfen aşağıdaki alanları doldurun: " + string.Join(", ", missing), "Eksik Alan", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
                 using var db = new AppDbContext();
                 var reg = db.Registrations.FirstOrDefault(x => x.Id == _registrationId);
                 if (reg == null) { MessageBox.Show("Kayıt bulunamadı."); return; }
