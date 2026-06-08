@@ -132,6 +132,7 @@ namespace TurizmOperasyonSistemi.Views
             InitializeComponent();
             LoadAll();
             Loaded += PersonsHealthView_Loaded;
+            Unloaded += PersonsHealthView_Unloaded;
             LoadBloodOptions();
             // subscribe to notifications in case PersonsWizardView updates underlying data
             Services.NotificationCenter.Subscribe(OnNotification);
@@ -167,7 +168,7 @@ namespace TurizmOperasyonSistemi.Views
                             BorderBrush = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#60A5FA"),
                             BorderThickness = new System.Windows.Thickness(1.2)
                         };
-                        designBtn.Click += DesignButton_Click;
+                        designBtn.Click += DesignButton_Handler;
                         sp.Children.Add(designBtn);
 
                         parent.Children.Add(sp);
@@ -178,6 +179,41 @@ namespace TurizmOperasyonSistemi.Views
             {
                 // ignore any runtime issues when manipulating visual tree
             }
+        }
+
+        private void PersonsHealthView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // restore persisted template when leaving the health page so temporary "Uygula" changes are discarded
+                ApplySavedTemplate();
+            }
+            catch { }
+        }
+
+        private void DesignButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new ListDesignDialog(ResultsDataGrid.Columns, "Saglik", ResultsDataGrid);
+                dialog.Owner = Application.Current?.MainWindow;
+                var res = dialog.ShowDialog();
+                if (res != true) return;
+                try
+                {
+                    if (dialog.WasSaved)
+                    {
+                        // reload persisted template
+                        ApplySavedTemplate();
+                    }
+                    else
+                    {
+                        // temporary apply already done by dialog; keep until Unloaded
+                    }
+                }
+                catch { }
+            }
+            catch { }
         }
 
         private void OnNotification(string key, object payload)
@@ -639,20 +675,22 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                // pass mode name so templates are stored per-mode and allow applying directly to grid
+                // Open the dialog and let it either apply temporarily or save persistently.
                 var dialog = new ListDesignDialog(ResultsDataGrid.Columns, "Saglik", ResultsDataGrid);
                 dialog.Owner = Application.Current?.MainWindow;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
 
-                var options = dialog.ColumnOptions;
-                if (options == null) return;
-
-                // Apply ordering (DisplayIndex) and visibility based on returned options
-                // Apply by using same logic as dialog's Apply (we already passed ResultsDataGrid so saved template will be applied there)
-                var store = new Services.ListTemplateStore();
-                store.SaveTemplate("Saglik", options.OrderBy(o => o.Order).Select(o => new Services.ListTemplateStore.ColumnDto { Title = o.Title, Order = o.Order, IsVisible = o.IsVisible }).ToList());
-                try { ResultsDataGrid.Items.Refresh(); } catch { }
+                // If dialog saved persistently, reload persisted template; otherwise
+                // temporary changes were already applied to ResultsDataGrid by the dialog.
+                try
+                {
+                    if (dialog.WasSaved)
+                    {
+                        ApplySavedTemplate();
+                    }
+                }
+                catch { }
             }
             catch (System.Exception ex)
             {

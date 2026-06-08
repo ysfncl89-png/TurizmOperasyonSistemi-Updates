@@ -437,6 +437,7 @@ namespace TurizmOperasyonSistemi.Views
             ApplyTheme(_currentMode);
             // ensure default column projection is applied after InitializeComponent
             Loaded += (s, e) => ConfigureMode(_currentMode);
+            Unloaded += PersonsGeneralView_Unloaded;
             ResultsDataGrid.MouseDoubleClick += ResultsDataGrid_MouseDoubleClick;
             ResultsDataGrid.CellEditEnding += ResultsDataGrid_CellEditEnding;
             ResultsDataGrid.PreparingCellForEdit += ResultsDataGrid_PreparingCellForEdit;
@@ -446,6 +447,17 @@ namespace TurizmOperasyonSistemi.Views
             // initial state: show filters, hide topbar
             TopBar.Visibility = Visibility.Collapsed;
             FiltersPanel.Visibility = Visibility.Visible;
+        }
+
+        private void PersonsGeneralView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // When leaving this page, re-apply the persisted template for the current mode
+                // so any temporary "Uygula" changes are discarded.
+                ConfigureMode(_currentMode);
+            }
+            catch { }
         }
 
         // Theme structure local to this page
@@ -2555,10 +2567,18 @@ namespace TurizmOperasyonSistemi.Views
                 dialog.Owner = Application.Current?.MainWindow;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
-                // Template may have been saved by the dialog; reload/apply the template via ConfigureMode
+                // If the dialog saved the template persistently, reload templates from store.
                 try
                 {
-                    ConfigureMode(_currentMode);
+                    if (dialog.WasSaved)
+                    {
+                        ConfigureMode(_currentMode);
+                    }
+                    else
+                    {
+                        // If not saved, the dialog already applied temporary changes to the grid.
+                        // Keep them until the user leaves the module (handled by Unloaded event).
+                    }
                 }
                 catch { }
             }

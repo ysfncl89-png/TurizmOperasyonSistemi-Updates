@@ -15,6 +15,7 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class ListDesignDialog : Window
     {
+        public bool WasSaved { get; private set; } = false;
         private readonly ObservableCollection<ColumnOption> _columns;
         private readonly string _modeName;
         private readonly ListTemplateStore _store = new ListTemplateStore();
@@ -184,7 +185,14 @@ namespace TurizmOperasyonSistemi.Views
                     try { _targetGrid.Items.Refresh(); } catch { }
                 }
 
-                MessageBox.Show("Şablon kaydedildi.");
+                // mark that a persistent save occurred so caller can react
+                WasSaved = true;
+                var mbRes = MessageBox.Show("Şablon kaydedildi.", "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (mbRes == MessageBoxResult.OK)
+                {
+                    // close the dialog after user acknowledges the message
+                    try { this.DialogResult = true; } catch { this.Close(); }
+                }
             }
             catch (Exception ex)
             {
@@ -289,6 +297,9 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // Apply changes to the target grid for the current session only.
+                // Do NOT persist to the ListTemplateStore here so the change remains temporary
+                // until the user leaves the PersonsGeneralView module.
                 if (!string.IsNullOrWhiteSpace(_modeName))
                 {
                     SyncUiToModel();
@@ -296,7 +307,7 @@ namespace TurizmOperasyonSistemi.Views
                                        .Select(c => new ListTemplateStore.ColumnDto { Key = c.Key, Title = c.Title, Order = c.Order, IsVisible = c.IsVisible })
                                        .ToList();
                     try { FixTemplateKeysFromTargetGrid(list); } catch { }
-                    _store.SaveTemplate(_modeName, list);
+                    // Intentionally do NOT call _store.SaveTemplate(...) here to avoid making the template persistent.
                     if (_targetGrid != null)
                     {
                         ApplyToTargetGrid(list);
