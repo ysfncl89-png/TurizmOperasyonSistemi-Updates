@@ -1372,8 +1372,12 @@
             </Grid>
 
             <Grid x:Name="Step2Grid" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <Border Background="#1F2937"
+                <Border Grid.Row="0" Background="#1F2937"
                         CornerRadius="8"
                         Padding="25"
                         VerticalAlignment="Top"
@@ -1450,6 +1454,34 @@
 
                     </StackPanel>
 
+                </Border>
+
+                <!-- Attention notice placed under the combobox border as requested -->
+                <Border x:Name="Step2NoticeBorder"
+                        Grid.Row="1"
+                        Background="Transparent"
+                        Margin="0,12,0,0"
+                        HorizontalAlignment="Center">
+                    <TextBlock FontSize="14" FontWeight="Bold" TextAlignment="Center">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#F59E0B" BlurRadius="14" ShadowDepth="0" Opacity="0.9"/>
+                        </TextBlock.Effect>
+                        <Run Text="KİŞİNİN KİMLİK BİLGİLERİ SİSTEME KAYDEDİLDİ" Foreground="#FFF59E0B"/>
+                        <Run Text="  "/>
+                        <Run Text="TUR KAYDINI TAMAMLAMAK İÇİN KAYIT ÖNİZLEME ADIMINA KADAR İLERLEYİN." Foreground="White"/>
+                    </TextBlock>
+                    <Border.Triggers>
+                        <EventTrigger RoutedEvent="Border.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                    <DoubleAnimation Storyboard.TargetName="Step2NoticeBorder"
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     From="0.65" To="1"
+                                                     Duration="0:0:0.9" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Border.Triggers>
                 </Border>
 
             </Grid>
