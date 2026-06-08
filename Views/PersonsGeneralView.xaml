@@ -601,7 +601,13 @@
 
                         <DataGridTextColumn Header="TC Kimlik"
                                             Binding="{Binding TcKimlikNo}"
-                                            Width="Auto"/>
+                                            Width="Auto">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#FBBF24" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
 
                         <DataGridTextColumn Header="Uyruk"
                                             Binding="{Binding Nationality}"
@@ -680,7 +686,13 @@
 
                         <DataGridTextColumn Header="Pasaport numarası"
                                             Binding="{Binding PassportNumber}"
-                                            Width="Auto"/>
+                                            Width="Auto">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#FBBF24" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
 
                         <DataGridTemplateColumn Header="Pasaportu Geldi mi ?" Width="SizeToCells" MinWidth="120">
                             <DataGridTemplateColumn.CellTemplate>
