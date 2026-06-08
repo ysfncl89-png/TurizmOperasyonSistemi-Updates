@@ -427,6 +427,43 @@ namespace TurizmOperasyonSistemi.Views
             UpdateRegistrationActionButtons();
         }
 
+        private void RegistrationsDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Only open editor when double-clicked on specific columns
+            var col = RegistrationsDataGrid.CurrentColumn;
+            if (col == null) return;
+
+            var header = col.Header?.ToString() ?? string.Empty;
+            var editableHeaders = new[] { "Vize Talebi", "Bilet Talebi", "Vize Durumu", "Bilet Durumu", "Pasaportu Geldi mi" };
+            if (!editableHeaders.Contains(header)) return;
+
+            if (RegistrationsDataGrid.SelectedItem is RegistrationListItem item)
+            {
+                try
+                {
+                    var mode = RegistrationCellEditorWindow.EditorMode.Both;
+                    if (header == "Vize Talebi" || header == "Vize Durumu" || header == "Pasaportu Geldi mi") mode = RegistrationCellEditorWindow.EditorMode.VisaOnly;
+                    else if (header == "Bilet Talebi" || header == "Bilet Durumu") mode = RegistrationCellEditorWindow.EditorMode.TicketOnly;
+
+                    var editor = new RegistrationCellEditorWindow(item.Id, mode)
+                    {
+                        Owner = Window.GetWindow(this)
+                    };
+
+                    bool? res = editor.ShowDialog();
+                    if (res == true)
+                    {
+                        LoadRegistrations();
+                        SelectRegistration(item.Id);
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+        }
+
         private void SetRegistrationPassiveButton_Click(object sender, RoutedEventArgs e)
         {
             if (RegistrationsDataGrid.SelectedItem is not RegistrationListItem selectedRegistration)

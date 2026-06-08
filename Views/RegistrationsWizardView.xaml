@@ -462,7 +462,7 @@
                             </Grid>
 
                         <Grid Grid.Row="1">
-                            <DataGrid x:Name="RegistrationsDataGrid"
+                            <DataGrid x:Name="RegistrationsDataGrid" MouseDoubleClick="RegistrationsDataGrid_MouseDoubleClick"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
                                       MinHeight="360"
