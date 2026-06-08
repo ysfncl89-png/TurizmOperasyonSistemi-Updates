@@ -1167,23 +1167,19 @@ namespace TurizmOperasyonSistemi.Views
                             // İlk eksik alanı bulup odak ver
                             if (FirstNameTextBox != null && FirstNameTextBox.Tag as string == "RequiredError")
                             {
-                                FirstNameTextBox.Focus();
-                                FirstNameTextBox.BringIntoView();
+                                ScrollToAndFocus(FirstNameTextBox);
                             }
                             else if (LastNameTextBox != null && LastNameTextBox.Tag as string == "RequiredError")
                             {
-                                LastNameTextBox.Focus();
-                                LastNameTextBox.BringIntoView();
+                                ScrollToAndFocus(LastNameTextBox);
                             }
                             else if (mode == NationalityMode.Turkey && TcTextBox != null && TcTextBox.Tag as string == "RequiredError")
                             {
-                                TcTextBox.Focus();
-                                TcTextBox.BringIntoView();
+                                ScrollToAndFocus(TcTextBox);
                             }
                             else if (GenderComboBox != null && GenderComboBox.Tag as string == "RequiredError")
                             {
-                                GenderComboBox.Focus();
-                                GenderComboBox.BringIntoView();
+                                ScrollToAndFocus(GenderComboBox);
                             }
 
                             return;
@@ -1194,8 +1190,7 @@ namespace TurizmOperasyonSistemi.Views
                         {
                             currentStep = 4;
                             UpdateSteps();
-                            PassportTextBox.Focus();
-                            PassportTextBox.BringIntoView();
+                            ScrollToAndFocus(PassportTextBox);
                             return;
                         }
                     }
