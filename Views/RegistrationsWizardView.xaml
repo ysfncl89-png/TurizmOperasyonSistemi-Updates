@@ -586,7 +586,7 @@
                                     <DataGridTextColumn Header="Gün Sayısı" Binding="{Binding DaysCount}" Width="Auto"/>
                                     <DataGridTextColumn Header="Vize Talebi" Binding="{Binding VisaRequest}" Width="Auto"/>
                                     <DataGridTextColumn Header="Bilet Talebi" Binding="{Binding TicketRequest}" Width="Auto"/>
-                                    <DataGridTemplateColumn Header="Vize Durumu" Width="120">
+                                    <DataGridTemplateColumn Header="Vize Durumu" Width="160" MinWidth="160">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Border x:Name="VisaStatusBorder" CornerRadius="6" Padding="6" Margin="4,2" MinHeight="34" VerticalAlignment="Center">
