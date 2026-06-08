@@ -21,6 +21,147 @@
         <SolidColorBrush x:Key="GridAltRowBackgroundBrush" Color="#111827"/>
         <SolidColorBrush x:Key="GridSelectionBrush" Color="#0EA5E9"/>
 
+        <!-- Footer button styles (copied locally so Registrations view can use them) -->
+        <Style x:Key="RegFooterButtonBase" TargetType="Button">
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="18,6"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="Bd"
+                                    CornerRadius="10"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#AA06B6D4" BlurRadius="44" ShadowDepth="10" Opacity="1"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#22D3EE"/>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="-3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#AA06B6D4" BlurRadius="28" ShadowDepth="4" Opacity="0.9"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="0"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.98"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RegFooterButtonPrimary" TargetType="Button" BasedOn="{StaticResource RegFooterButtonBase}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#06B6D4" Offset="0"/>
+                        <GradientStop Color="#0894A8" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#0F5566"/>
+        </Style>
+
+        <Style x:Key="RegFooterButtonSave" TargetType="Button" BasedOn="{StaticResource RegFooterButtonBase}">
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="MinWidth" Value="160"/>
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#10B981" Offset="0"/>
+                        <GradientStop Color="#0E9F6A" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#0B7A54"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="Bd"
+                                    CornerRadius="12"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#AA10B981" BlurRadius="48" ShadowDepth="12" Opacity="1"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="-3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#AA10B981" BlurRadius="30" ShadowDepth="6" Opacity="0.95"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="0"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.98"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RegFooterButtonDanger" TargetType="Button" BasedOn="{StaticResource RegFooterButtonBase}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#EF4444" Offset="0"/>
+                        <GradientStop Color="#DC2626" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#7A1A1A"/>
+        </Style>
+
         <Style TargetType="TextBox">
             <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource InputForegroundBrush}"/>
@@ -218,6 +359,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
     </Page.Resources>
 
     <Grid Background="#111827">
@@ -429,34 +571,25 @@
                                 <!-- Action buttons (these will be blurred together with the grid below) -->
                                 <Button x:Name="EditRegistrationButton"
                                         Grid.Column="1"
+                                        Style="{StaticResource RegFooterButtonPrimary}"
                                         Content="Kaydı Düzenle"
                                         Margin="18,30,10,0"
-                                        Background="#2563EB"
-                                        Foreground="White"
-                                        Padding="16,10"
-                                        FontWeight="Bold"
                                         Click="EditRegistrationButton_Click"
                                         IsEnabled="False"/>
 
                                 <Button x:Name="SetRegistrationPassiveButton"
                                         Grid.Column="2"
+                                        Style="{StaticResource RegFooterButtonSave}"
                                         Content="Pasif Yap"
                                         Margin="0,30,10,0"
-                                        Background="#F59E0B"
-                                        Foreground="White"
-                                        Padding="16,10"
-                                        FontWeight="Bold"
                                         Click="SetRegistrationPassiveButton_Click"
                                         IsEnabled="False"/>
 
                                 <Button x:Name="DeleteRegistrationButton"
                                         Grid.Column="3"
+                                        Style="{StaticResource RegFooterButtonDanger}"
                                         Content="Kaydı Sil"
                                         Margin="0,30,0,0"
-                                        Background="#DC2626"
-                                        Foreground="White"
-                                        Padding="16,10"
-                                        FontWeight="Bold"
                                         Click="DeleteRegistrationButton_Click"
                                         IsEnabled="False"/>
                             </Grid>
@@ -1882,30 +2015,21 @@ Margin="0,10,0,6"/>
                 <Button x:Name="BackButton"
                         Content="Geri"
                         HorizontalAlignment="Left"
-                        Background="#374151"
-                        Foreground="White"
-                        Padding="25,10"
-                        FontWeight="Bold"
+                        Style="{StaticResource RegFooterButtonBase}"
                         Click="BackButton_Click"
                         Visibility="Collapsed"/>
 
                 <Button x:Name="ToggleActiveButton"
                         Content="⚡ Seçilen Kişiyi Aktif Yap ve İlerle"
                         HorizontalAlignment="Center"
-                        Background="#10B981"
-                        Foreground="White"
-                        Padding="20,10"
-                        FontWeight="Bold"
+                        Style="{StaticResource RegFooterButtonSave}"
                         Visibility="Collapsed"
                         Click="ToggleActiveButton_Click"/>
 
                 <Button x:Name="NextButton"
                         Content="İleri"
                         HorizontalAlignment="Right"
-                        Background="#06B6D4"
-                        Foreground="White"
-                        Padding="25,10"
-                        FontWeight="Bold"
+                        Style="{StaticResource RegFooterButtonPrimary}"
                         Click="NextButton_Click"
                         IsEnabled="False"/>
 

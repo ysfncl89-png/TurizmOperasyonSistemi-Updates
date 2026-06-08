@@ -49,8 +49,6 @@ namespace TurizmOperasyonSistemi.Views
                     db.EnsureRegistrationStatusChoiceColumnsExist();
                     db.NormalizeRegistrationNullValues();
                 }
-
-
             }
             catch { }
             LoadPersons();
@@ -565,6 +563,30 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        private void HidePreview()
+        {
+            try
+            {
+                if (Step10Grid != null)
+                {
+                    Step10Grid.Visibility = Visibility.Collapsed;
+                    Step10Grid.Opacity = 0.0;
+                    Step10Grid.IsHitTestVisible = false;
+                    Panel.SetZIndex(Step10Grid, 0);
+                }
+
+                if (PreviewTextBlock != null)
+                {
+                    PreviewTextBlock.Visibility = Visibility.Collapsed;
+                    PreviewTextBlock.Text = string.Empty;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         private void UpdateRegistrationActionButtons()
         {
             bool hasSelection = RegistrationsDataGrid?.SelectedItem is RegistrationListItem;
@@ -993,6 +1015,7 @@ namespace TurizmOperasyonSistemi.Views
             Step8Grid.Visibility = Visibility.Collapsed;
             Step9Grid.Visibility = Visibility.Collapsed;
             Step10Grid.Visibility = Visibility.Collapsed;
+            Step10Grid.Visibility = Visibility.Collapsed;
             BackButton.Visibility = Visibility.Collapsed;
             ToggleActiveButton.Visibility = Visibility.Collapsed;
             NextButton.Visibility = Visibility.Collapsed;
@@ -1153,6 +1176,14 @@ namespace TurizmOperasyonSistemi.Views
                     break;
             }
 
+            // Ensure preview content is only visible for step 10
+            try
+            {
+                if (PreviewTextBlock != null)
+                    PreviewTextBlock.Visibility = (step == 10) ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch { }
+
             var stepBorders = new[] { Step1Border, Step2Border, Step3Border, Step4Border, Step5Border, Step6Border, Step7Border, Step8Border, Step9Border, Step10Border };
             var stepTexts = new[] { Step1Text, Step2Text, Step3Text, Step4Text, Step5Text, Step6Text, Step7Text, Step8Text, Step9Text, Step10Text };
 
@@ -1167,6 +1198,44 @@ namespace TurizmOperasyonSistemi.Views
             BackButton.Visibility = step > 1 ? Visibility.Visible : Visibility.Collapsed;
 
             NextButton.Content = step == MaxStep ? "Kaydet" : "İleri";
+
+            // Ensure Step10 visual state is fully controlled to avoid ghosting
+            try
+            {
+                if (step == 10)
+                {
+                    if (Step10Grid != null)
+                    {
+                        Step10Grid.Visibility = Visibility.Visible;
+                        Step10Grid.Opacity = 1.0;
+                        Step10Grid.IsHitTestVisible = true;
+                        Panel.SetZIndex(Step10Grid, 50);
+                    }
+
+                    if (PreviewTextBlock != null)
+                    {
+                        PreviewTextBlock.Visibility = Visibility.Visible;
+                    }
+                }
+                else
+                {
+                    if (Step10Grid != null)
+                    {
+                        Step10Grid.Visibility = Visibility.Collapsed;
+                        Step10Grid.Opacity = 0.0;
+                        Step10Grid.IsHitTestVisible = false;
+                        Panel.SetZIndex(Step10Grid, 0);
+                    }
+
+                    if (PreviewTextBlock != null)
+                    {
+                        PreviewTextBlock.Visibility = Visibility.Collapsed;
+                        // Clear text to avoid visual remnants
+                        PreviewTextBlock.Text = string.Empty;
+                    }
+                }
+            }
+            catch { }
 
             UpdateNextButtonState();
         }
@@ -1577,6 +1646,12 @@ namespace TurizmOperasyonSistemi.Views
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
+            // If we're leaving the preview step explicitly hide preview content to avoid visual remnants
+            if (currentStep == 10)
+            {
+                HidePreview();
+            }
+
             if (currentStep == 1)
             {
                 ResetWizardForm();

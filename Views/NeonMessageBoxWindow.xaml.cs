@@ -13,9 +13,9 @@ namespace TurizmOperasyonSistemi.Views
             var neon = new DropShadowEffect
             {
                 Color = System.Windows.Media.Color.FromArgb(0xAA, 0x06, 0xB6, 0xD4),
-                BlurRadius = 28,
-                ShadowDepth = 6,
-                Opacity = 0.95
+                BlurRadius = 44,
+                ShadowDepth = 10,
+                Opacity = 1.0
             };
 
             BtnPrimary.Effect = neon;
