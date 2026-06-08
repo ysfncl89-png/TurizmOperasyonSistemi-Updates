@@ -229,12 +229,12 @@ namespace TurizmOperasyonSistemi.Views
         {
             if (!(PersonsDataGrid.SelectedItem is Person person))
             {
-                MessageBox.Show("Lütfen silmek için bir kişi seçin.");
+                NeonMessageBoxWindow.Show("Lütfen silmek için bir kişi seçin.", "Uyarı", false);
                 return;
             }
 
-            var result = MessageBox.Show($"{person.FirstName} {person.LastName} adlı kişiyi silmek istediğinize emin misiniz?", "Onay", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result != MessageBoxResult.Yes)
+            var confirm = NeonMessageBoxWindow.Show($"{person.FirstName} {person.LastName} adlı kişiyi silmek istediğinize emin misiniz?", "Onay", true);
+            if (confirm != true)
             {
                 return;
             }
@@ -251,14 +251,14 @@ namespace TurizmOperasyonSistemi.Views
                     }
                 }
 
-                MessageBox.Show("Kişi silindi.");
+                NeonMessageBoxWindow.Show("Kişi silindi.", "Bilgi", false);
                 LoadPersons();
                 ResetModuleToEntryState();
                 UpdateSteps();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                NeonMessageBoxWindow.Show(ex.Message, "Hata", false);
             }
         }
 
@@ -1148,7 +1148,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 if (HighlightMissingRequiredFields())
                 {
-                    MessageBox.Show("Zorunlu alanları doldurun.");
+                NeonMessageBoxWindow.Show("Zorunlu alanları doldurun.", "Uyarı", false);
 
                     // Öncelikle 1. adımda (kimlik) eksik alanlar varsa kullanıcıyı oraya taşı
                     try
@@ -1206,10 +1206,10 @@ namespace TurizmOperasyonSistemi.Views
                 if (GetNationalityMode() == NationalityMode.Turkey)
                 {
                     var digitsOnly = new string((TcTextBox.Text ?? string.Empty).Where(char.IsDigit).ToArray());
-                    if (digitsOnly.Length != 11)
-                    {
-                        TcTextBox.Tag = "RequiredError";
-                        MessageBox.Show("TC Kimlik No 11 haneli olmalıdır.");
+                        if (digitsOnly.Length != 11)
+                        {
+                            TcTextBox.Tag = "RequiredError";
+                            NeonMessageBoxWindow.Show("TC Kimlik No 11 haneli olmalıdır.", "Uyarı", false);
                         try
                         {
                             currentStep = 1;
@@ -1235,7 +1235,7 @@ namespace TurizmOperasyonSistemi.Views
                         if (exists)
                         {
                             TcTextBox.Tag = "RequiredError";
-                            MessageBox.Show("Bu TC zaten kayıtlı.");
+                            NeonMessageBoxWindow.Show("Bu TC zaten kayıtlı.", "Uyarı", false);
                             return;
                         }
                     }
@@ -1248,7 +1248,7 @@ namespace TurizmOperasyonSistemi.Views
 
                         if (person == null)
                         {
-                            MessageBox.Show("Kişi bulunamadı.");
+                            NeonMessageBoxWindow.Show("Kişi bulunamadı.", "Uyarı", false);
                             return;
                         }
                     }
@@ -1293,7 +1293,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 if (!SuppressSavedNotification)
                 {
-                    MessageBox.Show(selectedPersonId > 0 ? "Güncellendi" : "Kaydedildi");
+                    NeonMessageBoxWindow.Show(selectedPersonId > 0 ? "Güncellendi" : "Kaydedildi", "Bilgi", false);
                 }
 
                 LoadPersons();
@@ -1302,7 +1302,7 @@ namespace TurizmOperasyonSistemi.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                NeonMessageBoxWindow.Show(ex.Message, "Hata", false);
             }
         }
 

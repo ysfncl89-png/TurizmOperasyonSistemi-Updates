@@ -5,6 +5,213 @@
       Background="#111827">
 
     <Page.Resources>
+        <!-- Footer button stills: daha modern, yuvarlak ve gölgeli butonlar -->
+        <Style x:Key="FooterButtonBase" TargetType="Button">
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="18,6"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="Bd"
+                                    CornerRadius="10"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <!-- Daha güçlü neon glow -->
+                                        <DropShadowEffect Color="#AA06B6D4" BlurRadius="28" ShadowDepth="6" Opacity="0.9"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#22D3EE"/>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="-3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#AA06B6D4" BlurRadius="20" ShadowDepth="2" Opacity="0.75"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="0"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.98"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FooterButtonDanger" TargetType="Button" BasedOn="{StaticResource FooterButtonBase}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#EF4444" Offset="0"/>
+                        <GradientStop Color="#DC2626" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#7A1A1A"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="Bd"
+                                    CornerRadius="8"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#AAEF4444" BlurRadius="28" ShadowDepth="6" Opacity="0.95"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF7F7F"/>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="-3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#AAEF4444" BlurRadius="20" ShadowDepth="2" Opacity="0.9"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="0"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.98"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FooterButtonSave" TargetType="Button">
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="MinWidth" Value="160"/>
+            <Setter Property="Padding" Value="18,6"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="Bd"
+                                    CornerRadius="12"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <!-- Güçlü yeşil neon glow -->
+                                        <DropShadowEffect Color="#AA10B981" BlurRadius="36" ShadowDepth="8" Opacity="0.98"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="-3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#AA10B981" BlurRadius="22" ShadowDepth="3" Opacity="0.9"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="0"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.98"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#10B981" Offset="0"/>
+                        <GradientStop Color="#0E9F6A" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#0B7A54"/>
+        </Style>
+
+        <Style x:Key="FooterButtonPrimary" TargetType="Button" BasedOn="{StaticResource FooterButtonBase}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#06B6D4" Offset="0"/>
+                        <GradientStop Color="#0894A8" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#0F5566"/>
+        </Style>
+
+        <Style x:Key="FooterButtonSecondary" TargetType="Button" BasedOn="{StaticResource FooterButtonBase}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#374151" Offset="0"/>
+                        <GradientStop Color="#2C3942" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#20262B"/>
+        </Style>
+
         <Style TargetType="TextBox">
             <Setter Property="Background" Value="#1E293B"/>
             <Setter Property="Foreground" Value="#F8FAFC"/>
@@ -410,23 +617,15 @@
 
                                 <Button x:Name="EditSelectedButton"
                                         Grid.Column="2"
+                                        Style="{StaticResource FooterButtonPrimary}"
                                         Content="Düzenle"
-                                        Height="40"
-                                        Width="115"
-                                        Background="#2563EB"
-                                        Foreground="White"
-                                        FontWeight="Bold"
                                         Visibility="Collapsed"
                                         Margin="0,0,10,0"
                                         Click="EditSelectedButton_Click"/>
                                 <Button x:Name="DeleteSelectedButton"
                                         Grid.Column="3"
+                                        Style="{StaticResource FooterButtonDanger}"
                                         Content="Sil"
-                                        Height="40"
-                                        Width="115"
-                                        Background="#DC2626"
-                                        Foreground="White"
-                                        FontWeight="Bold"
                                         Visibility="Collapsed"
                                         Click="DeleteSelectedButton_Click"/>
                             </Grid>
@@ -457,12 +656,10 @@
                                                        FontWeight="SemiBold"
                                                        Margin="0,0,12,0"/>
                                             <Button x:Name="NewPersonButton"
+                                                    Style="{StaticResource FooterButtonSave}"
                                                     Content="Yeni Kişi Kaydı Yap"
-                                                    Height="34"
+                                                    Height="36"
                                                     MinWidth="160"
-                                                    Background="#10B981"
-                                                    Foreground="White"
-                                                    FontWeight="Bold"
                                                     Click="NewPersonButton_Click"/>
                                         </StackPanel>
                                     </Border>
@@ -781,12 +978,9 @@
                             </Border>
 
                             <Button x:Name="SaveButton"
+                                    Style="{StaticResource FooterButtonSave}"
                                     Content="Kaydet"
-                                    Height="45"
                                     Margin="0,25,0,0"
-                                    Background="#10B981"
-                                    Foreground="White"
-                                    FontWeight="Bold"
                                     Click="SaveButton_Click"/>
                         </StackPanel>
                     </Grid>
@@ -800,22 +994,18 @@
                 </Grid.ColumnDefinitions>
 
                 <Button x:Name="BackButton"
-                        Content="Geri"
-                        Height="45"
+                        Style="{StaticResource FooterButtonSecondary}"
+                        Content="◀ Geri"
+                        MinWidth="140"
                         Margin="0,10,10,0"
-                        Background="#374151"
-                        Foreground="White"
-                        FontWeight="Bold"
                         Click="BackButton_Click"/>
 
                 <Button x:Name="NextButton"
                         Grid.Column="1"
-                        Content="İleri"
-                        Height="45"
+                        Style="{StaticResource FooterButtonPrimary}"
+                        Content="İleri ▶"
+                        MinWidth="140"
                         Margin="10,10,0,0"
-                        Background="#06B6D4"
-                        Foreground="White"
-                        FontWeight="Bold"
                         Click="NextButton_Click"/>
             </Grid>
         </Grid>
