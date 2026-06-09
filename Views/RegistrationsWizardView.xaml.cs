@@ -35,6 +35,7 @@ namespace TurizmOperasyonSistemi.Views
         private bool _isSyncingRegistrationPeriodGuide = false;
         private string _selectedVisaStatusChoice = string.Empty;
         private string _selectedTicketStatusChoice = string.Empty;
+        private bool _userClickedRegistration = false;
 
 
         public RegistrationsWizardView()
@@ -57,8 +58,54 @@ namespace TurizmOperasyonSistemi.Views
             InitializePersonsModuleHost();
             UpdateRegistrationActionButtons();
             ShowRegistrationBrowser();
+            // Track explicit user clicks on the registrations grid so action buttons only appear after a user click
+            try
+            {
+                RegistrationsDataGrid.PreviewMouseLeftButtonDown -= RegistrationsDataGrid_PreviewMouseLeftButtonDown;
+                RegistrationsDataGrid.PreviewMouseLeftButtonDown += RegistrationsDataGrid_PreviewMouseLeftButtonDown;
+            }
+            catch { }
             // Attach click handlers to all ComboBox controls on this page so clicking anywhere opens the dropdown
             AttachComboBoxClickHandlers(this);
+        }
+
+        private void RegistrationsDataGrid_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                // Determine whether a DataGridRow was clicked
+                var dep = (DependencyObject)e.OriginalSource;
+                while (dep != null && !(dep is System.Windows.Controls.DataGridRow))
+                {
+                    dep = VisualTreeHelper.GetParent(dep);
+                }
+
+                if (dep is System.Windows.Controls.DataGridRow row)
+                {
+                    // If the user clicked the already-selected row, toggle selection off
+                    var clickedItem = row.Item as RegistrationListItem;
+                    if (clickedItem != null && RegistrationsDataGrid.SelectedItem is RegistrationListItem sel && sel.Id == clickedItem.Id)
+                    {
+                        RegistrationsDataGrid.SelectedItem = null;
+                        _userClickedRegistration = false;
+                        UpdateRegistrationActionButtons();
+                        e.Handled = true; // prevent default selection behavior
+                        return;
+                    }
+
+                    // Otherwise let the selection happen and mark that user clicked
+                    _userClickedRegistration = true;
+                    // do not call UpdateRegistrationActionButtons here; SelectionChanged will fire
+                }
+                else
+                {
+                    // click outside rows -> clear selection
+                    RegistrationsDataGrid.SelectedItem = null;
+                    _userClickedRegistration = false;
+                    UpdateRegistrationActionButtons();
+                }
+            }
+            catch { }
         }
 
         private int ResolveRoomCapacity(string roomType)
@@ -351,6 +398,16 @@ namespace TurizmOperasyonSistemi.Views
         {
             _registrationsView?.Refresh();
             UpdateRegistrationResultsState();
+            try
+            {
+                if (RegistrationBrowserInstructionTextBlock != null)
+                {
+                    RegistrationBrowserInstructionTextBlock.Visibility = string.IsNullOrWhiteSpace(RegistrationSearchTextBox.Text)
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+                }
+            }
+            catch { }
         }
 
         private void RegistrationPeriodFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -423,6 +480,13 @@ namespace TurizmOperasyonSistemi.Views
         private void RegistrationsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             UpdateRegistrationActionButtons();
+            // Update inline panel visibility when selection changes: hide inline suggestion when a row is selected,
+            // show it when no row is selected (provided search/period/results conditions are met).
+            try
+            {
+                UpdateRegistrationResultsState();
+            }
+            catch { }
         }
 
         private void RegistrationsDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -459,6 +523,29 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     // ignore
                 }
+            // Reset explicit user click flag when search text or period filter changed.
+            // This ensures action buttons hide until the user explicitly clicks a row after filtering.
+            try
+            {
+                bool hasSearchText = !string.IsNullOrWhiteSpace(RegistrationSearchTextBox?.Text);
+                bool hasPeriod = RegistrationPeriodFilterComboBox?.SelectedItem != null
+                    && RegistrationPeriodFilterComboBox.SelectedItem.ToString() != "Tüm Dönemler";
+
+                if (hasSearchText || hasPeriod)
+                {
+                    // Only keep the explicit-click flag set if a row is still selected and the user had clicked it.
+                    _userClickedRegistration = _userClickedRegistration && RegistrationsDataGrid?.SelectedItem is RegistrationListItem;
+                }
+                else
+                {
+                    _userClickedRegistration = false;
+                }
+                UpdateRegistrationActionButtons();
+            }
+            catch
+            {
+                // ignore
+            }
             }
         }
 
@@ -590,21 +677,38 @@ namespace TurizmOperasyonSistemi.Views
         private void UpdateRegistrationActionButtons()
         {
             bool hasSelection = RegistrationsDataGrid?.SelectedItem is RegistrationListItem;
-            EditRegistrationButton.IsEnabled = hasSelection;
-            SetRegistrationPassiveButton.IsEnabled = hasSelection;
-            DeleteRegistrationButton.IsEnabled = hasSelection;
+
+            // Context menu items should be enabled when a selection exists (regardless of click method)
             if (DeleteRegistrationMenuItem != null)
-            {
                 DeleteRegistrationMenuItem.IsEnabled = hasSelection;
-            }
+            var editMenu = this.FindName("EditRegistrationMenuItem") as MenuItem;
+            if (editMenu != null) editMenu.IsEnabled = hasSelection;
+            var setPassiveMenu = this.FindName("SetRegistrationPassiveMenuItem") as MenuItem;
+            if (setPassiveMenu != null) setPassiveMenu.IsEnabled = hasSelection;
+
+            // Footer buttons visible and enabled as soon as a selection exists
+            bool showFooterButtons = hasSelection;
+
+            EditRegistrationButton.Visibility = showFooterButtons ? Visibility.Visible : Visibility.Collapsed;
+            SetRegistrationPassiveButton.Visibility = showFooterButtons ? Visibility.Visible : Visibility.Collapsed;
+            DeleteRegistrationButton.Visibility = showFooterButtons ? Visibility.Visible : Visibility.Collapsed;
 
             if (!hasSelection)
             {
-                SetRegistrationPassiveButton.Content = "Pasif Yap";
+                // No selection: ensure defaults
+                if (SetRegistrationPassiveButton != null)
+                {
+                    SetRegistrationPassiveButton.IsEnabled = false;
+                    SetRegistrationPassiveButton.Content = "Pasif Yap";
+                }
+
                 if (SetRegistrationPassiveMenuItem != null)
                 {
                     SetRegistrationPassiveMenuItem.Header = "Pasif Yap";
                 }
+
+                if (EditRegistrationButton != null) EditRegistrationButton.IsEnabled = false;
+                if (DeleteRegistrationButton != null) DeleteRegistrationButton.IsEnabled = false;
 
                 return;
             }
@@ -613,11 +717,19 @@ namespace TurizmOperasyonSistemi.Views
             bool canActivate = string.Equals(selectedRegistration.Status, "Pasif", StringComparison.CurrentCultureIgnoreCase);
             string actionText = canActivate ? "Aktif Yap" : "Pasif Yap";
 
-            SetRegistrationPassiveButton.Content = actionText;
+            if (SetRegistrationPassiveButton != null)
+            {
+                SetRegistrationPassiveButton.IsEnabled = true;
+                SetRegistrationPassiveButton.Content = actionText;
+            }
+
             if (SetRegistrationPassiveMenuItem != null)
             {
                 SetRegistrationPassiveMenuItem.Header = actionText;
             }
+
+            if (EditRegistrationButton != null) EditRegistrationButton.IsEnabled = true;
+            if (DeleteRegistrationButton != null) DeleteRegistrationButton.IsEnabled = true;
         }
 
         private void EditRegistrationButton_Click(object sender, RoutedEventArgs e)
@@ -781,6 +893,37 @@ namespace TurizmOperasyonSistemi.Views
                 }
 
                 SetRegistrationBrowserBlur(shouldApplyBlur);
+
+            // Also control the inline no-results panel (just under search box)
+            try
+            {
+                if (InlineNoRegistrationPanel != null)
+                {
+                    // Show inline "not found / add new" suggestion when the user has typed a search,
+                    // a specific period is selected, the grid returned some results, and no row is selected.
+                    // If a row is selected, the inline suggestion should be hidden.
+                    bool noRowSelected = RegistrationsDataGrid?.SelectedItem == null;
+                    bool showInline = hasAnyResult && hasSearchText && hasPeriodFilter && noRowSelected;
+                    InlineNoRegistrationPanel.Visibility = showInline ? Visibility.Visible : Visibility.Collapsed;
+
+                    if (showInline && InlineNoRegistrationMessageTextBlock != null)
+                    {
+                        var selectedPeriod = RegistrationPeriodFilterComboBox?.SelectedItem?.ToString() ?? string.Empty;
+                        if (!string.IsNullOrWhiteSpace(selectedPeriod) && selectedPeriod != "Tüm Dönemler")
+                        {
+                            InlineNoRegistrationMessageTextBlock.Text = $"Aradığınız tur kaydı {selectedPeriod} dönemi için AŞAĞIDAKİ listede görünmüyor mu? Yeni kayıt ekleyin.";
+                        }
+                        else
+                        {
+                            InlineNoRegistrationMessageTextBlock.Text = "Aradığınız tur kaydı listede görünmüyor mu? Yeni kayıt ekleyin.";
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
             }
             catch
             {

@@ -510,7 +510,7 @@
 
 
                                 <!-- Ön plan net neon metin -->
-                                <TextBlock Foreground="#E6FCFF"
+                                <TextBlock x:Name="RegistrationBrowserInstructionTextBlock" Foreground="#E6FCFF"
                                            FontSize="14"
                                            FontWeight="SemiBold"
                                            TextWrapping="Wrap"
@@ -551,6 +551,36 @@
                                           FontSize="13"
                                           SelectionChanged="RegistrationPeriodFilterComboBox_SelectionChanged"/>
                             </Grid>
+
+                            <!-- Inline no-results panel directly under the search box (shows when no matching registrations) -->
+                            <Border x:Name="InlineNoRegistrationPanel"
+                                    Background="#0B1220"
+                                    BorderBrush="#334155"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="10"
+                                    Margin="0,8,0,0"
+                                    HorizontalAlignment="Left"
+                                    Visibility="Collapsed"
+                                    Panel.ZIndex="50">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <TextBlock x:Name="InlineNoRegistrationMessageTextBlock"
+                                               Text="Aradığınız tur kaydı listede bulunamadı"
+                                               Foreground="#FBBF24"
+                                               FontSize="13"
+                                               FontWeight="Bold"
+                                               VerticalAlignment="Center"/>
+
+                                    <Button x:Name="InlineStartNewRegistrationButton"
+                                            Content="Yeni Tur Kaydı Ekle +"
+                                            Background="#10B981"
+                                            Foreground="White"
+                                            Padding="10,6"
+                                            Margin="12,0,0,0"
+                                            FontWeight="Bold"
+                                            Click="StartNewRegistrationButton_Click"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
                         <!-- Blurable content: action buttons, grid, warning panel -->
@@ -575,7 +605,7 @@
                                         Content="Kaydı Düzenle"
                                         Margin="18,30,10,0"
                                         Click="EditRegistrationButton_Click"
-                                        IsEnabled="False"/>
+                                        Visibility="Collapsed"/>
 
                                 <Button x:Name="SetRegistrationPassiveButton"
                                         Grid.Column="2"
@@ -583,7 +613,7 @@
                                         Content="Pasif Yap"
                                         Margin="0,30,10,0"
                                         Click="SetRegistrationPassiveButton_Click"
-                                        IsEnabled="False"/>
+                                        Visibility="Collapsed"/>
 
                                 <Button x:Name="DeleteRegistrationButton"
                                         Grid.Column="3"
@@ -591,7 +621,7 @@
                                         Content="Kaydı Sil"
                                         Margin="0,30,0,0"
                                         Click="DeleteRegistrationButton_Click"
-                                        IsEnabled="False"/>
+                                        Visibility="Collapsed"/>
                             </Grid>
 
                             <Grid Grid.Row="1">
@@ -691,7 +721,7 @@
 
                                     <DataGrid.ContextMenu>
                                         <ContextMenu>
-                                            <MenuItem Header="Kaydı Düzenle"
+                                        <MenuItem x:Name="EditRegistrationMenuItem" Header="Kaydı Düzenle"
                                                   Click="EditRegistrationMenuItem_Click"/>
                                             <MenuItem x:Name="SetRegistrationPassiveMenuItem"
                                                   Header="Pasif Yap"
