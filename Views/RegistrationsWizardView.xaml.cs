@@ -36,6 +36,7 @@ namespace TurizmOperasyonSistemi.Views
         private string _selectedVisaStatusChoice = string.Empty;
         private string _selectedTicketStatusChoice = string.Empty;
         private bool _userClickedRegistration = false;
+        private bool _cameFromBrowserEdit = false;
 
 
         public RegistrationsWizardView()
@@ -820,6 +821,8 @@ namespace TurizmOperasyonSistemi.Views
                 RemainingDebtTextBox.Text = registration.RemainingDebt.ToString("N2");
                 ReferenceTextBox.Text = registration.Reference;
 
+                // Mark that we arrived here from editing a registration in the browser
+                _cameFromBrowserEdit = true;
                 SwitchToStep(2);
                 UpdateNextButtonState();
             }
@@ -1144,7 +1147,7 @@ namespace TurizmOperasyonSistemi.Views
             SwitchToStep(1);
         }
 
-        private void ShowRegistrationBrowser()
+        private void ShowRegistrationBrowser(bool preservePeriod = false)
         {
             WizardStepsPanel.Visibility = Visibility.Collapsed;
             RegistrationBrowserGrid.Visibility = Visibility.Visible;
@@ -1162,7 +1165,10 @@ namespace TurizmOperasyonSistemi.Views
             BackButton.Visibility = Visibility.Collapsed;
             ToggleActiveButton.Visibility = Visibility.Collapsed;
             NextButton.Visibility = Visibility.Collapsed;
-            ResetRegistrationPeriodGuide();
+            if (!preservePeriod)
+            {
+                ResetRegistrationPeriodGuide();
+            }
             // If a period is already selected, focus the search box so user can type immediately.
             FocusRegistrationSearchBox();
         }
@@ -1799,6 +1805,15 @@ namespace TurizmOperasyonSistemi.Views
             {
                 ResetWizardForm();
                 ShowRegistrationBrowser();
+            }
+            else if (_cameFromBrowserEdit && currentStep == 2)
+            {
+                // If we arrived here by editing a registration from the browser,
+                // going back from the first wizard step should return to the browser and reset the flag.
+                _cameFromBrowserEdit = false;
+                ResetWizardForm();
+                // Return to browser but preserve the selected period so user is not prompted again
+                ShowRegistrationBrowser(preservePeriod: true);
             }
             else if (skipPersonSelectionStepForEdit && currentStep == 2)
             {
