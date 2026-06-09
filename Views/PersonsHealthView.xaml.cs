@@ -168,7 +168,7 @@ namespace TurizmOperasyonSistemi.Views
                             BorderBrush = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#60A5FA"),
                             BorderThickness = new System.Windows.Thickness(1.2)
                         };
-                        designBtn.Click += DesignButton_Handler;
+                        designBtn.Click += DesignButton_Click;
                         sp.Children.Add(designBtn);
 
                         parent.Children.Add(sp);
@@ -191,30 +191,7 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
-        private void DesignButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var dialog = new ListDesignDialog(ResultsDataGrid.Columns, "Saglik", ResultsDataGrid);
-                dialog.Owner = Application.Current?.MainWindow;
-                var res = dialog.ShowDialog();
-                if (res != true) return;
-                try
-                {
-                    if (dialog.WasSaved)
-                    {
-                        // reload persisted template
-                        ApplySavedTemplate();
-                    }
-                    else
-                    {
-                        // temporary apply already done by dialog; keep until Unloaded
-                    }
-                }
-                catch { }
-            }
-            catch { }
-        }
+
 
         private void OnNotification(string key, object payload)
         {
