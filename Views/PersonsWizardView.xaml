@@ -571,11 +571,11 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel>
-                            <TextBlock Text="Kişinin KİMLİK BİLGİSİ kaydını veritabanında bulmak için önce arama yapınız."
+                            <TextBlock x:Name="SearchHeaderTitle" Text="Kişinin KİMLİK BİLGİSİ kaydını veritabanında bulmak için önce arama yapınız."
                                        Foreground="#22D3EE"
                                        FontSize="24"
                                        FontWeight="Bold"/>
-                            <TextBlock Text="Ad, soyad, ad soyad ya da TC kimlik ile arama yapabilirsiniz."
+                            <TextBlock x:Name="SearchHeaderHint" Text="Ad, soyad, ad soyad ya da TC kimlik ile arama yapabilirsiniz."
                                        Foreground="#CBD5E1"
                                        FontSize="13"
                                        Margin="0,6,0,14"/>

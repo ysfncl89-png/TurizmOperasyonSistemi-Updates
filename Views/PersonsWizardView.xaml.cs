@@ -375,6 +375,7 @@ namespace TurizmOperasyonSistemi.Views
             SearchTextBox.Focus();
         }
 
+
         private void OnNotification(string key, object payload)
         {
             if (key != "PersonUpdated") return;
@@ -816,6 +817,14 @@ namespace TurizmOperasyonSistemi.Views
 
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            try
+            {
+                var hasText = !string.IsNullOrWhiteSpace(SearchTextBox?.Text);
+                if (SearchHeaderTitle != null) SearchHeaderTitle.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
+                if (SearchHeaderHint != null) SearchHeaderHint.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
+            }
+            catch { }
+
             if (currentStep != 1)
             {
                 currentStep = 1;
