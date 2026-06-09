@@ -659,7 +659,7 @@
                                                        Margin="0,0,12,0"/>
                                             <Button x:Name="NewPersonButton"
                                                     Style="{StaticResource FooterButtonSave}"
-                                                    Content="Yeni Kişi Kaydı Yap"
+                                                    Content="Yeni Kimlik Kaydı Yap"
                                                     Height="36"
                                                     MinWidth="160"
                                                     Click="NewPersonButton_Click"/>
@@ -995,7 +995,7 @@
 
                     <Grid x:Name="Step5Grid" Visibility="Collapsed">
                         <StackPanel>
-                            <TextBlock Text="Kayıt Önizleme"
+                            <TextBlock Text="Kişi Kimlik Bilgileri Kayıt Önizleme"
                                        Foreground="White"
                                        FontSize="24"
                                        FontWeight="Bold"
