@@ -646,8 +646,9 @@ namespace TurizmOperasyonSistemi.Views
             var item = _registrationItems.FirstOrDefault(x => x.Id == registrationId);
             if (item != null)
             {
+                // Select the item but do not call ScrollIntoView so the grid's scroll position
+                // does not jump when selection changes.
                 RegistrationsDataGrid.SelectedItem = item;
-                RegistrationsDataGrid.ScrollIntoView(item);
             }
         }
 
@@ -902,11 +903,10 @@ namespace TurizmOperasyonSistemi.Views
             {
                 if (InlineNoRegistrationPanel != null)
                 {
-                    // Show inline "not found / add new" suggestion when the user has typed a search,
-                    // a specific period is selected, the grid returned some results, and no row is selected.
-                    // If a row is selected, the inline suggestion should be hidden.
+                    // Show inline suggestion when user typed something (regardless of period filter),
+                    // hide when a row is selected.
                     bool noRowSelected = RegistrationsDataGrid?.SelectedItem == null;
-                    bool showInline = hasAnyResult && hasSearchText && hasPeriodFilter && noRowSelected;
+                    bool showInline = hasSearchText && noRowSelected;
                     InlineNoRegistrationPanel.Visibility = showInline ? Visibility.Visible : Visibility.Collapsed;
 
                     if (showInline && InlineNoRegistrationMessageTextBlock != null)
