@@ -669,7 +669,7 @@
                                                Foreground="#22D3EE"
                                                FontSize="20"
                                                FontWeight="Bold"/>
-                                    <TextBlock Text="Kayıt bulunduysa kişiyi seçin. Aktif pasif durumunu burada yönetebilir veya düzenlemeye geçebilirsiniz."
+                                    <TextBlock Text="Kayıt bulunduysa kişiyi seçin. Düzenle Sil durumunu burada yönetebilir."
                                                Foreground="#CBD5E1"
                                                FontSize="12"
                                                Margin="0,5,0,12"
