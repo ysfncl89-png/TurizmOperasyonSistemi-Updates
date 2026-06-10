@@ -136,6 +136,8 @@ namespace TurizmOperasyonSistemi.Views
             LoadBloodOptions();
             // subscribe to notifications in case PersonsWizardView updates underlying data
             Services.NotificationCenter.Subscribe(OnNotification);
+            // also listen for registration status changes so pasif yapılan kişiler sağlık listesine gitmesin
+            Services.NotificationCenter.Subscribe(OnRegistrationNotification);
 
             // Ensure Design button is visible next to Export button at runtime
             try
@@ -200,6 +202,75 @@ namespace TurizmOperasyonSistemi.Views
                 // reload local list
                 LoadAll();
             }
+        }
+
+        private void OnRegistrationNotification(string key, object payload)
+        {
+            try
+            {
+                if (key != "RegistrationSaved") return;
+
+                int? personId = null;
+                bool addToPool = true;
+
+                if (payload is int pid) personId = pid;
+                else if (payload != null)
+                {
+                    try
+                    {
+                        var t = payload.GetType();
+                        var pidProp = t.GetProperty("PersonId");
+                        if (pidProp != null)
+                        {
+                            var v = pidProp.GetValue(payload);
+                            if (v is int vi) personId = vi;
+                            else if (v is long vl) personId = (int)vl;
+                        }
+                        var addProp = t.GetProperty("AddToPool");
+                        if (addProp != null)
+                        {
+                            var av = addProp.GetValue(payload);
+                            if (av is bool b) addToPool = b;
+                        }
+                    }
+                    catch { }
+                }
+
+                if (!personId.HasValue) return;
+
+                // If AddToPool not provided, determine current status from DB
+                try
+                {
+                    var t = payload?.GetType();
+                    var addPropPresent = false;
+                    if (t != null) addPropPresent = t.GetProperty("AddToPool") != null;
+                    if (!addPropPresent)
+                    {
+                        try
+                        {
+                            using var db = new AppDbContext();
+                            var hasActive = db.Registrations.Any(r => r.PersonId == personId.Value && r.IsActive);
+                            addToPool = hasActive;
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                if (!addToPool)
+                {
+                    // person became passive or was deleted; refresh view to exclude them
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        try
+                        {
+                            if (HasActiveFilters()) LoadFilteredPersons(); else LoadAll();
+                        }
+                        catch { }
+                    }));
+                }
+            }
+            catch { }
         }
 
         private void LoadBloodOptions()
@@ -363,7 +434,15 @@ namespace TurizmOperasyonSistemi.Views
         {
             using (var db = new AppDbContext())
             {
-                _all = db.Persons.OrderByDescending(x => x.Id).ToList();
+                // Only include persons who have an active registration so pasif kayıtlı kişiler görünmesin
+                _all = db.Registrations
+                    .AsNoTracking()
+                    .Where(r => r.IsActive && r.Person != null)
+                    .Select(r => r.Person)
+                    .Distinct()
+                    .OrderByDescending(p => p.Id)
+                    .ToList();
+
                 ResultsDataGrid.ItemsSource = _all;
             }
             try { ApplySavedTemplate(); } catch { }
@@ -739,6 +818,8 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using var db = new AppDbContext();
                 var query = db.Registrations.Include(r => r.Person).AsQueryable();
+                // Only consider active registrations so passive entries are excluded
+                query = query.Where(r => r.IsActive);
 
                 var tour = CbTourType?.SelectedItem as string;
                 if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") query = query.Where(r => r.TourType == tour);

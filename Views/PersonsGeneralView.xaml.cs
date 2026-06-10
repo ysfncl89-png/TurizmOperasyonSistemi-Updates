@@ -1288,6 +1288,13 @@ namespace TurizmOperasyonSistemi.Views
 
                 var query = db.Registrations.Include(r => r.Person).AsQueryable();
 
+                // Only include active registrations for Lists views — passive kayıtlar listelere gelmesin
+                try
+                {
+                    query = query.Where(r => r.IsActive);
+                }
+                catch { }
+
                 var tour = CbTourType.SelectedItem as string;
                 if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") query = query.Where(r => r.TourType == tour);
 

@@ -1760,7 +1760,7 @@ namespace TurizmOperasyonSistemi.Views
                         // Bildirim gönder: Bir kaydın odalama kriterleri güncellendi
                         try
                         {
-                            NotificationCenter.Publish("RegistrationSaved", registration.PersonId);
+                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive });
                         }
                         catch
                         {

@@ -64,6 +64,195 @@ namespace TurizmOperasyonSistemi.Views
             {
                 // ignore
             }
+
+            // Subscribe to registration changes so passive kayıtlı kişiler kartlardaki listelere gitmesin
+            try
+            {
+                TurizmOperasyonSistemi.Services.NotificationCenter.Subscribe(OnRegistrationNotification);
+            }
+            catch { }
+        }
+
+        private void OnRegistrationNotification(string key, object payload)
+        {
+            try
+            {
+                if (key != "RegistrationSaved") return;
+
+                int? personId = null;
+                bool addToPool = true;
+
+                if (payload is int pid) personId = pid;
+                else if (payload != null)
+                {
+                    try
+                    {
+                        var t = payload.GetType();
+                        var pidProp = t.GetProperty("PersonId");
+                        if (pidProp != null)
+                        {
+                            var v = pidProp.GetValue(payload);
+                            if (v is int vi) personId = vi;
+                            else if (v is long vl) personId = (int)vl;
+                        }
+                        var addProp = t.GetProperty("AddToPool");
+                        if (addProp != null)
+                        {
+                            var av = addProp.GetValue(payload);
+                            if (av is bool b) addToPool = b;
+                        }
+                    }
+                    catch { }
+                }
+
+                if (!personId.HasValue) return;
+
+                // Eğer payload'ta AddToPool bilgisi yoksa DB'ye bakarak kişinin aktif bir kaydı olup olmadığını kontrol et
+                try
+                {
+                    var t = payload?.GetType();
+                    var addPropPresent = false;
+                    if (t != null)
+                    {
+                        addPropPresent = t.GetProperty("AddToPool") != null;
+                    }
+
+                    if (!addPropPresent)
+                    {
+                        try
+                        {
+                            using var db = new TurizmOperasyonSistemi.Data.AppDbContext();
+                            var hasActive = db.Registrations.Any(r => r.PersonId == personId.Value && r.IsActive);
+                            addToPool = hasActive;
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                // Eğer AddToPool == false ise, sayfada bulunan herhangi bir ListBox / ItemsControl içinden bu kişiyi çıkar
+                if (!addToPool)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        try
+                        {
+                            RemovePersonFromAllLists(personId.Value);
+                        }
+                        catch { }
+                    }));
+                }
+                else
+                {
+                    // Aktif hale gelirse, basit yaklaşım: yoksa yeniden yükleme gerekli olabilir; şimdilik pasif -> aktif olaylarında hiçbir şey yapmıyoruz
+                }
+            }
+            catch { }
+        }
+
+        private void RemovePersonFromAllLists(int personId)
+        {
+            // find all ItemsControl and ListBox children and remove matching items
+            try
+            {
+                var toProcess = new List<ItemsControl>();
+                CollectVisualChildren(this, toProcess);
+
+                foreach (var ic in toProcess)
+                {
+                    try
+                    {
+                        // prefer ItemsSource if it's a mutable IList
+                        var src = ic.ItemsSource as System.Collections.IList;
+                        if (src != null)
+                        {
+                            RemoveFromIListByPersonId(src, personId);
+                            continue;
+                        }
+
+                        // fallback to Items collection
+                        var items = ic.Items;
+                        if (items != null && items.Count > 0)
+                        {
+                            RemoveFromIListByPersonId(items, personId);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        private void RemoveFromIListByPersonId(System.Collections.IList list, int personId)
+        {
+            if (list == null) return;
+            var snapshot = new object[list.Count];
+            list.CopyTo(snapshot, 0);
+            foreach (var item in snapshot)
+            {
+                try
+                {
+                    if (item == null) continue;
+                    // if item is Person
+                    var personType = item.GetType();
+                    var idProp = personType.GetProperty("Id");
+                    if (idProp != null)
+                    {
+                        var val = idProp.GetValue(item);
+                        if (val is int vid && vid == personId)
+                        {
+                            try { list.Remove(item); } catch { }
+                            continue;
+                        }
+                    }
+
+                    // if item has Person or PersonId property
+                    var pidProp = personType.GetProperty("PersonId");
+                    if (pidProp != null)
+                    {
+                        var v = pidProp.GetValue(item);
+                        if (v is int v2 && v2 == personId)
+                        {
+                            try { list.Remove(item); } catch { }
+                            continue;
+                        }
+                    }
+                    var personProp = personType.GetProperty("Person");
+                    if (personProp != null)
+                    {
+                        var p = personProp.GetValue(item);
+                        if (p != null)
+                        {
+                            var pIdProp = p.GetType().GetProperty("Id");
+                            if (pIdProp != null)
+                            {
+                                var pv = pIdProp.GetValue(p);
+                                if (pv is int pvi && pvi == personId)
+                                {
+                                    try { list.Remove(item); } catch { }
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private void CollectVisualChildren(DependencyObject parent, List<ItemsControl> accum)
+        {
+            if (parent == null) return;
+            int c = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < c; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is ItemsControl ic)
+                {
+                    accum.Add(ic);
+                }
+                CollectVisualChildren(child, accum);
+            }
         }
         private void Kb_opt2_Click(object sender, RoutedEventArgs e)
         {
