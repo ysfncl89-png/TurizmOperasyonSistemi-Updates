@@ -31,8 +31,8 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Effect">
                                     <Setter.Value>
-                                        <!-- Daha güçlü neon glow -->
-                                        <DropShadowEffect Color="#AA06B6D4" BlurRadius="28" ShadowDepth="6" Opacity="0.9"/>
+                                        <!-- Lighter shadow for better performance -->
+                                        <DropShadowEffect Color="#AA06B6D4" BlurRadius="12" ShadowDepth="2" Opacity="0.75" RenderingBias="Performance"/>
                                     </Setter.Value>
                                 </Setter>
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="#22D3EE"/>
@@ -45,7 +45,7 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#AA06B6D4" BlurRadius="20" ShadowDepth="2" Opacity="0.75"/>
+                                        <DropShadowEffect Color="#AA06B6D4" BlurRadius="10" ShadowDepth="1" Opacity="0.65" RenderingBias="Performance"/>
                                     </Setter.Value>
                                 </Setter>
                                 <Setter TargetName="Bd" Property="RenderTransform">
@@ -93,7 +93,7 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#AAEF4444" BlurRadius="28" ShadowDepth="6" Opacity="0.95"/>
+                                        <DropShadowEffect Color="#AAEF4444" BlurRadius="12" ShadowDepth="2" Opacity="0.8" RenderingBias="Performance"/>
                                     </Setter.Value>
                                 </Setter>
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="#FF7F7F"/>
@@ -106,7 +106,7 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#AAEF4444" BlurRadius="20" ShadowDepth="2" Opacity="0.9"/>
+                                        <DropShadowEffect Color="#AAEF4444" BlurRadius="10" ShadowDepth="1" Opacity="0.7" RenderingBias="Performance"/>
                                     </Setter.Value>
                                 </Setter>
                                 <Setter TargetName="Bd" Property="RenderTransform">
@@ -148,8 +148,8 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Effect">
                                     <Setter.Value>
-                                        <!-- Güçlü yeşil neon glow -->
-                                        <DropShadowEffect Color="#AA10B981" BlurRadius="36" ShadowDepth="8" Opacity="0.98"/>
+                                        <!-- Daha hafif glow for performance -->
+                                        <DropShadowEffect Color="#AA10B981" BlurRadius="12" ShadowDepth="2" Opacity="0.85" RenderingBias="Performance"/>
                                     </Setter.Value>
                                 </Setter>
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
@@ -162,7 +162,7 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#AA10B981" BlurRadius="22" ShadowDepth="3" Opacity="0.9"/>
+                                        <DropShadowEffect Color="#AA10B981" BlurRadius="10" ShadowDepth="1" Opacity="0.75" RenderingBias="Performance"/>
                                     </Setter.Value>
                                 </Setter>
                                 <Setter TargetName="Bd" Property="RenderTransform">
@@ -238,9 +238,9 @@
                     <Setter Property="Effect">
                         <Setter.Value>
                             <DropShadowEffect Color="#FF4D6D"
-                                              BlurRadius="18"
+                                              BlurRadius="8"
                                               ShadowDepth="0"
-                                              Opacity="0.95"/>
+                                              Opacity="0.85" RenderingBias="Performance"/>
                         </Setter.Value>
                     </Setter>
                 </Trigger>
@@ -275,7 +275,7 @@
                                 <Setter TargetName="Outer" Property="StrokeThickness" Value="2"/>
                                 <Setter TargetName="Outer" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#FF4D6D" BlurRadius="18" ShadowDepth="0" Opacity="0.95"/>
+                                        <DropShadowEffect Color="#FF4D6D" BlurRadius="8" ShadowDepth="0" Opacity="0.85" RenderingBias="Performance"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -348,6 +348,7 @@
 
                             <Popup IsOpen="{TemplateBinding IsDropDownOpen}"
                                    Placement="Bottom"
+                                   PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                    AllowsTransparency="True"
                                    Focusable="False"
                                    PopupAnimation="Slide">
@@ -374,9 +375,9 @@
                                 <Setter TargetName="ComboBorder" Property="Effect">
                                     <Setter.Value>
                                         <DropShadowEffect Color="#FF4D6D"
-                                                          BlurRadius="18"
+                                                          BlurRadius="8"
                                                           ShadowDepth="0"
-                                                          Opacity="0.95"/>
+                                                          Opacity="0.85" RenderingBias="Performance"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -598,7 +599,7 @@
                                          Background="#0F172A"
                                          Foreground="#E2F9FF">
                                     <TextBox.Effect>
-                                        <DropShadowEffect Color="#22D3EE" BlurRadius="18" ShadowDepth="0" Opacity="0.85"/>
+                                        <DropShadowEffect Color="#22D3EE" BlurRadius="8" ShadowDepth="0" Opacity="0.75" RenderingBias="Performance"/>
                                     </TextBox.Effect>
                                 </TextBox>
 
