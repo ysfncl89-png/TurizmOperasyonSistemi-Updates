@@ -825,6 +825,29 @@ namespace TurizmOperasyonSistemi.Views
                 SetRegistrationPassiveButton.Content = actionText;
             }
 
+            // Adjust button color according to action: if action will activate the record, show green; if will make passive, show danger red.
+            try
+            {
+                if (SetRegistrationPassiveButton != null)
+                {
+                    if (string.Equals(actionText, "Aktif Yap", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        SetRegistrationPassiveButton.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#10B981");
+                        SetRegistrationPassiveButton.BorderBrush = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#0B7A54");
+                    }
+                    else
+                    {
+                        // Pasif Yap
+                        SetRegistrationPassiveButton.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#EF4444");
+                        SetRegistrationPassiveButton.BorderBrush = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#7A1A1A");
+                    }
+                }
+            }
+            catch
+            {
+                // ignore brush errors
+            }
+
             if (SetRegistrationPassiveMenuItem != null)
             {
                 SetRegistrationPassiveMenuItem.Header = actionText;
