@@ -18,6 +18,9 @@ namespace TurizmOperasyonSistemi.Models
         public string Period { get; set; } // Bağlı olduğu dönem
         public string GroupType { get; set; } // Bağlı olduğu grup türü
         public string DaysCount { get; set; } // Kaç günlük grup
+        // Giriş ve çıkış tarihlerini metin olarak saklıyoruz (veritabanı sütunları dinamik ekleniyor)
+        public string CheckInDate { get; set; }
+        public string CheckOutDate { get; set; }
         public bool IsConnection { get; set; } // Connection oda mı?
         public string ConnectionGroupId { get; set; } // Bağlantı grubu ID'si
 

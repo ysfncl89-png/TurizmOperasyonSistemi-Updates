@@ -906,6 +906,28 @@ namespace TurizmOperasyonSistemi.Views
             catch
             {
             }
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    db.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN CheckInDate TEXT DEFAULT ''");
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    db.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN CheckOutDate TEXT DEFAULT ''");
+                }
+            }
+            catch
+            {
+            }
         }
 
         private void LoadSavedAllocations(string hotelNameFilter = null)
@@ -1234,6 +1256,10 @@ namespace TurizmOperasyonSistemi.Views
                         db.SaveChanges();
                     }
 
+                    // Read the selected dates from the UI
+                    string draftCheckIn = CheckInDatePicker.SelectedDate?.ToString("yyyy-MM-dd") ?? string.Empty;
+                    string draftCheckOut = CheckOutDatePicker.SelectedDate?.ToString("yyyy-MM-dd") ?? string.Empty;
+
                     foreach (var room in RoomsList)
                     {
                         var roomAllocation = new RoomAllocation
@@ -1245,6 +1271,8 @@ namespace TurizmOperasyonSistemi.Views
                             Period = selectedPeriod,
                             GroupType = selectedGroupType,
                             DaysCount = selectedDaysCount,
+                            CheckInDate = draftCheckIn,
+                            CheckOutDate = draftCheckOut,
                             IsConnection = room.IsConnection,
                             ConnectionGroupId = room.ConnectionGroupId ?? string.Empty,
                             Occupants = room.Occupants
@@ -1810,6 +1838,20 @@ namespace TurizmOperasyonSistemi.Views
                     _suppressHotelSelectionChanged = false;
                     _suppressStep2SelectionChanged = false;
                     _suppressStep1SelectionChanged = false;
+
+                    // Restore saved dates if present on the allocations (use first allocation as representative)
+                    var firstAllocWithDates = allocations.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.CheckInDate) || !string.IsNullOrWhiteSpace(a.CheckOutDate));
+                    if (firstAllocWithDates != null)
+                    {
+                        if (DateTime.TryParse(firstAllocWithDates.CheckInDate, out DateTime parsedIn))
+                        {
+                            CheckInDatePicker.SelectedDate = parsedIn;
+                        }
+                        if (DateTime.TryParse(firstAllocWithDates.CheckOutDate, out DateTime parsedOut))
+                        {
+                            CheckOutDatePicker.SelectedDate = parsedOut;
+                        }
+                    }
 
                     LoadSavedAllocations(selectedAllocation.HotelName);
 
