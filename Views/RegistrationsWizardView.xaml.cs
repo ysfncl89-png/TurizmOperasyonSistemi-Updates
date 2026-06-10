@@ -903,10 +903,12 @@ namespace TurizmOperasyonSistemi.Views
             {
                 if (InlineNoRegistrationPanel != null)
                 {
-                    // Show inline suggestion when user typed something (regardless of period filter),
-                    // hide when a row is selected.
+                    // Show inline suggestion when user typed something AND there are matching rows in the grid
+                    // (this allows offering a quick "Yeni Tur Kaydı Ekle" when name similarity exists).
+                    // Hide the inline suggestion when a row is selected or when there are no results
+                    // because in that case the separate NoRegistrationResultsPanel already explains the absence.
                     bool noRowSelected = RegistrationsDataGrid?.SelectedItem == null;
-                    bool showInline = hasSearchText && noRowSelected;
+                    bool showInline = hasSearchText && noRowSelected && hasAnyResult;
                     InlineNoRegistrationPanel.Visibility = showInline ? Visibility.Visible : Visibility.Collapsed;
 
                     if (showInline && InlineNoRegistrationMessageTextBlock != null)
