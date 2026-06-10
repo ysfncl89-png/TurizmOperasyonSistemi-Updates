@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:TurizmOperasyonSistemi.Views"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
 
@@ -106,6 +107,28 @@
                     <Setter Property="Background" Value="#0EA5E9"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <!-- DatePicker styles to ensure selected date text is visible on dark theme and enough space is provided -->
+        <Style TargetType="DatePicker">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#475569"/>
+            <Setter Property="BorderThickness" Value="1.4"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="150"/>
+            <Setter Property="Margin" Value="0,5,0,15"/>
+        </Style>
+
+        <Style TargetType="{x:Type DatePickerTextBox}">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="FontSize" Value="14"/>
         </Style>
     </UserControl.Resources>
 
@@ -927,6 +950,37 @@
                                        Foreground="#94A3B8"
                                        FontSize="12"
                                        Margin="0,5,0,0"/>
+
+                            <UniformGrid Columns="2" Margin="0,10,0,0" HorizontalAlignment="Left">
+                                <StackPanel>
+                                    <TextBlock Text="Giriş Tarihi"
+                                               Foreground="#94A3B8"
+                                               FontSize="11"
+                                               Margin="0,0,0,4"/>
+                                    <DatePicker x:Name="CheckInDatePicker"
+                                                MinWidth="250"
+                                                Height="38"
+                                                Background="#1E293B"
+                                                Foreground="White"
+                                                BorderBrush="#334155"
+                                                FontSize="14"
+                                                SelectedDate="{x:Static sys:DateTime.Now}"/>
+                                </StackPanel>
+
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Çıkış Tarihi"
+                                               Foreground="#94A3B8"
+                                               FontSize="11"
+                                               Margin="0,0,0,4"/>
+                                    <DatePicker x:Name="CheckOutDatePicker"
+                                                MinWidth="250"
+                                                Height="38"
+                                                Background="#1E293B"
+                                                Foreground="White"
+                                                BorderBrush="#334155"
+                                                FontSize="14"/>
+                                </StackPanel>
+                            </UniformGrid>
                         </StackPanel>
 
                         <Border Grid.Row="1" Background="#0F172A" Padding="10" CornerRadius="6" Margin="0,0,0,15">
