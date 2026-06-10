@@ -1341,7 +1341,8 @@ namespace TurizmOperasyonSistemi.Views
             for (int i = 0; i < stepBorders.Length; i++)
             {
                 bool isActive = i == step - 1;
-                stepBorders[i].Background = (SolidColorBrush)new BrushConverter().ConvertFromString(isActive ? "#06B6D4" : "#1F2937");
+                // Use the registrations module active color #FFF59E0B so embedded Persons module is unaffected.
+                stepBorders[i].Background = (SolidColorBrush)new BrushConverter().ConvertFromString(isActive ? "#FFF59E0B" : "#1F2937");
                 stepTexts[i].Foreground = (SolidColorBrush)new BrushConverter().ConvertFromString(isActive ? "White" : "#9CA3AF");
                 stepTexts[i].FontWeight = isActive ? FontWeights.Bold : FontWeights.Normal;
             }

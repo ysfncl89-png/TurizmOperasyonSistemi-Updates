@@ -377,7 +377,7 @@
                     Visibility="Collapsed">
 
             <Border x:Name="Step1Border"
-                    Background="#06B6D4"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -388,7 +388,7 @@
             </Border>
 
             <Border x:Name="Step2Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -398,7 +398,7 @@
             </Border>
 
             <Border x:Name="Step3Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -408,7 +408,7 @@
             </Border>
 
             <Border x:Name="Step4Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -418,7 +418,7 @@
             </Border>
 
             <Border x:Name="Step5Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -428,7 +428,7 @@
             </Border>
 
             <Border x:Name="Step6Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -438,7 +438,7 @@
             </Border>
 
             <Border x:Name="Step7Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -448,7 +448,7 @@
             </Border>
 
             <Border x:Name="Step8Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -458,7 +458,7 @@
             </Border>
 
             <Border x:Name="Step9Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
@@ -468,7 +468,7 @@
             </Border>
 
             <Border x:Name="Step10Border"
-                    Background="#1F2937"
+                    Background="#FFF59E0B"
                     CornerRadius="15"
                     Padding="15,8"
                     Margin="5">
