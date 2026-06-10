@@ -538,7 +538,7 @@
                                           FontSize="13"
                                           SelectionChanged="RegistrationPeriodFilterComboBox_SelectionChanged"/>
                             </Grid>
-
+ 
                             <!-- Inline no-results panel directly under the search box (shows when no matching registrations) -->
                             <Border x:Name="InlineNoRegistrationPanel"
                                     Background="#0B1220"
