@@ -633,8 +633,54 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
+                int personId = registration.PersonId;
+
+                // Remove the registration
                 db.Registrations.Remove(registration);
+
+                try
+                {
+                    // Also remove any RoomOccupant entries for this person
+                    var occupants = db.RoomOccupants
+                        .Where(o => o.PassengerId == personId)
+                        .ToList();
+
+                    if (occupants.Any())
+                    {
+                        var allocIds = occupants.Select(o => o.RoomAllocationId).Distinct().ToList();
+                        db.RoomOccupants.RemoveRange(occupants);
+
+                        // For each affected RoomAllocation, if no other occupants remain, remove the allocation
+                        foreach (var aid in allocIds)
+                        {
+                            bool hasOther = db.RoomOccupants.Any(o => o.RoomAllocationId == aid && o.PassengerId != personId);
+                            if (!hasOther)
+                            {
+                                var alloc = db.RoomAllocations.FirstOrDefault(a => a.Id == aid);
+                                if (alloc != null)
+                                {
+                                    db.RoomAllocations.Remove(alloc);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore errors during cleanup
+                }
+
                 db.SaveChanges();
+
+                try
+                {
+                    // Notify other modules (ör. odalama) that this person's registration changed/removed
+                    NotificationCenter.Publish("RegistrationSaved", personId);
+                }
+                catch
+                {
+                    // ignore notification failures
+                }
             }
 
             LoadRegistrations();
