@@ -23,6 +23,8 @@ namespace TurizmOperasyonSistemi.Views
         // Sağ taraftaki odaları ve sol taraftaki yolcuları dinamik takip etmek için ObservableCollection kullanıyoruz
         public ObservableCollection<RoomViewModel> RoomsList { get; set; } = new ObservableCollection<RoomViewModel>();
         public ObservableCollection<PassengerUiModel> PassengerPool { get; set; } = new ObservableCollection<PassengerUiModel>();
+        private System.ComponentModel.ICollectionView _passengerPoolView;
+        private string _passengerPoolQuery = string.Empty;
         public ObservableCollection<SavedAllocationRow> SavedAllocations { get; set; } = new ObservableCollection<SavedAllocationRow>();
         private List<SavedAllocationRow> _allSavedAllocations = new List<SavedAllocationRow>();
         private SavedAllocationRow _matchedSavedAllocation = null;
@@ -56,7 +58,6 @@ namespace TurizmOperasyonSistemi.Views
 
             // XAML'deki kontrollere listelerimizi bağlıyoruz
             RoomsItemsControl.ItemsSource = RoomsList;
-            UnallocatedPassengersGrid.ItemsSource = PassengerPool;
             SavedAllocationsGrid.ItemsSource = SavedAllocations;
 
             LoadSavedAllocations();
@@ -65,6 +66,30 @@ namespace TurizmOperasyonSistemi.Views
             {
                 ResetModuleToInitialState();
             }), DispatcherPriority.Loaded);
+
+            // create a view for passenger pool so we can filter locally
+            _passengerPoolView = System.Windows.Data.CollectionViewSource.GetDefaultView(PassengerPool);
+            _passengerPoolView.Filter = PassengerPoolFilter;
+
+            // bind the view to the grid so it updates when PassengerPool changes
+            UnallocatedPassengersGrid.ItemsSource = _passengerPoolView;
+
+            // Attach TextChanged for search box after control is loaded to avoid timing issues
+            this.Loaded += (s, e) =>
+            {
+                try
+                {
+                    var sb = this.FindName("PassengerPoolSearchTextBox") as TextBox;
+                    if (sb != null)
+                    {
+                        sb.TextChanged += PassengerPoolSearchTextBox_TextChanged;
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+            };
 
             // Combobox'lara kutucuğa tıklandığında da açılma davranışı ekle
             Dispatcher.BeginInvoke(new Action(() =>
@@ -86,6 +111,28 @@ namespace TurizmOperasyonSistemi.Views
 
 
 
+        }
+
+        private bool PassengerPoolFilter(object item)
+        {
+            if (!(item is PassengerUiModel p)) return false;
+            var q = _passengerPoolQuery?.Trim();
+            if (string.IsNullOrWhiteSpace(q)) return true;
+            return (p.FullName ?? string.Empty).IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void PassengerPoolSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                var tb = sender as TextBox;
+                _passengerPoolQuery = tb?.Text ?? string.Empty;
+                _passengerPoolView?.Refresh();
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void OnNotificationReceived(string key, object payload)
@@ -434,6 +481,22 @@ namespace TurizmOperasyonSistemi.Views
             _selectedRoomForAllocation.UpdateStatus();
 
             RefreshPassengerCountLabel();
+
+            // Eğer kullanıcı arama yapmışsa, kişi odalana kadar arama kutusunu temizle
+            try
+            {
+                _passengerPoolQuery = string.Empty;
+                var sb = this.FindName("PassengerPoolSearchTextBox") as TextBox;
+                if (sb != null)
+                {
+                    sb.Text = string.Empty;
+                }
+                _passengerPoolView?.Refresh();
+            }
+            catch
+            {
+                // ignore any UI timing issues
+            }
         }
 
         private void RemovePassengerFromRoomButton_Click(object sender, RoutedEventArgs e)

@@ -864,10 +864,33 @@
                                 <TextBlock Text="4. Gerekirse odayı kapatınca yolcular otomatik havuza geri döner."
                                            Foreground="#CBD5E1"
                                            Margin="0,2,0,0"/>
+                                <TextBlock Text="5. İki Odayı Connection yapmak isterseniz önce bir odaya tıklayın . "
+                                           Foreground="#CBD5E1"
+                                           Margin="0,2,0,0"/>
+                                <TextBlock Text=" Daha sonra connection yap butonuna tıklayın ve diğer odaya/odalara tıklayın ve tekrar"
+                                           Foreground="#CBD5E1"
+                                           Margin="0,2,0,0"/>
+                                <TextBlock Text=" connection yap butonuna tıklayın ."
+                                           Foreground="#CBD5E1"
+                                           Margin="0,2,0,0"/>
+                                <TextBlock Text="6. Otele giriş-çıkış tarihlerini seçmeyi unutmayın . Çıktı aldığınızda belgenizde görünecek. "
+                                           Foreground="#CBD5E1"
+                                           Margin="0,2,0,0"/>                           
                             </StackPanel>
                         </Border>
 
-                        <DataGrid Grid.Row="2"
+                        <!-- Arama kutusu: sadece o anki havuzdaki kişileri filtreler -->
+                        <StackPanel Grid.Row="2" Margin="0,6,0,6">
+                            <TextBox x:Name="PassengerPoolSearchTextBox"
+                                     Height="34"
+                                     Background="#1E293B"
+                                     Foreground="#F8FAFC"
+                                     BorderBrush="#475569"
+                                     BorderThickness="1"
+                                     Padding="10,6"
+                                     ToolTip="Yolcu adı ile ara"/>
+
+                            <DataGrid Grid.Row="2"
                                   x:Name="UnallocatedPassengersGrid"
                                   Background="Transparent"
                                   RowBackground="#0F172A"
@@ -913,6 +936,7 @@
                             </DataGrid.Columns>
 
                         </DataGrid>
+                            </StackPanel>
                     </Grid>
                 </Border>
 
