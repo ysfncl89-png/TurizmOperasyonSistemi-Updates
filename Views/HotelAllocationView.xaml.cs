@@ -93,25 +93,74 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 if (key != "RegistrationSaved") return;
+                int? personId = null;
+                bool addToPool = true;
 
-                if (payload is not int personId) return;
-
-                // Eğer odalamalarda bu kişi varsa tüm odalardan çıkar ve havuza ekle
-                bool removed = false;
-
-                foreach (var room in RoomsList.ToList())
+                // payload can be int or an object { PersonId = int, AddToPool = bool }
+                if (payload is int pid)
                 {
-                    var occ = room.Occupants.FirstOrDefault(o => o.PersonId == personId);
-                    if (occ != null)
+                    personId = pid;
+                }
+                else if (payload != null)
+                {
+                    try
                     {
-                        room.Occupants.Remove(occ);
-                        AddPassengerToPoolIfMissing(occ);
-                        room.UpdateStatus();
-                        removed = true;
+                        var t = payload.GetType();
+                        var pidProp = t.GetProperty("PersonId");
+                        if (pidProp != null)
+                        {
+                            var v = pidProp.GetValue(payload);
+                            if (v is int vi) personId = vi;
+                            else if (v is long vl) personId = (int)vl;
+                            else if (v is short vs) personId = (int)vs;
+                        }
+
+                        var addProp = t.GetProperty("AddToPool");
+                        if (addProp != null)
+                        {
+                            var av = addProp.GetValue(payload);
+                            if (av is bool b) addToPool = b;
+                        }
+                    }
+                    catch
+                    {
+                        // ignore reflection errors
                     }
                 }
 
-                if (removed)
+                if (!personId.HasValue) return;
+
+                // Eğer odalamalarda bu kişi varsa tüm odalardan çıkar.
+                // Eğer AddToPool true ise havuza ekle; değilse havuzdan kaldır.
+                bool changed = false;
+
+                foreach (var room in RoomsList.ToList())
+                {
+                    var occ = room.Occupants.FirstOrDefault(o => o.PersonId == personId.Value);
+                    if (occ != null)
+                    {
+                        room.Occupants.Remove(occ);
+                        if (addToPool)
+                        {
+                            AddPassengerToPoolIfMissing(occ);
+                        }
+                        room.UpdateStatus();
+                        changed = true;
+                    }
+                }
+
+                // Eğer AddToPool == false ise ve kişi PassengerPool'da varsa çıkar
+                if (!addToPool)
+                {
+                    var poolItem = PassengerPool.FirstOrDefault(p => p.PersonId == personId.Value);
+                    if (poolItem != null)
+                    {
+                        PassengerPool.Remove(poolItem);
+                        changed = true;
+                    }
+                }
+
+                if (changed)
                 {
                     RefreshPassengerCountLabel();
                 }
@@ -299,7 +348,8 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     var matchingRegistrations = db.Registrations
                         .AsNoTracking()
-                        .Where(x => x.TourType == selectedTourType &&
+                        .Where(x => x.IsActive &&
+                                    x.TourType == selectedTourType &&
                                     x.Period == selectedPeriod &&
                                     x.GroupType == selectedGroupType &&
                                     x.DaysCount == selectedDuration)

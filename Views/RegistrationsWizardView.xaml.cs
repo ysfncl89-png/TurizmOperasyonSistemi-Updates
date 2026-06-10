@@ -604,6 +604,59 @@ namespace TurizmOperasyonSistemi.Views
                 registration.Status = status;
                 registration.IsActive = status == "Aktif";
                 db.SaveChanges();
+                try
+                {
+                    // Eğer kayıt pasif hale geldiyse, odalama verilerini senkronize et:
+                    // Bu kişi odalardan çıkarılsın ve boş kalan odalama kayıtları silinsin.
+                    if (!registration.IsActive)
+                    {
+                        int personId = registration.PersonId;
+                        try
+                        {
+                            var occupants = db.RoomOccupants
+                                .Where(o => o.PassengerId == personId)
+                                .ToList();
+
+                            if (occupants.Any())
+                            {
+                                var allocIds = occupants.Select(o => o.RoomAllocationId).Distinct().ToList();
+                                db.RoomOccupants.RemoveRange(occupants);
+
+                                foreach (var aid in allocIds)
+                                {
+                                    bool hasOther = db.RoomOccupants.Any(o => o.RoomAllocationId == aid && o.PassengerId != personId);
+                                    if (!hasOther)
+                                    {
+                                        var alloc = db.RoomAllocations.FirstOrDefault(a => a.Id == aid);
+                                        if (alloc != null)
+                                        {
+                                            db.RoomAllocations.Remove(alloc);
+                                        }
+                                    }
+                                }
+
+                                db.SaveChanges();
+                            }
+                        }
+                        catch
+                        {
+                            // ignore cleanup errors
+                        }
+
+                        try
+                        {
+                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive });
+                        }
+                        catch
+                        {
+                            // ignore
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
             }
 
             LoadRegistrations();
@@ -675,7 +728,8 @@ namespace TurizmOperasyonSistemi.Views
                 try
                 {
                     // Notify other modules (ör. odalama) that this person's registration changed/removed
-                    NotificationCenter.Publish("RegistrationSaved", personId);
+                    // Pass AddToPool=false so odalama motorü bu kişiyi havuza eklemesin
+                    NotificationCenter.Publish("RegistrationSaved", new { PersonId = personId, AddToPool = false });
                 }
                 catch
                 {
