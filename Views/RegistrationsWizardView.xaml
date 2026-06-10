@@ -28,6 +28,7 @@
             <Setter Property="Padding" Value="18,6"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#FFF59E0B"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -78,28 +79,14 @@
         </Style>
 
         <Style x:Key="RegFooterButtonPrimary" TargetType="Button" BasedOn="{StaticResource RegFooterButtonBase}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#06B6D4" Offset="0"/>
-                        <GradientStop Color="#0894A8" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="#FFF59E0B"/>
             <Setter Property="BorderBrush" Value="#0F5566"/>
         </Style>
 
         <Style x:Key="RegFooterButtonSave" TargetType="Button" BasedOn="{StaticResource RegFooterButtonBase}">
             <Setter Property="Height" Value="48"/>
             <Setter Property="MinWidth" Value="160"/>
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#10B981" Offset="0"/>
-                        <GradientStop Color="#0E9F6A" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="#FFF59E0B"/>
             <Setter Property="BorderBrush" Value="#0B7A54"/>
             <Setter Property="Template">
                 <Setter.Value>
