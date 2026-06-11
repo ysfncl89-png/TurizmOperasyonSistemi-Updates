@@ -289,6 +289,10 @@ namespace TurizmOperasyonSistemi.Views
         private StepOneState _stepOneState = StepOneState.Initial;
         private ICollectionView _personsView;
         private System.Windows.Threading.DispatcherTimer _noMatchScrollTimer;
+    // control handler activation to avoid reacting to programmatic selection changes during setup
+    private bool _ageRangeSelectionHandlerActive = false;
+    // set when user initiated a click on the AgeRangeComboBox surface
+    private bool _ageRangeUserInteraction = false;
 
         public PersonsWizardView()
         {
@@ -314,6 +318,13 @@ namespace TurizmOperasyonSistemi.Views
             ResetModuleToEntryState();
             UpdateSteps();
 
+            // Subscribe age range selection handler and enable it after constructor finishes setup
+            AgeRangeComboBox.SelectionChanged += AgeRangeComboBox_SelectionChanged;
+            // Also handle DropDownClosed so first user selection (when dropdown closes) is detected reliably
+            AgeRangeComboBox.DropDownClosed += AgeRangeComboBox_DropDownClosed;
+            // detect keyboard interactions on the combobox (arrow keys, space, enter)
+            AgeRangeComboBox.PreviewKeyDown += AgeRangeComboBox_PreviewKeyDown;
+
             Loaded += PersonsWizardView_Loaded;
             Loaded += PersonsWizardView_PostLoad;
             SettingDialog.OnSettingsChanged += LoadNationalityRadioOptions;
@@ -338,6 +349,9 @@ namespace TurizmOperasyonSistemi.Views
                 Interval = TimeSpan.FromMilliseconds(650)
             };
             _noMatchScrollTimer.Tick += NoMatchScrollTimer_Tick;
+
+            // enable the age range handler now that initial loading is complete
+            _ageRangeSelectionHandlerActive = true;
         }
 
         private void PersonsWizardView_PostLoad(object sender, RoutedEventArgs e)
@@ -1411,6 +1425,15 @@ namespace TurizmOperasyonSistemi.Views
         {
             if (sender is ComboBox cb)
             {
+                // mark user interaction for AgeRange combo so SelectionChanged can react only to user actions
+                try
+                {
+                    if (cb == AgeRangeComboBox)
+                    {
+                        _ageRangeUserInteraction = true;
+                    }
+                }
+                catch { }
                 // Eğer zaten açıksa normal davranış sürsün
                 if (!cb.IsDropDownOpen)
                 {
@@ -1418,6 +1441,69 @@ namespace TurizmOperasyonSistemi.Views
                     e.Handled = true;
                 }
             }
+        }
+
+        private void AgeRangeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_ageRangeSelectionHandlerActive) return;
+
+            // If user interacted via keyboard (PreviewKeyDown set the flag), perform scroll on selection
+            if (_ageRangeUserInteraction)
+            {
+                _ageRangeUserInteraction = false;
+
+                if (currentStep != 1) return;
+
+                try
+                {
+                    if (AgeRangeComboBox != null && AgeRangeComboBox.SelectedIndex > 0 && RootScrollViewer != null)
+                    {
+                        RootScrollViewer.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            try
+                            {
+                                RootScrollViewer.ScrollToVerticalOffset(RootScrollViewer.ScrollableHeight);
+                            }
+                            catch { }
+                        }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private void AgeRangeComboBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            try
+            {
+                if (e.Key == System.Windows.Input.Key.Up || e.Key == System.Windows.Input.Key.Down || e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Space)
+                {
+                    _ageRangeUserInteraction = true;
+                }
+            }
+            catch { }
+        }
+
+        private void AgeRangeComboBox_DropDownClosed(object sender, EventArgs e)
+        {
+            if (!_ageRangeSelectionHandlerActive) return;
+            if (currentStep != 1) return;
+
+            try
+            {
+                if (AgeRangeComboBox != null && AgeRangeComboBox.SelectedIndex > 0 && RootScrollViewer != null)
+                {
+                    RootScrollViewer.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        try
+                        {
+                            RootScrollViewer.ScrollToVerticalOffset(RootScrollViewer.ScrollableHeight);
+                        }
+                        catch { }
+                    }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                }
+            }
+            catch { }
         }
 
         private void ToggleActiveButton_Click(object sender, RoutedEventArgs e)
