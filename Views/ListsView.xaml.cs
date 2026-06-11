@@ -358,7 +358,7 @@ namespace TurizmOperasyonSistemi.Views
                 var grid = b.Child as Grid;
                 if (grid == null) return;
 
-                var options = grid.Children.OfType<Button>().Where(btn => btn.Name != "tk_center" && btn.Name != "kb_center" && btn.Name != "oo_center" && btn.Name != "od_center" && btn.Name != "kg_center").ToList();
+                var options = grid.Children.OfType<Button>().Where(btn => btn.Name != "tk_center" && btn.Name != "kb_center" && btn.Name != "od_center" && btn.Name != "kg_center").ToList();
                 if (options.Count == 0) return;
 
                 ArrangeOptionsInPolygon(grid, options);
@@ -372,7 +372,7 @@ namespace TurizmOperasyonSistemi.Views
                 var grid = b.Child as Grid;
                 if (grid == null) return;
 
-                var options = grid.Children.OfType<Button>().Where(btn => btn.Name != "tk_center" && btn.Name != "kb_center" && btn.Name != "oo_center" && btn.Name != "od_center" && btn.Name != "kg_center").ToList();
+                var options = grid.Children.OfType<Button>().Where(btn => btn.Name != "tk_center" && btn.Name != "kb_center" && btn.Name != "od_center" && btn.Name != "kg_center").ToList();
                 foreach (var btn in options)
                 {
                     var tt = btn.RenderTransform as TranslateTransform;
