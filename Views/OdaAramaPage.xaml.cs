@@ -126,87 +126,130 @@ namespace TurizmOperasyonSistemi.Views
             {
                 var headers = new List<string> { "Oda No", "Oda Türü", "Kapasite", "Yerleşen Kişi Sayısı", "Yerleşen Kişiler", "Connection" };
                 var rows = new List<Dictionary<string, string>>();
+                var checkInDisplay = "-";
+                var checkOutDisplay = "-";
 
                 using (var db = new AppDbContext())
                 {
-                    var allocations = db.RoomAllocations.Include(x => x.Hotel).Include(x => x.Occupants)
-                        .Where(x => x.Hotel != null && x.Hotel.Name == row.HotelName && x.TourType == row.TourType && x.Period == row.Period && x.GroupType == row.GroupType && x.DaysCount == row.DaysCount)
+                    var allocations = db.RoomAllocations
+                        .Include(x => x.Hotel)
+                        .Include(x => x.Occupants)
+                        .Where(x => x.Hotel != null
+                            && x.Hotel.Name == row.HotelName
+                            && x.TourType == row.TourType
+                            && x.Period == row.Period
+                            && x.GroupType == row.GroupType
+                            && x.DaysCount == row.DaysCount)
                         .ToList();
 
-                    var passengerIds = allocations.SelectMany(x => x.Occupants).Select(x => x.PassengerId).Distinct().ToList();
-                    var personLookup = db.Persons.AsNoTracking().Where(x => passengerIds.Contains(x.Id)).ToDictionary(x => x.Id, x => $"{x.FirstName} {x.LastName}");
+                    var passengerIds = allocations
+                        .SelectMany(x => x.Occupants)
+                        .Select(x => x.PassengerId)
+                        .Distinct()
+                        .ToList();
 
-                    // order allocations
-                    var ordered = allocations.OrderBy(x => int.TryParse(x.RoomNumber, out var n) ? n : int.MaxValue).ThenBy(x => x.RoomNumber).ToList();
+                    var personLookup = db.Persons
+                        .AsNoTracking()
+                        .Where(x => passengerIds.Contains(x.Id))
+                        .ToDictionary(x => x.Id, x => $"{x.FirstName} {x.LastName}");
 
+                    var ordered = allocations
+                        .OrderBy(x => int.TryParse(x.RoomNumber, out var number) ? number : int.MaxValue)
+                        .ThenBy(x => x.RoomNumber)
+                        .ToList();
+
+                    var connectionLookup = BuildConnectionLabelLookup(ordered);
                     var personCounter = 1;
-                    foreach (var a in ordered)
+
+                    foreach (var allocation in ordered)
                     {
-                        int capacity = ResolveRoomCapacity(a.RoomType);
-                        var occupants = a.Occupants.Select(o => personLookup.TryGetValue(o.PassengerId, out var nm) ? nm : $"Yolcu #{o.PassengerId}").ToList();
-                        // prefix occupants with continuous numbering across the whole export
+                        var capacity = ResolveRoomCapacity(allocation.RoomType);
+                        var occupants = allocation.Occupants
+                            .Select(o => personLookup.TryGetValue(o.PassengerId, out var name) ? name : $"Yolcu #{o.PassengerId}")
+                            .ToList();
+
                         for (var i = 0; i < occupants.Count; i++)
                         {
                             occupants[i] = $"{personCounter}. {occupants[i]}";
                             personCounter++;
                         }
-                        var occCount = occupants.Count;
-                        var conn = a.IsConnection ? (string.IsNullOrWhiteSpace(a.ConnectionGroupId) ? "Evet" : a.ConnectionGroupId) : "Hayır";
-                        var asim = occCount > capacity;
-                        var dict = new Dictionary<string, string>
+
+                        var occupantCount = occupants.Count;
+                        var connectionLabel = ResolveConnectionLabel(allocation, connectionLookup);
+
+                        rows.Add(new Dictionary<string, string>
                         {
-                            ["Oda No"] = a.RoomNumber ?? string.Empty,
-                            ["Oda Türü"] = a.RoomType ?? string.Empty,
+                            ["Oda No"] = allocation.RoomNumber ?? string.Empty,
+                            ["Oda Türü"] = allocation.RoomType ?? string.Empty,
                             ["Kapasite"] = capacity.ToString(),
-                            ["Yerleşen Kişi Sayısı"] = occCount.ToString(),
-                            ["Yerleşen Kişiler"] = occupants.Count > 0 ? string.Join(", ", occupants) : "Boş Oda",
-                            ["Connection"] = conn,
-                            ["Aşım"] = asim ? "!!RED!!Kapasite aşılıyor" : "Hayır"
-                        };
-                        rows.Add(dict);
+                            ["Yerleşen Kişi Sayısı"] = occupantCount.ToString(),
+                            ["Yerleşen Kişiler"] = occupantCount > 0 ? string.Join(", ", occupants) : "Boş Oda",
+                            ["Connection"] = connectionLabel
+                        });
                     }
-                }
 
-                // Build default filename
-                string baseName = BuildExportBaseFileName(row);
-
-                // Prepare title / preface (hotel name + checkin/out) to be rendered above the table
-                string exportTitle = baseName;
-                if (rows.Count > 0)
-                {
-                    using (var db = new AppDbContext())
+                    var anyAlloc = allocations.FirstOrDefault();
+                    if (anyAlloc != null)
                     {
-                        var anyAlloc = db.RoomAllocations.AsNoTracking()
-                            .Where(x => x.Hotel != null && x.Hotel.Name == row.HotelName && x.TourType == row.TourType && x.Period == row.Period && x.GroupType == row.GroupType && x.DaysCount == row.DaysCount)
-                            .OrderBy(x => x.RoomNumber)
-                            .FirstOrDefault();
-                        string checkIn = anyAlloc?.CheckInDate ?? string.Empty;
-                        string checkOut = anyAlloc?.CheckOutDate ?? string.Empty;
-
-                        // format dates as Gün/Ay/Yıl (dd/MM/yyyy) when possible
-                        string fmtIn = checkIn;
-                        if (!string.IsNullOrWhiteSpace(checkIn) && DateTime.TryParse(checkIn, out var dIn)) fmtIn = dIn.ToString("dd/MM/yyyy");
-                        string fmtOut = checkOut;
-                        if (!string.IsNullOrWhiteSpace(checkOut) && DateTime.TryParse(checkOut, out var dOut)) fmtOut = dOut.ToString("dd/MM/yyyy");
-
-                        exportTitle = baseName + "\n" + row.HotelName + "\n" + "Giriş: " + (string.IsNullOrWhiteSpace(fmtIn) ? "-" : fmtIn) + "\n" + "Çıkış: " + (string.IsNullOrWhiteSpace(fmtOut) ? "-" : fmtOut);
+                        checkInDisplay = FormatDateDisplay(anyAlloc.CheckInDate);
+                        checkOutDisplay = FormatDateDisplay(anyAlloc.CheckOutDate);
                     }
                 }
 
-                // compute footer lines: total rooms and summary by type
+                var baseName = BuildExportBaseFileName(row);
+                var exportTitle = string.Join(Environment.NewLine, new[]
+                {
+                    baseName,
+                    row.HotelName ?? string.Empty,
+                    $"Giriş: {checkInDisplay}",
+                    $"Çıkış: {checkOutDisplay}"
+                });
+
                 var totalRooms = rows.Count;
-                var typeSummary = rows.GroupBy(r => r.ContainsKey("Oda Türü") ? r["Oda Türü"] : "").Where(g => !string.IsNullOrWhiteSpace(g.Key)).Select(g => $"{g.Count()} {g.Key}").ToList();
+                var typeSummary = rows
+                    .GroupBy(r => r.TryGetValue("Oda Türü", out var roomType) ? roomType : string.Empty)
+                    .Where(g => !string.IsNullOrWhiteSpace(g.Key))
+                    .Select(g => $"{g.Count()} {g.Key}")
+                    .ToList();
                 var footerLines = new List<string> { $"TOPLAM ODA : {totalRooms}", string.Join(", ", typeSummary) };
 
-                // Ask for path
-                var filter = format == "docx" ? "Word dosyası (*.docx)|*.docx" : format == "xlsx" ? "Excel dosyası (*.xlsx)|*.xlsx" : "PDF dosyası (*.pdf)|*.pdf";
+                var filter = format == "docx"
+                    ? "Word dosyası (*.docx)|*.docx"
+                    : format == "xlsx"
+                        ? "Excel dosyası (*.xlsx)|*.xlsx"
+                        : "PDF dosyası (*.pdf)|*.pdf";
                 var defaultName = baseName + (format == "docx" ? ".docx" : format == "xlsx" ? ".xlsx" : ".pdf");
-                var path = AskForPath(format == "docx" ? "Word belgesi" : format == "xlsx" ? "Excel çalışma kitabı" : "PDF belgesi", filter, defaultName);
-                if (path == null) return;
+                var path = AskForPath(
+                    format == "docx" ? "Word belgesi" : format == "xlsx" ? "Excel çalışma kitabı" : "PDF belgesi",
+                    filter,
+                    defaultName);
 
-                if (format == "docx") Services.ExportHelper.ExportWord(path, rows, headers, exportTitle, footerLines);
-                else if (format == "xlsx") Services.ExportHelper.ExportExcel(path, rows, headers, exportTitle, footerLines);
-                else if (format == "pdf") Services.ExportHelper.ExportPdf(path, rows, headers, exportTitle, footerLines);
+                if (path == null)
+                {
+                    return;
+                }
+
+                if (format == "docx")
+                {
+                    Services.ExportHelper.ExportRoomAllocationWord(
+                        path,
+                        rows,
+                        row.HotelName,
+                        checkInDisplay,
+                        checkOutDisplay,
+                        row.TourType,
+                        row.Period,
+                        row.GroupType,
+                        row.DaysCount);
+                }
+                else if (format == "xlsx")
+                {
+                    Services.ExportHelper.ExportExcel(path, rows, headers, exportTitle, footerLines);
+                }
+                else if (format == "pdf")
+                {
+                    Services.ExportHelper.ExportPdf(path, rows, headers, exportTitle, footerLines);
+                }
 
                 MessageBox.Show("Dosya başarıyla oluşturuldu.");
             }
@@ -214,6 +257,72 @@ namespace TurizmOperasyonSistemi.Views
             {
                 MessageBox.Show($"Export hatası: {ex.Message}");
             }
+        }
+
+        private Dictionary<string, string> BuildConnectionLabelLookup(List<RoomAllocation> allocations)
+        {
+            var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var group in allocations
+                .Where(x => x.IsConnection && !string.IsNullOrWhiteSpace(x.ConnectionGroupId))
+                .GroupBy(x => x.ConnectionGroupId))
+            {
+                var roomNumbers = group
+                    .Select(x => NormalizeRoomNumber(x.RoomNumber))
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => int.TryParse(x, out var number) ? number : int.MaxValue)
+                    .ThenBy(x => x, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (roomNumbers.Count == 0)
+                {
+                    continue;
+                }
+
+                var label = string.Join("+", roomNumbers);
+                foreach (var room in group)
+                {
+                    var roomNumber = NormalizeRoomNumber(room.RoomNumber);
+                    if (!string.IsNullOrWhiteSpace(roomNumber))
+                    {
+                        lookup[roomNumber] = label;
+                    }
+                }
+            }
+
+            return lookup;
+        }
+
+        private string ResolveConnectionLabel(RoomAllocation allocation, Dictionary<string, string> connectionLookup)
+        {
+            if (allocation == null || !allocation.IsConnection)
+            {
+                return "Hayır";
+            }
+
+            var roomNumber = NormalizeRoomNumber(allocation.RoomNumber);
+            if (!string.IsNullOrWhiteSpace(roomNumber) && connectionLookup != null && connectionLookup.TryGetValue(roomNumber, out var label))
+            {
+                return label;
+            }
+
+            return string.IsNullOrWhiteSpace(roomNumber) ? "Hayır" : roomNumber;
+        }
+
+        private string NormalizeRoomNumber(string roomNumber)
+        {
+            return (roomNumber ?? string.Empty).Trim();
+        }
+
+        private string FormatDateDisplay(string value)
+        {
+            if (DateTime.TryParse(value, out var dateTime))
+            {
+                return dateTime.ToString("dd.MM.yyyy");
+            }
+
+            return string.IsNullOrWhiteSpace(value) ? "-" : value;
         }
 
         private string BuildExportBaseFileName(SavedAllocationRow row)

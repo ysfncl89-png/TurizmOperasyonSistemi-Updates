@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Security;
+using System.Text;
 
 namespace TurizmOperasyonSistemi.Services
 {
@@ -45,6 +46,11 @@ namespace TurizmOperasyonSistemi.Services
             File.WriteAllBytes(filePath, pdf);
         }
 
+        public static void ExportRoomAllocationWord(string filePath, List<Dictionary<string, string>> rows, string hotelName, string checkInDate, string checkOutDate, string tourType, string period, string groupType, string daysCount)
+        {
+            RoomAllocationWordExporter.Export(filePath, rows, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
+        }
+
         // --- DOCX helpers ---
         private static void AddDocxContentTypes(ZipArchive archive)
         {
@@ -61,6 +67,346 @@ namespace TurizmOperasyonSistemi.Services
         private static void AddDocxDocumentRels(ZipArchive archive)
         {
             AddZipEntry(archive, "word/_rels/document.xml.rels", "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"/>");
+        }
+
+        private static void AddRoomAllocationDocumentXml(ZipArchive archive, List<Dictionary<string, string>> rows, string hotelName, string checkInDate, string checkOutDate)
+        {
+            var headers = new List<string>
+            {
+                "Oda No",
+                "Oda Türü",
+                "Kapasite",
+                "Yerleşen Kişi Sayısı",
+                "Yerleşen Kişiler",
+                "Connection"
+            };
+
+            var roomTypeSummary = rows
+                .GroupBy(row => NormalizeRoomType(row.ContainsKey("Oda Türü") ? row["Oda Türü"] : string.Empty))
+                .Where(group => !string.IsNullOrWhiteSpace(group.Key))
+                .Select(group => new
+                {
+                    RoomType = group.Key,
+                    Count = group.Count()
+                })
+                .OrderByDescending(item => item.Count)
+                .ThenBy(item => GetRoomTypeSortOrder(item.RoomType))
+                .ToList();
+
+            var totalRooms = rows.Count;
+            var summaryLine = roomTypeSummary.Count > 0
+                ? string.Join(", ", roomTypeSummary.Select(item => $"{item.Count} {item.RoomType}"))
+                : "-";
+
+            var topInfoTable = BuildTopInfoTable(hotelName, checkInDate, checkOutDate);
+            var mainTable = BuildRoomTable(rows, headers);
+            var summarySection = BuildSummarySection(roomTypeSummary, totalRooms, summaryLine);
+
+            var document = $@"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>
+<w:document xmlns:w=""http://schemas.openxmlformats.org/wordprocessingml/2006/main"">
+  <w:body>
+    {topInfoTable}
+    <w:p><w:r><w:t xml:space=""preserve""> </w:t></w:r></w:p>
+    {mainTable}
+    <w:p><w:r><w:t xml:space=""preserve""> </w:t></w:r></w:p>
+    {summarySection}
+    <w:sectPr>
+      <w:pgSz w:w=""16838"" w:h=""11906"" w:orient=""landscape""/>
+      <w:pgMar w:top=""540"" w:right=""540"" w:bottom=""540"" w:left=""540"" w:header=""400"" w:footer=""400"" w:gutter=""0""/>
+    </w:sectPr>
+  </w:body>
+</w:document>";
+
+            AddZipEntry(archive, "word/document.xml", document);
+        }
+
+        private static string BuildTopInfoTable(string hotelName, string checkInDate, string checkOutDate)
+        {
+            var widths = new[] { 5100, 5100, 5100 };
+            var cells = new[]
+            {
+                BuildInfoCardCell("OTEL", string.IsNullOrWhiteSpace(hotelName) ? "-" : hotelName, widths[0]),
+                BuildInfoCardCell("GİRİŞ TARİHİ", string.IsNullOrWhiteSpace(checkInDate) ? "-" : checkInDate, widths[1]),
+                BuildInfoCardCell("ÇIKIŞ TARİHİ", string.IsNullOrWhiteSpace(checkOutDate) ? "-" : checkOutDate, widths[2])
+            };
+
+            return $@"<w:tbl>
+  <w:tblPr>
+    <w:tblW w:w=""15300"" w:type=""dxa""/>
+    <w:tblLayout w:type=""fixed""/>
+    <w:tblBorders>
+      <w:top w:val=""nil""/>
+      <w:left w:val=""nil""/>
+      <w:bottom w:val=""nil""/>
+      <w:right w:val=""nil""/>
+      <w:insideH w:val=""nil""/>
+      <w:insideV w:val=""nil""/>
+    </w:tblBorders>
+  </w:tblPr>
+  <w:tblGrid>
+    <w:gridCol w:w=""{widths[0]}""/>
+    <w:gridCol w:w=""{widths[1]}""/>
+    <w:gridCol w:w=""{widths[2]}""/>
+  </w:tblGrid>
+  <w:tr>
+    {cells[0]}
+    {cells[1]}
+    {cells[2]}
+  </w:tr>
+</w:tbl>";
+        }
+
+        private static string BuildInfoCardCell(string label, string value, int width)
+        {
+            var content = BuildParagraph(label, "center", "64748B", 18, true)
+                + BuildParagraph(value, "center", "1E293B", 24, false);
+            return BuildTableCell(content, width, "FFFFFF", "D8E0EC", "center");
+        }
+
+        private static string BuildRoomTable(List<Dictionary<string, string>> rows, IReadOnlyList<string> headers)
+        {
+            var widths = new[] { 1200, 1600, 1000, 1800, 6200, 1400 };
+            var headerCells = headers.Select((header, index) => BuildTableCell(BuildParagraph(header.ToUpperInvariant(), "center", "FFFFFF", 18, true), widths[index], "173B72", "173B72", "center"));
+            var tableRows = new List<string>
+            {
+                $"<w:tr>{string.Join(string.Empty, headerCells)}</w:tr>"
+            };
+
+            for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+            {
+                var row = rows[rowIndex];
+                var fill = rowIndex % 2 == 0 ? "FFFFFF" : "F8FBFF";
+                var cells = new List<string>();
+
+                for (var i = 0; i < headers.Count; i++)
+                {
+                    var header = headers[i];
+                    var value = row.ContainsKey(header) ? row[header] : string.Empty;
+                    if (header == "Yerleşen Kişiler")
+                    {
+                        value = FormatOccupantNamesForWord(value);
+                    }
+
+                    if (header == "Connection")
+                    {
+                        cells.Add(BuildConnectionCell(value, widths[i], fill));
+                        continue;
+                    }
+
+                    var align = header == "Yerleşen Kişiler" ? "left" : "center";
+                    var content = BuildParagraph(string.IsNullOrWhiteSpace(value) ? "-" : value, align, "1F2937", 18, false);
+                    cells.Add(BuildTableCell(content, widths[i], fill, "D8E0EC", align));
+                }
+
+                tableRows.Add($"<w:tr>{string.Join(string.Empty, cells)}</w:tr>");
+            }
+
+            return $@"<w:tbl>
+  <w:tblPr>
+    <w:tblW w:w=""15300"" w:type=""dxa""/>
+    <w:tblLayout w:type=""fixed""/>
+    <w:tblBorders>
+      <w:top w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:left w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:bottom w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:right w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:insideH w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:insideV w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+    </w:tblBorders>
+  </w:tblPr>
+  <w:tblGrid>
+    <w:gridCol w:w=""{widths[0]}""/>
+    <w:gridCol w:w=""{widths[1]}""/>
+    <w:gridCol w:w=""{widths[2]}""/>
+    <w:gridCol w:w=""{widths[3]}""/>
+    <w:gridCol w:w=""{widths[4]}""/>
+    <w:gridCol w:w=""{widths[5]}""/>
+  </w:tblGrid>
+  {string.Join(Environment.NewLine, tableRows)}
+</w:tbl>";
+        }
+
+        private static string BuildConnectionCell(string value, int width, string fill)
+        {
+            var text = string.IsNullOrWhiteSpace(value) ? "-" : value;
+            var isNo = text.Equals("Hayır", StringComparison.OrdinalIgnoreCase);
+            var color = isNo ? "EF4444" : "2563EB";
+            var content = BuildParagraph(text, "center", color, 18, false);
+            var cellFill = isNo ? "FFF1F2" : "EEF4FF";
+            return BuildTableCell(content, width, cellFill, "D8E0EC", "center");
+        }
+
+        private static string BuildSummarySection(IReadOnlyList<dynamic> roomTypeSummary, int totalRooms, string summaryLine)
+        {
+            var leftContent = BuildSummaryDistributionBlock(roomTypeSummary, totalRooms);
+            var rightContent = BuildTotalRoomBlock(totalRooms, summaryLine);
+
+            return $@"<w:tbl>
+  <w:tblPr>
+    <w:tblW w:w=""15300"" w:type=""dxa""/>
+    <w:tblLayout w:type=""fixed""/>
+    <w:tblBorders>
+      <w:top w:val=""nil""/>
+      <w:left w:val=""nil""/>
+      <w:bottom w:val=""nil""/>
+      <w:right w:val=""nil""/>
+      <w:insideH w:val=""nil""/>
+      <w:insideV w:val=""nil""/>
+    </w:tblBorders>
+  </w:tblPr>
+  <w:tblGrid>
+    <w:gridCol w:w=""7600""/>
+    <w:gridCol w:w=""7600""/>
+  </w:tblGrid>
+  <w:tr>
+    {BuildTableCell(leftContent, 7600, "FFFFFF", "D8E0EC", "center")}
+    {BuildTableCell(rightContent, 7600, "F8FBFF", "D8E0EC", "center")}
+  </w:tr>
+</w:tbl>";
+        }
+
+        private static string BuildSummaryDistributionBlock(IReadOnlyList<dynamic> roomTypeSummary, int totalRooms)
+        {
+            var header = BuildParagraph("ODA DAĞILIM ÖZETİ", "center", "173B72", 20, true);
+            var rows = new List<string>();
+            var widths = new[] { 4200, 1200 };
+
+            rows.Add($@"<w:tr>
+  {BuildTableCell(BuildParagraph("ODA TÜRÜ", "center", "173B72", 16, true), widths[0], "EEF4FF", "D8E0EC", "center")}
+  {BuildTableCell(BuildParagraph("ODA SAYISI", "center", "173B72", 16, true), widths[1], "EEF4FF", "D8E0EC", "center")}
+</w:tr>");
+
+            foreach (var item in roomTypeSummary)
+            {
+                rows.Add($@"<w:tr>
+  {BuildTableCell(BuildParagraph(item.RoomType, "center", "1F2937", 16, false), widths[0], "FFFFFF", "D8E0EC", "center")}
+  {BuildTableCell(BuildParagraph(item.Count.ToString(), "center", "1F2937", 16, false), widths[1], "FFFFFF", "D8E0EC", "center")}
+</w:tr>");
+            }
+
+            rows.Add($@"<w:tr>
+  {BuildTableCell(BuildParagraph("TOPLAM ODA", "center", "173B72", 16, true), widths[0], "DCE8F8", "D8E0EC", "center")}
+  {BuildTableCell(BuildParagraph(totalRooms.ToString(), "center", "173B72", 16, true), widths[1], "DCE8F8", "D8E0EC", "center")}
+</w:tr>");
+
+            return $@"<w:tbl>
+  <w:tblPr>
+    <w:tblW w:w=""5400"" w:type=""dxa""/>
+    <w:tblLayout w:type=""fixed""/>
+    <w:tblBorders>
+      <w:top w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:left w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:bottom w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:right w:val=""single"" w:sz=""8"" w:color=""D8E0EC""/>
+      <w:insideH w:val=""single"" w:sz=""6"" w:color=""D8E0EC""/>
+      <w:insideV w:val=""single"" w:sz=""6"" w:color=""D8E0EC""/>
+    </w:tblBorders>
+  </w:tblPr>
+  <w:tblGrid>
+    <w:gridCol w:w=""5400""/>
+  </w:tblGrid>
+  <w:tr>
+    {BuildTableCell(header, 5400, "FFFFFF", "FFFFFF", "center")}
+  </w:tr>
+  <w:tr>
+    {BuildTableCell($@"<w:tbl>
+      <w:tblPr>
+        <w:tblW w:w=""5400"" w:type=""dxa""/>
+        <w:tblLayout w:type=""fixed""/>
+        <w:tblBorders>
+          <w:top w:val=""single"" w:sz=""6"" w:color=""D8E0EC""/>
+          <w:left w:val=""single"" w:sz=""6"" w:color=""D8E0EC""/>
+          <w:bottom w:val=""single"" w:sz=""6"" w:color=""D8E0EC""/>
+          <w:right w:val=""single"" w:sz=""6"" w:color=""D8E0EC""/>
+          <w:insideH w:val=""single"" w:sz=""6"" w:color=""D8E0EC""/>
+          <w:insideV w:val=""single"" w:sz=""6"" w:color=""D8E0EC""/>
+        </w:tblBorders>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w=""4200""/>
+        <w:gridCol w:w=""1200""/>
+      </w:tblGrid>
+      {string.Join(Environment.NewLine, rows)}
+    </w:tbl>", 5400, "FFFFFF", "FFFFFF", "center")}
+  </w:tr>
+</w:tbl>";
+        }
+
+        private static string BuildTotalRoomBlock(int totalRooms, string summaryLine)
+        {
+            return $@"{BuildParagraph("TOPLAM ODA", "center", "173B72", 18, true)}
+{BuildParagraph(totalRooms.ToString(), "center", "173B72", 40, true)}
+{BuildParagraph(summaryLine, "center", "334155", 16, false)}";
+        }
+
+        private static string BuildTableCell(string contentXml, int width, string fillColor, string borderColor, string align)
+        {
+            return $@"<w:tc>
+  <w:tcPr>
+    <w:tcW w:w=""{width}"" w:type=""dxa""/>
+    <w:tcBorders>
+      <w:top w:val=""single"" w:sz=""8"" w:color=""{borderColor}""/>
+      <w:left w:val=""single"" w:sz=""8"" w:color=""{borderColor}""/>
+      <w:bottom w:val=""single"" w:sz=""8"" w:color=""{borderColor}""/>
+      <w:right w:val=""single"" w:sz=""8"" w:color=""{borderColor}""/>
+    </w:tcBorders>
+    <w:shd w:val=""clear"" w:color=""auto"" w:fill=""{fillColor}""/>
+    <w:vAlign w:val=""center""/>
+  </w:tcPr>
+  {contentXml}
+</w:tc>";
+        }
+
+        private static string BuildParagraph(string text, string align, string color, int size, bool bold)
+        {
+            var safeText = (text ?? string.Empty).Split(new[] { '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = string.Join("", safeText).Split(new[] { '\n' }, StringSplitOptions.None);
+            var builder = new StringBuilder();
+            builder.Append($"<w:p><w:pPr><w:jc w:val=\"{align}\"/><w:spacing w:after=\"0\" w:before=\"0\"/></w:pPr><w:r><w:rPr>");
+            if (bold)
+            {
+                builder.Append("<w:b/>");
+            }
+            builder.Append($"<w:color w:val=\"{color}\"/><w:sz w:val=\"{size}\"/></w:rPr>");
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append("<w:br/>");
+                }
+
+                builder.Append($"<w:t xml:space=\"preserve\">{EscapeXml(lines[i])}</w:t>");
+            }
+
+            builder.Append("</w:r></w:p>");
+            return builder.ToString();
+        }
+
+        private static string FormatOccupantNamesForWord(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "-";
+            }
+
+            return string.Join("\n", value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(item => item.Trim()));
+        }
+
+        private static string NormalizeRoomType(string value)
+        {
+            return (value ?? string.Empty).Trim();
+        }
+
+        private static int GetRoomTypeSortOrder(string roomType)
+        {
+            var normalized = (roomType ?? string.Empty).Trim().ToUpperInvariant();
+            if (normalized.Contains("SINGLE") || normalized.Contains("SNGL")) return 0;
+            if (normalized.Contains("DBL")) return 1;
+            if (normalized.Contains("TRPL") || normalized.Contains("TRIPLE") || normalized.Contains("TRİPLE")) return 2;
+            if (normalized.Contains("TWIN")) return 3;
+            if (normalized.Contains("QUAD")) return 4;
+            if (normalized.Contains("QUINT")) return 5;
+            return 50;
         }
 
         private static void AddDocxDocumentXml(ZipArchive archive, List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
