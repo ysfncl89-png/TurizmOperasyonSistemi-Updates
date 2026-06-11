@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
@@ -276,7 +275,7 @@ namespace TurizmOperasyonSistemi.Views
                         row.DaysCount);
                 }
 
-                MessageBox.Show("Dosya başarıyla oluşturuldu ve bilgisayarınıza indirildi.");
+                MessageBox.Show("Dosya başarıyla oluşturuldu.");
             }
             catch (Exception ex)
             {
@@ -533,12 +532,7 @@ namespace TurizmOperasyonSistemi.Views
         private void ApplyFilters()
         {
             _rows.Clear();
-            string searchRaw = SearchTextBox.Text ?? string.Empty;
-            var tokens = searchRaw.Split(new[] { ',', ';', ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(t => t.Trim())
-                .Where(t => !string.IsNullOrWhiteSpace(t))
-                .Select(t => t.ToLowerInvariant())
-                .ToList();
+            string search = SearchTextBox.Text?.Trim() ?? string.Empty;
             string tour = TourTypeFilter.SelectedItem?.ToString();
             string period = PeriodFilter.SelectedItem?.ToString();
             string group = GroupTypeFilter.SelectedItem?.ToString();
@@ -551,18 +545,13 @@ namespace TurizmOperasyonSistemi.Views
                 .Where(x => (string.IsNullOrWhiteSpace(group) || group == "Tümü" || string.Equals(x.GroupType, group, StringComparison.OrdinalIgnoreCase)))
                 .Where(x => (string.IsNullOrWhiteSpace(days) || days == "Tümü" || string.Equals(x.DaysCount, days, StringComparison.OrdinalIgnoreCase)))
                 .Where(x => (string.IsNullOrWhiteSpace(hotel) || hotel == "Tümü" || string.Equals(x.HotelName, hotel, StringComparison.OrdinalIgnoreCase)))
-                .Where(x => tokens.Count == 0 || tokens.All(token =>
-                {
-                    var occ = (x.OccupantNames ?? string.Empty).ToLower(CultureInfo.CurrentCulture);
-                    var hotel = (x.HotelName ?? string.Empty).ToLower(CultureInfo.CurrentCulture);
-                    var room = (x.RoomSummary ?? string.Empty).ToLower(CultureInfo.CurrentCulture);
-                    var tour = (x.TourType ?? string.Empty).ToLower(CultureInfo.CurrentCulture);
-                    var period = (x.Period ?? string.Empty).ToLower(CultureInfo.CurrentCulture);
-                    var groupType = (x.GroupType ?? string.Empty).ToLower(CultureInfo.CurrentCulture);
-                    var daysCount = (x.DaysCount ?? string.Empty).ToLower(CultureInfo.CurrentCulture);
-
-                    return occ.Contains(token) || hotel.Contains(token) || room.Contains(token) || tour.Contains(token) || period.Contains(token) || groupType.Contains(token) || daysCount.Contains(token);
-                }))
+                .Where(x => string.IsNullOrWhiteSpace(search) ||
+                            (x.OccupantNames != null && x.OccupantNames.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                            (x.HotelName != null && x.HotelName.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                            (x.RoomSummary != null && x.RoomSummary.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                            (x.TourType != null && x.TourType.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                            (x.Period != null && x.Period.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+                            )
                 .ToList();
 
             foreach (var r in filtered)

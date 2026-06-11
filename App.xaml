@@ -46,16 +46,9 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
-                            <Grid>
-                                <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
-                                <TextBlock x:Name="Watermark" Text="Arama yapmak için Tur , Dönem , Grup , Gün ,Ad , Soyad veya Otel kelimeleri ile hızlı arama yapabilirsiniz. Ya da Kutucukları tek tek seçerek Oda listenizi daha hızlı bulabilirsiniz .  ."
-                                           Foreground="#88E2F8FF" FontStyle="Italic" Margin="12,0,12,0" VerticalAlignment="Center" TextWrapping="Wrap" IsHitTestVisible="False" Visibility="Collapsed" />
-                            </Grid>
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="Text" Value="">
-                                <Setter TargetName="Watermark" Property="Visibility" Value="Visible"/>
-                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource GlowBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderThickness" Value="1.4"/>
@@ -73,9 +66,6 @@
                                         <DropShadowEffect Color="{StaticResource NeonGlowColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.5"/>
                                     </Setter.Value>
                                 </Setter>
-                            </Trigger>
-                            <Trigger Property="Text" Value="{x:Null}">
-                                <Setter TargetName="Watermark" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
