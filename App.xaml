@@ -34,6 +34,95 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Neon search TextBox style (implicit: applies to all TextBox controls) -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#475569"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                            <Grid>
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                                <TextBlock x:Name="Watermark" Text="Arama yapmak için Tur , Dönem , Grup , Gün ,Ad , Soyad veya Otel kelimeleri ile hızlı arama yapabilirsiniz"
+                                           Foreground="#88E2F8FF" FontStyle="Italic" Margin="12,0,12,0" VerticalAlignment="Center" TextWrapping="Wrap" IsHitTestVisible="False" Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Watermark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource GlowBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1.4"/>
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="{StaticResource NeonGlowColor}" BlurRadius="12" ShadowDepth="0" Opacity="0.25"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource GlowBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1.8"/>
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="{StaticResource NeonGlowColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="Text" Value="{x:Null}">
+                                <Setter TargetName="Watermark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Implicit small-button rule for Back buttons (Content == 'Geri') to avoid editing every page XAML -->
+        <Style TargetType="Button">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource Self}}" Value="Geri">
+                    <Setter Property="Background" Value="#2D3748"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Padding" Value="8,4"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="{StaticResource NeonGlowColor}" BlurRadius="8" ShadowDepth="0" Opacity="0.12"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" Effect="{TemplateBinding Effect}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bd" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="{StaticResource NeonGlowColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.5"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource GlowBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="bd" Property="Opacity" Value="0.95"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
 
         <!-- Implicit ComboBox style (applies to all ComboBoxes) -->
         <Style TargetType="ComboBox">
