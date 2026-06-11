@@ -1974,14 +1974,17 @@ Margin="0,10,0,6"/>
                                    Margin="0,0,0,20"
                                    HorizontalAlignment="Center"/>
 
-                        <TextBlock Text="Referans"
-                                   Foreground="#9CA3AF"/>
+                        <TextBlock Text="REFERANS BELİRTİRKEN İSMİN SONUNA + İŞARETİ KOYUNUZ."
+                                   Foreground="Gold"/>
+                        <TextBlock Text="REFERANS LİSTESİNDE FİLTRELEME YAPARKEN KOLAYLIK SAĞLAYACAKTIR."
+                                   Foreground="Gold"/>
 
                         <TextBox x:Name="ReferenceTextBox"
                                  Background="#111827"
                                  Foreground="White"
                                  BorderBrush="#374151"
                                  Padding="8"/>
+                        
 
                     </StackPanel>
 
