@@ -34,6 +34,11 @@
         <SolidColorBrush x:Key="TkPasaportBaseBrush" Color="{StaticResource TkPasaportBaseColor}"/>
         <Color x:Key="TkPasaportHoverColor">#03636f</Color>
 
+        <!-- Per-card center glow colors -->
+        <Color x:Key="GlowOdaColor">#F59E0B</Color>
+        <Color x:Key="GlowOdemeColor">#10B981</Color>
+        <Color x:Key="GlowKargoColor">#3B82F6</Color>
+
 
         <!-- Card background brushes so we can animate color on hover -->
         <SolidColorBrush x:Key="CardBg1" Color="#0B1220" />
@@ -59,13 +64,45 @@
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#1F2937"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Ellipse Fill="{TemplateBinding Background}" />
+                        <Grid x:Name="centerRoot" RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="centerScale" ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
+                            <Ellipse x:Name="centerEll" Fill="{TemplateBinding Background}">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="#FF8B5CF6" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="centerScale" Storyboard.TargetProperty="ScaleX" To="1.06" Duration="0:0:0.12" />
+                                            <DoubleAnimation Storyboard.TargetName="centerScale" Storyboard.TargetProperty="ScaleY" To="1.06" Duration="0:0:0.12" />
+                                            <DoubleAnimation Storyboard.TargetName="centerEll" Storyboard.TargetProperty="Effect.(DropShadowEffect.BlurRadius)" To="18" Duration="0:0:0.18" />
+                                            <DoubleAnimation Storyboard.TargetName="centerEll" Storyboard.TargetProperty="Effect.(DropShadowEffect.Opacity)" To="0.7" Duration="0:0:0.18" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="centerScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.12" />
+                                            <DoubleAnimation Storyboard.TargetName="centerScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.12" />
+                                            <DoubleAnimation Storyboard.TargetName="centerEll" Storyboard.TargetProperty="Effect.(DropShadowEffect.BlurRadius)" To="0" Duration="0:0:0.12" />
+                                            <DoubleAnimation Storyboard.TargetName="centerEll" Storyboard.TargetProperty="Effect.(DropShadowEffect.Opacity)" To="0" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -257,8 +294,24 @@
                                 </StackPanel>
                             </Button.Content>
                             <Button.Effect>
-                                <DropShadowEffect Color="#7EE3FD" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
                             </Button.Effect>
+                            <Button.Triggers>
+                                <EventTrigger RoutedEvent="MouseEnter">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="odl_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Color)" To="{StaticResource GlowOdaColor}" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                                <EventTrigger RoutedEvent="MouseLeave">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="odl_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Color)" To="#FF8B5CF6" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Button.Triggers>
                         </Button>
 
 
@@ -490,8 +543,24 @@
                                 <TextBlock Text="🧭" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button.Content>
                             <Button.Effect>
-                                <DropShadowEffect Color="#4ADE80" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
                             </Button.Effect>
+                            <Button.Triggers>
+                                <EventTrigger RoutedEvent="MouseEnter">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="od_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Color)" To="{StaticResource GlowOdemeColor}" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                                <EventTrigger RoutedEvent="MouseLeave">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="od_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Color)" To="#FF8B5CF6" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Button.Triggers>
                         </Button>
 
 
@@ -501,49 +570,142 @@
 
                 <!-- Oda Listesi Card (simple icon card) -->
                 <Border x:Name="border3" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg3}" Margin="18" Padding="18" ClipToBounds="True">
+                    <Border.Triggers>
+                        <EventTrigger RoutedEvent="MouseEnter">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <!-- Oda card should glow with its own color -->
+                                    <ColorAnimation Storyboard.TargetName="border3" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource GlowOdaColor}" Duration="0:0:0.18" />
+                                    <DoubleAnimation Storyboard.TargetName="odl_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.75" Duration="0:0:0.18" />
+                                    <DoubleAnimation Storyboard.TargetName="odl_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="28" Duration="0:0:0.18" />
+                                    <!-- set text to dark for contrast on light glow -->
+                                    <ColorAnimation Storyboard.TargetName="odl_title" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="odl_desc" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeave">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetName="border3" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                    <DoubleAnimation Storyboard.TargetName="odl_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0:0:0.12" />
+                                    <DoubleAnimation Storyboard.TargetName="odl_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="0" Duration="0:0:0.12" />
+                                    <!-- restore text colors -->
+                                    <ColorAnimation Storyboard.TargetName="odl_title" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="White" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="odl_desc" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#9CA3AF" Duration="0:0:0.12" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Border.Triggers>
                     <Grid x:Name="card3">
-                        <TextBlock Text="Oda Listesi" Foreground="White" FontSize="18" FontWeight="Bold"
+                        <TextBlock x:Name="odl_title" Text="Oda Listesi" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
 
                         <Button x:Name="odl_center" Style="{StaticResource CenterButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="2" ToolTip="Oda Listesi">
                             <Button.Content>
                                 <TextBlock Text="🛏️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button.Content>
+                            <Button.Effect>
+                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                            </Button.Effect>
                         </Button>
 
-                        <TextBlock Text="Oda kayıtları ve doluluk durumu" Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
+                        <TextBlock x:Name="odl_desc" Text="Oda kayıtları ve doluluk durumu" Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
                     </Grid>
                 </Border>
 
                 <!-- Ödeme Card (simple icon card) -->
                 <Border x:Name="border4" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg4}" Margin="18" Padding="18" ClipToBounds="True">
+                    <Border.Triggers>
+                        <EventTrigger RoutedEvent="MouseEnter">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetName="border4" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource GlowOdemeColor}" Duration="0:0:0.18" />
+                                    <DoubleAnimation Storyboard.TargetName="od_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.75" Duration="0:0:0.18" />
+                                    <DoubleAnimation Storyboard.TargetName="od_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="28" Duration="0:0:0.18" />
+                                    <!-- make text dark for contrast when background glows -->
+                                    <ColorAnimation Storyboard.TargetName="od_title" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="od_desc" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeave">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetName="border4" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                    <DoubleAnimation Storyboard.TargetName="od_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0:0:0.12" />
+                                    <DoubleAnimation Storyboard.TargetName="od_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="0" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="od_title" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="White" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="od_desc" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#9CA3AF" Duration="0:0:0.12" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Border.Triggers>
                     <Grid x:Name="card4">
-                        <TextBlock Text="Ödeme" Foreground="White" FontSize="18" FontWeight="Bold"
+                        <TextBlock x:Name="od_title" Text="Ödeme" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
 
                         <Button x:Name="od_center" Style="{StaticResource CenterButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="2" ToolTip="Ödeme">
                             <Button.Content>
                                 <TextBlock Text="💳" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button.Content>
+                            <Button.Effect>
+                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                            </Button.Effect>
+
                         </Button>
 
-                        <TextBlock Text="Ödeme yöntemleri ve kayıtları" Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
+                        <TextBlock x:Name="od_desc" Text="Ödeme yöntemleri ve kayıtları" Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
                     </Grid>
                 </Border>
 
                 <!-- Kargo Card (simple icon card) -->
                 <Border x:Name="border5" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg5}" Margin="18" Padding="18" ClipToBounds="True">
+                    <Border.Triggers>
+                        <EventTrigger RoutedEvent="MouseEnter">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetName="border5" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource GlowKargoColor}" Duration="0:0:0.18" />
+                                    <DoubleAnimation Storyboard.TargetName="kg_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.75" Duration="0:0:0.18" />
+                                    <DoubleAnimation Storyboard.TargetName="kg_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="28" Duration="0:0:0.18" />
+                                    <!-- set kargo texts to dark on hover -->
+                                    <ColorAnimation Storyboard.TargetName="kg_title" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="kg_desc" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeave">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetName="border5" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                    <DoubleAnimation Storyboard.TargetName="kg_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0:0:0.12" />
+                                    <DoubleAnimation Storyboard.TargetName="kg_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="0" Duration="0:0:0.12" />
+                                    <!-- restore kargo texts to white on leave -->
+                                    <ColorAnimation Storyboard.TargetName="kg_title" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="White" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="kg_desc" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="White" Duration="0:0:0.12" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Border.Triggers>
+
                     <Grid x:Name="card5">
-                        <TextBlock Text="Kargo" Foreground="White" FontSize="18" FontWeight="Bold"
+                        <TextBlock x:Name="kg_title" Text="Kargo" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
 
                         <Button x:Name="kg_center" Style="{StaticResource CenterButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="2" ToolTip="Kargo">
                             <Button.Content>
                                 <TextBlock Text="📦" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button.Content>
+                            <Button.Effect>
+                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                            </Button.Effect>
+
                         </Button>
 
-                        <TextBlock Text="Kargo gönderimleri ve takip" Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
+                        <TextBlock x:Name="kg_desc" Text="Kargo gönderimleri ve takip" Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
                     </Grid>
                 </Border>
 
