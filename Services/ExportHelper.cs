@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security;
 using System.Text;
+using System.Globalization;
 
 namespace TurizmOperasyonSistemi.Services
 {
@@ -695,9 +696,21 @@ namespace TurizmOperasyonSistemi.Services
 
                 var cellRef = $"{ColumnName(i + 1)}{rowNumber}";
                 var styleIndex = header ? 1 : (styleSelector != null ? styleSelector(i, values[i] ?? string.Empty) : 3);
-                var style = $" s=\"{styleIndex}\"";
-                var txt = EscapeXml(values[i] ?? string.Empty).Replace("\n", "&#10;");
-                cells.Add($"<c r=\"{cellRef}\" t=\"inlineStr\"{style}><is><t xml:space=\"preserve\">{txt}</t></is></c>");
+                var styleAttr = $" s=\"{styleIndex}\"";
+                var raw = values[i] ?? string.Empty;
+
+                // If not a header and value is numeric, write as numeric cell to avoid Excel "number stored as text" indicators.
+                if (!header && double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var numeric))
+                {
+                    // Use invariant culture for value formatting (no thousands separator)
+                    var formatted = numeric.ToString(CultureInfo.InvariantCulture);
+                    cells.Add($"<c r=\"{cellRef}\"{styleAttr}><v>{formatted}</v></c>");
+                }
+                else
+                {
+                    var txt = EscapeXml(raw).Replace("\n", "&#10;");
+                    cells.Add($"<c r=\"{cellRef}\" t=\"inlineStr\"{styleAttr}><is><t xml:space=\"preserve\">{txt}</t></is></c>");
+                }
             }
             return $"<row r=\"{rowNumber}\">{string.Join(string.Empty, cells)}</row>";
         }
