@@ -13,6 +13,8 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class OdaAramaPage : Page
     {
+        // When true, the page is shown embedded inside the Lists card and should adapt UI
+        public bool IsEmbeddedMode { get; set; } = false;
         private List<SavedAllocationRow> _allRows = new List<SavedAllocationRow>();
         private ObservableCollection<SavedAllocationRow> _rows = new ObservableCollection<SavedAllocationRow>();
 
@@ -21,6 +23,222 @@ namespace TurizmOperasyonSistemi.Views
             InitializeComponent();
             ResultsGrid.ItemsSource = _rows;
             LoadData();
+        }
+
+        private void CiktiAlButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var btn = sender as Button;
+                var row = btn?.DataContext as SavedAllocationRow;
+                if (row == null)
+                {
+                    MessageBox.Show("Seçili kayıt bulunamadı.");
+                    return;
+                }
+
+                // Before export: check if there are registrations matching the same criteria that are not yet allocated
+                using (var db = new AppDbContext())
+                {
+                    var allocations = db.RoomAllocations.Include(x => x.Occupants).Include(x => x.Hotel)
+                        .Where(x => x.Hotel != null && x.Hotel.Name == row.HotelName && x.TourType == row.TourType && x.Period == row.Period && x.GroupType == row.GroupType && x.DaysCount == row.DaysCount)
+                        .ToList();
+
+                    var allocatedPassengerIds = allocations.SelectMany(a => a.Occupants).Select(o => o.PassengerId).Distinct().ToList();
+
+                    var regs = db.Registrations.AsNoTracking()
+                        .Where(r => r.TourType == row.TourType && r.Period == row.Period && r.GroupType == row.GroupType && r.DaysCount == row.DaysCount && r.IsActive)
+                        .ToList();
+
+                    var unallocated = regs.Where(r => !allocatedPassengerIds.Contains(r.PersonId)).ToList();
+                    if (unallocated.Count > 0)
+                    {
+                        var msg = $"Seçili kriterler için hâlâ odalanmamış {unallocated.Count} kişi var. İndirmeye izin verilmiyor.\n\nOdalama motoruna gitmek ister misiniz?";
+                        var res = MessageBox.Show(msg, "Eksik Oda Atamaları", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                        if (res == MessageBoxResult.Yes)
+                        {
+                            // navigate to HotelAllocationView and preselect filters
+                            var hv = new HotelAllocationView();
+                            hv.Loaded += (s2, e2) =>
+                            {
+                                try
+                                {
+                                    var cbTour = hv.FindName("Step1TourTypeComboBox") as ComboBox;
+                                    var cbPeriod = hv.FindName("Step1PeriodComboBox") as ComboBox;
+                                    var cbGroup = hv.FindName("Step1GroupTypeComboBox") as ComboBox;
+                                    var cbDays = hv.FindName("Step1DaysComboBox") as ComboBox;
+                                    var cbHotel = hv.FindName("Step1HotelComboBox") as ComboBox;
+
+                                    if (cbTour != null) cbTour.SelectedItem = row.TourType;
+                                    if (cbPeriod != null) cbPeriod.SelectedItem = row.Period;
+                                    if (cbGroup != null) cbGroup.SelectedItem = row.GroupType;
+                                    if (cbDays != null) cbDays.SelectedItem = row.DaysCount;
+                                    if (cbHotel != null) cbHotel.SelectedItem = row.HotelName;
+                                }
+                                catch { }
+                            };
+
+                            if (this.NavigationService != null)
+                            {
+                                this.NavigationService.Navigate(hv);
+                                return;
+                            }
+
+                            var win = new Window
+                            {
+                                Title = "Odalama Motoru",
+                                Content = new Frame { Content = hv, NavigationUIVisibility = NavigationUIVisibility.Hidden },
+                                Width = 1200,
+                                Height = 800,
+                                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                                Owner = Application.Current?.MainWindow
+                            };
+                            win.Show();
+                        }
+                        return;
+                    }
+                }
+
+                // Build a small context menu at the button to choose format
+                var context = new ContextMenu();
+                var miWord = new MenuItem { Header = "Word (.docx)" };
+                miWord.Click += (s, ev) => { ExportSavedAllocation(row, "docx"); };
+                var miExcel = new MenuItem { Header = "Excel (.xlsx)" };
+                miExcel.Click += (s, ev) => { ExportSavedAllocation(row, "xlsx"); };
+                var miPdf = new MenuItem { Header = "PDF (.pdf)" };
+                miPdf.Click += (s, ev) => { ExportSavedAllocation(row, "pdf"); };
+                context.Items.Add(miWord);
+                context.Items.Add(miExcel);
+                context.Items.Add(miPdf);
+                context.PlacementTarget = btn;
+                context.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                context.IsOpen = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void ExportSavedAllocation(SavedAllocationRow row, string format)
+        {
+            try
+            {
+                var headers = new List<string> { "Oda No", "Oda Türü", "Kapasite", "Yerleşen Kişi Sayısı", "Yerleşen Kişiler", "Connection", "Aşım" };
+                var rows = new List<Dictionary<string, string>>();
+
+                using (var db = new AppDbContext())
+                {
+                    var allocations = db.RoomAllocations.Include(x => x.Hotel).Include(x => x.Occupants)
+                        .Where(x => x.Hotel != null && x.Hotel.Name == row.HotelName && x.TourType == row.TourType && x.Period == row.Period && x.GroupType == row.GroupType && x.DaysCount == row.DaysCount)
+                        .ToList();
+
+                    var passengerIds = allocations.SelectMany(x => x.Occupants).Select(x => x.PassengerId).Distinct().ToList();
+                    var personLookup = db.Persons.AsNoTracking().Where(x => passengerIds.Contains(x.Id)).ToDictionary(x => x.Id, x => $"{x.FirstName} {x.LastName}");
+
+                    // order allocations
+                    var ordered = allocations.OrderBy(x => int.TryParse(x.RoomNumber, out var n) ? n : int.MaxValue).ThenBy(x => x.RoomNumber).ToList();
+
+                    foreach (var a in ordered)
+                    {
+                        int capacity = ResolveRoomCapacity(a.RoomType);
+                        var occupants = a.Occupants.Select(o => personLookup.TryGetValue(o.PassengerId, out var nm) ? nm : $"Yolcu #{o.PassengerId}").ToList();
+                        var occCount = occupants.Count;
+                        var conn = a.IsConnection ? (string.IsNullOrWhiteSpace(a.ConnectionGroupId) ? "Evet" : a.ConnectionGroupId) : "Hayır";
+                        var asim = occCount > capacity;
+                        var dict = new Dictionary<string, string>
+                        {
+                            ["Oda No"] = a.RoomNumber ?? string.Empty,
+                            ["Oda Türü"] = a.RoomType ?? string.Empty,
+                            ["Kapasite"] = capacity.ToString(),
+                            ["Yerleşen Kişi Sayısı"] = occCount.ToString(),
+                            ["Yerleşen Kişiler"] = occupants.Count > 0 ? string.Join(", ", occupants) : "Boş Oda",
+                            ["Connection"] = conn,
+                            ["Aşım"] = asim ? "!!RED!!Kapasite aşılıyor" : "Hayır"
+                        };
+                        rows.Add(dict);
+                    }
+                }
+
+                // Prepend hotel name and checkin/checkout rows
+                if (rows.Count > 0)
+                {
+                    using (var db = new AppDbContext())
+                    {
+                        var anyAlloc = db.RoomAllocations.AsNoTracking()
+                            .Where(x => x.Hotel != null && x.Hotel.Name == row.HotelName && x.TourType == row.TourType && x.Period == row.Period && x.GroupType == row.GroupType && x.DaysCount == row.DaysCount)
+                            .OrderBy(x => x.RoomNumber)
+                            .FirstOrDefault();
+                        string checkIn = anyAlloc?.CheckInDate ?? string.Empty;
+                        string checkOut = anyAlloc?.CheckOutDate ?? string.Empty;
+
+                        // create two intro rows using first header as carrier
+                        var intro1 = headers.ToDictionary(h => h, h => string.Empty);
+                        intro1[headers[0]] = row.HotelName;
+                        var intro2 = headers.ToDictionary(h => h, h => string.Empty);
+                        intro2[headers[0]] = "Giriş: " + (string.IsNullOrWhiteSpace(checkIn) ? "-" : checkIn) + "   Çıkış: " + (string.IsNullOrWhiteSpace(checkOut) ? "-" : checkOut);
+
+                        rows.Insert(0, intro2);
+                        rows.Insert(0, intro1);
+                    }
+                }
+
+                // Build default filename
+                string baseName = BuildExportBaseFileName(row);
+                // Ask for path
+                var filter = format == "docx" ? "Word dosyası (*.docx)|*.docx" : format == "xlsx" ? "Excel dosyası (*.xlsx)|*.xlsx" : "PDF dosyası (*.pdf)|*.pdf";
+                var defaultName = baseName + (format == "docx" ? ".docx" : format == "xlsx" ? ".xlsx" : ".pdf");
+                var path = AskForPath(format == "docx" ? "Word belgesi" : format == "xlsx" ? "Excel çalışma kitabı" : "PDF belgesi", filter, defaultName);
+                if (path == null) return;
+
+                if (format == "docx") Services.ExportHelper.ExportWord(path, rows, headers, baseName);
+                else if (format == "xlsx") Services.ExportHelper.ExportExcel(path, rows, headers, baseName);
+                else if (format == "pdf") Services.ExportHelper.ExportPdf(path, rows, headers, baseName);
+
+                MessageBox.Show("Dosya başarıyla oluşturuldu.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Export hatası: {ex.Message}");
+            }
+        }
+
+        private string BuildExportBaseFileName(SavedAllocationRow row)
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(row.TourType)) parts.Add(row.TourType);
+            if (!string.IsNullOrWhiteSpace(row.Period)) parts.Add(row.Period);
+            if (!string.IsNullOrWhiteSpace(row.GroupType)) parts.Add(row.GroupType + " " + row.DaysCount);
+            if (!string.IsNullOrWhiteSpace(row.HotelName)) parts.Add(row.HotelName);
+            parts.Add("Otel Odalama Listesi");
+            var name = string.Join(" - ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+            // sanitize filename
+            foreach (var c in System.IO.Path.GetInvalidFileNameChars()) name = name.Replace(c, '_');
+            return name;
+        }
+
+        private string AskForPath(string title, string filter, string defaultFileName)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = title,
+                Filter = filter,
+                FileName = defaultFileName,
+                AddExtension = true,
+                OverwritePrompt = true
+            };
+            return dlg.ShowDialog() == true ? dlg.FileName : null;
+        }
+
+        private int ResolveRoomCapacity(string roomType)
+        {
+            string selectedRoomType = (roomType ?? string.Empty).ToUpper();
+            if (selectedRoomType.Contains("SNGL") || selectedRoomType.Contains("SINGLE")) return 1;
+            if (selectedRoomType.Contains("DBL") || selectedRoomType.Contains("TWIN")) return 2;
+            if (selectedRoomType.Contains("TRPL") || selectedRoomType.Contains("TRİPLE") || selectedRoomType.Contains("TRIPLE")) return 3;
+            if (selectedRoomType.Contains("QUAD")) return 4;
+            if (selectedRoomType.Contains("QUINT")) return 5;
+            return 2;
         }
 
         private void EditButton_Click(object sender, RoutedEventArgs e)

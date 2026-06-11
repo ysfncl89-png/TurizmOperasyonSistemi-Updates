@@ -291,6 +291,7 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 var page = new OdaAramaPage();
+                page.IsEmbeddedMode = true;
 
                 // If this view is hosted in a NavigationService, navigate to the page
                 if (this.NavigationService != null)

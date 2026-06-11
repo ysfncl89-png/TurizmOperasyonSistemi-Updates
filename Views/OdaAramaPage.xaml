@@ -93,10 +93,53 @@
                 <DataGridTemplateColumn Header="İşlem" Width="1.4*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Düzenle" Click="EditButton_Click" Margin="0,0,6,0" Padding="8,4" Background="#2563EB" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                                <Button Content="Kaydı Sil" Click="DeleteButton_Click" Padding="8,4" Background="#DC2626" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                            </StackPanel>
+                            <Grid>
+                                <Grid.Resources>
+                                    <Style x:Key="DefaultButtons" TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </Style>
+                                    <Style x:Key="ExportButtonStyle" TargetType="Button">
+                                        <Setter Property="Background" Value="#10B981" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="Padding" Value="8,4" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                    </Style>
+                                </Grid.Resources>
+
+                                <StackPanel x:Name="defaultButtons" Orientation="Horizontal">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEmbeddedMode, RelativeSource={RelativeSource AncestorType=Page}}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <Button Content="Düzenle" Click="EditButton_Click" Margin="0,0,6,0" Padding="8,4" Background="#2563EB" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                                    <Button Content="Kaydı Sil" Click="DeleteButton_Click" Padding="8,4" Background="#DC2626" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                                </StackPanel>
+
+                                <Button x:Name="exportButton" Content="Çıktı Al / İndir" Click="CiktiAlButton_Click" Visibility="Visible">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#10B981" />
+                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="Padding" Value="8,4" />
+                                            <Setter Property="BorderThickness" Value="0" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEmbeddedMode, RelativeSource={RelativeSource AncestorType=Page}}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

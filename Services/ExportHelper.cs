@@ -73,7 +73,18 @@ namespace TurizmOperasyonSistemi.Services
 
         private static string BuildWordTableRow(IReadOnlyList<string> values, bool header)
         {
-            var cells = values.Select(value => $"<w:tc><w:tcPr>{(header ? "<w:shd w:fill=\"22324A\"/>" : string.Empty)}</w:tcPr><w:p><w:r><w:t>{EscapeXml(value ?? string.Empty)}</w:t></w:r></w:p></w:tc>");
+            var cells = values.Select(value =>
+            {
+                var v = value ?? string.Empty;
+                var isRed = v.StartsWith("!!RED!!");
+                if (isRed) v = v.Substring("!!RED!!".Length);
+                var text = EscapeXml(v);
+                if (header)
+                    return $"<w:tc><w:tcPr><w:shd w:fill=\"22324A\"/></w:tcPr><w:p><w:r><w:t>{text}</w:t></w:r></w:p></w:tc>";
+                if (isRed)
+                    return $"<w:tc><w:tcPr></w:tcPr><w:p><w:r><w:rPr><w:color w:val=\"FF0000\"/></w:rPr><w:t>{text}</w:t></w:r></w:p></w:tc>";
+                return $"<w:tc><w:tcPr></w:tcPr><w:p><w:r><w:t>{text}</w:t></w:r></w:p></w:tc>";
+            });
             return "<w:tr>" + string.Join(string.Empty, cells) + "</w:tr>";
         }
 
@@ -160,7 +171,10 @@ namespace TurizmOperasyonSistemi.Services
             {
                 var left = x + (int)(i * columnWidth);
                 var right = x + (int)((i + 1) * columnWidth);
-                var text = EscapePdf(values[i] ?? string.Empty);
+                var raw = values[i] ?? string.Empty;
+                var isRed = raw.StartsWith("!!RED!!");
+                if (isRed) raw = raw.Substring("!!RED!!".Length);
+                var text = EscapePdf(raw);
                 var textX = left + 4; var textY = y + 7;
                 if (header)
                 {
@@ -173,10 +187,20 @@ namespace TurizmOperasyonSistemi.Services
                 }
                 else
                 {
-                    yield return "0 0 0 RG";
-                    yield return $"{left} {y} {right - left} {rowHeight} re S";
-                    yield return "0 0 0 rg";
-                    yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(values[i] ?? string.Empty)}) Tj ET";
+                    if (isRed)
+                    {
+                        // set fill color to red
+                        yield return "1 0 0 rg"; // red
+                        yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(raw)}) Tj ET";
+                        yield return "0 0 0 rg"; // reset
+                    }
+                    else
+                    {
+                        yield return "0 0 0 RG";
+                        yield return $"{left} {y} {right - left} {rowHeight} re S";
+                        yield return "0 0 0 rg";
+                        yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(raw)}) Tj ET";
+                    }
                 }
             }
         }
