@@ -59,6 +59,8 @@ namespace TurizmOperasyonSistemi.Views
                 if (tkReferans != null) tkReferans.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Referans);
                 var tkPasaport = this.FindName("tk_o7") as Button;
                 if (tkPasaport != null) tkPasaport.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Pasaport);
+                var odlCenter = this.FindName("odl_center") as Button;
+                if (odlCenter != null) odlCenter.Click += Odl_center_Click;
             }
             catch
             {
@@ -284,6 +286,36 @@ namespace TurizmOperasyonSistemi.Views
                 MessageBox.Show(ex.Message);
             }
         }
+        private void Odl_center_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var page = new OdaAramaPage();
+
+                // If this view is hosted in a NavigationService, navigate to the page
+                if (this.NavigationService != null)
+                {
+                    this.NavigationService.Navigate(page);
+                    return;
+                }
+
+                // Otherwise open a new window that hosts the page inside a Frame
+                var win = new Window
+                {
+                    Title = "Oda Listesi",
+                    Content = new Frame { Content = page, NavigationUIVisibility = NavigationUIVisibility.Hidden },
+                    Width = 1000,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
 
         private void Tk_o1_Click(object sender, RoutedEventArgs e)
         {
@@ -358,7 +390,7 @@ namespace TurizmOperasyonSistemi.Views
                 var grid = b.Child as Grid;
                 if (grid == null) return;
 
-                var options = grid.Children.OfType<Button>().Where(btn => btn.Name != "tk_center" && btn.Name != "kb_center" && btn.Name != "od_center" && btn.Name != "kg_center").ToList();
+                var options = grid.Children.OfType<Button>().Where(btn => btn.Name != "tk_center" && btn.Name != "kb_center" && btn.Name != "od_center" && btn.Name != "odl_center" && btn.Name != "kg_center").ToList();
                 if (options.Count == 0) return;
 
                 ArrangeOptionsInPolygon(grid, options);
@@ -372,7 +404,7 @@ namespace TurizmOperasyonSistemi.Views
                 var grid = b.Child as Grid;
                 if (grid == null) return;
 
-                var options = grid.Children.OfType<Button>().Where(btn => btn.Name != "tk_center" && btn.Name != "kb_center" && btn.Name != "od_center" && btn.Name != "kg_center").ToList();
+                var options = grid.Children.OfType<Button>().Where(btn => btn.Name != "tk_center" && btn.Name != "kb_center" && btn.Name != "od_center" && btn.Name != "odl_center" && btn.Name != "kg_center").ToList();
                 foreach (var btn in options)
                 {
                     var tt = btn.RenderTransform as TranslateTransform;

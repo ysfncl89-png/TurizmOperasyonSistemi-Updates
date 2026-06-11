@@ -499,7 +499,21 @@
                     </Grid>
                 </Border>
 
-                <!-- Oda Listesi card removed -->
+                <!-- Oda Listesi Card (simple icon card) -->
+                <Border x:Name="border3" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg3}" Margin="18" Padding="18" ClipToBounds="True">
+                    <Grid x:Name="card3">
+                        <TextBlock Text="Oda Listesi" Foreground="White" FontSize="18" FontWeight="Bold"
+                                   HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
+
+                        <Button x:Name="odl_center" Style="{StaticResource CenterButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="2" ToolTip="Oda Listesi">
+                            <Button.Content>
+                                <TextBlock Text="🛏️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button.Content>
+                        </Button>
+
+                        <TextBlock Text="Oda kayıtları ve doluluk durumu" Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
+                    </Grid>
+                </Border>
 
                 <!-- Ödeme Card (simple icon card) -->
                 <Border x:Name="border4" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg4}" Margin="18" Padding="18" ClipToBounds="True">
