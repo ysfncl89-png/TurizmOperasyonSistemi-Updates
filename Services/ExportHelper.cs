@@ -10,7 +10,7 @@ namespace TurizmOperasyonSistemi.Services
 {
     public static class ExportHelper
     {
-        public static void ExportWord(string filePath, List<Dictionary<string, string>> rows, List<string> headers, string title = "Liste")
+        public static void ExportWord(string filePath, List<Dictionary<string, string>> rows, List<string> headers, string title = "Liste", List<string> footers = null)
         {
             if (rows == null) rows = new List<Dictionary<string, string>>();
             if (headers == null) headers = new List<string>();
@@ -19,10 +19,10 @@ namespace TurizmOperasyonSistemi.Services
             AddDocxContentTypes(archive);
             AddDocxRels(archive);
             AddDocxDocumentRels(archive);
-            AddDocxDocumentXml(archive, rows, headers, title);
+            AddDocxDocumentXml(archive, rows, headers, title, footers);
         }
 
-        public static void ExportExcel(string filePath, List<Dictionary<string, string>> rows, List<string> headers, string title = "Liste")
+        public static void ExportExcel(string filePath, List<Dictionary<string, string>> rows, List<string> headers, string title = "Liste", List<string> footers = null)
         {
             if (rows == null) rows = new List<Dictionary<string, string>>();
             if (headers == null) headers = new List<string>();
@@ -33,15 +33,15 @@ namespace TurizmOperasyonSistemi.Services
             AddXlsxWorkbook(archive);
             AddXlsxWorkbookRels(archive);
             AddXlsxStyles(archive);
-            AddXlsxSheet(archive, rows, headers, title);
+            AddXlsxSheet(archive, rows, headers, title, footers);
         }
 
-        public static void ExportPdf(string filePath, List<Dictionary<string, string>> rows, List<string> headers, string title = "Liste")
+        public static void ExportPdf(string filePath, List<Dictionary<string, string>> rows, List<string> headers, string title = "Liste", List<string> footers = null)
         {
             if (rows == null) rows = new List<Dictionary<string, string>>();
             if (headers == null) headers = new List<string>();
             if (File.Exists(filePath)) File.Delete(filePath);
-            var pdf = BuildSimplePdf(rows, headers, title);
+            var pdf = BuildSimplePdf(rows, headers, title, footers);
             File.WriteAllBytes(filePath, pdf);
         }
 
@@ -63,29 +63,67 @@ namespace TurizmOperasyonSistemi.Services
             AddZipEntry(archive, "word/_rels/document.xml.rels", "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"/>");
         }
 
-        private static void AddDocxDocumentXml(ZipArchive archive, List<Dictionary<string, string>> rows, List<string> headers, string title)
+        private static void AddDocxDocumentXml(ZipArchive archive, List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
         {
-            var tableRows = new List<string> { BuildWordTableRow(headers, true) };
-            tableRows.AddRange(rows.Select(r => BuildWordTableRow(headers.Select(h => r.ContainsKey(h) ? r[h] : string.Empty).ToList(), false)));
-            var document = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n  <w:body>\n    <w:p><w:r><w:t>{EscapeXml(title)}</w:t></w:r></w:p>\n    <w:tbl>\n      {string.Join(Environment.NewLine, tableRows)}\n    </w:tbl>\n    <w:sectPr>\n      <w:pgSz w:w=\"16838\" w:h=\"11906\"/>\n      <w:pgMar w:top=\"720\" w:right=\"720\" w:bottom=\"720\" w:left=\"720\" w:header=\"450\" w:footer=\"450\" w:gutter=\"0\"/>\n    </w:sectPr>\n  </w:body>\n</w:document>";
+            // define default column widths (in twentieths of a point / dxa) for 6 columns
+            var defaultWidths = new[] { 1200, 1600, 1000, 1600, 3600, 1200 };
+            var tableRows = new List<string> { BuildWordTableRow(headers, true, defaultWidths) };
+            tableRows.AddRange(rows.Select(r => BuildWordTableRow(headers.Select(h => r.ContainsKey(h) ? r[h] : string.Empty).ToList(), false, defaultWidths)));
+
+            // build table grid
+            var tblGrid = string.Join(string.Empty, defaultWidths.Select(w => $"<w:gridCol w:w=\"{w}\"/>"));
+
+            var titleLines = (title ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
+            var titleXml = string.Join("\n", titleLines.Select(l => $"    <w:p><w:r><w:t>{EscapeXml(l)}</w:t></w:r></w:p>"));
+
+            var footerXml = string.Empty;
+            if (footers != null && footers.Count > 0)
+            {
+                footerXml = string.Join("\n", footers.Select(f => $"    <w:p><w:r><w:t>{EscapeXml(f)}</w:t></w:r></w:p>"));
+            }
+
+            var document = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n  <w:body>\n{titleXml}\n    <w:tbl>\n      <w:tblPr>\n        <w:tblStyle w:val=\"TableGrid\"/>\n        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n      </w:tblPr>\n      <w:tblGrid>\n        {tblGrid}\n      </w:tblGrid>\n      {string.Join(Environment.NewLine, tableRows)}\n    </w:tbl>\n{footerXml}\n    <w:sectPr>\n      <w:pgSz w:w=\"16838\" w:h=\"11906\"/>\n      <w:pgMar w:top=\"720\" w:right=\"720\" w:bottom=\"720\" w:left=\"720\" w:header=\"450\" w:footer=\"450\" w:gutter=\"0\"/>\n    </w:sectPr>\n  </w:body>\n</w:document>";
             AddZipEntry(archive, "word/document.xml", document);
         }
 
-        private static string BuildWordTableRow(IReadOnlyList<string> values, bool header)
+        private static string BuildWordTableRow(IReadOnlyList<string> values, bool header, int[] widths)
         {
-            var cells = values.Select(value =>
+            var cells = new List<string>();
+            for (var i = 0; i < values.Count; i++)
             {
-                var v = value ?? string.Empty;
+                var v = values[i] ?? string.Empty;
                 var isRed = v.StartsWith("!!RED!!");
                 if (isRed) v = v.Substring("!!RED!!".Length);
                 var text = EscapeXml(v);
+                var cellWidth = (i < widths.Length ? widths[i] : 1500);
+
+                // build cell properties: width and optional shading for header
+                var tcPr = $"<w:tcPr><w:tcW w:w=\"{cellWidth}\" w:type=\"dxa\"/>";
                 if (header)
-                    return $"<w:tc><w:tcPr><w:shd w:fill=\"22324A\"/></w:tcPr><w:p><w:r><w:t>{text}</w:t></w:r></w:p></w:tc>";
-                if (isRed)
-                    return $"<w:tc><w:tcPr></w:tcPr><w:p><w:r><w:rPr><w:color w:val=\"FF0000\"/></w:rPr><w:t>{text}</w:t></w:r></w:p></w:tc>";
-                return $"<w:tc><w:tcPr></w:tcPr><w:p><w:r><w:t>{text}</w:t></w:r></w:p></w:tc>";
-            });
-            return "<w:tr>" + string.Join(string.Empty, cells) + "</w:tr>";
+                {
+                    tcPr += "<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"22324A\"/>";
+                }
+                tcPr += "</w:tcPr>";
+                // support multiline values separated by '\n'
+                var parts = text.Split(new[] { '\n' }, StringSplitOptions.None);
+                if (header)
+                {
+                    // header: single paragraph, bold
+                    cells.Add($"<w:tc>{tcPr}<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>{parts[0]}</w:t></w:r></w:p></w:tc>");
+                }
+                else
+                {
+                    // build multiple paragraphs inside cell
+                    var inner = string.Join(string.Empty, parts.Select(p => $"<w:p><w:r><w:t>{p}</w:t></w:r></w:p>"));
+                    if (isRed)
+                        cells.Add($"<w:tc>{tcPr}<w:p><w:r><w:rPr><w:color w:val=\"FF0000\"/></w:rPr><w:t>{parts[0]}</w:t></w:r></w:p>{(parts.Length>1? string.Join(string.Empty, parts.Skip(1).Select(p=>$"<w:p><w:r><w:t>{p}</w:t></w:r></w:p>")) : string.Empty)}</w:tc>");
+                    else
+                        cells.Add($"<w:tc>{tcPr}{inner}</w:tc>");
+                }
+            }
+            // add bottom border for non-header rows by wrapping tr with trPr when not header
+            var rowXml = "<w:tr>" + string.Join(string.Empty, cells) + "</w:tr>";
+            return rowXml;
         }
 
         // --- XLSX helpers ---
@@ -121,18 +159,43 @@ namespace TurizmOperasyonSistemi.Services
             AddZipEntry(archive, "xl/styles.xml", styles);
         }
 
-        private static void AddXlsxSheet(ZipArchive archive, List<Dictionary<string, string>> rows, List<string> headers, string title)
+        private static void AddXlsxSheet(ZipArchive archive, List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
         {
             var rowXml = new List<string>();
-            // build rows (header + data)
-            rowXml.Add(BuildXlsxRow(1, headers, true));
+            // If title contains multiple lines, render them as rows above the header
+            var titleLines = (title ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
+            var currentRow = 1;
+            foreach (var t in titleLines)
+            {
+                // put title in first column spanning, other columns empty
+                var titleRow = new List<string> { t };
+                for (var k = 1; k < headers.Count; k++) titleRow.Add(string.Empty);
+                rowXml.Add(BuildXlsxRow(currentRow++, titleRow, false));
+            }
+
+            // header row
+            rowXml.Add(BuildXlsxRow(currentRow++, headers, true));
+
+            // data rows
             for (var i = 0; i < rows.Count; i++)
             {
-                rowXml.Add(BuildXlsxRow(i + 2, headers.Select(h => rows[i].ContainsKey(h) ? rows[i][h] : string.Empty).ToList(), false));
+                rowXml.Add(BuildXlsxRow(currentRow + i, headers.Select(h => rows[i].ContainsKey(h) ? rows[i][h] : string.Empty).ToList(), false));
             }
+            var lastDataRow = currentRow + Math.Max(0, rows.Count - 1);
             var lastColumn = ColumnName(headers.Count);
-            var lastRow = Math.Max(1, rows.Count + 1);
-            var sheet = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <dimension ref=\"A1:{lastColumn}{lastRow}\"/>\n  <sheetViews>\n    <sheetView workbookViewId=\"0\"/>\n  </sheetViews>\n  <sheetData>\n    {string.Join(Environment.NewLine, rowXml)}\n  </sheetData>\n  <autoFilter ref=\"A1:{lastColumn}{lastRow}\"/>\n</worksheet>";
+            var footerCount = footers?.Count ?? 0;
+            var lastRow = Math.Max(1, titleLines.Count + 1 + rows.Count + footerCount);
+
+            // approximate column widths in characters for 6 columns (narrower)
+            var colWidths = new[] { 6.0, 10.0, 6.0, 10.0, 28.0, 10.0 };
+            var colsXml = "";
+            for (var i = 0; i < headers.Count; i++)
+            {
+                var w = i < colWidths.Length ? colWidths[i] : 12.0;
+                colsXml += $"<col min=\"{i + 1}\" max=\"{i + 1}\" width=\"{w}\" customWidth=\"1\"/>";
+            }
+
+            var sheet = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <dimension ref=\"A1:{lastColumn}{lastRow}\"/>\n  <sheetViews>\n    <sheetView workbookViewId=\"0\"/>\n  </sheetViews>\n  <cols>\n    {colsXml}\n  </cols>\n  <sheetData>\n    {string.Join(Environment.NewLine, rowXml)}\n  </sheetData>\n  <autoFilter ref=\"A1:{lastColumn}{lastRow}\"/>\n</worksheet>";
             AddZipEntry(archive, "xl/worksheets/sheet1.xml", sheet);
         }
 
@@ -143,65 +206,110 @@ namespace TurizmOperasyonSistemi.Services
             {
                 var cellRef = $"{ColumnName(i + 1)}{rowNumber}";
                 var style = header ? " s=\"1\"" : string.Empty;
-                cells.Add($"<c r=\"{cellRef}\" t=\"inlineStr\"{style}><is><t>{EscapeXml(values[i] ?? string.Empty)}</t></is></c>");
+                // preserve newlines in cell
+                var txt = EscapeXml(values[i] ?? string.Empty).Replace("\n", "&#10;");
+                cells.Add($"<c r=\"{cellRef}\" t=\"inlineStr\"{style}><is><t xml:space=\"preserve\">{txt}</t></is></c>");
             }
             return $"<row r=\"{rowNumber}\">{string.Join(string.Empty, cells)}</row>";
         }
 
         // --- PDF builders ---
-        private static byte[] BuildSimplePdf(List<Dictionary<string, string>> rows, List<string> headers, string title)
+        private static byte[] BuildSimplePdf(List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
         {
-            var pageWidth = 842; var pageHeight = 595; var margin = 28; var top = 40; var rowHeight = 22; var usableWidth = pageWidth - margin * 2; var columnWidth = usableWidth / Math.Max(1, headers.Count);
-            var content = new List<string> { $"BT /F1 16 Tf 40 560 Td ({EscapePdfText(title)}) Tj ET" };
-            var y = 520; var headersList = headers.ToList();
-            content.AddRange(BuildPdfRow(headersList, margin, y, columnWidth, rowHeight, true)); y -= rowHeight;
+            var pageWidth = 842; var pageHeight = 595; var margin = 28; var rowHeight = 22; var usableWidth = pageWidth - margin * 2;
+            // define relative widths matching desired layout (sums to 100)
+            var rel = new double[] { 8, 12, 8, 16, 40, 8, 8 };
+            var totalRel = rel.Sum();
+            var colWidths = rel.Select(r => (usableWidth * r) / totalRel).ToArray();
+
+            var content = new List<string>();
+            var y = pageHeight - 40; var headersList = headers.ToList();
+
+            // render title lines as separate paragraphs
+            var titleLines = (title ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
+            foreach (var t in titleLines)
+            {
+                content.Add($"BT /F1 12 Tf {margin} {y} Td ({EscapePdfText(t)}) Tj ET");
+                y -= 20;
+            }
+            y -= 10; // small gap before table
+
+            // draw header background rectangle across full table width
+            var headerLeft = margin; var headerRight = margin + colWidths.Sum();
+            content.Add(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:F3} {1:F3} {2:F3} rg", 34.0/255.0, 50.0/255.0, 74.0/255.0));
+            content.Add($"0 0 0 RG");
+            content.Add($"{headerLeft} {y} {headerRight - headerLeft} {rowHeight} re B");
+            content.Add("0 0 0 rg");
+
+            // draw headers text
+            content.AddRange(BuildPdfRow(headersList, margin, y, colWidths, rowHeight, true)); y -= rowHeight;
+
             foreach (var row in rows)
             {
                 if (y < 50) break;
-                content.AddRange(BuildPdfRow(headersList.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList(), margin, y, columnWidth, rowHeight, false));
-                y -= rowHeight;
+                // estimate row height by counting newline markers or commas in the 'Yerleşen Kişiler' column
+                var data = headersList.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList();
+                var personCell = data.Count > 4 ? data[4] : string.Empty;
+                var lines = personCell.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                var effectiveRowHeight = Math.Max(rowHeight, rowHeight * lines);
+                content.AddRange(BuildPdfRow(data, margin, y, colWidths, effectiveRowHeight, false));
+                // draw separator line below row
+                content.Add("0 0 0 RG");
+                content.Add(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:F3} {1:F3} m {2:F3} {3:F3} l S", (double)margin, y - 2, (double)(margin + colWidths.Sum()), y - 2));
+                y -= effectiveRowHeight;
             }
+
+            // render footers if any
+            if (footers != null && footers.Count > 0)
+            {
+                y -= 10;
+                foreach (var f in footers)
+                {
+                    if (y < 50) break;
+                    content.Add($"BT /F1 10 Tf {margin} {y} Td ({EscapePdfText(f)}) Tj ET");
+                    y -= 16;
+                }
+            }
+
             var contentText = string.Join("\n", content);
             return BuildMinimalPdfBytes(pageWidth, pageHeight, contentText);
         }
 
-        private static IEnumerable<string> BuildPdfRow(IReadOnlyList<string> values, int x, int y, double columnWidth, int rowHeight, bool header)
+        private static IEnumerable<string> BuildPdfRow(IReadOnlyList<string> values, int x, int y, double[] columnWidths, int rowHeight, bool header)
         {
+            var left = x;
             for (var i = 0; i < values.Count; i++)
             {
-                var left = x + (int)(i * columnWidth);
-                var right = x + (int)((i + 1) * columnWidth);
+                var cw = (int)Math.Round(columnWidths[i]);
                 var raw = values[i] ?? string.Empty;
                 var isRed = raw.StartsWith("!!RED!!");
                 if (isRed) raw = raw.Substring("!!RED!!".Length);
                 var text = EscapePdf(raw);
                 var textX = left + 4; var textY = y + 7;
+                var right = left + cw;
                 if (header)
                 {
-                    yield return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:F3} {1:F3} {2:F3} rg", 34.0/255.0, 50.0/255.0, 74.0/255.0);
-                    yield return "0 0 0 RG";
-                    yield return $"{left} {y} {right - left} {rowHeight} re B";
-                    yield return "1 1 1 rg";
+                    // header text in white bold
                     yield return $"BT /F2 9 Tf {textX} {textY} Td ({EscapePdfText(values[i] ?? string.Empty)}) Tj ET";
-                    yield return "0 0 0 rg";
                 }
                 else
                 {
                     if (isRed)
                     {
-                        // set fill color to red
-                        yield return "1 0 0 rg"; // red
+                        yield return "1 0 0 rg"; // red fill for text
                         yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(raw)}) Tj ET";
-                        yield return "0 0 0 rg"; // reset
+                        yield return "0 0 0 rg";
                     }
                     else
                     {
+                        // draw cell border
                         yield return "0 0 0 RG";
-                        yield return $"{left} {y} {right - left} {rowHeight} re S";
-                        yield return "0 0 0 rg";
+                        yield return $"{left} {y} {cw} {rowHeight} re S";
                         yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(raw)}) Tj ET";
                     }
                 }
+
+                left += cw;
             }
         }
 

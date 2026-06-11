@@ -124,7 +124,7 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var headers = new List<string> { "Oda No", "Oda Türü", "Kapasite", "Yerleşen Kişi Sayısı", "Yerleşen Kişiler", "Connection", "Aşım" };
+                var headers = new List<string> { "Oda No", "Oda Türü", "Kapasite", "Yerleşen Kişi Sayısı", "Yerleşen Kişiler", "Connection" };
                 var rows = new List<Dictionary<string, string>>();
 
                 using (var db = new AppDbContext())
@@ -139,10 +139,17 @@ namespace TurizmOperasyonSistemi.Views
                     // order allocations
                     var ordered = allocations.OrderBy(x => int.TryParse(x.RoomNumber, out var n) ? n : int.MaxValue).ThenBy(x => x.RoomNumber).ToList();
 
+                    var personCounter = 1;
                     foreach (var a in ordered)
                     {
                         int capacity = ResolveRoomCapacity(a.RoomType);
                         var occupants = a.Occupants.Select(o => personLookup.TryGetValue(o.PassengerId, out var nm) ? nm : $"Yolcu #{o.PassengerId}").ToList();
+                        // prefix occupants with continuous numbering across the whole export
+                        for (var i = 0; i < occupants.Count; i++)
+                        {
+                            occupants[i] = $"{personCounter}. {occupants[i]}";
+                            personCounter++;
+                        }
                         var occCount = occupants.Count;
                         var conn = a.IsConnection ? (string.IsNullOrWhiteSpace(a.ConnectionGroupId) ? "Evet" : a.ConnectionGroupId) : "Hayır";
                         var asim = occCount > capacity;
@@ -160,7 +167,11 @@ namespace TurizmOperasyonSistemi.Views
                     }
                 }
 
-                // Prepend hotel name and checkin/checkout rows
+                // Build default filename
+                string baseName = BuildExportBaseFileName(row);
+
+                // Prepare title / preface (hotel name + checkin/out) to be rendered above the table
+                string exportTitle = baseName;
                 if (rows.Count > 0)
                 {
                     using (var db = new AppDbContext())
@@ -172,28 +183,30 @@ namespace TurizmOperasyonSistemi.Views
                         string checkIn = anyAlloc?.CheckInDate ?? string.Empty;
                         string checkOut = anyAlloc?.CheckOutDate ?? string.Empty;
 
-                        // create two intro rows using first header as carrier
-                        var intro1 = headers.ToDictionary(h => h, h => string.Empty);
-                        intro1[headers[0]] = row.HotelName;
-                        var intro2 = headers.ToDictionary(h => h, h => string.Empty);
-                        intro2[headers[0]] = "Giriş: " + (string.IsNullOrWhiteSpace(checkIn) ? "-" : checkIn) + "   Çıkış: " + (string.IsNullOrWhiteSpace(checkOut) ? "-" : checkOut);
+                        // format dates as Gün/Ay/Yıl (dd/MM/yyyy) when possible
+                        string fmtIn = checkIn;
+                        if (!string.IsNullOrWhiteSpace(checkIn) && DateTime.TryParse(checkIn, out var dIn)) fmtIn = dIn.ToString("dd/MM/yyyy");
+                        string fmtOut = checkOut;
+                        if (!string.IsNullOrWhiteSpace(checkOut) && DateTime.TryParse(checkOut, out var dOut)) fmtOut = dOut.ToString("dd/MM/yyyy");
 
-                        rows.Insert(0, intro2);
-                        rows.Insert(0, intro1);
+                        exportTitle = baseName + "\n" + row.HotelName + "\n" + "Giriş: " + (string.IsNullOrWhiteSpace(fmtIn) ? "-" : fmtIn) + "\n" + "Çıkış: " + (string.IsNullOrWhiteSpace(fmtOut) ? "-" : fmtOut);
                     }
                 }
 
-                // Build default filename
-                string baseName = BuildExportBaseFileName(row);
+                // compute footer lines: total rooms and summary by type
+                var totalRooms = rows.Count;
+                var typeSummary = rows.GroupBy(r => r.ContainsKey("Oda Türü") ? r["Oda Türü"] : "").Where(g => !string.IsNullOrWhiteSpace(g.Key)).Select(g => $"{g.Count()} {g.Key}").ToList();
+                var footerLines = new List<string> { $"TOPLAM ODA : {totalRooms}", string.Join(", ", typeSummary) };
+
                 // Ask for path
                 var filter = format == "docx" ? "Word dosyası (*.docx)|*.docx" : format == "xlsx" ? "Excel dosyası (*.xlsx)|*.xlsx" : "PDF dosyası (*.pdf)|*.pdf";
                 var defaultName = baseName + (format == "docx" ? ".docx" : format == "xlsx" ? ".xlsx" : ".pdf");
                 var path = AskForPath(format == "docx" ? "Word belgesi" : format == "xlsx" ? "Excel çalışma kitabı" : "PDF belgesi", filter, defaultName);
                 if (path == null) return;
 
-                if (format == "docx") Services.ExportHelper.ExportWord(path, rows, headers, baseName);
-                else if (format == "xlsx") Services.ExportHelper.ExportExcel(path, rows, headers, baseName);
-                else if (format == "pdf") Services.ExportHelper.ExportPdf(path, rows, headers, baseName);
+                if (format == "docx") Services.ExportHelper.ExportWord(path, rows, headers, exportTitle, footerLines);
+                else if (format == "xlsx") Services.ExportHelper.ExportExcel(path, rows, headers, exportTitle, footerLines);
+                else if (format == "pdf") Services.ExportHelper.ExportPdf(path, rows, headers, exportTitle, footerLines);
 
                 MessageBox.Show("Dosya başarıyla oluşturuldu.");
             }
