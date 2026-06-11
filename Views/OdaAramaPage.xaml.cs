@@ -276,7 +276,7 @@ namespace TurizmOperasyonSistemi.Views
                         row.DaysCount);
                 }
 
-                MessageBox.Show("Dosya başarıyla oluşturuldu.");
+                MessageBox.Show("Dosya başarıyla oluşturuldu ve bilgisayarınıza indirildi.");
             }
             catch (Exception ex)
             {
