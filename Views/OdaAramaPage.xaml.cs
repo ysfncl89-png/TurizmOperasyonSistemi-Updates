@@ -244,11 +244,35 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 else if (format == "xlsx")
                 {
-                    Services.ExportHelper.ExportExcel(path, rows, headers, exportTitle, footerLines);
+                    Services.ExportHelper.ExportExcel(
+                        path,
+                        rows,
+                        headers,
+                        exportTitle,
+                        footerLines,
+                        row.HotelName,
+                        checkInDisplay,
+                        checkOutDisplay,
+                        row.TourType,
+                        row.Period,
+                        row.GroupType,
+                        row.DaysCount);
                 }
                 else if (format == "pdf")
                 {
-                    Services.ExportHelper.ExportPdf(path, rows, headers, exportTitle, footerLines);
+                    Services.ExportHelper.ExportPdf(
+                        path,
+                        rows,
+                        headers,
+                        exportTitle,
+                        footerLines,
+                        row.HotelName,
+                        checkInDisplay,
+                        checkOutDisplay,
+                        row.TourType,
+                        row.Period,
+                        row.GroupType,
+                        row.DaysCount);
                 }
 
                 MessageBox.Show("Dosya başarıyla oluşturuldu.");

@@ -23,7 +23,19 @@ namespace TurizmOperasyonSistemi.Services
             AddDocxDocumentXml(archive, rows, headers, title, footers);
         }
 
-        public static void ExportExcel(string filePath, List<Dictionary<string, string>> rows, List<string> headers, string title = "Liste", List<string> footers = null)
+        public static void ExportExcel(
+            string filePath,
+            List<Dictionary<string, string>> rows,
+            List<string> headers,
+            string title = "Liste",
+            List<string> footers = null,
+            string hotelName = null,
+            string checkInDate = null,
+            string checkOutDate = null,
+            string tourType = null,
+            string period = null,
+            string groupType = null,
+            string daysCount = null)
         {
             if (rows == null) rows = new List<Dictionary<string, string>>();
             if (headers == null) headers = new List<string>();
@@ -34,15 +46,27 @@ namespace TurizmOperasyonSistemi.Services
             AddXlsxWorkbook(archive);
             AddXlsxWorkbookRels(archive);
             AddXlsxStyles(archive);
-            AddXlsxSheet(archive, rows, headers, title, footers);
+            AddXlsxSheet(archive, rows, headers, title, footers, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
         }
 
-        public static void ExportPdf(string filePath, List<Dictionary<string, string>> rows, List<string> headers, string title = "Liste", List<string> footers = null)
+        public static void ExportPdf(
+            string filePath,
+            List<Dictionary<string, string>> rows,
+            List<string> headers,
+            string title = "Liste",
+            List<string> footers = null,
+            string hotelName = null,
+            string checkInDate = null,
+            string checkOutDate = null,
+            string tourType = null,
+            string period = null,
+            string groupType = null,
+            string daysCount = null)
         {
             if (rows == null) rows = new List<Dictionary<string, string>>();
             if (headers == null) headers = new List<string>();
             if (File.Exists(filePath)) File.Delete(filePath);
-            var pdf = BuildSimplePdf(rows, headers, title, footers);
+            var pdf = BuildSimplePdf(rows, headers, title, footers, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
             File.WriteAllBytes(filePath, pdf);
         }
 
@@ -501,119 +525,261 @@ namespace TurizmOperasyonSistemi.Services
 
         private static void AddXlsxStyles(ZipArchive archive)
         {
-            var styles = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"2\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font><font><b/><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"solid\"><fgColor rgb=\"FF22324A\"/></patternFill></fill></fills><borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs><cellXfs count=\"2\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/><xf numFmtId=\"0\" fontId=\"1\" fillId=\"1\" borderId=\"0\" xfId=\"0\" applyFill=\"1\" applyFont=\"1\"/></cellXfs></styleSheet>";
+            var styles = @"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>
+<styleSheet xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"">
+  <fonts count=""3"">
+    <font><sz val=""11""/><name val=""Calibri""/></font>
+    <font><b/><sz val=""11""/><color rgb=""FFFFFFFF""/><name val=""Calibri""/></font>
+    <font><b/><sz val=""11""/><color rgb=""FF173B72""/><name val=""Calibri""/></font>
+  </fonts>
+  <fills count=""4"">
+    <fill><patternFill patternType=""none""/></fill>
+    <fill><patternFill patternType=""solid""><fgColor rgb=""FF173B72""/></patternFill></fill>
+    <fill><patternFill patternType=""solid""><fgColor rgb=""FFEEF4FF""/></patternFill></fill>
+    <fill><patternFill patternType=""solid""><fgColor rgb=""FFF8FBFF""/></patternFill></fill>
+  </fills>
+  <borders count=""2"">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+    <border>
+      <left style=""thin""><color rgb=""FFD8E0EC""/></left>
+      <right style=""thin""><color rgb=""FFD8E0EC""/></right>
+      <top style=""thin""><color rgb=""FFD8E0EC""/></top>
+      <bottom style=""thin""><color rgb=""FFD8E0EC""/></bottom>
+      <diagonal/>
+    </border>
+  </borders>
+  <cellStyleXfs count=""1"">
+    <xf numFmtId=""0"" fontId=""0"" fillId=""0"" borderId=""0""/>
+  </cellStyleXfs>
+  <cellXfs count=""7"">
+    <xf numFmtId=""0"" fontId=""0"" fillId=""0"" borderId=""1"" xfId=""0"" applyBorder=""1"" applyAlignment=""1"">
+      <alignment horizontal=""center"" vertical=""center"" wrapText=""1""/>
+    </xf>
+    <xf numFmtId=""0"" fontId=""2"" fillId=""2"" borderId=""1"" xfId=""0"" applyFont=""1"" applyFill=""1"" applyBorder=""1"" applyAlignment=""1"">
+      <alignment horizontal=""center"" vertical=""center"" wrapText=""1""/>
+    </xf>
+    <xf numFmtId=""0"" fontId=""1"" fillId=""1"" borderId=""1"" xfId=""0"" applyFont=""1"" applyFill=""1"" applyBorder=""1"" applyAlignment=""1"">
+      <alignment horizontal=""center"" vertical=""center"" wrapText=""1""/>
+    </xf>
+    <xf numFmtId=""0"" fontId=""0"" fillId=""0"" borderId=""1"" xfId=""0"" applyBorder=""1"" applyAlignment=""1"">
+      <alignment horizontal=""center"" vertical=""center"" wrapText=""1""/>
+    </xf>
+    <xf numFmtId=""0"" fontId=""0"" fillId=""0"" borderId=""1"" xfId=""0"" applyBorder=""1"" applyAlignment=""1"">
+      <alignment horizontal=""left"" vertical=""center"" wrapText=""1""/>
+    </xf>
+    <xf numFmtId=""0"" fontId=""2"" fillId=""3"" borderId=""1"" xfId=""0"" applyFont=""1"" applyFill=""1"" applyBorder=""1"" applyAlignment=""1"">
+      <alignment horizontal=""center"" vertical=""center"" wrapText=""1""/>
+    </xf>
+    <xf numFmtId=""0"" fontId=""1"" fillId=""3"" borderId=""1"" xfId=""0"" applyFont=""1"" applyFill=""1"" applyBorder=""1"" applyAlignment=""1"">
+      <alignment horizontal=""center"" vertical=""center"" wrapText=""1""/>
+    </xf>
+  </cellXfs>
+</styleSheet>";
             AddZipEntry(archive, "xl/styles.xml", styles);
         }
 
-        private static void AddXlsxSheet(ZipArchive archive, List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
+        private static void AddXlsxSheet(
+            ZipArchive archive,
+            List<Dictionary<string, string>> rows,
+            List<string> headers,
+            string title,
+            List<string> footers,
+            string hotelName,
+            string checkInDate,
+            string checkOutDate,
+            string tourType,
+            string period,
+            string groupType,
+            string daysCount)
         {
             var rowXml = new List<string>();
-            // If title contains multiple lines, render them as rows above the header
-            var titleLines = (title ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
-            var currentRow = 1;
-            foreach (var t in titleLines)
+            var infoRows = new[]
             {
-                // put title in first column spanning, other columns empty
-                var titleRow = new List<string> { t };
-                for (var k = 1; k < headers.Count; k++) titleRow.Add(string.Empty);
-                rowXml.Add(BuildXlsxRow(currentRow++, titleRow, false));
-            }
+                new[] { ("OTEL", hotelName), ("GİRİŞ TARİHİ", checkInDate), ("ÇIKIŞ TARİHİ", checkOutDate) },
+                new[] { ("TUR TÜRÜ", tourType), ("DÖNEM", period), ("GRUP TÜRÜ", groupType), ("GRUP SÜRESİ", daysCount) }
+            };
 
-            // header row
+            var currentRow = 1;
+            rowXml.Add(BuildXlsxRow(currentRow++, new List<string>
+            {
+                FormatCardText(infoRows[0][0].Item1, infoRows[0][0].Item2),
+                string.Empty, string.Empty,
+                FormatCardText(infoRows[0][1].Item1, infoRows[0][1].Item2),
+                string.Empty, string.Empty,
+                FormatCardText(infoRows[0][2].Item1, infoRows[0][2].Item2),
+                string.Empty, string.Empty,
+                string.Empty, string.Empty, string.Empty
+            }, false));
+            rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, 12).ToList(), false));
+
+            rowXml.Add(BuildXlsxRow(currentRow++, new List<string>
+            {
+                FormatCardText(infoRows[1][0].Item1, infoRows[1][0].Item2),
+                string.Empty, string.Empty,
+                FormatCardText(infoRows[1][1].Item1, infoRows[1][1].Item2),
+                string.Empty, string.Empty,
+                FormatCardText(infoRows[1][2].Item1, infoRows[1][2].Item2),
+                string.Empty, string.Empty,
+                FormatCardText(infoRows[1][3].Item1, infoRows[1][3].Item2),
+                string.Empty, string.Empty
+            }, false));
+            rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, 12).ToList(), false));
+
+            var tableStartRow = currentRow;
+            rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, 12).ToList(), false));
             rowXml.Add(BuildXlsxRow(currentRow++, headers, true));
 
-            // data rows
             for (var i = 0; i < rows.Count; i++)
             {
-                rowXml.Add(BuildXlsxRow(currentRow + i, headers.Select(h => rows[i].ContainsKey(h) ? rows[i][h] : string.Empty).ToList(), false));
-            }
-            var lastDataRow = currentRow + Math.Max(0, rows.Count - 1);
-            var lastColumn = ColumnName(headers.Count);
-            var footerCount = footers?.Count ?? 0;
-            var lastRow = Math.Max(1, titleLines.Count + 1 + rows.Count + footerCount);
+                var data = headers.Select(h => rows[i].ContainsKey(h) ? rows[i][h] : string.Empty).ToList();
+                rowXml.Add(BuildXlsxRow(currentRow++, data, false, (index, value) =>
+                {
+                    if (headers[index] == "Connection")
+                    {
+                        return string.Equals(value, "Hayır", StringComparison.OrdinalIgnoreCase) ? 5 : 2;
+                    }
 
-            // approximate column widths in characters for 6 columns (narrower)
-            var colWidths = new[] { 6.0, 10.0, 6.0, 10.0, 28.0, 10.0 };
-            var colsXml = "";
-            for (var i = 0; i < headers.Count; i++)
+                    return index == 4 ? 4 : 3;
+                }));
+            }
+
+            var summaryStartRow = currentRow + 1;
+            var roomTypeSummary = rows
+                .GroupBy(row => NormalizeRoomType(row.ContainsKey("Oda Türü") ? row["Oda Türü"] : string.Empty))
+                .Where(group => !string.IsNullOrWhiteSpace(group.Key))
+                .Select(group => new { RoomType = group.Key, Count = group.Count() })
+                .OrderByDescending(item => item.Count)
+                .ThenBy(item => GetRoomTypeSortOrder(item.RoomType))
+                .ToList();
+
+            rowXml.Add(BuildXlsxRow(summaryStartRow, new List<string> { "ODA DAĞILIM ÖZETİ", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty }, false, (index, value) => 1));
+            rowXml.Add(BuildXlsxRow(summaryStartRow + 1, new List<string> { "ODA TÜRÜ", "ODA SAYISI", string.Empty, string.Empty, "TOPLAM ODA", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty }, true));
+
+            var summaryRow = summaryStartRow + 2;
+            foreach (var item in roomTypeSummary)
             {
-                var w = i < colWidths.Length ? colWidths[i] : 12.0;
-                colsXml += $"<col min=\"{i + 1}\" max=\"{i + 1}\" width=\"{w}\" customWidth=\"1\"/>";
+                rowXml.Add(BuildXlsxRow(summaryRow++, new List<string> { item.RoomType, item.Count.ToString(), string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty }, false, (index, value) => index == 0 ? 4 : 3));
             }
 
-            var sheet = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <dimension ref=\"A1:{lastColumn}{lastRow}\"/>\n  <sheetViews>\n    <sheetView workbookViewId=\"0\"/>\n  </sheetViews>\n  <cols>\n    {colsXml}\n  </cols>\n  <sheetData>\n    {string.Join(Environment.NewLine, rowXml)}\n  </sheetData>\n  <autoFilter ref=\"A1:{lastColumn}{lastRow}\"/>\n</worksheet>";
+            rowXml.Add(BuildXlsxRow(summaryRow++, new List<string> { "TOPLAM ODA", rows.Count.ToString(), string.Empty, string.Empty, totalRoomsLine(roomTypeSummary), string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty }, false, (index, value) => index == 0 ? 6 : 6));
+
+            var lastRow = Math.Max(currentRow, summaryRow);
+            var lastColumn = "L";
+            var colWidths = new[] { 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0 };
+            var colsXml = string.Join(string.Empty, Enumerable.Range(1, 12).Select(i => $"<col min=\"{i}\" max=\"{i}\" width=\"{colWidths[i - 1]}\" customWidth=\"1\"/>"));
+            var mergeCells = string.Join(string.Empty, new[]
+            {
+                "<mergeCell ref=\"A1:C2\"/>",
+                "<mergeCell ref=\"D1:F2\"/>",
+                "<mergeCell ref=\"G1:I2\"/>",
+                "<mergeCell ref=\"A4:C5\"/>",
+                "<mergeCell ref=\"D4:F5\"/>",
+                "<mergeCell ref=\"G4:I5\"/>",
+                "<mergeCell ref=\"J4:L5\"/>",
+                $"<mergeCell ref=\"A{summaryStartRow}:L{summaryStartRow}\"/>"
+            });
+
+            var sheet = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <dimension ref=\"A1:{lastColumn}{lastRow}\"/>\n  <sheetViews>\n    <sheetView workbookViewId=\"0\"/>\n  </sheetViews>\n  <sheetFormatPr defaultRowHeight=\"22\"/>\n  <cols>\n    {colsXml}\n  </cols>\n  <sheetData>\n    {string.Join(Environment.NewLine, rowXml)}\n  </sheetData>\n  <mergeCells count=\"8\">\n    {mergeCells}\n  </mergeCells>\n</worksheet>";
             AddZipEntry(archive, "xl/worksheets/sheet1.xml", sheet);
         }
 
-        private static string BuildXlsxRow(int rowNumber, IReadOnlyList<string> values, bool header)
+        private static string BuildXlsxRow(int rowNumber, IReadOnlyList<string> values, bool header, Func<int, string, int> styleSelector = null)
         {
             var cells = new List<string>();
             for (var i = 0; i < values.Count; i++)
             {
+                if (string.IsNullOrWhiteSpace(values[i]) && !header && styleSelector == null)
+                {
+                    continue;
+                }
+
                 var cellRef = $"{ColumnName(i + 1)}{rowNumber}";
-                var style = header ? " s=\"1\"" : string.Empty;
-                // preserve newlines in cell
+                var styleIndex = header ? 1 : (styleSelector != null ? styleSelector(i, values[i] ?? string.Empty) : 3);
+                var style = $" s=\"{styleIndex}\"";
                 var txt = EscapeXml(values[i] ?? string.Empty).Replace("\n", "&#10;");
                 cells.Add($"<c r=\"{cellRef}\" t=\"inlineStr\"{style}><is><t xml:space=\"preserve\">{txt}</t></is></c>");
             }
             return $"<row r=\"{rowNumber}\">{string.Join(string.Empty, cells)}</row>";
         }
 
-        // --- PDF builders ---
-        private static byte[] BuildSimplePdf(List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
+        private static string FormatCardText(string label, string value)
         {
-            var pageWidth = 842; var pageHeight = 595; var margin = 28; var rowHeight = 22; var usableWidth = pageWidth - margin * 2;
-            // define relative widths matching desired layout (sums to 100)
-            var rel = new double[] { 8, 12, 8, 16, 40, 8, 8 };
-            var totalRel = rel.Sum();
-            var colWidths = rel.Select(r => (usableWidth * r) / totalRel).ToArray();
+            var safeValue = string.IsNullOrWhiteSpace(value) ? "-" : value;
+            return $"{label}\n{safeValue}";
+        }
 
-            var content = new List<string>();
-            var y = pageHeight - 40; var headersList = headers.ToList();
-
-            // render title lines as separate paragraphs
-            var titleLines = (title ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
-            foreach (var t in titleLines)
+        private static string totalRoomsLine(IReadOnlyList<dynamic> roomTypeSummary)
+        {
+            if (roomTypeSummary == null || roomTypeSummary.Count == 0)
             {
-                content.Add($"BT /F1 12 Tf {margin} {y} Td ({EscapePdfText(t)}) Tj ET");
-                y -= 20;
+                return "-";
             }
-            y -= 10; // small gap before table
 
-            // draw header background rectangle across full table width
-            var headerLeft = margin; var headerRight = margin + colWidths.Sum();
-            content.Add(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:F3} {1:F3} {2:F3} rg", 34.0/255.0, 50.0/255.0, 74.0/255.0));
-            content.Add($"0 0 0 RG");
-            content.Add($"{headerLeft} {y} {headerRight - headerLeft} {rowHeight} re B");
-            content.Add("0 0 0 rg");
+            return string.Join(", ", roomTypeSummary.Select(item => $"{item.Count} {item.RoomType}"));
+        }
 
-            // draw headers text
-            content.AddRange(BuildPdfRow(headersList, margin, y, colWidths, rowHeight, true)); y -= rowHeight;
+        // --- PDF builders ---
+        private static byte[] BuildSimplePdf(
+            List<Dictionary<string, string>> rows,
+            List<string> headers,
+            string title,
+            List<string> footers,
+            string hotelName,
+            string checkInDate,
+            string checkOutDate,
+            string tourType,
+            string period,
+            string groupType,
+            string daysCount)
+        {
+            var pageWidth = 842;
+            var pageHeight = 595;
+            var margin = 24;
+            var content = new List<string>();
+            var y = pageHeight - 24;
+            var headersList = headers.ToList();
+
+            DrawPdfInfoCards(content, margin, ref y, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
+
+            y -= 12;
+            var usableWidth = pageWidth - margin * 2;
+            var columnWidths = new double[] { 56, 76, 50, 90, 450, 70 };
+            var scale = usableWidth / columnWidths.Sum();
+            columnWidths = columnWidths.Select(value => value * scale).ToArray();
+
+            DrawPdfTableHeader(content, margin, y, columnWidths, headersList);
+            y -= 20;
 
             foreach (var row in rows)
             {
-                if (y < 50) break;
-                // estimate row height by counting newline markers or commas in the 'Yerleşen Kişiler' column
-                var data = headersList.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList();
-                var personCell = data.Count > 4 ? data[4] : string.Empty;
-                var lines = personCell.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Length;
-                var effectiveRowHeight = Math.Max(rowHeight, rowHeight * lines);
-                content.AddRange(BuildPdfRow(data, margin, y, colWidths, effectiveRowHeight, false));
-                // draw separator line below row
-                content.Add("0 0 0 RG");
-                content.Add(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:F3} {1:F3} m {2:F3} {3:F3} l S", (double)margin, y - 2, (double)(margin + colWidths.Sum()), y - 2));
-                y -= effectiveRowHeight;
+                if (y < 120)
+                {
+                    break;
+                }
+
+                var values = headersList.Select(header => row.ContainsKey(header) ? row[header] : string.Empty).ToList();
+                var occupantsText = values.Count > 4 ? values[4] : string.Empty;
+                var occupantLines = Math.Max(1, occupantsText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Length);
+                var rowHeight = Math.Max(20, 14 * occupantLines + 6);
+                DrawPdfTableRow(content, margin, y, columnWidths, values, rowHeight);
+                y -= rowHeight;
             }
 
-            // render footers if any
+            y -= 14;
+            DrawPdfSummary(content, margin, ref y, rows);
+
             if (footers != null && footers.Count > 0)
             {
-                y -= 10;
-                foreach (var f in footers)
+                y -= 8;
+                foreach (var footer in footers)
                 {
-                    if (y < 50) break;
-                    content.Add($"BT /F1 10 Tf {margin} {y} Td ({EscapePdfText(f)}) Tj ET");
-                    y -= 16;
+                    if (y < 40)
+                    {
+                        break;
+                    }
+
+                    content.Add($"BT /F1 9 Tf {margin} {y} Td ({EscapePdfText(footer)}) Tj ET");
+                    y -= 14;
                 }
             }
 
@@ -621,42 +787,180 @@ namespace TurizmOperasyonSistemi.Services
             return BuildMinimalPdfBytes(pageWidth, pageHeight, contentText);
         }
 
-        private static IEnumerable<string> BuildPdfRow(IReadOnlyList<string> values, int x, int y, double[] columnWidths, int rowHeight, bool header)
+        private static void DrawPdfInfoCards(
+            List<string> content,
+            int margin,
+            ref int y,
+            string hotelName,
+            string checkInDate,
+            string checkOutDate,
+            string tourType,
+            string period,
+            string groupType,
+            string daysCount)
         {
-            var left = x;
+            var firstRowTop = y;
+            DrawPdfCard(content, margin, firstRowTop, 248, 48, "OTEL", string.IsNullOrWhiteSpace(hotelName) ? "-" : hotelName);
+            DrawPdfCard(content, margin + 254, firstRowTop, 248, 48, "GİRİŞ TARİHİ", string.IsNullOrWhiteSpace(checkInDate) ? "-" : checkInDate);
+            DrawPdfCard(content, margin + 508, firstRowTop, 248, 48, "ÇIKIŞ TARİHİ", string.IsNullOrWhiteSpace(checkOutDate) ? "-" : checkOutDate);
+
+            var secondRowTop = firstRowTop - 60;
+            DrawPdfCard(content, margin, secondRowTop, 185, 48, "TUR TÜRÜ", string.IsNullOrWhiteSpace(tourType) ? "-" : tourType);
+            DrawPdfCard(content, margin + 191, secondRowTop, 185, 48, "DÖNEM", string.IsNullOrWhiteSpace(period) ? "-" : period);
+            DrawPdfCard(content, margin + 382, secondRowTop, 185, 48, "GRUP TÜRÜ", string.IsNullOrWhiteSpace(groupType) ? "-" : groupType);
+            DrawPdfCard(content, margin + 573, secondRowTop, 185, 48, "GRUP SÜRESİ", string.IsNullOrWhiteSpace(daysCount) ? "-" : daysCount);
+
+            y = secondRowTop - 60;
+        }
+
+        private static void DrawPdfCard(List<string> content, int x, int topY, int width, int height, string label, string value)
+        {
+            var y = topY - height;
+            content.Add("1 1 1 rg");
+            content.Add($"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)} {y.ToString(System.Globalization.CultureInfo.InvariantCulture)} {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} {height.ToString(System.Globalization.CultureInfo.InvariantCulture)} re f");
+            content.Add("0.847 0.878 0.925 RG");
+            content.Add($"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)} {y.ToString(System.Globalization.CultureInfo.InvariantCulture)} {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} {height.ToString(System.Globalization.CultureInfo.InvariantCulture)} re S");
+            content.Add("0.404 0.455 0.533 rg");
+            content.Add($"BT /F2 8 Tf {(x + 12).ToString(System.Globalization.CultureInfo.InvariantCulture)} {(topY - 14).ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({EscapePdfText(label)}) Tj ET");
+            content.Add("0.106 0.169 0.286 rg");
+            content.Add($"BT /F1 12 Tf {(x + 12).ToString(System.Globalization.CultureInfo.InvariantCulture)} {(topY - 31).ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({EscapePdfText(value)}) Tj ET");
+        }
+
+        private static void DrawPdfTableHeader(List<string> content, int margin, int topY, double[] columnWidths, IReadOnlyList<string> headers)
+        {
+            double x = margin;
+            var height = 20;
+            for (var i = 0; i < headers.Count; i++)
+            {
+                DrawPdfTableCell(content, x, topY - height, columnWidths[i], height, headers[i], true, false, false);
+                x += columnWidths[i];
+            }
+        }
+
+        private static void DrawPdfTableRow(List<string> content, int margin, int topY, double[] columnWidths, IReadOnlyList<string> values, int rowHeight)
+        {
+            double x = margin;
             for (var i = 0; i < values.Count; i++)
             {
-                var cw = (int)Math.Round(columnWidths[i]);
-                var raw = values[i] ?? string.Empty;
-                var isRed = raw.StartsWith("!!RED!!");
-                if (isRed) raw = raw.Substring("!!RED!!".Length);
-                var text = EscapePdf(raw);
-                var textX = left + 4; var textY = y + 7;
-                var right = left + cw;
-                if (header)
-                {
-                    // header text in white bold
-                    yield return $"BT /F2 9 Tf {textX} {textY} Td ({EscapePdfText(values[i] ?? string.Empty)}) Tj ET";
-                }
-                else
-                {
-                    if (isRed)
-                    {
-                        yield return "1 0 0 rg"; // red fill for text
-                        yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(raw)}) Tj ET";
-                        yield return "0 0 0 rg";
-                    }
-                    else
-                    {
-                        // draw cell border
-                        yield return "0 0 0 RG";
-                        yield return $"{left} {y} {cw} {rowHeight} re S";
-                        yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(raw)}) Tj ET";
-                    }
-                }
-
-                left += cw;
+                var isConnection = i == 5;
+                var isPeople = i == 4;
+                DrawPdfTableCell(content, x, topY - rowHeight, columnWidths[i], rowHeight, values[i], false, isPeople, isConnection);
+                x += columnWidths[i];
             }
+        }
+
+        private static void DrawPdfTableCell(List<string> content, double x, double y, double width, double height, string value, bool header, bool leftAlign, bool connectionColumn)
+        {
+            var text = value ?? string.Empty;
+            if (leftAlign)
+            {
+                text = FormatPdfOccupants(text);
+            }
+
+            var isNo = connectionColumn && text.Equals("Hayır", StringComparison.OrdinalIgnoreCase);
+            var fill = header ? "0.091 0.231 0.447" : isNo ? "0.996 0.945 0.949" : "1 1 1";
+            var textColor = header ? "1 1 1" : isNo ? "0.933 0.267 0.267" : "0.122 0.161 0.224";
+            content.Add($"{fill} rg");
+            content.Add($"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)} {y.ToString(System.Globalization.CultureInfo.InvariantCulture)} {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} {height.ToString(System.Globalization.CultureInfo.InvariantCulture)} re f");
+            content.Add("0.847 0.878 0.925 RG");
+            content.Add($"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)} {y.ToString(System.Globalization.CultureInfo.InvariantCulture)} {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} {height.ToString(System.Globalization.CultureInfo.InvariantCulture)} re S");
+            content.Add($"{textColor} rg");
+
+            var lines = (string.IsNullOrWhiteSpace(text) ? "-" : text)
+                .Split(new[] { '\n' }, StringSplitOptions.None);
+            var textX = leftAlign ? x + 4 : x + 6;
+            var textY = y + height - 12;
+            for (var i = 0; i < lines.Length; i++)
+            {
+                var line = header ? lines[i].ToUpperInvariant() : lines[i];
+                var font = header ? "/F2" : "/F1";
+                var size = header ? 8.5 : 7.8;
+                content.Add($"BT {font} {size.ToString(System.Globalization.CultureInfo.InvariantCulture)} Tf {textX.ToString(System.Globalization.CultureInfo.InvariantCulture)} {textY.ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({EscapePdfText(line)}) Tj ET");
+                textY -= 9;
+            }
+        }
+
+        private static void DrawPdfSummary(List<string> content, int margin, ref int y, List<Dictionary<string, string>> rows)
+        {
+            var roomTypeSummary = rows
+                .GroupBy(row => NormalizeRoomType(row.ContainsKey("Oda Türü") ? row["Oda Türü"] : string.Empty))
+                .Where(group => !string.IsNullOrWhiteSpace(group.Key))
+                .Select(group => new { RoomType = group.Key, Count = group.Count() })
+                .OrderByDescending(item => item.Count)
+                .ThenBy(item => GetRoomTypeSortOrder(item.RoomType))
+                .ToList();
+
+            var leftX = margin;
+            var topY = y;
+            var leftWidth = 230;
+            var rowHeight = 18;
+            var leftHeight = 38 + (roomTypeSummary.Count + 1) * rowHeight;
+            DrawPdfBlock(content, leftX, topY, leftWidth, leftHeight, "ODA DAĞILIM ÖZETİ");
+
+            var currentTop = topY - 24;
+            DrawPdfMiniRow(content, leftX + 8, currentTop, leftWidth - 16, rowHeight, "ODA TÜRÜ", "ODA SAYISI", true);
+            currentTop -= rowHeight;
+            foreach (var item in roomTypeSummary)
+            {
+                DrawPdfMiniRow(content, leftX + 8, currentTop, leftWidth - 16, rowHeight, item.RoomType, item.Count.ToString(), false);
+                currentTop -= rowHeight;
+            }
+            DrawPdfMiniRow(content, leftX + 8, currentTop, leftWidth - 16, rowHeight, "TOPLAM ODA", rows.Count.ToString(), true);
+
+            var rightX = margin + 260;
+            var rightWidth = 300;
+            var rightHeight = 110;
+            DrawPdfBlock(content, rightX, topY, rightWidth, rightHeight, "TOPLAM ODA");
+            content.Add("0.094 0.231 0.447 rg");
+            content.Add($"BT /F2 24 Tf {(rightX + 136).ToString(System.Globalization.CultureInfo.InvariantCulture)} {(topY - 55).ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({rows.Count}) Tj ET");
+            content.Add("0.200 0.294 0.373 rg");
+            content.Add($"BT /F1 8.5 Tf {(rightX + 18).ToString(System.Globalization.CultureInfo.InvariantCulture)} {(topY - 80).ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({EscapePdfText(JoinSummaryLine(roomTypeSummary))}) Tj ET");
+
+            y = topY - Math.Max(leftHeight, rightHeight) - 12;
+        }
+
+        private static void DrawPdfBlock(List<string> content, int x, int topY, int width, int height, string title)
+        {
+            var y = topY - height;
+            content.Add("1 1 1 rg");
+            content.Add($"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)} {y.ToString(System.Globalization.CultureInfo.InvariantCulture)} {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} {height.ToString(System.Globalization.CultureInfo.InvariantCulture)} re f");
+            content.Add("0.847 0.878 0.925 RG");
+            content.Add($"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)} {y.ToString(System.Globalization.CultureInfo.InvariantCulture)} {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} {height.ToString(System.Globalization.CultureInfo.InvariantCulture)} re S");
+            content.Add("0.094 0.231 0.447 rg");
+            content.Add($"BT /F2 10 Tf {(x + 12).ToString(System.Globalization.CultureInfo.InvariantCulture)} {(topY - 16).ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({EscapePdfText(title)}) Tj ET");
+        }
+
+        private static void DrawPdfMiniRow(List<string> content, int x, int topY, int width, int height, string leftText, string rightText, bool header)
+        {
+            var y = topY - height;
+            var leftWidth = (int)(width * 0.72);
+            content.Add(header ? "0.933 0.957 1 rg" : "1 1 1 rg");
+            content.Add($"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)} {y.ToString(System.Globalization.CultureInfo.InvariantCulture)} {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} {height.ToString(System.Globalization.CultureInfo.InvariantCulture)} re f");
+            content.Add("0.847 0.878 0.925 RG");
+            content.Add($"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)} {y.ToString(System.Globalization.CultureInfo.InvariantCulture)} {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} {height.ToString(System.Globalization.CultureInfo.InvariantCulture)} re S");
+            content.Add("0.094 0.231 0.447 rg");
+            content.Add($"BT /F2 7.5 Tf {(x + 4).ToString(System.Globalization.CultureInfo.InvariantCulture)} {(topY - 12).ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({EscapePdfText(leftText)}) Tj ET");
+            content.Add($"BT /F2 7.5 Tf {(x + leftWidth + 4).ToString(System.Globalization.CultureInfo.InvariantCulture)} {(topY - 12).ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({EscapePdfText(rightText)}) Tj ET");
+        }
+
+        private static string FormatPdfOccupants(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "-";
+            }
+
+            return string.Join("\n", value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(item => item.Trim()));
+        }
+
+        private static string JoinSummaryLine(IReadOnlyList<dynamic> roomTypeSummary)
+        {
+            if (roomTypeSummary == null || roomTypeSummary.Count == 0)
+            {
+                return "-";
+            }
+
+            return string.Join(", ", roomTypeSummary.Select(item => $"{item.Count} {item.RoomType}"));
         }
 
         private static byte[] BuildMinimalPdfBytes(int pageWidth, int pageHeight, string content)
