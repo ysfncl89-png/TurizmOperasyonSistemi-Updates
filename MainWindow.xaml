@@ -176,7 +176,6 @@
                 </Button>
 
 
-
                 <Button x:Name="RegistrationButton"
                         Style="{StaticResource MenuButtonStyle}"
                         Height="50"
@@ -193,19 +192,12 @@
                     </StackPanel>
                 </Button>
 
-
-                <Button x:Name="ListsButton"
-                        Style="{StaticResource MenuButtonStyle}"
-                        Height="50"
-                        Margin="15,10"
-                        Background="#1F2937"
-                        Foreground="White"
-                        BorderThickness="0"
-                        FontSize="16"
-                        Click="ListsButton_Click">
+                <Button x:Name="HotelAllocationButton" 
+                        Click="HotelAllocationButton_Click"
+                        Style="{StaticResource MenuButtonStyle}">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🔎" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Listeler" FontSize="14" VerticalAlignment="Center" Foreground="White"
+                        <TextBlock Text="🛏️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Odalama Motoru" FontSize="14" VerticalAlignment="Center" Foreground="White"
                                    Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </StackPanel>
                 </Button>
@@ -227,12 +219,18 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="HotelAllocationButton" 
-                        Click="HotelAllocationButton_Click"
-                        Style="{StaticResource MenuButtonStyle}">
+                <Button x:Name="ListsButton"
+                        Style="{StaticResource MenuButtonStyle}"
+                        Height="50"
+                        Margin="15,10"
+                        Background="#1F2937"
+                        Foreground="White"
+                        BorderThickness="0"
+                        FontSize="16"
+                        Click="ListsButton_Click">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🛏️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Odalama Motoru" FontSize="14" VerticalAlignment="Center" Foreground="White"
+                        <TextBlock Text="🔎" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Listeler" FontSize="14" VerticalAlignment="Center" Foreground="White"
                                    Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </StackPanel>
                 </Button>
