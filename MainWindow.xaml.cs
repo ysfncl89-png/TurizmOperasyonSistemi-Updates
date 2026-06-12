@@ -23,6 +23,7 @@ namespace TurizmOperasyonSistemi
             ListsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             SettingsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             HotelAllocationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
+            PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
 
             // 🔹 Yeni eklediğimiz kayıt butonunun rengini de burada sıfırlıyoruz
             RegistrationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
@@ -72,6 +73,18 @@ namespace TurizmOperasyonSistemi
             ResetMenuColors();
             HotelAllocationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             MainFrame.Navigate(new HotelAllocationView());
+        }
+
+        // Yeni: Ödemeler ve Finans modülü buton tıklama olayı
+        private void PaymentsButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetMenuColors();
+
+            // Ödemeler için özel renk (mor tonlu, başka butonlardan farklı)
+            PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
+
+            // Ödemeler için oluşturduğumuz PaymentsView'e yönlendiriyoruz
+            MainFrame.Navigate(new PaymentsView());
         }
 
         // Programatik olarak anasayfaya geçiş yapmak isteyen diğer bileşenler için

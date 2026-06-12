@@ -194,16 +194,6 @@
                 </Button>
 
 
-                <Button x:Name="HotelAllocationButton" 
-        Click="HotelAllocationButton_Click"
-        Style="{StaticResource MenuButtonStyle}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🛏️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Odalama Motoru" FontSize="14" VerticalAlignment="Center" Foreground="White"
-                                   Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
-                    </StackPanel>
-                </Button>
-
                 <Button x:Name="ListsButton"
                         Style="{StaticResource MenuButtonStyle}"
                         Height="50"
@@ -216,6 +206,33 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="🔎" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <TextBlock Text="Listeler" FontSize="14" VerticalAlignment="Center" Foreground="White"
+                                   Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Yeni: Ödemeler ve Finans butonu -->
+                <Button x:Name="PaymentsButton"
+                        Style="{StaticResource MenuButtonStyle}"
+                        Height="50"
+                        Margin="15,10"
+                        Background="#1F2937"
+                        Foreground="White"
+                        BorderThickness="0"
+                        FontSize="16"
+                        Click="PaymentsButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="💳" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Ödemeler ve Finans" FontSize="14" VerticalAlignment="Center" Foreground="White"
+                                   Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="HotelAllocationButton" 
+                        Click="HotelAllocationButton_Click"
+                        Style="{StaticResource MenuButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🛏️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Odalama Motoru" FontSize="14" VerticalAlignment="Center" Foreground="White"
                                    Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </StackPanel>
                 </Button>
