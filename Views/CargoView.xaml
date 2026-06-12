@@ -1,0 +1,117 @@
+<UserControl x:Class="TurizmOperasyonSistemi.Views.CargoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#1E293B">
+
+    <UserControl.Resources>
+        <!-- Kart stili (PaymentsView ile aynı) -->
+        <Style x:Key="CardButtonStyle" TargetType="Button">
+                        <Setter Property="Background" Value="#0F172A"/>
+                        <Setter Property="Foreground" Value="#E2E8F0"/>
+                        <Setter Property="BorderBrush" Value="#334155"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="Padding" Value="14"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="cardBorder"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="12"
+                                            Padding="{TemplateBinding Padding}"
+                                            SnapsToDevicePixels="True"
+                                            RenderTransformOrigin="0.5,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="scaleTransform" ScaleX="1" ScaleY="1.04"/>
+                                        </Border.RenderTransform>
+
+                                        <Border.Effect>
+                                            <DropShadowEffect x:Name="shadow" Color="#FF8B5CF6" BlurRadius="6" ShadowDepth="0" Opacity="0"/>
+                                        </Border.Effect>
+
+                                        <Grid>
+                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <ControlTemplate.Triggers>
+                                        <EventTrigger RoutedEvent="MouseEnter">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1.03" Duration="0:0:0.12"/>
+                                                    <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1.07" Duration="0:0:0.12"/>
+                                                    <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0.85" Duration="0:0:0.15"/>
+                                                    <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="BlurRadius" To="30" Duration="0:0:0.15"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+
+                                        <EventTrigger RoutedEvent="MouseLeave">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.12"/>
+                                                    <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1.04" Duration="0:0:0.12"/>
+                                                    <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                                    <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="BlurRadius" To="6" Duration="0:0:0.12"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24">
+                <TextBlock Text="Kargo İşlemleri"
+                           FontSize="28"
+                           FontWeight="Bold"
+                           Foreground="#3B82F6"
+                           Margin="0,0,0,12"/>
+
+                <!-- Kargo kartları -->
+                <UniformGrid Columns="3" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,0,0,30">
+
+                    <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="CargoList_Click" BorderBrush="#3B82F6">
+                        <StackPanel>
+                            <Rectangle Height="6" Fill="#3B82F6" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
+                            <TextBlock Text="📦" FontSize="30" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Kargo Listesi" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
+                            <TextBlock Text="Tüm gönderimler ve kayıtlar" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="CargoDocs_Click" BorderBrush="#F59E0B">
+                        <StackPanel>
+                            <Rectangle Height="6" Fill="#F59E0B" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
+                            <TextBlock Text="🧾" FontSize="30" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Kargo Evrak Hazırlama" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
+                            <TextBlock Text="Barkod, etiket ve gönderi evrakları" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="CargoTracking_Click" BorderBrush="#06B6D4">
+                        <StackPanel>
+                            <Rectangle Height="6" Fill="#06B6D4" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
+                            <TextBlock Text="🔎" FontSize="30" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Kargo Takip" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
+                            <TextBlock Text="Gönderi sorgulama ve durum takibi" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                </UniformGrid>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+
+</UserControl>

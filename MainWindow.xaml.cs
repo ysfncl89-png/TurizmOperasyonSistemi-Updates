@@ -24,6 +24,7 @@ namespace TurizmOperasyonSistemi
             SettingsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             HotelAllocationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
+            CargoButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
 
             // 🔹 Yeni eklediğimiz kayıt butonunun rengini de burada sıfırlıyoruz
             RegistrationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
@@ -85,6 +86,17 @@ namespace TurizmOperasyonSistemi
 
             // Ödemeler için oluşturduğumuz PaymentsView'e yönlendiriyoruz
             MainFrame.Navigate(new PaymentsView());
+        }
+
+        private void CargoButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetMenuColors();
+
+            // Kargo seçili iken özel bir mavi renge bürünsün
+            CargoButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"));
+
+            // Kargo sayfasına git
+            MainFrame.Navigate(new Views.CargoView());
         }
 
         // Programatik olarak anasayfaya geçiş yapmak isteyen diğer bileşenler için

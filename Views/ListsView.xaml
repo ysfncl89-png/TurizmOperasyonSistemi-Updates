@@ -774,7 +774,7 @@
                         </EventTrigger>
                     </Border.Triggers>
                     <Grid x:Name="card4">
-                        <TextBlock x:Name="od_title" Text="Ödeme" Foreground="White" FontSize="18" FontWeight="Bold"
+                        <TextBlock x:Name="od_title" Text="Ödeme Listesi" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
 
                         <Button x:Name="od_center" Style="{StaticResource CenterButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="2" ToolTip="Ödeme">
@@ -822,7 +822,7 @@
                     </Border.Triggers>
 
                     <Grid x:Name="card5">
-                        <TextBlock x:Name="kg_title" Text="Kargo" Foreground="White" FontSize="18" FontWeight="Bold"
+                        <TextBlock x:Name="kg_title" Text="Kargo Listesi" Foreground="White" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
 
                         <Button x:Name="kg_center" Style="{StaticResource CenterButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="2" ToolTip="Kargo">
