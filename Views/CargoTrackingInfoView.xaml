@@ -1,0 +1,21 @@
+<UserControl x:Class="TurizmOperasyonSistemi.Views.CargoTrackingInfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="600"
+             Background="#1E293B">
+
+    <Grid Margin="24">
+        <Border Background="#0F172A" CornerRadius="10" Padding="18" BorderBrush="#334155" BorderThickness="1">
+            <StackPanel>
+                <TextBlock Text="Kargo Takip Bilgilendirme" FontSize="20" FontWeight="Bold" Foreground="#06B6D4" Margin="0,0,0,8"/>
+                <TextBlock TextWrapping="Wrap" Foreground="#E2E8F0"> 
+                    Anlaşmalı kargo şirketlerinden API bilgileri talep edildiğinde bu özellik ek olarak yapılabilir. Şimdilik boş bırakılmıştır. Kargolardaki anlık güncellemeler API sayesinde bu ekrana internet aracılığı ile online olarak bilgi verir.
+                </TextBlock>
+            </StackPanel>
+        </Border>
+    </Grid>
+
+</UserControl>

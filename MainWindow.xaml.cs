@@ -106,5 +106,11 @@ namespace TurizmOperasyonSistemi
             HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C1A15"));
             MainFrame.Navigate(new HomeView());
         }
+
+        // Genel navigasyon yardımcı metodu: dışarıdan UserControl'a geçiş yapar
+        public void NavigateTo(System.Windows.Controls.UserControl view)
+        {
+            MainFrame.Navigate(view);
+        }
     }
 }

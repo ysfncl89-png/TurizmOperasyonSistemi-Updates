@@ -22,7 +22,12 @@ namespace TurizmOperasyonSistemi.Views
 
         private void CargoTracking_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("Kargo Takip açıldı (placeholder)");
+            // MainWindow üzerinden navigation yap
+            var main = System.Windows.Application.Current.MainWindow as MainWindow;
+            if (main != null)
+            {
+                main.NavigateTo(new CargoTrackingInfoView());
+            }
         }
     }
 }
