@@ -628,7 +628,7 @@
 
                         <DataGridTextColumn Header="Adres"
                                             Binding="{Binding Address}"
-                                            Width="Auto"/>
+                                            Width="360"/>
 
                         <DataGridTemplateColumn Header="Pasaport tipi" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
@@ -775,7 +775,6 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
-
                         <DataGridTemplateColumn Header="Kargo Talebi" Width="110">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -788,6 +787,22 @@
                                               SelectedItem="{Binding CargoRequest, Mode=TwoWay}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="İşlem" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Kargo için incele"
+                                            Background="#DC2626"
+                                            Foreground="White"
+                                            Padding="6,4"
+                                            Margin="6,4"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Cursor="Hand"
+                                            Click="CargoInspect_Click"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
                         <DataGridTextColumn Header="Oda tipi"

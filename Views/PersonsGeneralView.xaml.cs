@@ -36,12 +36,31 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        // Placeholder click handler for the cargo inspect button added to the grid
+        private void CargoInspect_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is FrameworkElement fe)) return;
+                var row = fe.DataContext as GeneralRow;
+                if (row == null)
+                {
+                    MessageBox.Show("Kayıt bilgisi bulunamadı.", "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // Only show placeholder for now. The caller requested the button to be red initially; further behavior will be implemented later.
+                MessageBox.Show($"Kargo inceleme butonuna tıklandı: {row.FirstName} {row.LastName}", "Kargo İncele", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch { }
+        }
+
         // Ensure only cargo columns are visible when in CargoOnlyMode
         private void EnforceCargoColumns()
         {
             try
             {
-                var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
+                var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "İşlem", "Kargo Talebi" };
                 int idx = 0;
                 foreach (var col in ResultsDataGrid.Columns)
                 {
@@ -307,7 +326,7 @@ namespace TurizmOperasyonSistemi.Views
             // If CargoOnlyMode is active, override visible headers to the strict cargo list set
             if (CargoOnlyMode)
             {
-                visible = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
+                visible = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "İşlem", "Kargo Talebi" };
             }
 
             // Show VisaRequestPanel only when in Vize mode
