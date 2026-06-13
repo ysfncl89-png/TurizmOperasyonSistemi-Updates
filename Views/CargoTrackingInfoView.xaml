@@ -16,6 +16,8 @@
                 </TextBlock>
             </StackPanel>
         </Border>
+        <!-- Sol altta geri butonu; implicit 'Geri' stili App.xaml'de tanımlı olduğu için sadece Content="Geri" yeterli -->
+        <Button Content="Geri" Width="88" Height="36" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8,0,0,8" Click="BackButton_Click" />
     </Grid>
 
 </UserControl>
