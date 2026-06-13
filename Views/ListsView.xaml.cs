@@ -61,6 +61,8 @@ namespace TurizmOperasyonSistemi.Views
                 if (tkPasaport != null) tkPasaport.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Pasaport);
                 var odlCenter = this.FindName("odl_center") as Button;
                 if (odlCenter != null) odlCenter.Click += Odl_center_Click;
+                var kgCenter = this.FindName("kg_center") as Button;
+                if (kgCenter != null) kgCenter.Click += Kg_center_Click;
             }
             catch
             {
@@ -73,7 +75,42 @@ namespace TurizmOperasyonSistemi.Views
                 TurizmOperasyonSistemi.Services.NotificationCenter.Subscribe(OnRegistrationNotification);
             }
             catch { }
+
         }
+
+        private void Kg_center_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var personsView = new PersonsGeneralView();
+                try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
+                // enable cargo-only behavior so ApplyFilters will restrict results
+                try { personsView.CargoOnlyMode = true; } catch { }
+
+                if (this.NavigationService != null)
+                {
+                    this.NavigationService.Navigate(personsView);
+                    return;
+                }
+
+                var win = new Window
+                {
+                    Title = "Kargo Listesi - Filtreler",
+                    Content = new Frame { Content = personsView, NavigationUIVisibility = NavigationUIVisibility.Hidden },
+                    Width = 1100,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+
 
         private void OnRegistrationNotification(string key, object payload)
         {

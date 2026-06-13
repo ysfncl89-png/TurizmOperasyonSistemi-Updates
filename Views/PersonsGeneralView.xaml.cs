@@ -36,6 +36,31 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        // Ensure only cargo columns are visible when in CargoOnlyMode
+        private void EnforceCargoColumns()
+        {
+            try
+            {
+                var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
+                int idx = 0;
+                foreach (var col in ResultsDataGrid.Columns)
+                {
+                    var header = col.Header?.ToString() ?? string.Empty;
+                    if (allowed.Contains(header))
+                    {
+                        col.Visibility = Visibility.Visible;
+                        col.DisplayIndex = idx++;
+                    }
+                    else
+                    {
+                        col.Visibility = Visibility.Collapsed;
+                    }
+                }
+                try { ResultsDataGrid.Items.Refresh(); ResultsDataGrid.UpdateLayout(); } catch { }
+            }
+            catch { }
+        }
+
         private void PassportArrivedRadio_Changed(object sender, RoutedEventArgs e)
         {
             try
@@ -229,29 +254,39 @@ namespace TurizmOperasyonSistemi.Views
             // update filter title dynamically
             try
             {
-                if (FilterTitleTextBlock != null)
+                // If CargoOnlyMode is active, replace the standard split title with a single-line cargo title
+                var prefixTb = this.FindName("FilterTitlePrefix") as TextBlock;
+                var midTb = this.FindName("ModeInlineText") as TextBlock;
+                var suffixTb = this.FindName("FilterTitleSuffix") as TextBlock;
+                if (CargoOnlyMode)
                 {
-                    FilterTitleTextBlock.Text = $"Görüntülemek istediğiniz {GetModeTitle()} Listesi İçin Önce Kriterleri Sırayla Seçin";
+                    try
+                    {
+                        if (prefixTb != null) prefixTb.Text = "Görüntülemek istediğiniz Kargo Listesi için önce kriterleri sırayla seçin";
+                        if (midTb != null) midTb.Visibility = Visibility.Collapsed;
+                        if (suffixTb != null) suffixTb.Visibility = Visibility.Collapsed;
+                    }
+                    catch { }
                 }
-                var mb = this.FindName("ModeBadge") as TextBlock;
-                // update inline Run in filter title to highlight current mode
-                var mit = this.FindName("ModeInlineText") as TextBlock;
-                if (mit != null)
+                else
                 {
-                    mit.Text = GetModeTitle();
-                    try {
-                        var clr = (Color)FindResource("PrimaryStartColor");
-                        mit.Foreground = new SolidColorBrush(clr);
-                        mit.FontWeight = FontWeights.ExtraBold;
-                        mit.FontSize = CurrentFilterLabel?.FontSize ?? 30;
-                    } catch { }
-                }
-                // also update CurrentModeLabel in TopBar
-                var cml = this.FindName("CurrentModeLabel") as TextBlock;
-                if (cml != null)
-                {
-                    cml.Text = GetModeTitle();
-                    try { var clr = (Color)FindResource("PrimaryStartColor"); cml.Foreground = new SolidColorBrush(clr); } catch { }
+                    try
+                    {
+                        if (prefixTb != null) prefixTb.Text = "Görüntülemek istediğiniz ";
+                        if (midTb != null) {
+                            midTb.Visibility = Visibility.Visible;
+                            midTb.Text = GetModeTitle();
+                            try { var clr = (Color)FindResource("PrimaryStartColor"); midTb.Foreground = new SolidColorBrush(clr); midTb.FontWeight = FontWeights.ExtraBold; midTb.FontSize = CurrentFilterLabel?.FontSize ?? 30; } catch { }
+                        }
+                        if (suffixTb != null) suffixTb.Visibility = Visibility.Visible;
+                    var cml = this.FindName("CurrentModeLabel") as TextBlock;
+                    if (cml != null)
+                    {
+                        cml.Text = CargoOnlyMode ? "Kargo Listesi" : GetModeTitle();
+                        try { var clr = (Color)FindResource("PrimaryStartColor"); cml.Foreground = new SolidColorBrush(clr); } catch { }
+                    }
+                    }
+                    catch { }
                 }
             }
             catch { }
@@ -268,6 +303,12 @@ namespace TurizmOperasyonSistemi.Views
             };
 
             if (!modeVisibleHeaders.TryGetValue(mode, out var visible)) visible = modeVisibleHeaders[ViewMode.Genel];
+
+            // If CargoOnlyMode is active, override visible headers to the strict cargo list set
+            if (CargoOnlyMode)
+            {
+                visible = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
+            }
 
             // Show VisaRequestPanel only when in Vize mode
             try
@@ -425,10 +466,39 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        private string CurrentModeName => GetModeTitle();
+        private string CurrentModeName => CargoOnlyMode ? "Kargo Listesi" : GetModeTitle();
         private List<GeneralRow> _allRows = new List<GeneralRow>();
         private Button _applyButton;
         private DataGridColumn _editingColumn;
+        // When true, Results should only include registrations where CargoRequest == "Kargo Gönderilecek"
+        private bool _cargoOnlyMode = false;
+        public bool CargoOnlyMode
+        {
+            get => _cargoOnlyMode;
+            set
+            {
+                if (_cargoOnlyMode == value) return;
+                _cargoOnlyMode = value;
+                try
+                {
+                    // Refresh mode/configuration on UI thread so labels and columns update
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        try { ConfigureMode(_currentMode); } catch { }
+                        try
+                        {
+                            var cml = this.FindName("CurrentModeLabel") as TextBlock;
+                            if (cml != null) cml.Text = _cargoOnlyMode ? "Kargo Listesi" : GetModeTitle();
+                            var mit = this.FindName("ModeInlineText") as TextBlock;
+                            if (mit != null) mit.Visibility = _cargoOnlyMode ? Visibility.Collapsed : Visibility.Visible;
+                        }
+                        catch { }
+                        try { if (_cargoOnlyMode) EnforceCargoColumns(); } catch { }
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                }
+                catch { }
+            }
+        }
 
         public PersonsGeneralView()
         {
@@ -976,8 +1046,16 @@ namespace TurizmOperasyonSistemi.Views
                 .ToList();
             if (!headers.Any())
             {
-                // fallback to all known headers from MapHeaderToProperty
-                headers = new List<string> { "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kan Grubu", "Hastalık durumu" };
+                // fallback based on cargo-only mode or general
+                if (CargoOnlyMode)
+                {
+                    headers = new List<string> { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
+                }
+                else
+                {
+                    // fallback to all known headers from MapHeaderToProperty
+                    headers = new List<string> { "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kan Grubu", "Hastalık durumu" };
+                }
             }
             // For Havayolu mode, export headers should be uppercase and Turkish characters removed
             try
@@ -1348,6 +1426,12 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 catch { }
 
+                // If cargo-only mode requested, restrict by CargoRequest
+                if (CargoOnlyMode)
+                {
+                    query = query.Where(r => r.CargoRequest != null && r.CargoRequest.Trim().ToLower() == "kargo gönderilecek");
+                }
+
                 var list = query.OrderBy(r => r.Id).ToList();
 
                 var rows = new List<GeneralRow>();
@@ -1517,6 +1601,8 @@ namespace TurizmOperasyonSistemi.Views
 
                 _allRows = rows;
                 ResultsDataGrid.ItemsSource = _allRows;
+                // If CargoOnlyMode, make sure only allowed cargo columns are visible regardless of templates
+                try { if (CargoOnlyMode) EnforceCargoColumns(); } catch { }
             }
             catch (Exception ex)
             {
@@ -2570,7 +2656,18 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var dialog = new ListDesignDialog(ResultsDataGrid.Columns, _currentMode.ToString(), ResultsDataGrid);
+                // If CargoOnlyMode is active, present a dialog prepopulated with only cargo columns
+                IEnumerable<DataGridColumn> cols = ResultsDataGrid.Columns;
+                if (CargoOnlyMode)
+                {
+                    cols = ResultsDataGrid.Columns.Where(c =>
+                    {
+                        var h = (c.Header?.ToString() ?? string.Empty).Trim();
+                        return new[] { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" }
+                               .Any(x => string.Equals(x, h, StringComparison.OrdinalIgnoreCase));
+                    }).ToList();
+                }
+                var dialog = new ListDesignDialog(cols, _currentMode.ToString(), ResultsDataGrid);
                 dialog.Owner = Application.Current?.MainWindow;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
@@ -2588,6 +2685,8 @@ namespace TurizmOperasyonSistemi.Views
                     }
                 }
                 catch { }
+                // After closing the design dialog, if CargoOnlyMode enforce strict cargo columns
+                try { if (CargoOnlyMode) EnforceCargoColumns(); } catch { }
             }
             catch (Exception ex)
             {

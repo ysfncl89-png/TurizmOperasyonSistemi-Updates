@@ -756,9 +756,29 @@ namespace TurizmOperasyonSistemi.Services
 
             y -= 12;
             var usableWidth = pageWidth - margin * 2;
-            var columnWidths = new double[] { 56, 76, 50, 90, 450, 70 };
-            var scale = usableWidth / columnWidths.Sum();
-            columnWidths = columnWidths.Select(value => value * scale).ToArray();
+            var colCount = headersList.Count;
+            double[] weights;
+            if (colCount <= 0)
+            {
+                weights = new double[] { 1 };
+            }
+            else if (colCount == 6)
+            {
+                weights = new double[] { 56, 76, 50, 90, 450, 70 };
+            }
+            else if (colCount == 7)
+            {
+                // Sıra, Ad, Soyad, TC Kimlik, Telefon, Adres, Kargo Talebi
+                weights = new double[] { 40, 140, 140, 100, 110, 320, 90 };
+            }
+            else
+            {
+                // distribute evenly as fallback
+                weights = Enumerable.Repeat(1.0, colCount).ToArray();
+            }
+
+            var scale = usableWidth / weights.Sum();
+            var columnWidths = weights.Select(value => value * scale).ToArray();
 
             DrawPdfTableHeader(content, margin, y, columnWidths, headersList);
             y -= 20;
