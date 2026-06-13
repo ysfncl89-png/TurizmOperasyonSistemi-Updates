@@ -1014,21 +1014,64 @@ namespace TurizmOperasyonSistemi.Views
         {
             var cols = GetExportHeaders();
             var rows = GetExportRows(cols);
-            Services.ExportHelper.ExportWord(filePath, rows, cols, CurrentModeName + " Liste");
+            // build a descriptive title that includes current mode and selected filter combobox values
+            var titleParts = new List<string> { CurrentModeName + " Liste" };
+            try
+            {
+                var tour = CbTourType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") titleParts.Add(tour);
+                var period = CbPeriod?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") titleParts.Add(period);
+                var group = CbGroupType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") titleParts.Add(group);
+                var days = CbGroupDays?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") titleParts.Add(days + " Günlük");
+            }
+            catch { }
+            var exportTitle = string.Join("\n", titleParts);
+            Services.ExportHelper.ExportWord(filePath, rows, cols, exportTitle);
         }
 
         private void ExportExcel(string filePath)
         {
             var cols = GetExportHeaders();
             var rows = GetExportRows(cols);
-            Services.ExportHelper.ExportExcel(filePath, rows, cols, CurrentModeName + " Liste");
+            var titleParts = new List<string> { CurrentModeName + " Liste" };
+            try
+            {
+                var tour = CbTourType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") titleParts.Add(tour);
+                var period = CbPeriod?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") titleParts.Add(period);
+                var group = CbGroupType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") titleParts.Add(group);
+                var days = CbGroupDays?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") titleParts.Add(days + " Günlük");
+            }
+            catch { }
+            var exportTitle = string.Join("\n", titleParts);
+            Services.ExportHelper.ExportExcel(filePath, rows, cols, exportTitle);
         }
 
         private void ExportPdf(string filePath)
         {
             var cols = GetExportHeaders();
             var rows = GetExportRows(cols);
-            Services.ExportHelper.ExportPdf(filePath, rows, cols, CurrentModeName + " Liste");
+            var titleParts = new List<string> { CurrentModeName + " Liste" };
+            try
+            {
+                var tour = CbTourType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(tour) && tour != "Seçiniz") titleParts.Add(tour);
+                var period = CbPeriod?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(period) && period != "Seçiniz") titleParts.Add(period);
+                var group = CbGroupType?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(group) && group != "Seçiniz") titleParts.Add(group);
+                var days = CbGroupDays?.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(days) && days != "Seçiniz") titleParts.Add(days + " Günlük");
+            }
+            catch { }
+            var exportTitle = string.Join("\n", titleParts);
+            Services.ExportHelper.ExportPdf(filePath, rows, cols, exportTitle);
         }
 
         private void DeleteIfExists(string filePath)

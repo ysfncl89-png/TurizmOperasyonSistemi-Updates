@@ -21,7 +21,85 @@ namespace TurizmOperasyonSistemi.Services
             AddDocxContentTypes(archive);
             AddDocxRels(archive);
             AddDocxDocumentRels(archive);
-            AddDocxDocumentXml(archive, rows, headers, title, footers);
+            // choose room-allocation-specific docx when title contains 'Otel Odalama' or when rows have room allocation headers
+            if ((!string.IsNullOrWhiteSpace(title) && title.IndexOf("Otel Odalama", StringComparison.OrdinalIgnoreCase) >= 0)
+                || (headers != null && headers.Contains("Oda No") && headers.Contains("Oda Türü")))
+            {
+                AddDocxDocumentXml(archive, rows, headers, title, footers);
+            }
+            else
+            {
+                AddDocxDocumentXml_Generic(archive, rows, headers, title, footers);
+            }
+        }
+
+        // Generic docx document builder for non-room-allocation exports
+        private static void AddDocxDocumentXml_Generic(ZipArchive archive, List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
+        {
+            var colCount = Math.Max(1, headers?.Count ?? 0);
+            var defaultWidths = Enumerable.Repeat(1500, colCount).ToArray();
+            var tableRows = new List<string> { BuildWordTableRow(headers, true, defaultWidths) };
+            tableRows.AddRange(rows.Select(r => BuildWordTableRow(headers.Select(h => r.ContainsKey(h) ? r[h] : string.Empty).ToList(), false, defaultWidths)));
+            var titleXml = string.Empty;
+            if (!string.IsNullOrWhiteSpace(title)) titleXml = $"    <w:p><w:r><w:t>{EscapeXml(title)}</w:t></w:r></w:p>\n";
+            var footerXml = string.Empty;
+            if (footers != null && footers.Count > 0) footerXml = string.Join("\n", footers.Select(f => $"    <w:p><w:r><w:t>{EscapeXml(f)}</w:t></w:r></w:p>"));
+            var document = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n  <w:body>\n{titleXml}    <w:tbl>\n      <w:tblPr>\n        <w:tblStyle w:val=\"TableGrid\"/>\n        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n      </w:tblPr>\n      <w:tblGrid>\n      </w:tblGrid>\n      {string.Join(Environment.NewLine, tableRows)}\n    </w:tbl>\n{footerXml}\n    <w:sectPr>\n      <w:pgSz w:w=\"16838\" w:h=\"11906\"/>\n      <w:pgMar w:top=\"720\" w:right=\"720\" w:bottom=\"720\" w:left=\"720\" w:header=\"450\" w:footer=\"450\" w:gutter=\"0\"/>\n    </w:sectPr>\n  </w:body>\n</w:document>";
+            AddZipEntry(archive, "word/document.xml", document);
+        }
+
+        // Generic PDF builder for non-room-allocation exports
+        private static byte[] BuildSimplePdf_Generic(List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
+        {
+            var pageWidth = 842; var pageHeight = 595; var margin = 28; var rowHeight = 22; var usableWidth = pageWidth - margin * 2; var columnWidth = usableWidth / Math.Max(1, headers.Count);
+            var content = new List<string> { $"BT /F1 16 Tf 40 560 Td ({EscapePdfText(title ?? "Liste")}) Tj ET" };
+            var y = 520; content.AddRange(BuildPdfRowHelper(headers, margin, y, columnWidth, rowHeight, true)); y -= rowHeight;
+            foreach (var row in rows)
+            {
+                if (y < 50) break;
+                content.AddRange(BuildPdfRowHelper(headers.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList(), margin, y, columnWidth, rowHeight, false));
+                y -= rowHeight;
+            }
+            if (footers != null && footers.Count > 0)
+            {
+                y -= 8;
+                foreach (var f in footers)
+                {
+                    if (y < 40) break;
+                    content.Add($"BT /F1 9 Tf {margin} {y} Td ({EscapePdfText(f)}) Tj ET");
+                    y -= 14;
+                }
+            }
+            var contentText = string.Join("\n", content);
+            return BuildMinimalPdfBytes(pageWidth, pageHeight, contentText);
+        }
+
+        // helper used by generic PDF builder (keeps same signature as earlier helpers)
+        private static IEnumerable<string> BuildPdfRowHelper(IReadOnlyList<string> values, int x, int y, double columnWidth, int rowHeight, bool header)
+        {
+            for (var i = 0; i < values.Count; i++)
+            {
+                var left = x + (int)(i * columnWidth);
+                var right = x + (int)((i + 1) * columnWidth);
+                var text = EscapePdf(values[i] ?? string.Empty);
+                var textX = left + 4; var textY = y + 7;
+                if (header)
+                {
+                    yield return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:F3} {1:F3} {2:F3} rg", 34.0/255.0, 50.0/255.0, 74.0/255.0);
+                    yield return "0 0 0 RG";
+                    yield return $"{left} {y} {right - left} {rowHeight} re B";
+                    yield return "1 1 1 rg";
+                    yield return $"BT /F2 9 Tf {textX} {textY} Td ({EscapePdfText(values[i] ?? string.Empty)}) Tj ET";
+                    yield return "0 0 0 rg";
+                }
+                else
+                {
+                    yield return "0 0 0 RG";
+                    yield return $"{left} {y} {right - left} {rowHeight} re S";
+                    yield return "0 0 0 rg";
+                    yield return $"BT /F1 8 Tf {textX} {textY} Td ({EscapePdfText(values[i] ?? string.Empty)}) Tj ET";
+                }
+            }
         }
 
         public static void ExportExcel(
@@ -47,7 +125,16 @@ namespace TurizmOperasyonSistemi.Services
             AddXlsxWorkbook(archive);
             AddXlsxWorkbookRels(archive);
             AddXlsxStyles(archive);
-            AddXlsxSheet(archive, rows, headers, title, footers, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
+            // If this looks like a room-allocation export (has hotel or room headers), use the room allocation sheet
+            if ((!string.IsNullOrWhiteSpace(hotelName) || !string.IsNullOrWhiteSpace(tourType))
+                || (headers != null && headers.Contains("Oda No") && headers.Contains("Oda Türü")))
+            {
+                AddXlsxSheet(archive, rows, headers, title, footers, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
+            }
+            else
+            {
+                AddXlsxSheet_Generic(archive, rows, headers, title, footers);
+            }
         }
 
         public static void ExportPdf(
@@ -67,7 +154,22 @@ namespace TurizmOperasyonSistemi.Services
             if (rows == null) rows = new List<Dictionary<string, string>>();
             if (headers == null) headers = new List<string>();
             if (File.Exists(filePath)) File.Delete(filePath);
-            var pdf = BuildSimplePdf(rows, headers, title, footers, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
+            byte[] pdf;
+            // If no room-allocation metadata provided, build a generic table PDF
+            if (string.IsNullOrWhiteSpace(hotelName)
+                && string.IsNullOrWhiteSpace(checkInDate)
+                && string.IsNullOrWhiteSpace(checkOutDate)
+                && string.IsNullOrWhiteSpace(tourType)
+                && string.IsNullOrWhiteSpace(period)
+                && string.IsNullOrWhiteSpace(groupType)
+                && string.IsNullOrWhiteSpace(daysCount))
+            {
+                pdf = BuildSimplePdf_Generic(rows, headers, title, footers);
+            }
+            else
+            {
+                pdf = BuildSimplePdf(rows, headers, title, footers, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
+            }
             File.WriteAllBytes(filePath, pdf);
         }
 
@@ -593,6 +695,18 @@ namespace TurizmOperasyonSistemi.Services
             string groupType,
             string daysCount)
         {
+            // If no hotel/tour metadata provided, use the generic table layout instead of the room-allocation layout
+            if (string.IsNullOrWhiteSpace(hotelName)
+                && string.IsNullOrWhiteSpace(checkInDate)
+                && string.IsNullOrWhiteSpace(checkOutDate)
+                && string.IsNullOrWhiteSpace(tourType)
+                && string.IsNullOrWhiteSpace(period)
+                && string.IsNullOrWhiteSpace(groupType)
+                && string.IsNullOrWhiteSpace(daysCount))
+            {
+                AddXlsxSheet_Generic(archive, rows, headers, title, footers);
+                return;
+            }
             var rowXml = new List<string>();
             var infoRows = new[]
             {
@@ -681,6 +795,55 @@ namespace TurizmOperasyonSistemi.Services
             });
 
             var sheet = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <dimension ref=\"A1:{lastColumn}{lastRow}\"/>\n  <sheetViews>\n    <sheetView workbookViewId=\"0\"/>\n  </sheetViews>\n  <sheetFormatPr defaultRowHeight=\"22\"/>\n  <cols>\n    {colsXml}\n  </cols>\n  <sheetData>\n    {string.Join(Environment.NewLine, rowXml)}\n  </sheetData>\n  <mergeCells count=\"8\">\n    {mergeCells}\n  </mergeCells>\n</worksheet>";
+            AddZipEntry(archive, "xl/worksheets/sheet1.xml", sheet);
+        }
+
+        private static void AddXlsxSheet_Generic(
+            ZipArchive archive,
+            List<Dictionary<string, string>> rows,
+            List<string> headers,
+            string title,
+            List<string> footers)
+        {
+            var rowXml = new List<string>();
+            var currentRow = 1;
+
+            // ensure we have at least one column
+            var colCount = Math.Max(1, headers?.Count ?? 0);
+
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                var titleRow = Enumerable.Range(0, colCount).Select(i => i == 0 ? title : string.Empty).ToList();
+                rowXml.Add(BuildXlsxRow(currentRow++, titleRow, false));
+                // blank row after title
+                rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, colCount).ToList(), false));
+            }
+
+            // header row
+            var headerList = headers?.ToList() ?? Enumerable.Repeat(string.Empty, colCount).ToList();
+            rowXml.Add(BuildXlsxRow(currentRow++, headerList, true));
+
+            // data rows
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var data = headerList.Select(h => rows[i].ContainsKey(h) ? rows[i][h] : string.Empty).ToList();
+                rowXml.Add(BuildXlsxRow(currentRow++, data, false));
+            }
+
+            // footers if any
+            if (footers != null && footers.Count > 0)
+            {
+                rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, colCount).ToList(), false));
+                foreach (var f in footers)
+                {
+                    var frow = Enumerable.Range(0, colCount).Select(i => i == 0 ? f : string.Empty).ToList();
+                    rowXml.Add(BuildXlsxRow(currentRow++, frow, false));
+                }
+            }
+
+            var lastColumn = ColumnName(colCount);
+            var lastRow = Math.Max(1, currentRow - 1);
+            var sheet = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <dimension ref=\"A1:{lastColumn}{lastRow}\"/>\n  <sheetData>\n    {string.Join(Environment.NewLine, rowXml)}\n  </sheetData>\n</worksheet>";
             AddZipEntry(archive, "xl/worksheets/sheet1.xml", sheet);
         }
 
