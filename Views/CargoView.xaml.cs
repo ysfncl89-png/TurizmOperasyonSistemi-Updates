@@ -11,8 +11,36 @@ namespace TurizmOperasyonSistemi.Views
 
         private void CargoList_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            // Geçici: ilerde gerçek sayfaya yönlendir
-            System.Windows.MessageBox.Show("Kargo Listesi açıldı (placeholder)");
+            try
+            {
+                var personsView = new PersonsGeneralView();
+                try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
+                try { personsView.CargoOnlyMode = true; } catch { }
+
+                // Try to use NavigationService if available
+                var nav = System.Windows.Navigation.NavigationService.GetNavigationService(this);
+                if (nav != null)
+                {
+                    nav.Navigate(personsView);
+                    return;
+                }
+
+                // Otherwise open in a new window inside a Frame
+                var win = new System.Windows.Window
+                {
+                    Title = "Kargo Listesi - Filtreler",
+                    Content = new System.Windows.Controls.Frame { Content = personsView, NavigationUIVisibility = System.Windows.Navigation.NavigationUIVisibility.Hidden },
+                    Width = 1100,
+                    Height = 700,
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+                    Owner = System.Windows.Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (System.Exception ex)
+            {
+                System.Windows.MessageBox.Show(ex.Message);
+            }
         }
 
         private void CargoDocs_Click(object sender, System.Windows.RoutedEventArgs e)
