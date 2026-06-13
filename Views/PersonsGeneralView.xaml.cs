@@ -66,8 +66,13 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
-                // Only show placeholder for now. The caller requested the button to be red initially; further behavior will be implemented later.
-                MessageBox.Show($"Kargo inceleme butonuna tıklandı: {row.FirstName} {row.LastName}", "Kargo İncele", MessageBoxButton.OK, MessageBoxImage.Information);
+                var dlg = new CargoInspectWindow(row) { Owner = Window.GetWindow(this) };
+                var result = dlg.ShowDialog();
+                if (result == true)
+                {
+                    // row.IsCargoInspected already set by dialog; refresh grid so triggers apply
+                    try { ResultsDataGrid.Items.Refresh(); ResultsDataGrid.UpdateLayout(); } catch { }
+                }
             }
             catch { }
         }
@@ -2961,7 +2966,7 @@ namespace TurizmOperasyonSistemi.Views
             return v;
         }
 
-        private class GeneralRow : System.ComponentModel.INotifyPropertyChanged
+        public class GeneralRow : System.ComponentModel.INotifyPropertyChanged
         {
             public int RegistrationId { get; set; }
             public int PersonId { get; set; }
@@ -3005,6 +3010,7 @@ namespace TurizmOperasyonSistemi.Views
             public string TicketStatusChoiceRaw { get; set; }
             public string CargoRequest { get; set; }
             public string CargoRequestRaw { get; set; }
+            public bool IsCargoInspected { get; set; }
             public string RoomType { get; set; }
             public string DepartureCity { get; set; }
             public string DepartureCityRaw { get; set; }

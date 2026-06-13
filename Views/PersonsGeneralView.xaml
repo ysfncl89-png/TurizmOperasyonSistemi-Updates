@@ -793,14 +793,24 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Content="Kargo için incele"
-                                            Background="#DC2626"
                                             Foreground="White"
                                             Padding="6,4"
                                             Margin="6,4"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
                                             Cursor="Hand"
-                                            Click="CargoInspect_Click"/>
+                                            Click="CargoInspect_Click">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="#DC2626" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCargoInspected}" Value="True">
+                                                        <Setter Property="Background" Value="#6B7280" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -808,15 +818,38 @@
                         <DataGridTemplateColumn Header="Detay" Width="90">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="Detay"
-                                            Background="#123046"
-                                            Foreground="White"
-                                            Padding="6,4"
-                                            Margin="6,4"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Cursor="Hand"
-                                            Click="Detay_Click"/>
+                                    <StackPanel>
+                                        <Button Content="Detay"
+                                                Background="#123046"
+                                                Foreground="White"
+                                                Padding="6,4"
+                                                Margin="6,4"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Cursor="Hand"
+                                                Click="Detay_Click"/>
+
+                                        <Button Content="Kargo Havuzuna Gönder"
+                                                Background="#059669"
+                                                Foreground="White"
+                                                Padding="6,4"
+                                                Margin="6,4,6,0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Cursor="Hand"
+                                                Visibility="Collapsed"
+                                                x:Name="BtnSendToPool">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsCargoInspected}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
