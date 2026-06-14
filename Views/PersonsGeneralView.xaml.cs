@@ -101,7 +101,13 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "İşlem", "Detay", "Kargo Talebi" };
+                // Base allowed set for cargo-only view. Do not include İşlem/Detay unless this page is opened as Cargo Evrak Hazırlama
+                var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
+                if (IsCargoDocsMode)
+                {
+                    allowed.Add("İşlem");
+                    allowed.Add("Detay");
+                }
                 int idx = 0;
                 foreach (var col in ResultsDataGrid.Columns)
                 {
@@ -447,7 +453,14 @@ namespace TurizmOperasyonSistemi.Views
             // If CargoOnlyMode is active, override visible headers to the strict cargo list set
             if (CargoOnlyMode)
             {
-                visible = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "İşlem", "Detay", "Kargo Talebi" };
+                // For the regular Kargo Listesi cards we DO NOT show İşlem/Detay columns.
+                // Only when opened as Cargo Evrak Hazırlama (IsCargoDocsMode) should İşlem and Detay remain visible.
+                visible = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
+                if (IsCargoDocsMode)
+                {
+                    visible.Add("İşlem");
+                    visible.Add("Detay");
+                }
             }
 
             // Show VisaRequestPanel only when in Vize mode
