@@ -509,7 +509,25 @@ namespace TurizmOperasyonSistemi.Views
                             try { exportBtn.Click -= ExportPreview_Click; } catch { }
                             try { exportBtn.Click -= ExportButton_Click; } catch { }
                             exportBtn.Click += ExportButton_Click;
-                            // ContextMenu is defined in XAML; no change needed here.
+                            // Restore ContextMenu to match XAML (Word/Excel/PDF)
+                            try
+                            {
+                                var cm = new System.Windows.Controls.ContextMenu();
+                                var miWord = new System.Windows.Controls.MenuItem { Header = "Word (.docx)" };
+                                miWord.Click += ExportWord_Click;
+                                try { miWord.Icon = new System.Windows.Controls.Image { Width = 18, Height = 18, Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("/Assets/Icons/word.png", UriKind.Relative)) }; } catch { }
+                                var miExcel = new System.Windows.Controls.MenuItem { Header = "Excel (.xlsx)" };
+                                miExcel.Click += ExportExcel_Click;
+                                try { miExcel.Icon = new System.Windows.Controls.Image { Width = 18, Height = 18, Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("/Assets/Icons/excel.png", UriKind.Relative)) }; } catch { }
+                                var miPdf = new System.Windows.Controls.MenuItem { Header = "PDF (.pdf)" };
+                                miPdf.Click += ExportPdf_Click;
+                                try { miPdf.Icon = new System.Windows.Controls.Image { Width = 18, Height = 18, Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("/Assets/Icons/pdf.png", UriKind.Relative)) }; } catch { }
+                                cm.Items.Add(miWord);
+                                cm.Items.Add(miExcel);
+                                cm.Items.Add(miPdf);
+                                exportBtn.ContextMenu = cm;
+                            }
+                            catch { }
                         }
                     }
                     catch { }
