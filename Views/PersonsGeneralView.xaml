@@ -46,6 +46,16 @@
         <conv:StatusToBrushConverter x:Key="StatusToBrush" />
         <conv:StatusToGlowColorConverter x:Key="StatusToGlowColor" />
         <conv:ForegroundContrastConverter x:Key="ForegroundContrast" />
+        <!-- TextBlock style to change button label when IsSentToCargo becomes true -->
+        <Style x:Key="SendBtnTextStyle" TargetType="TextBlock">
+            <Setter Property="Text" Value="Kargo havuzuna gönder" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSentToCargo}" Value="True">
+                    <Setter Property="Text" Value="Kargo Havuzuna Gönderildi" />
+                    <Setter Property="Foreground" Value="White" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
 
         <!-- Neon badge button style used for status cells (capsule, neon border + glow) -->
         <Style x:Key="NeonBadgeButtonStyle" TargetType="Button">
@@ -836,12 +846,14 @@
                                             </Button.Style>
                                         </Button>
 
-                                        <Button Content="Kargo havuzuna gönder"
-                                                Padding="6,4"
+                                        <Button Padding="6,4"
                                                 Margin="6,4"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 Click="SendToCargoPool_Click">
+                                            <Button.Content>
+                                                <TextBlock x:Name="BtnText" Style="{StaticResource SendBtnTextStyle}" />
+                                            </Button.Content>
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Template" Value="{StaticResource FlatButtonTemplate}" />
@@ -871,16 +883,18 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn x:Name="DetayColumn" Header="Detay" Width="154">
+                        <DataGridTemplateColumn x:Name="DetayColumn" Header="Detay" Width="0.1*" MinWidth="120">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                                        <Button Content="Kargo havuzuna gönder"
-                                                Padding="6,4"
+                                        <Button Padding="6,4"
                                                 Margin="6,4"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 Click="SendToCargoPool_Click">
+                                            <Button.Content>
+                                                <TextBlock x:Name="BtnText2" Style="{StaticResource SendBtnTextStyle}" />
+                                            </Button.Content>
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Template" Value="{StaticResource FlatButtonTemplate}" />

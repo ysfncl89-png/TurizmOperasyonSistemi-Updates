@@ -182,7 +182,25 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                                                 var green = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x05, 0x96, 0x69));
                                                 btn.Background = green;
                                                 btn.Foreground = System.Windows.Media.Brushes.White;
-                                                btn.Content = "Kargo Havuzuna Gönderildi";
+                                                // update content or any nested TextBlock
+                                                try
+                                                {
+                                                    // if button contains a TextBlock child, update its text
+                                                    var tbChild = FindVisualChildren<System.Windows.Controls.TextBlock>(btn).FirstOrDefault();
+                                                    if (tbChild != null)
+                                                    {
+                                                        tbChild.Text = "Kargo Havuzuna Gönderildi";
+                                                        tbChild.Foreground = System.Windows.Media.Brushes.White;
+                                                    }
+                                                    else
+                                                    {
+                                                        btn.Content = new System.Windows.Controls.TextBlock { Text = "Kargo Havuzuna Gönderildi", Foreground = System.Windows.Media.Brushes.White };
+                                                    }
+                                                }
+                                                catch
+                                                {
+                                                    try { btn.Content = "Kargo Havuzuna Gönderildi"; } catch { }
+                                                }
                                                 btn.IsEnabled = false;
                                                 btn.IsHitTestVisible = false;
                                                 btn.Opacity = 1.0;
@@ -200,7 +218,21 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                                         var green = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x05, 0x96, 0x69));
                                         clickedBtn.Background = green;
                                         clickedBtn.Foreground = System.Windows.Media.Brushes.White;
-                                        clickedBtn.Content = "Kargo Havuzuna Gönderildi";
+                                        try
+                                        {
+                                            var tbChild = FindVisualChildren<System.Windows.Controls.TextBlock>(clickedBtn).FirstOrDefault();
+                                            if (tbChild != null)
+                                            {
+                                                tbChild.Text = "Kargo Havuzuna Gönderildi";
+                                                tbChild.Foreground = System.Windows.Media.Brushes.White;
+                                            }
+                                            else
+                                            {
+                                                clickedBtn.Content = "Kargo Havuzuna Gönderildi";
+                                            }
+                                        }
+                                        catch { try { clickedBtn.Content = "Kargo Havuzuna Gönderildi"; } catch { } }
+                                        // Disable interaction but keep visual appearance
                                         clickedBtn.IsEnabled = false;
                                         clickedBtn.IsHitTestVisible = false;
                                         clickedBtn.Opacity = 1.0;
@@ -2103,6 +2135,17 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                     foreach (var rr in rows)
                     {
                         try { rr.IsCargoInspected = store.IsInspected(rr.RegistrationId); } catch { }
+                    }
+                }
+                catch { }
+
+                // Mark rows that are already in the print queue as sent so UI remains correct when returning to the module
+                try
+                {
+                    var queueIds = TurizmOperasyonSistemi.Services.CargoPrintQueue.Instance.Items.Select(i => i.RegistrationId).ToHashSet();
+                    foreach (var rr in rows)
+                    {
+                        try { rr.IsSentToCargo = queueIds.Contains(rr.RegistrationId); } catch { }
                     }
                 }
                 catch { }
