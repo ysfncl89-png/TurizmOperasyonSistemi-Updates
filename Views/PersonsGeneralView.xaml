@@ -557,6 +557,10 @@
                             Cursor="Hand"
                             Click="ApplyFiltersButton_Click"
                             IsEnabled="False" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock x:Name="QueueCountTextBlock" Text="Baskı Havuzu (0)" Foreground="#FCA311" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="Collapsed" />
+                        <Button x:Name="OpenPrintPreviewButton" Content="Baskı Önizleme" Width="140" Height="46" Margin="0,0,0,0" Click="OpenPrintPreviewButton_Click" Visibility="Collapsed" IsEnabled="False" />
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </StackPanel>

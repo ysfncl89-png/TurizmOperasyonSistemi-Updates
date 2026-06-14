@@ -37,6 +37,35 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        private void ExportPreview_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Open the PrintPreviewWindow which shows the output queue templates
+                var win = new PrintPreviewWindow { Owner = Window.GetWindow(this) };
+                win.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Önizleme açılamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void OpenPrintPreviewButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var win = new PrintPreviewWindow { Owner = Window.GetWindow(this) };
+                win.ShowDialog();
+                // After preview/print actions, update queue UI
+                UpdatePrintPreviewButtonVisibility();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Önizleme açılamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         private void Detay_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -88,8 +117,28 @@ namespace TurizmOperasyonSistemi.Views
                 // Send to cargo pool action. Do NOT change inspected flag here.
                 try
                 {
-                    // TODO: implement actual send logic (API/DB update) as needed.
-                    ShowSaveToast("Kayıt kargo havuzuna gönderildi.");
+                    // Only add to print queue when this page is in Cargo Evrak Hazırlama mode
+                    if (IsCargoDocsMode)
+                    {
+                        var item = new Services.PrintQueueItem
+                        {
+                            RegistrationId = row.RegistrationId,
+                            FullName = $"{row.FirstName} {row.LastName}",
+                            Tc = row.TcKimlikNoRaw ?? row.TcKimlikNo ?? string.Empty,
+                            Phone = row.PhoneNumberRaw ?? row.PhoneNumber ?? string.Empty,
+                            Address = row.AddressRaw ?? row.Address ?? string.Empty,
+                            Printed = false
+                        };
+                        Services.CargoPrintQueue.Instance.Add(item);
+                        ShowSaveToast("Kayıt baskı havuzuna eklendi.");
+                        // update optional queue count UI element if present
+                        try { if (this.FindName("QueueCountTextBlock") is TextBlock qtb) qtb.Text = Services.CargoPrintQueue.Instance.Items.Count.ToString(); } catch { }
+                    }
+                    else
+                    {
+                        // For non-Cargo Evrak Hazırlama flows, preserve previous behavior (no change)
+                        ShowSaveToast("Kayıt kargo havuzuna gönderildi.");
+                    }
                 }
                 catch { ShowSaveToast("Kargo havuzuna gönderilemedi.", true); }
             }
@@ -369,6 +418,23 @@ namespace TurizmOperasyonSistemi.Views
                         if (cml != null) cml.Text = "Kargo Evrak Hazırlama";
                     }
                     catch { }
+                    // UI changes specific to Cargo Evrak Hazırlama: hide 'Listeyi tasarla' and repurpose Export button
+                    try
+                    {
+                        var exportBtn = this.FindName("ExportButton") as Button;
+                        var designBtn = this.FindName("DesignButton") as Button;
+                        if (designBtn != null) designBtn.Visibility = Visibility.Collapsed;
+                        if (exportBtn != null)
+                        {
+                            exportBtn.Content = "Kargo Havuzu Önizleme";
+                            try { exportBtn.Click -= ExportButton_Click; } catch { }
+                            try { exportBtn.Click -= ExportPreview_Click; } catch { }
+                            exportBtn.Click += ExportPreview_Click;
+                            // remove export popup for this mode
+                            try { exportBtn.ContextMenu = null; } catch { }
+                        }
+                    }
+                    catch { }
                 }
                 if (IsCargoDocsMode)
                 {
@@ -431,6 +497,22 @@ namespace TurizmOperasyonSistemi.Views
                         cml.Text = CargoOnlyMode ? "Kargo Listesi" : GetModeTitle();
                         try { var clr = (Color)FindResource("PrimaryStartColor"); cml.Foreground = new SolidColorBrush(clr); } catch { }
                     }
+                    // restore export/design buttons when leaving cargo docs mode
+                    try
+                    {
+                        var exportBtn = this.FindName("ExportButton") as Button;
+                        var designBtn = this.FindName("DesignButton") as Button;
+                        if (designBtn != null) designBtn.Visibility = Visibility.Visible;
+                        if (exportBtn != null)
+                        {
+                            exportBtn.Content = "Çıktı Al / İndir";
+                            try { exportBtn.Click -= ExportPreview_Click; } catch { }
+                            try { exportBtn.Click -= ExportButton_Click; } catch { }
+                            exportBtn.Click += ExportButton_Click;
+                            // ContextMenu is defined in XAML; no change needed here.
+                        }
+                    }
+                    catch { }
                     }
                     catch { }
                 }
@@ -694,6 +776,29 @@ namespace TurizmOperasyonSistemi.Views
             // initial state: show filters, hide topbar
             TopBar.Visibility = Visibility.Collapsed;
             FiltersPanel.Visibility = Visibility.Visible;
+            // ensure print preview button shown only for cargo docs mode
+            try { UpdatePrintPreviewButtonVisibility(); } catch { }
+        }
+
+        private void UpdatePrintPreviewButtonVisibility()
+        {
+            try
+            {
+                var btn = this.FindName("OpenPrintPreviewButton") as Button;
+                var qtb = this.FindName("QueueCountTextBlock") as TextBlock;
+                var count = Services.CargoPrintQueue.Instance.Items.Count;
+                if (qtb != null)
+                {
+                    qtb.Text = $"Baskı Havuzu ({count})";
+                    qtb.Visibility = (IsCargoDocsMode && count > 0) ? Visibility.Visible : Visibility.Collapsed;
+                }
+                if (btn != null)
+                {
+                    btn.Visibility = IsCargoDocsMode ? Visibility.Visible : Visibility.Collapsed;
+                    btn.IsEnabled = count > 0;
+                }
+            }
+            catch { }
         }
 
         private void ApplyCargoDocsTheme(bool enable)
