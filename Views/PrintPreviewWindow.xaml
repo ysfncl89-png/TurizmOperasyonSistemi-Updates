@@ -20,9 +20,35 @@
             <Button x:Name="RefreshPreviewButton" Content="Önizlemeyi Yenile" Margin="12,0,0,0" Click="RefreshPreviewButton_Click" />
         </StackPanel>
 
-        <Border Grid.Row="1" BorderBrush="#334155" BorderThickness="1" Background="#0F172A">
-            <DocumentViewer x:Name="DocViewer" />
-        </Border>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" BorderBrush="#334155" BorderThickness="1" Background="#0B1220" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="Baskı Havuzu (Kuyruk)" FontWeight="Bold" Margin="8" Foreground="White" />
+                    <ListBox x:Name="QueueListBox" Margin="8" Background="#07121A" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel LastChildFill="True">
+                                    <Button Content="✖" Width="28" Height="24" DockPanel.Dock="Right" Margin="4,0,0,0" Click="RemoveQueueItem_Click" />
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding FullName}" Foreground="White" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Tc}" Foreground="#AAB" FontSize="11" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" BorderBrush="#334155" BorderThickness="1" Background="#0F172A">
+                <DocumentViewer x:Name="DocViewer" />
+            </Border>
+        </Grid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
             <Button x:Name="ExportPdfButton" Content="PDF Olarak Kaydet" Width="140" Margin="0,0,8,0" Click="ExportPdfButton_Click" />

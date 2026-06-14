@@ -60,6 +60,18 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+// Helper for visual tree traversal
+public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObject depObj) where T : System.Windows.DependencyObject
+{
+    if (depObj == null) yield break;
+    for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(depObj); i++)
+    {
+        var child = System.Windows.Media.VisualTreeHelper.GetChild(depObj, i);
+        if (child is T t) yield return t;
+        foreach (var c in FindVisualChildren<T>(child)) yield return c;
+    }
+}
+
         private void OpenPrintPreviewButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -148,6 +160,57 @@ namespace TurizmOperasyonSistemi.Views
                             Printed = false
                         };
                         Services.CargoPrintQueue.Instance.Add(item);
+                        // Mark the row as sent so UI updates (change text, disable button)
+                        try
+                        {
+                            row.IsSentToCargo = true;
+                            ResultsDataGrid.Items.Refresh();
+                            // Update all relevant buttons in the same DataGridRow to reflect sent state
+                            try
+                            {
+                                var container = ResultsDataGrid.ItemContainerGenerator.ContainerFromItem(row) as System.Windows.Controls.DataGridRow;
+                                if (container != null)
+                                {
+                                    foreach (var btn in FindVisualChildren<System.Windows.Controls.Button>(container))
+                                    {
+                                        try
+                                        {
+                                            // Only update buttons that are the send-to-cargo buttons (by matching their original content)
+                                            var text = btn.Content as string;
+                                            if (string.Equals(text, "Kargo havuzuna gönder", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "Kargo Havuzuna Gönderildi", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                var green = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x05, 0x96, 0x69));
+                                                btn.Background = green;
+                                                btn.Foreground = System.Windows.Media.Brushes.White;
+                                                btn.Content = "Kargo Havuzuna Gönderildi";
+                                                btn.IsEnabled = false;
+                                                btn.IsHitTestVisible = false;
+                                                btn.Opacity = 1.0;
+                                                try { btn.BorderBrush = green; } catch { }
+                                            }
+                                        }
+                                        catch { }
+                                    }
+                                }
+                                else
+                                {
+                                    // Fallback: update the clicked element if it was a button
+                                    if (fe is System.Windows.Controls.Button clickedBtn)
+                                    {
+                                        var green = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x05, 0x96, 0x69));
+                                        clickedBtn.Background = green;
+                                        clickedBtn.Foreground = System.Windows.Media.Brushes.White;
+                                        clickedBtn.Content = "Kargo Havuzuna Gönderildi";
+                                        clickedBtn.IsEnabled = false;
+                                        clickedBtn.IsHitTestVisible = false;
+                                        clickedBtn.Opacity = 1.0;
+                                        try { clickedBtn.BorderBrush = green; } catch { }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                        catch { }
                         ShowSaveToast("Kayıt baskı havuzuna eklendi.");
                         // update optional queue count UI element if present
                         try { if (this.FindName("QueueCountTextBlock") is TextBlock qtb) qtb.Text = Services.CargoPrintQueue.Instance.Items.Count.ToString(); } catch { }
@@ -745,23 +808,23 @@ namespace TurizmOperasyonSistemi.Views
         private DataGridColumn _editingColumn;
         // When true, Results should only include registrations where CargoRequest == "Kargo Gönderilecek"
         private bool _cargoOnlyMode = false;
-        private bool _isCargoDocsMode = false;
+        // Use a DependencyProperty so XAML bindings / triggers can react to changes
+        public static readonly DependencyProperty IsCargoDocsModeProperty = DependencyProperty.Register(
+            nameof(IsCargoDocsMode), typeof(bool), typeof(PersonsGeneralView),
+            new PropertyMetadata(false, OnIsCargoDocsModePropertyChanged));
+
+        private static void OnIsCargoDocsModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is PersonsGeneralView ctrl)
+            {
+                try { ctrl.ApplyCargoDocsTheme((bool)e.NewValue); } catch { }
+            }
+        }
+
         public bool IsCargoDocsMode
         {
-            get => _isCargoDocsMode;
-            set
-            {
-                if (_isCargoDocsMode == value) return;
-                _isCargoDocsMode = value;
-                try
-                {
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        try { ApplyCargoDocsTheme(_isCargoDocsMode); } catch { }
-                    }));
-                }
-                catch { }
-            }
+            get => (bool)GetValue(IsCargoDocsModeProperty);
+            set => SetValue(IsCargoDocsModeProperty, value);
         }
         public bool CargoOnlyMode
         {
@@ -1170,6 +1233,29 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
             // ensure initial filter UI state reflects current selections
             try { Filter_Changed(null, null); } catch { }
+            try
+            {
+                Services.CargoPrintQueue.Instance.ItemRemoved += (it) =>
+                {
+                    try
+                    {
+                        // find matching row by RegistrationId and revert sent/inspected flags
+                        var rr = _allRows.FirstOrDefault(r => r.RegistrationId == it.RegistrationId);
+                        if (rr != null)
+                        {
+                            rr.IsSentToCargo = false;
+                            rr.IsCargoInspected = false;
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                try { ResultsDataGrid.Items.Refresh(); } catch { }
+                                try { UpdatePrintPreviewButtonVisibility(); } catch { }
+                            }));
+                        }
+                    }
+                    catch { }
+                };
+            }
+            catch { }
         }
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
@@ -3349,6 +3435,19 @@ namespace TurizmOperasyonSistemi.Views
             public string CargoRequest { get; set; }
             public string CargoRequestRaw { get; set; }
             public bool IsCargoInspected { get; set; }
+            private bool _isSentToCargo;
+            public bool IsSentToCargo
+            {
+                get => _isSentToCargo;
+                set
+                {
+                    if (_isSentToCargo != value)
+                    {
+                        _isSentToCargo = value;
+                        OnPropertyChanged(nameof(IsSentToCargo));
+                    }
+                }
+            }
             public string RoomType { get; set; }
             public string DepartureCity { get; set; }
             public string DepartureCityRaw { get; set; }

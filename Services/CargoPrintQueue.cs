@@ -29,6 +29,9 @@ namespace TurizmOperasyonSistemi.Services
 
         public ObservableCollection<PrintQueueItem> Items { get; } = new ObservableCollection<PrintQueueItem>();
 
+        // Event fired when an item is removed from the queue
+        public event Action<PrintQueueItem>? ItemRemoved;
+
         private CargoPrintQueue()
         {
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -64,6 +67,7 @@ namespace TurizmOperasyonSistemi.Services
             lock (_sync)
             {
                 Items.Remove(item);
+                try { ItemRemoved?.Invoke(item); } catch { }
             }
         }
 

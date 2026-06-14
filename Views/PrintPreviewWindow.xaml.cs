@@ -17,6 +17,7 @@ namespace TurizmOperasyonSistemi.Views
             TemplateCombo.SelectedIndex = 1; // default 3x5
             OrientationCombo.SelectedIndex = 0;
             this.Loaded += (s, e) => RefreshPreview();
+            this.Loaded += (s, e) => BindQueueList();
         }
 
         // Sender info applied to all labels in this preview session
@@ -40,6 +41,27 @@ namespace TurizmOperasyonSistemi.Views
             {
                 MessageBox.Show(ex.Message, "Önizleme hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
+        }
+
+        private void BindQueueList()
+        {
+            try
+            {
+                QueueListBox.ItemsSource = CargoPrintQueue.Instance.Items;
+            }
+            catch { }
+        }
+
+        private void RemoveQueueItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is System.Windows.Controls.Button btn)) return;
+                if (!(btn.DataContext is PrintQueueItem it)) return;
+                CargoPrintQueue.Instance.Remove(it);
+                RefreshPreview();
+            }
+            catch { }
         }
 
         private void RefreshPreviewButton_Click(object sender, RoutedEventArgs e) => RefreshPreview();

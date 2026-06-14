@@ -32,6 +32,16 @@
             <Setter Property="CanUserResizeRows" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
         </Style>
+        <!-- Simple flat button template used to force visual appearance regardless of global disabled style -->
+        <ControlTemplate x:Key="FlatButtonTemplate" TargetType="Button">
+            <Border Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="4"
+                    Padding="{TemplateBinding Padding}">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+            </Border>
+        </ControlTemplate>
         <conv:InverseBooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:StatusToBrushConverter x:Key="StatusToBrush" />
         <conv:StatusToGlowColorConverter x:Key="StatusToGlowColor" />
@@ -827,8 +837,6 @@
                                         </Button>
 
                                         <Button Content="Kargo havuzuna gönder"
-                                                Background="#059669"
-                                                Foreground="White"
                                                 Padding="6,4"
                                                 Margin="6,4"
                                                 HorizontalAlignment="Center"
@@ -836,10 +844,23 @@
                                                 Click="SendToCargoPool_Click">
                                             <Button.Style>
                                                 <Style TargetType="Button">
+                                                    <Setter Property="Template" Value="{StaticResource FlatButtonTemplate}" />
                                                     <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Setter Property="Background" Value="#059669" />
+                                                    <Setter Property="Foreground" Value="White" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsCargoInspected}" Value="True">
                                                             <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsCargoDocsMode, RelativeSource={RelativeSource AncestorType=Page}}" Value="True">
+                                                            <Setter Property="Background" Value="#FBBF24" />
+                                                            <Setter Property="Foreground" Value="Black" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsSentToCargo}" Value="True">
+                                                            <Setter Property="Background" Value="#059669" />
+                                                            <Setter Property="Foreground" Value="White" />
+                                                            <Setter Property="Content" Value="Kargo Havuzuna Gönderildi" />
+                                                            <Setter Property="IsEnabled" Value="False" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -855,8 +876,6 @@
                                 <DataTemplate>
                                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                                         <Button Content="Kargo havuzuna gönder"
-                                                Background="#059669"
-                                                Foreground="White"
                                                 Padding="6,4"
                                                 Margin="6,4"
                                                 HorizontalAlignment="Center"
@@ -864,10 +883,23 @@
                                                 Click="SendToCargoPool_Click">
                                             <Button.Style>
                                                 <Style TargetType="Button">
+                                                    <Setter Property="Template" Value="{StaticResource FlatButtonTemplate}" />
                                                     <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Setter Property="Background" Value="#059669" />
+                                                    <Setter Property="Foreground" Value="White" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsCargoInspected}" Value="True">
                                                             <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsCargoDocsMode, RelativeSource={RelativeSource AncestorType=Page}}" Value="True">
+                                                            <Setter Property="Background" Value="#FBBF24" />
+                                                            <Setter Property="Foreground" Value="Black" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsSentToCargo}" Value="True">
+                                                            <Setter Property="Background" Value="#059669" />
+                                                            <Setter Property="Foreground" Value="White" />
+                                                            <Setter Property="Content" Value="Kargo Havuzuna Gönderildi" />
+                                                            <Setter Property="IsEnabled" Value="False" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
