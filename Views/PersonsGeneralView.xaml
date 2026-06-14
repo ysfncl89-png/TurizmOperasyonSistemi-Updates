@@ -628,7 +628,7 @@
 
                         <DataGridTextColumn Header="Adres"
                                             Binding="{Binding Address}"
-                                            Width="360"/>
+                                            Width="486"/>
 
                         <DataGridTemplateColumn Header="Pasaport tipi" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
@@ -837,7 +837,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn x:Name="DetayColumn" Header="Detay" Width="140">
+                        <DataGridTemplateColumn x:Name="DetayColumn" Header="Detay" Width="154">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
