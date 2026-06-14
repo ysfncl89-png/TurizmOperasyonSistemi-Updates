@@ -5,12 +5,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Markup;
+using TurizmOperasyonSistemi.Views;
 
 namespace TurizmOperasyonSistemi.Services
 {
     public static class PrintEngine
     {
-        public static FixedDocument BuildFixedDocument(PrintQueueItem[] items, Views.PrintPreviewWindow.TemplateSpec template, bool landscape)
+        public static FixedDocument BuildFixedDocument(PrintQueueItem[] items, Views.PrintPreviewWindow.TemplateSpec template, bool landscape, SenderInfo sender = null)
         {
             // Determine rows/cols based on template
             int cols = 3, rows = 5;
@@ -72,6 +73,15 @@ namespace TurizmOperasyonSistemi.Services
                     if (idx < total)
                     {
                         var it = items[idx];
+                        // Render sender info on top if provided
+                        if (sender != null)
+                        {
+                            stack.Children.Add(new TextBlock { Text = sender.Name ?? string.Empty, FontSize = 10, FontWeight = FontWeights.Bold });
+                            stack.Children.Add(new TextBlock { Text = sender.Phone ?? string.Empty, FontSize = 9 });
+                            var saddr = new TextBlock { Text = sender.Address ?? string.Empty, FontSize = 8, TextWrapping = TextWrapping.Wrap };
+                            stack.Children.Add(saddr);
+                            stack.Children.Add(new Separator { Margin = new Thickness(0,4,0,4) });
+                        }
                         stack.Children.Add(new TextBlock { Text = it.FullName ?? string.Empty, FontSize = 11, FontWeight = FontWeights.SemiBold });
                         stack.Children.Add(new TextBlock { Text = $"TC: {it.Tc}", FontSize = 10 });
                         stack.Children.Add(new TextBlock { Text = $"Tel: {it.Phone}", FontSize = 10 });

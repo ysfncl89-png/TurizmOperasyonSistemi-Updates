@@ -41,8 +41,17 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                // Open the PrintPreviewWindow which shows the output queue templates
-                var win = new PrintPreviewWindow { Owner = Window.GetWindow(this) };
+                // When in Cargo Evrak Hazırlama mode, prompt for sender info once and pass it into the preview window
+                SenderInfo senderInfo = null;
+                if (IsCargoDocsMode)
+                {
+                    var sd = new SenderDialog { Owner = Window.GetWindow(this) };
+                    var res = sd.ShowDialog();
+                    if (res != true) return; // user cancelled
+                    senderInfo = sd.Result;
+                }
+
+                var win = new PrintPreviewWindow { Owner = Window.GetWindow(this), Sender = senderInfo };
                 win.ShowDialog();
             }
             catch (Exception ex)
@@ -55,7 +64,16 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var win = new PrintPreviewWindow { Owner = Window.GetWindow(this) };
+                SenderInfo senderInfo = null;
+                if (IsCargoDocsMode)
+                {
+                    var sd = new SenderDialog { Owner = Window.GetWindow(this) };
+                    var res = sd.ShowDialog();
+                    if (res != true) return; // user cancelled
+                    senderInfo = sd.Result;
+                }
+
+                var win = new PrintPreviewWindow { Owner = Window.GetWindow(this), Sender = senderInfo };
                 win.ShowDialog();
                 // After preview/print actions, update queue UI
                 UpdatePrintPreviewButtonVisibility();

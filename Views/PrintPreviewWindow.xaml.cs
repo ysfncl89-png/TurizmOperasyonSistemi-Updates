@@ -16,8 +16,11 @@ namespace TurizmOperasyonSistemi.Views
             TemplateCombo.ItemsSource = new[] { "3x4 (12)", "3x5 (15)", "2x6 (12)", "2x7 (14)" };
             TemplateCombo.SelectedIndex = 1; // default 3x5
             OrientationCombo.SelectedIndex = 0;
-            RefreshPreview();
+            this.Loaded += (s, e) => RefreshPreview();
         }
+
+        // Sender info applied to all labels in this preview session
+        public SenderInfo Sender { get; set; }
 
         private void RefreshPreview()
         {
@@ -29,7 +32,8 @@ namespace TurizmOperasyonSistemi.Views
                              : TemplateSpec.T2x7;
 
                 var items = CargoPrintQueue.Instance.Items.ToArray();
-                var doc = PrintEngine.BuildFixedDocument(items, template, OrientationCombo.SelectedIndex == 1);
+                // Use Sender property provided by caller
+                var doc = PrintEngine.BuildFixedDocument(items, template, OrientationCombo.SelectedIndex == 1, this.Sender);
                 DocViewer.Document = doc;
             }
             catch (Exception ex)
@@ -52,7 +56,7 @@ namespace TurizmOperasyonSistemi.Views
                                  : (TemplateCombo.SelectedIndex == 2) ? TemplateSpec.T2x6
                                  : TemplateSpec.T2x7;
                     var items = CargoPrintQueue.Instance.Items.ToArray();
-                    var doc = PrintEngine.BuildFixedDocument(items, template, OrientationCombo.SelectedIndex == 1);
+                    var doc = PrintEngine.BuildFixedDocument(items, template, OrientationCombo.SelectedIndex == 1, this.Sender);
                     // print
                     pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Kargo Etiketleri");
 
