@@ -24,6 +24,9 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class PersonsGeneralView : Page
     {
+        // When true, this instance was opened from the Kargo Listesi card (Lists module or Cargo module)
+        // and ApplyFilters behavior for CargoRequest should show ALL when no selection is made.
+        public bool CargoListCardMode { get; set; } = false;
         private readonly DispatcherTimer _saveToastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.2) };
 
         public enum ViewMode
@@ -2143,12 +2146,20 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                         }
                         else
                         {
-                            query = query.Where(r => r.CargoRequest != null && r.CargoRequest.Trim().ToLower() == "kargo gönderilecek");
+                            // When opened from Kargo Listesi kart (CargoListCardMode), an empty selection should show ALL CargoRequest values.
+                            if (CargoListCardMode)
+                            {
+                                // no additional filter -> leave query as-is
+                            }
+                            else
+                            {
+                                query = query.Where(r => r.CargoRequest != null && r.CargoRequest.Trim().ToLower() == "kargo gönderilecek");
+                            }
                         }
                     }
                     catch
                     {
-                        query = query.Where(r => r.CargoRequest != null && r.CargoRequest.Trim().ToLower() == "kargo gönderilecek");
+                        if (!CargoListCardMode) query = query.Where(r => r.CargoRequest != null && r.CargoRequest.Trim().ToLower() == "kargo gönderilecek");
                     }
                 }
 

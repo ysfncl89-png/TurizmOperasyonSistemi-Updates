@@ -86,6 +86,7 @@ namespace TurizmOperasyonSistemi.Views
                 try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
                 // enable cargo-only behavior so ApplyFilters will restrict results
                 try { personsView.CargoOnlyMode = true; } catch { }
+                try { personsView.CargoListCardMode = true; } catch { }
 
                 if (this.NavigationService != null)
                 {

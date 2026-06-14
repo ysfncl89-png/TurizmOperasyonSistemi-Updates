@@ -16,6 +16,7 @@ namespace TurizmOperasyonSistemi.Views
                 var personsView = new PersonsGeneralView();
                 try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
                 try { personsView.CargoOnlyMode = true; } catch { }
+                try { personsView.CargoListCardMode = true; } catch { }
 
                 // Try to use NavigationService if available
                 var nav = System.Windows.Navigation.NavigationService.GetNavigationService(this);

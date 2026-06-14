@@ -11,17 +11,11 @@ namespace TurizmOperasyonSistemi.Services
 {
     public static class PrintEngine
     {
-        public static FixedDocument BuildFixedDocument(PrintQueueItem[] items, Views.PrintPreviewWindow.TemplateSpec template, bool landscape, SenderInfo sender = null)
+        public static FixedDocument BuildFixedDocument(PrintQueueItem[] items, int cols, int rows, bool landscape, SenderInfo sender = null)
         {
-            // Determine rows/cols based on template
-            int cols = 3, rows = 5;
-            switch (template)
-            {
-                case Views.PrintPreviewWindow.TemplateSpec.T3x4: cols = 3; rows = 4; break;
-                case Views.PrintPreviewWindow.TemplateSpec.T3x5: cols = 3; rows = 5; break;
-                case Views.PrintPreviewWindow.TemplateSpec.T2x6: cols = 2; rows = 6; break;
-                case Views.PrintPreviewWindow.TemplateSpec.T2x7: cols = 2; rows = 7; break;
-            }
+            // cols and rows specify template grid (e.g., cols=3, rows=5)
+            if (cols <= 0) cols = 3;
+            if (rows <= 0) rows = 5;
 
             double mmToDip = 96.0 / 25.4; // WPF device-independent units per mm
             double pageWidth = 210 * mmToDip;
@@ -69,32 +63,45 @@ namespace TurizmOperasyonSistemi.Services
                     FixedPage.SetLeft(border, x + 3);
                     FixedPage.SetTop(border, y + 3);
 
-                    var stack = new StackPanel { Margin = new Thickness(6) };
+                    // compute scale factor relative to a base template (3x5) so fonts scale logically
+                    var baseCols = 3; var baseRows = 5;
+                    double baseCellW = usableW / baseCols;
+                    double baseCellH = usableH / baseRows;
+                    double scale = 1.0;
+                    try
+                    {
+                        scale = Math.Min(cellW / baseCellW, cellH / baseCellH);
+                        // clamp scale to avoid unreadably small/large text
+                        scale = Math.Max(0.5, Math.Min(1.6, scale));
+                    }
+                    catch { scale = 1.0; }
+
+                    var stack = new StackPanel { Margin = new Thickness(6 * scale) };
                     if (idx < total)
                     {
                         var it = items[idx];
                         // Render sender info on top if provided with a heading
                         if (sender != null)
                         {
-                            stack.Children.Add(new TextBlock { Text = "GÖNDERİCİ", FontSize = 9, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2) });
-                            stack.Children.Add(new TextBlock { Text = sender.Name ?? string.Empty, FontSize = 10, FontWeight = FontWeights.Bold });
-                            stack.Children.Add(new TextBlock { Text = sender.Phone ?? string.Empty, FontSize = 9 });
-                            var saddr = new TextBlock { Text = sender.Address ?? string.Empty, FontSize = 8, TextWrapping = TextWrapping.Wrap };
+                            stack.Children.Add(new TextBlock { Text = "GÖNDERİCİ", FontSize = 9 * scale, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2 * scale) });
+                            stack.Children.Add(new TextBlock { Text = sender.Name ?? string.Empty, FontSize = 10 * scale, FontWeight = FontWeights.Bold });
+                            stack.Children.Add(new TextBlock { Text = sender.Phone ?? string.Empty, FontSize = 9 * scale });
+                            var saddr = new TextBlock { Text = sender.Address ?? string.Empty, FontSize = 8 * scale, TextWrapping = TextWrapping.Wrap };
                             stack.Children.Add(saddr);
-                            stack.Children.Add(new Separator { Margin = new Thickness(0,4,0,4) });
+                            stack.Children.Add(new Separator { Margin = new Thickness(0,4 * scale,0,4 * scale) });
                             // recipient heading after sender
-                            stack.Children.Add(new TextBlock { Text = "ALICI", FontSize = 9, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2) });
+                            stack.Children.Add(new TextBlock { Text = "ALICI", FontSize = 9 * scale, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2 * scale) });
                         }
                         else
                         {
                             // If no sender, still show recipient heading
-                            stack.Children.Add(new TextBlock { Text = "ALICI", FontSize = 9, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2) });
+                            stack.Children.Add(new TextBlock { Text = "ALICI", FontSize = 9 * scale, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2 * scale) });
                         }
 
-                        stack.Children.Add(new TextBlock { Text = it.FullName ?? string.Empty, FontSize = 11, FontWeight = FontWeights.SemiBold });
-                        stack.Children.Add(new TextBlock { Text = $"TC: {it.Tc}", FontSize = 10 });
-                        stack.Children.Add(new TextBlock { Text = $"Tel: {it.Phone}", FontSize = 10 });
-                        var addr = new TextBlock { Text = it.Address ?? string.Empty, FontSize = 9, TextWrapping = TextWrapping.Wrap };
+                        stack.Children.Add(new TextBlock { Text = it.FullName ?? string.Empty, FontSize = 11 * scale, FontWeight = FontWeights.SemiBold });
+                        stack.Children.Add(new TextBlock { Text = $"TC: {it.Tc}", FontSize = 10 * scale });
+                        stack.Children.Add(new TextBlock { Text = $"Tel: {it.Phone}", FontSize = 10 * scale });
+                        var addr = new TextBlock { Text = it.Address ?? string.Empty, FontSize = 9 * scale, TextWrapping = TextWrapping.Wrap };
                         stack.Children.Add(addr);
                     }
                     else
@@ -102,7 +109,7 @@ namespace TurizmOperasyonSistemi.Services
                         // empty slot
                         stack.Children.Add(new TextBlock { Text = string.Empty });
                     }
-
+                    // Assign stack directly; font sizes adjusted by scale
                     border.Child = stack;
                     fixedPage.Children.Add(border);
                 }

@@ -11,13 +11,12 @@
 
         <StackPanel Orientation="Horizontal" Grid.Row="0" VerticalAlignment="Center" Margin="0,0,0,8">
             <TextBlock Text="Şablon:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <ComboBox x:Name="TemplateCombo" Width="160" SelectedIndex="0" Margin="0,0,12,0" />
+            <ComboBox x:Name="TemplateCombo" Width="160" Margin="0,0,12,0" />
             <TextBlock Text="Sayfa yönü:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <ComboBox x:Name="OrientationCombo" Width="100" SelectedIndex="0">
+            <ComboBox x:Name="OrientationCombo" Width="100">
                 <ComboBoxItem>Portrait</ComboBoxItem>
                 <ComboBoxItem>Landscape</ComboBoxItem>
             </ComboBox>
-            <Button x:Name="RefreshPreviewButton" Content="Önizlemeyi Yenile" Margin="12,0,0,0" Click="RefreshPreviewButton_Click" />
         </StackPanel>
 
         <Grid Grid.Row="1">

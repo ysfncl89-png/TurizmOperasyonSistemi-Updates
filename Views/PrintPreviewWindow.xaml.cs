@@ -8,16 +8,20 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class PrintPreviewWindow : Window
     {
-        public enum TemplateSpec { T3x4, T3x5, T2x6, T2x7 }
-
         public PrintPreviewWindow()
         {
             InitializeComponent();
-            TemplateCombo.ItemsSource = new[] { "3x4 (12)", "3x5 (15)", "2x6 (12)", "2x7 (14)" };
-            TemplateCombo.SelectedIndex = 1; // default 3x5
+            TemplateCombo.ItemsSource = new[] {
+                "2x2 (4)", "2x3 (6)", "2x4 (8)",
+                "3x2 (6)", "3x3 (9)", "3x4 (12)", "3x5 (15)", "3x6 (18)",
+                "3x7 (21)", "3x8 (24)", "3x9 (27)", "3x10 (30)", "3x11 (33)", "3x12 (36)", "3x13 (39)", "3x14 (42)", "3x15 (45)"
+            };
+            TemplateCombo.SelectedIndex = 0; // default 2x2
             OrientationCombo.SelectedIndex = 0;
             this.Loaded += (s, e) => RefreshPreview();
             this.Loaded += (s, e) => BindQueueList();
+            TemplateCombo.SelectionChanged += (s, e) => RefreshPreview();
+            OrientationCombo.SelectionChanged += (s, e) => RefreshPreview();
         }
 
         // Sender info applied to all labels in this preview session
@@ -27,14 +31,21 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var template = (TemplateCombo.SelectedIndex == 0) ? TemplateSpec.T3x4
-                             : (TemplateCombo.SelectedIndex == 1) ? TemplateSpec.T3x5
-                             : (TemplateCombo.SelectedIndex == 2) ? TemplateSpec.T2x6
-                             : TemplateSpec.T2x7;
+                // parse selected template like "3x5 (15)" -> cols=3 rows=5
+                var sel = TemplateCombo.SelectedItem?.ToString() ?? "3x5 (15)";
+                int cols = 3, rows = 5;
+                try
+                {
+                    var parts = sel.Split(new[] { ' ', 'x', '(' }, StringSplitOptions.RemoveEmptyEntries);
+                    // expected parts like ["3","5","15)"] but be defensive
+                    int c = 3, r = 5;
+                    if (parts.Length >= 2 && int.TryParse(parts[0], out c) && int.TryParse(parts[1], out r)) { cols = c; rows = r; }
+                }
+                catch { }
 
                 var items = CargoPrintQueue.Instance.Items.ToArray();
                 // Use Sender property provided by caller
-                var doc = PrintEngine.BuildFixedDocument(items, template, OrientationCombo.SelectedIndex == 1, this.Sender);
+                var doc = PrintEngine.BuildFixedDocument(items, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
                 DocViewer.Document = doc;
             }
             catch (Exception ex)
@@ -73,12 +84,18 @@ namespace TurizmOperasyonSistemi.Views
                 var pd = new System.Windows.Controls.PrintDialog();
                 if (pd.ShowDialog() == true)
                 {
-                    var template = (TemplateCombo.SelectedIndex == 0) ? TemplateSpec.T3x4
-                                 : (TemplateCombo.SelectedIndex == 1) ? TemplateSpec.T3x5
-                                 : (TemplateCombo.SelectedIndex == 2) ? TemplateSpec.T2x6
-                                 : TemplateSpec.T2x7;
+                    var sel = TemplateCombo.SelectedItem?.ToString() ?? "3x5 (15)";
+                    int cols = 3, rows = 5;
+                    try
+                    {
+                        var parts = sel.Split(new[] { ' ', 'x', '(' }, StringSplitOptions.RemoveEmptyEntries);
+                        int c = 3, r = 5;
+                        if (parts.Length >= 2 && int.TryParse(parts[0], out c) && int.TryParse(parts[1], out r)) { cols = c; rows = r; }
+                    }
+                    catch { }
+
                     var items = CargoPrintQueue.Instance.Items.ToArray();
-                    var doc = PrintEngine.BuildFixedDocument(items, template, OrientationCombo.SelectedIndex == 1, this.Sender);
+                    var doc = PrintEngine.BuildFixedDocument(items, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
                     // print
                     pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Kargo Etiketleri");
 
