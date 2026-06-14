@@ -818,38 +818,8 @@
                         <DataGridTemplateColumn Header="Detay" Width="90" Visibility="Collapsed">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel>
-                                        <Button Content="Detay"
-                                                Background="#123046"
-                                                Foreground="White"
-                                                Padding="6,4"
-                                                Margin="6,4"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Cursor="Hand"
-                                                Click="Detay_Click"/>
-
-                                        <Button Content="Kargo Havuzuna Gönder"
-                                                Background="#059669"
-                                                Foreground="White"
-                                                Padding="6,4"
-                                                Margin="6,4,6,0"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Cursor="Hand"
-                                                Visibility="Collapsed"
-                                                x:Name="BtnSendToPool">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsCargoInspected}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </StackPanel>
+                                    <!-- Detay butonları geçici olarak kaldırıldı; hücreler boş bırakıldı -->
+                                    <TextBlock Text="" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
