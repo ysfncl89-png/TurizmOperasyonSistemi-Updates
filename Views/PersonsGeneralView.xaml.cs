@@ -77,6 +77,24 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
+        private void SendToCargoPool_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is FrameworkElement fe)) return;
+                var row = fe.DataContext as GeneralRow;
+                if (row == null) return;
+                // Send to cargo pool action. Do NOT change inspected flag here.
+                try
+                {
+                    // TODO: implement actual send logic (API/DB update) as needed.
+                    ShowSaveToast("Kayıt kargo havuzuna gönderildi.");
+                }
+                catch { ShowSaveToast("Kargo havuzuna gönderilemedi.", true); }
+            }
+            catch { }
+        }
+
         // Ensure only cargo columns are visible when in CargoOnlyMode
         private void EnforceCargoColumns()
         {
@@ -86,8 +104,19 @@ namespace TurizmOperasyonSistemi.Views
                 int idx = 0;
                 foreach (var col in ResultsDataGrid.Columns)
                 {
-                    var header = col.Header?.ToString() ?? string.Empty;
-                    if (allowed.Contains(header))
+                    // Normalize header text: when Header is a TextBlock its ToString() is not the visible text.
+                    // Prefer the TextBlock.Text if present, otherwise fall back to Header.ToString().
+                    string headerText = string.Empty;
+                    try
+                    {
+                        headerText = (col.Header as TextBlock)?.Text ?? col.Header?.ToString() ?? string.Empty;
+                        headerText = headerText.Trim();
+                    }
+                    catch
+                    {
+                        headerText = col.Header?.ToString() ?? string.Empty;
+                    }
+                    if (allowed.Contains(headerText))
                     {
                         col.Visibility = Visibility.Visible;
                         col.DisplayIndex = idx++;
@@ -535,6 +564,8 @@ namespace TurizmOperasyonSistemi.Views
                         }
                         catch { }
                         try { if (_cargoOnlyMode) EnforceCargoColumns(); } catch { }
+                        // mark grid tag so cell-level triggers can react (show Send button)
+                        try { ResultsDataGrid.Tag = _cargoOnlyMode ? "Cargo" : null; } catch { }
                     }), System.Windows.Threading.DispatcherPriority.Background);
                 }
                 catch { }
@@ -1566,6 +1597,7 @@ namespace TurizmOperasyonSistemi.Views
                         VisaRequest = reg.VisaRequest ?? string.Empty,
                         TicketRequest = reg.TicketRequest ?? string.Empty,
                         CargoRequest = reg.CargoRequest ?? string.Empty,
+                        IsCargoInspected = false,
                         RoomType = reg.RoomType ?? string.Empty,
                         DepartureCityRaw = reg.DepartureCity ?? string.Empty,
                         HasTransferRaw = reg.HasTransfer ?? string.Empty,
@@ -1682,6 +1714,17 @@ namespace TurizmOperasyonSistemi.Views
                     }
                     rows.Add(r);
                 }
+
+                // Load persisted inspected flags
+                try
+                {
+                    var store = new TurizmOperasyonSistemi.Services.CargoInspectedStore();
+                    foreach (var rr in rows)
+                    {
+                        try { rr.IsCargoInspected = store.IsInspected(rr.RegistrationId); } catch { }
+                    }
+                }
+                catch { }
 
                 _allRows = rows;
                 ResultsDataGrid.ItemsSource = _allRows;

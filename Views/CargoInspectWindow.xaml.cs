@@ -111,8 +111,14 @@ namespace TurizmOperasyonSistemi.Views
                 _row.PhoneNumber = TbPhone.Text;
                 _row.Address = TbAddress.Text;
 
-                // mark as inspected so UI can react
+                // mark as inspected so UI can react and persist the inspected state
                 _row.IsCargoInspected = true;
+                try
+                {
+                    var store = new TurizmOperasyonSistemi.Services.CargoInspectedStore();
+                    store.MarkInspected(_row.RegistrationId);
+                }
+                catch { }
 
                 Confirmed = true;
                 this.DialogResult = true;

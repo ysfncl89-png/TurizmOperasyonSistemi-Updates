@@ -66,6 +66,12 @@ namespace TurizmOperasyonSistemi.Views
                 _row.Address = TbAddress.Text;
 
                 _row.IsCargoInspected = true;
+                try
+                {
+                    var store = new TurizmOperasyonSistemi.Services.CargoInspectedStore();
+                    store.MarkInspected(_row.RegistrationId);
+                }
+                catch { }
 
                 Confirmed = true;
                 this.DialogResult = true;
