@@ -461,6 +461,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <!-- Action row: reserved for the Apply Filters button to avoid overlapping previous controls -->
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <Button x:Name="FiltersBackButton" Grid.Row="0" Content="← Geri" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,8" Padding="8,6" Click="BackButton_Click" Background="{DynamicResource PrimaryGradient}" Foreground="White" BorderBrush="{DynamicResource GlowBrush}" BorderThickness="0" />
