@@ -18,6 +18,7 @@ using TurizmOperasyonSistemi.Models;
 using TurizmOperasyonSistemi.Services;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Effects;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -328,7 +329,76 @@ namespace TurizmOperasyonSistemi.Views
                 var prefixTb = this.FindName("FilterTitlePrefix") as TextBlock;
                 var midTb = this.FindName("ModeInlineText") as TextBlock;
                 var suffixTb = this.FindName("FilterTitleSuffix") as TextBlock;
-                if (CargoOnlyMode)
+                var cargoHeader = this.FindName("CargoDocsHeader") as TextBlock;
+                // When Cargo Docs Mode is active, show the dedicated cargo header and hide the normal split title parts
+                if (IsCargoDocsMode)
+                {
+                    try
+                    {
+                        if (cargoHeader != null) cargoHeader.Visibility = Visibility.Visible;
+                        if (prefixTb != null) prefixTb.Visibility = Visibility.Collapsed;
+                        if (midTb != null) midTb.Visibility = Visibility.Collapsed;
+                        if (suffixTb != null) suffixTb.Visibility = Visibility.Collapsed;
+                    }
+                    catch { }
+                }
+                else
+                {
+                    try { if (cargoHeader != null) cargoHeader.Visibility = Visibility.Collapsed; } catch { }
+                }
+                // If this page was opened specifically from Cargo Evrak Hazirlama, apply that header
+                if (IsCargoDocsMode)
+                {
+                    try
+                    {
+                        if (prefixTb != null) prefixTb.Text = "Görüntülemek istediğiniz ";
+                        if (midTb != null)
+                        {
+                            midTb.Visibility = Visibility.Visible;
+                            midTb.Text = "Kargo Havuzu";
+                            try { midTb.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFF59E0B")); } catch { }
+                        }
+                        if (suffixTb != null) suffixTb.Text = " için Kriterleri sırayla seçin";
+                        var cml = this.FindName("CurrentModeLabel") as TextBlock;
+                        if (cml != null) cml.Text = "Kargo Evrak Hazırlama";
+                    }
+                    catch { }
+                }
+                if (IsCargoDocsMode)
+                {
+                    // handled above in ApplyCargoDocsTheme call; keep this branch to ensure header values
+                    try
+                    {
+                        if (prefixTb != null) prefixTb.Text = "Görüntülemek istediğiniz ";
+                        if (midTb != null)
+                        {
+                            midTb.Visibility = Visibility.Visible;
+                            midTb.Text = "Kargo Havuzu";
+                            try { midTb.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFF59E0B")); } catch { }
+                        }
+                        if (suffixTb != null) suffixTb.Text = " için Kriterleri sırayla seçin";
+                    }
+                    catch { }
+                    // Explicitly set visual brushes on named ComboBoxes and Apply button so templated resources update immediately
+                    try
+                    {
+                        var cargoBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFF59E0B"));
+                        var cbNames = new[] { "CbTourType", "CbPeriod", "CbGroupType", "CbGroupDays", "CbTicketRequest", "CbHasTransfer", "CbVisaRequest", "Cb_CargoRequest" };
+                        foreach (var n in cbNames)
+                        {
+                            try
+                            {
+                                var obj = this.FindName(n) as ComboBox;
+                                if (obj != null) { obj.BorderBrush = cargoBrush; obj.Effect = new DropShadowEffect { Color = cargoBrush.Color, BlurRadius = 10, ShadowDepth = 0, Opacity = 0.18 }; }
+                            }
+                            catch { }
+                        }
+                        var applyBtn = this.FindName("ApplyFiltersButton") as Button;
+                        if (applyBtn != null) { applyBtn.BorderBrush = cargoBrush; applyBtn.Background = cargoBrush; applyBtn.Foreground = Brushes.White; }
+                    }
+                    catch { }
+                }
+                else if (CargoOnlyMode)
                 {
                     try
                     {
@@ -517,6 +587,8 @@ namespace TurizmOperasyonSistemi.Views
             }
             // Refresh grid to reflect changes
             try { ResultsDataGrid.Items.Refresh(); } catch { }
+            // Apply cargo docs theme override last so it wins over ApplyTheme
+            try { ApplyCargoDocsTheme(IsCargoDocsMode); } catch { }
         }
 
         private ViewMode _currentMode = ViewMode.Genel;
@@ -542,6 +614,24 @@ namespace TurizmOperasyonSistemi.Views
         private DataGridColumn _editingColumn;
         // When true, Results should only include registrations where CargoRequest == "Kargo Gönderilecek"
         private bool _cargoOnlyMode = false;
+        private bool _isCargoDocsMode = false;
+        public bool IsCargoDocsMode
+        {
+            get => _isCargoDocsMode;
+            set
+            {
+                if (_isCargoDocsMode == value) return;
+                _isCargoDocsMode = value;
+                try
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        try { ApplyCargoDocsTheme(_isCargoDocsMode); } catch { }
+                    }));
+                }
+                catch { }
+            }
+        }
         public bool CargoOnlyMode
         {
             get => _cargoOnlyMode;
@@ -577,6 +667,8 @@ namespace TurizmOperasyonSistemi.Views
             InitializeComponent();
             // Apply initial theme for the default mode
             ApplyTheme(_currentMode);
+            // ensure CargoDocs theme default off
+            ApplyCargoDocsTheme(false);
             // ensure default column projection is applied after InitializeComponent
             Loaded += (s, e) => ConfigureMode(_currentMode);
             Unloaded += PersonsGeneralView_Unloaded;
@@ -589,6 +681,55 @@ namespace TurizmOperasyonSistemi.Views
             // initial state: show filters, hide topbar
             TopBar.Visibility = Visibility.Collapsed;
             FiltersPanel.Visibility = Visibility.Visible;
+        }
+
+        private void ApplyCargoDocsTheme(bool enable)
+        {
+            try
+            {
+                if (enable)
+                {
+                    // Header prefix text override
+                    var prefixTb = this.FindName("FilterTitlePrefix") as TextBlock;
+                    var midTb = this.FindName("ModeInlineText") as TextBlock;
+                    var suffixTb = this.FindName("FilterTitleSuffix") as TextBlock;
+                    if (prefixTb != null) prefixTb.Text = "Görüntülemek istediğiniz ";
+                    if (midTb != null)
+                    {
+                        midTb.Visibility = Visibility.Visible;
+                        midTb.Text = "Kargo Havuzu";
+                        midTb.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFF59E0B"));
+                    }
+                    if (suffixTb != null) suffixTb.Text = " için Kriterleri sırayla seçin";
+
+                    // override combo/button styles locally using resources
+                    var cargoColor = (Color)ColorConverter.ConvertFromString("#FFF59E0B");
+                    this.Resources["PrimaryStartColor"] = cargoColor;
+                    this.Resources["PrimaryEndColor"] = cargoColor;
+                    this.Resources["GlowColor"] = cargoColor;
+                    this.Resources["PrimaryStartBrush"] = new SolidColorBrush(cargoColor);
+                    this.Resources["PrimaryEndBrush"] = new SolidColorBrush(cargoColor);
+                    this.Resources["GlowBrush"] = new SolidColorBrush(cargoColor);
+                    // replace PrimaryGradient so buttons using it update immediately
+                    try { this.Resources["PrimaryGradient"] = new LinearGradientBrush(cargoColor, cargoColor, 45); } catch { }
+
+                    // set specific control brushes for immediate effect
+                    try
+                    {
+                        var borderBrush = new SolidColorBrush(cargoColor);
+                        if (this.FindName("ApplyFiltersButton") is Button btn) btn.BorderBrush = borderBrush;
+                        // update ComboBoxes: set BorderBrush via resource used by NeonCombo
+                        this.Resources["GlowBrush"] = borderBrush;
+                    }
+                    catch { }
+                }
+                else
+                {
+                    // restore defaults by re-applying theme for current mode
+                    ApplyTheme(_currentMode);
+                }
+            }
+            catch { }
         }
 
         private void PersonsGeneralView_Unloaded(object sender, RoutedEventArgs e)

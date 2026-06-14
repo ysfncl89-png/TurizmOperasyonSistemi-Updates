@@ -45,7 +45,35 @@ namespace TurizmOperasyonSistemi.Views
 
         private void CargoDocs_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("Kargo Evrak Hazırlama açıldı (placeholder)");
+            try
+            {
+                var personsView = new PersonsGeneralView();
+                try { personsView.CargoOnlyMode = true; } catch { }
+                try { personsView.IsCargoDocsMode = true; } catch { }
+                try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
+
+                var nav = System.Windows.Navigation.NavigationService.GetNavigationService(this);
+                if (nav != null)
+                {
+                    nav.Navigate(personsView);
+                    return;
+                }
+
+                var win = new System.Windows.Window
+                {
+                    Title = "Kargo Evrak Hazırlama - Filtreler",
+                    Content = new System.Windows.Controls.Frame { Content = personsView, NavigationUIVisibility = System.Windows.Navigation.NavigationUIVisibility.Hidden },
+                    Width = 1100,
+                    Height = 700,
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+                    Owner = System.Windows.Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (System.Exception ex)
+            {
+                System.Windows.MessageBox.Show(ex.Message);
+            }
         }
 
         private void CargoTracking_Click(object sender, System.Windows.RoutedEventArgs e)

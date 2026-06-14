@@ -454,6 +454,15 @@
                     </TextBlock>
                     <TextBlock x:Name="FilterTitleSuffix" Text=" Listesi İçin Önce Kriterleri Sırayla Seçin" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
                 </StackPanel>
+
+                <!-- Specialized header used only for Cargo Evrak Hazırlama (exact phrasing + colored run) -->
+                <TextBlock x:Name="CargoDocsHeader" Grid.Row="0" HorizontalAlignment="Center" Margin="0,8,0,18" Visibility="Collapsed" FontSize="18" FontWeight="Bold" Foreground="White">
+                    <TextBlock.Inlines>
+                        <Run Text="Görüntülemek istediğiniz " />
+                        <Run Text="Kargo Havuzu" Foreground="#FFF59E0B" FontWeight="ExtraBold" FontSize="20" />
+                        <Run Text=" için Kriterleri sırayla seçin" />
+                    </TextBlock.Inlines>
+                </TextBlock>
                 <!-- Backwards-compat placeholder for code-behind references; kept collapsed to avoid duplicate UI -->
                 <TextBlock x:Name="FilterTitleTextBlock" Visibility="Collapsed" />
 
