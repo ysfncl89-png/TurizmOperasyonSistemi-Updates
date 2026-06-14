@@ -88,7 +88,15 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     person.FirstName = TbFirstName.Text;
                     person.LastName = TbLastName.Text;
-                    person.TcKimlikNo = TbTc.Text;
+                    // normalize TC: only digits allowed and must be 11 digits
+                    var tcInput = TbTc.Text ?? string.Empty;
+                    var digitsOnly = new string(tcInput.Where(char.IsDigit).ToArray());
+                    if (digitsOnly.Length != 11)
+                    {
+                        MessageBox.Show("Geçersiz TC Kimlik numarası. TC Kimlik 11 rakamdan oluşmalıdır.", "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    person.TcKimlikNo = digitsOnly;
                     person.PhoneNumber = TbPhone.Text;
                     person.Address = TbAddress.Text;
                     db.Entry(person).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
@@ -107,7 +115,7 @@ namespace TurizmOperasyonSistemi.Views
                 // update local row for immediate UI feedback
                 _row.FirstName = TbFirstName.Text;
                 _row.LastName = TbLastName.Text;
-                _row.TcKimlikNo = TbTc.Text;
+                _row.TcKimlikNo = new string((TbTc.Text ?? string.Empty).Where(char.IsDigit).ToArray());
                 _row.PhoneNumber = TbPhone.Text;
                 _row.Address = TbAddress.Text;
 
