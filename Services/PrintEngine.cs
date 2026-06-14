@@ -73,15 +73,24 @@ namespace TurizmOperasyonSistemi.Services
                     if (idx < total)
                     {
                         var it = items[idx];
-                        // Render sender info on top if provided
+                        // Render sender info on top if provided with a heading
                         if (sender != null)
                         {
+                            stack.Children.Add(new TextBlock { Text = "GÖNDERİCİ", FontSize = 9, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2) });
                             stack.Children.Add(new TextBlock { Text = sender.Name ?? string.Empty, FontSize = 10, FontWeight = FontWeights.Bold });
                             stack.Children.Add(new TextBlock { Text = sender.Phone ?? string.Empty, FontSize = 9 });
                             var saddr = new TextBlock { Text = sender.Address ?? string.Empty, FontSize = 8, TextWrapping = TextWrapping.Wrap };
                             stack.Children.Add(saddr);
                             stack.Children.Add(new Separator { Margin = new Thickness(0,4,0,4) });
+                            // recipient heading after sender
+                            stack.Children.Add(new TextBlock { Text = "ALICI", FontSize = 9, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2) });
                         }
+                        else
+                        {
+                            // If no sender, still show recipient heading
+                            stack.Children.Add(new TextBlock { Text = "ALICI", FontSize = 9, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,2) });
+                        }
+
                         stack.Children.Add(new TextBlock { Text = it.FullName ?? string.Empty, FontSize = 11, FontWeight = FontWeights.SemiBold });
                         stack.Children.Add(new TextBlock { Text = $"TC: {it.Tc}", FontSize = 10 });
                         stack.Children.Add(new TextBlock { Text = $"Tel: {it.Phone}", FontSize = 10 });
