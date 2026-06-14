@@ -66,7 +66,7 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
-                var dlg = new CargoInspectWindow(row) { Owner = Window.GetWindow(this) };
+                var dlg = new CargoInspectWindow2(row) { Owner = Window.GetWindow(this) };
                 var result = dlg.ShowDialog();
                 if (result == true)
                 {

@@ -13,6 +13,49 @@ namespace TurizmOperasyonSistemi.Views
         public CargoInspectWindow(PersonsGeneralView.GeneralRow row)
         {
             InitializeComponent();
+            try
+            {
+                this.Height = 520;
+                this.Width = 720;
+                this.MinHeight = 420;
+                this.MinWidth = 520;
+                if (this.FindName("TbAddress") is System.Windows.Controls.TextBox tb)
+                {
+                    tb.Height = 160;
+                    tb.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
+                }
+                // Tighten spacing and make controls fill available width
+                try
+                {
+                    void StyleTb(string name)
+                    {
+                        var o = this.FindName(name) as System.Windows.Controls.TextBox;
+                        if (o != null)
+                        {
+                            o.Height = 34;
+                            o.Margin = new System.Windows.Thickness(4);
+                            o.Padding = new System.Windows.Thickness(6,4,6,4);
+                            o.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
+                        }
+                    }
+
+                    StyleTb("TbFirstName");
+                    StyleTb("TbLastName");
+                    StyleTb("TbTc");
+                    StyleTb("TbPhone");
+                    var addr = this.FindName("TbAddress") as System.Windows.Controls.TextBox;
+                    if (addr != null)
+                    {
+                        addr.Height = 120;
+                        addr.Margin = new System.Windows.Thickness(4);
+                        addr.Padding = new System.Windows.Thickness(8);
+                        addr.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
+                        addr.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
+                    }
+                }
+                catch { }
+            }
+            catch { }
             _row = row;
             LoadRowToFields();
         }
