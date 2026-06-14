@@ -265,7 +265,21 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             {
                 // Base allowed set for cargo-only view. Do not include İşlem/Detay unless this page is opened as Cargo Evrak Hazırlama
                 var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
-                if (IsCargoDocsMode)
+                // Only show İşlem/Detay when in Cargo Docs mode AND the selected cargo request indicates sending (or none selected)
+                bool showActionCols = false;
+                try
+                {
+                    if (IsCargoDocsMode)
+                    {
+                        var cb = this.FindName("Cb_CargoRequest") as ComboBox;
+                        var sel = cb?.SelectedItem as string;
+                        // treat null/empty/"Seçiniz" as sending-case
+                        bool isSending = string.IsNullOrWhiteSpace(sel) || string.Equals(sel, "Seçiniz", StringComparison.OrdinalIgnoreCase) || string.Equals(sel?.Trim(), "Kargo gönderilecek", StringComparison.OrdinalIgnoreCase);
+                        showActionCols = isSending;
+                    }
+                }
+                catch { }
+                if (showActionCols)
                 {
                     allowed.Add("İşlem");
                     allowed.Add("Detay");
@@ -296,6 +310,114 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                     }
                 }
                 try { ResultsDataGrid.Items.Refresh(); ResultsDataGrid.UpdateLayout(); } catch { }
+            }
+            catch { }
+        }
+
+        private bool IsCargoRequestSendingSelected()
+        {
+            try
+            {
+                if (!IsCargoDocsMode) return false;
+                var cb = this.FindName("Cb_CargoRequest") as ComboBox;
+                var sel = cb?.SelectedItem as string;
+                if (string.IsNullOrWhiteSpace(sel)) return true; // no selection = sending-case
+                sel = sel.Trim();
+                if (string.Equals(sel, "Seçiniz", StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(sel, "Kargo gönderilecek", StringComparison.OrdinalIgnoreCase)) return true;
+                return false;
+            }
+            catch { return false; }
+        }
+
+        // Adjust UI for Cargo Evrak Hazırlama based on current CargoRequest combobox selection
+        private void UpdateCargoDocsState()
+        {
+            try
+            {
+                if (!IsCargoDocsMode) return;
+                var exportBtn = this.FindName("ExportButton") as Button;
+                var designBtn = this.FindName("DesignButton") as Button;
+                var cb = this.FindName("Cb_CargoRequest") as ComboBox;
+                var sel = cb?.SelectedItem as string;
+
+                // normalize
+                sel = sel?.Trim();
+                var nonSendingSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Kargo almayacak", "Kargo Gönderildi", "elden teslim alacak", "Elden teslim aldı" };
+
+                bool isNonSending = !string.IsNullOrWhiteSpace(sel) && nonSendingSet.Contains(sel);
+                bool isSending = IsCargoRequestSendingSelected();
+
+                if (isNonSending)
+                {
+                    // Show Export and Design buttons (normal export behavior)
+                    try
+                    {
+                        if (exportBtn != null)
+                        {
+                            exportBtn.Visibility = Visibility.Visible;
+                            exportBtn.Content = "Çıktı Al / İndir";
+                            try { exportBtn.Click -= ExportPreview_Click; } catch { }
+                            try { exportBtn.Click -= ExportButton_Click; } catch { }
+                            exportBtn.Click += ExportButton_Click;
+                            // restore context menu
+                            try
+                            {
+                                var cm = new System.Windows.Controls.ContextMenu();
+                                var miWord = new System.Windows.Controls.MenuItem { Header = "Word (.docx)" };
+                                miWord.Click += ExportWord_Click;
+                                try { miWord.Icon = new System.Windows.Controls.Image { Width = 18, Height = 18, Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("/Assets/Icons/word.png", UriKind.Relative)) }; } catch { }
+                                var miExcel = new System.Windows.Controls.MenuItem { Header = "Excel (.xlsx)" };
+                                miExcel.Click += ExportExcel_Click;
+                                try { miExcel.Icon = new System.Windows.Controls.Image { Width = 18, Height = 18, Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("/Assets/Icons/excel.png", UriKind.Relative)) }; } catch { }
+                                var miPdf = new System.Windows.Controls.MenuItem { Header = "PDF (.pdf)" };
+                                miPdf.Click += ExportPdf_Click;
+                                try { miPdf.Icon = new System.Windows.Controls.Image { Width = 18, Height = 18, Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("/Assets/Icons/pdf.png", UriKind.Relative)) }; } catch { }
+                                cm.Items.Add(miWord);
+                                cm.Items.Add(miExcel);
+                                cm.Items.Add(miPdf);
+                                exportBtn.ContextMenu = cm;
+                            }
+                            catch { }
+                        }
+                        if (designBtn != null) designBtn.Visibility = Visibility.Visible;
+                    }
+                    catch { }
+
+                    // Hide action columns
+                    try { EnforceCargoColumns(); } catch { }
+                    // Hide preview button (still visible but per earlier logic preview exists only when IsCargoDocsMode)
+                    try { UpdatePrintPreviewButtonVisibility(); } catch { }
+                }
+                else if (isSending)
+                {
+                    // Sending-case: show preview button, hide Design, set Export to preview action
+                    try
+                    {
+                        if (designBtn != null) designBtn.Visibility = Visibility.Collapsed;
+                        if (exportBtn != null)
+                        {
+                            exportBtn.Visibility = Visibility.Visible;
+                            exportBtn.Content = "Kargo Havuzu Önizleme";
+                            try { exportBtn.Click -= ExportButton_Click; } catch { }
+                            try { exportBtn.Click -= ExportPreview_Click; } catch { }
+                            exportBtn.Click += ExportPreview_Click;
+                            try { exportBtn.ContextMenu = null; } catch { }
+                        }
+                    }
+                    catch { }
+
+                    // Show İşlem/Detay columns
+                    try { EnforceCargoColumns(); } catch { }
+                    try { UpdatePrintPreviewButtonVisibility(); } catch { }
+                }
+                else
+                {
+                    // default fallback: hide design, show export as preview
+                    try { if (designBtn != null) designBtn.Visibility = Visibility.Collapsed; } catch { }
+                    try { EnforceCargoColumns(); } catch { }
+                    try { UpdatePrintPreviewButtonVisibility(); } catch { }
+                }
             }
             catch { }
         }
@@ -699,6 +821,17 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                     hasTransferPanel.Visibility = (mode == ViewMode.Havayolu) ? Visibility.Visible : Visibility.Collapsed;
                 }
                 if (mode != ViewMode.Havayolu && CbHasTransfer != null) CbHasTransfer.SelectedIndex = -1;
+
+                // Show CargoRequestPanel when CargoOnlyMode or Cargo Docs Mode is active
+                try
+                {
+                    var cargoPanel = this.FindName("CargoRequestPanel") as FrameworkElement;
+                    if (cargoPanel != null)
+                    {
+                        cargoPanel.Visibility = (this.CargoOnlyMode || this.IsCargoDocsMode) ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                }
+                catch { }
             }
             catch { }
             // If user has a saved template for this mode, prefer that (so custom visibility/order persists)
@@ -921,10 +1054,11 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 if (qtb != null)
                 {
                     qtb.Text = $"Baskı Havuzu ({count})";
-                    qtb.Visibility = (IsCargoDocsMode && count > 0) ? Visibility.Visible : Visibility.Collapsed;
+                    qtb.Visibility = IsCargoDocsMode ? Visibility.Visible : Visibility.Collapsed;
                 }
                 if (btn != null)
                 {
+                    // For Cargo Evrak Hazırlama mode, preview button should be present (enabled only when queue has items)
                     btn.Visibility = IsCargoDocsMode ? Visibility.Visible : Visibility.Collapsed;
                     btn.IsEnabled = count > 0;
                 }
@@ -1364,12 +1498,41 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 }
                 if (CbTicketRequest != null) CbTicketRequest.ItemsSource = ticket;
 
+                // Populate CargoRequest options from AppSettings (type names may vary)
+                var cargo = all.Where(x => x.Type == "KargoTalebi" || x.Type == "CargoRequest" || x.Type == "Kargo Talebi").Select(x => x.Value).ToList();
+                if (cargo == null) cargo = new System.Collections.Generic.List<string>();
+                if (!cargo.Any())
+                {
+                    cargo.AddRange(new[] { "Seçiniz", "Kargo Gönderilecek", "Kargo Gönderilmeyecek" });
+                }
+                else
+                {
+                    cargo.Insert(0, "Seçiniz");
+                }
+                try
+                {
+                    var cb = this.FindName("Cb_CargoRequest") as ComboBox;
+                    if (cb != null) cb.ItemsSource = cargo;
+                }
+                catch { }
+
                 // Populate HasTransfer options (Aktarma var mı?) from AppSettings
                 var hasTransfer = all.Where(x => x.Type == "Aktarma Var mı ?" || x.Type == "Aktarma" || x.Type == "HasTransfer").Select(x => x.Value).ToList();
                 if (hasTransfer == null) hasTransfer = new System.Collections.Generic.List<string>();
                 if (!hasTransfer.Any()) hasTransfer.AddRange(new[] { "Seçiniz", "Var", "Yok" });
                 else hasTransfer.Insert(0, "Seçiniz");
                 if (CbHasTransfer != null) CbHasTransfer.ItemsSource = hasTransfer;
+
+                // show cargo request combobox only when in cargo-only or cargo docs mode
+                try
+                {
+                    var cargoPanel = this.FindName("CargoRequestPanel") as FrameworkElement;
+                    if (cargoPanel != null)
+                    {
+                        cargoPanel.Visibility = (CargoOnlyMode || IsCargoDocsMode) ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                }
+                catch { }
             }
             catch { }
         }
@@ -1398,6 +1561,19 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                         // Only reload when a selection change happened (guard null sender cases)
                         LoadResults();
                     }
+                // If cargo docs mode active and cargo combobox changed, update cargo UI state and reload when results visible
+                try
+                {
+                    if (IsCargoDocsMode)
+                    {
+                        UpdateCargoDocsState();
+                        if (ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
+                        {
+                            LoadResults();
+                        }
+                    }
+                }
+                catch { }
                 }
                 catch { }
             }
@@ -1957,7 +2133,22 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 // If cargo-only mode requested, restrict by CargoRequest
                 if (CargoOnlyMode)
                 {
-                    query = query.Where(r => r.CargoRequest != null && r.CargoRequest.Trim().ToLower() == "kargo gönderilecek");
+                    try
+                    {
+                        var cargoSel = Cb_CargoRequest?.SelectedItem as string;
+                        if (!string.IsNullOrWhiteSpace(cargoSel) && cargoSel != "Seçiniz")
+                        {
+                            query = query.Where(r => r.CargoRequest == cargoSel);
+                        }
+                        else
+                        {
+                            query = query.Where(r => r.CargoRequest != null && r.CargoRequest.Trim().ToLower() == "kargo gönderilecek");
+                        }
+                    }
+                    catch
+                    {
+                        query = query.Where(r => r.CargoRequest != null && r.CargoRequest.Trim().ToLower() == "kargo gönderilecek");
+                    }
                 }
 
                 var list = query.OrderBy(r => r.Id).ToList();

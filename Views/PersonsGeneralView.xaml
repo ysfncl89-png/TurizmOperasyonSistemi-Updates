@@ -541,7 +541,7 @@
                 </StackPanel>
 
                 <!-- Aktarma var mı? (sadece Havayolu modu için) -->
-                <StackPanel x:Name="HasTransferPanel" Grid.Row="6" Margin="0,6,0,6" Visibility="Collapsed">
+                <StackPanel x:Name="HasTransferPanel" Grid.Row="7" Margin="0,6,0,6" Visibility="Collapsed">
                     <TextBlock Text="Aktarma var mı ?" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
                     <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
                         <ComboBox x:Name="CbHasTransfer"
@@ -551,7 +551,7 @@
                 </StackPanel>
 
                 <!-- Vize Talebi -->
-                <StackPanel x:Name="VisaRequestPanel" Grid.Row="7" Margin="0,6,0,6" Visibility="Collapsed">
+                <StackPanel x:Name="VisaRequestPanel" Grid.Row="8" Margin="0,6,0,6" Visibility="Collapsed">
                     <TextBlock Text="Vize Talebi" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
                     <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
 
@@ -561,8 +561,19 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Kargo Talebi -->
+                <StackPanel x:Name="CargoRequestPanel" Grid.Row="5" Margin="0,6,0,6" Visibility="Collapsed">
+                    <TextBlock Text="Kargo Talebi" Foreground="#9FB2CB" FontWeight="SemiBold" Margin="6,0,0,6"/>
+                    <Border CornerRadius="8" Background="#0F172A" Padding="10" SnapsToDevicePixels="True">
+
+                        <ComboBox x:Name="Cb_CargoRequest"
+                                  Style="{StaticResource NeonCombo}"
+                                  SelectionChanged="Filter_Changed"/>
+                    </Border>
+                </StackPanel>
+
                 <!-- Action button (moved below comboboxes) -->
-                <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
                     <TextBlock x:Name="FilterWarning" Text="Tur Türü ve Dönem seçilmeden Listeyi Göster devre dışı." Foreground="#FCA311" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="Visible"/>
                     <Button x:Name="ApplyFiltersButton"
                             Content="Listeyi Göster"
@@ -816,7 +827,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <ComboBox x:Name="Cb_CargoRequest"
+                                    <ComboBox x:Name="Cb_CargoRequest_Edit"
                                               SelectedItem="{Binding CargoRequest, Mode=TwoWay}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
