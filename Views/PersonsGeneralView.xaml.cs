@@ -244,8 +244,8 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                         }
                         catch { }
                         ShowSaveToast("Kayıt baskı havuzuna eklendi.");
-                        // update optional queue count UI element if present
-                        try { if (this.FindName("QueueCountTextBlock") is TextBlock qtb) qtb.Text = Services.CargoPrintQueue.Instance.Items.Count.ToString(); } catch { }
+                        // queue count UI removed from filter panel; Results area (if present) will refresh when needed
+                        try { UpdatePrintPreviewButtonVisibility(); } catch { }
                     }
                     else
                     {
@@ -1049,16 +1049,10 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             try
             {
                 var btn = this.FindName("OpenPrintPreviewButton") as Button;
-                var qtb = this.FindName("QueueCountTextBlock") as TextBlock;
                 var count = Services.CargoPrintQueue.Instance.Items.Count;
-                if (qtb != null)
-                {
-                    qtb.Text = $"Baskı Havuzu ({count})";
-                    qtb.Visibility = IsCargoDocsMode ? Visibility.Visible : Visibility.Collapsed;
-                }
+                // Print preview button lives in the Results area; we only control its enabled state here when present.
                 if (btn != null)
                 {
-                    // For Cargo Evrak Hazırlama mode, preview button should be present (enabled only when queue has items)
                     btn.Visibility = IsCargoDocsMode ? Visibility.Visible : Visibility.Collapsed;
                     btn.IsEnabled = count > 0;
                 }
@@ -1417,6 +1411,13 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                                 try { UpdatePrintPreviewButtonVisibility(); } catch { }
                             }));
                         }
+                        // Also persistently unmark inspected status so returning to the screen does not restore it
+                        try
+                        {
+                            var store = new TurizmOperasyonSistemi.Services.CargoInspectedStore();
+                            store.Unmark(it.RegistrationId);
+                        }
+                        catch { }
                     }
                     catch { }
                 };
@@ -3121,6 +3122,57 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                     }
                     db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                     db.SaveChanges();
+
+                    // If CargoRequest was changed and now is NOT 'Kargo gönderilecek', ensure the registration is removed
+                    // from the persistent print queue and any inspected flags are cleared so it won't reappear on re-open.
+                    try
+                    {
+                        if (string.Equals(propName, "CargoRequest", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var cur = (reg.CargoRequest ?? string.Empty).Trim();
+                            bool isSending = string.Equals(cur, "Kargo gönderilecek", StringComparison.OrdinalIgnoreCase) || string.Equals(cur, "Seçiniz", StringComparison.OrdinalIgnoreCase) == false && string.IsNullOrWhiteSpace(cur) == false && cur.Length==0 ? false : string.Equals(cur, "Kargo gönderilecek", StringComparison.OrdinalIgnoreCase);
+                            // Normalize: treat only exact 'Kargo gönderilecek' as sending-case
+                            isSending = string.Equals(cur, "Kargo gönderilecek", StringComparison.OrdinalIgnoreCase);
+                            if (!isSending)
+                            {
+                                try
+                                {
+                                    // remove from in-memory queue
+                                    var items = TurizmOperasyonSistemi.Services.CargoPrintQueue.Instance.Items.ToArray();
+                                    foreach (var it in items)
+                                    {
+                                        try
+                                        {
+                                            if (it.RegistrationId == reg.Id)
+                                            {
+                                                TurizmOperasyonSistemi.Services.CargoPrintQueue.Instance.Remove(it);
+                                            }
+                                        }
+                                        catch { }
+                                    }
+                                }
+                                catch { }
+
+                                // unmark inspected persistently
+                                try
+                                {
+                                    var store = new TurizmOperasyonSistemi.Services.CargoInspectedStore();
+                                    store.Unmark(reg.Id);
+                                }
+                                catch { }
+
+                                // update row state if present
+                                try
+                                {
+                                    row.IsSentToCargo = false;
+                                    row.IsCargoInspected = false;
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                    catch { }
+
                     try { ResultsDataGrid.Items.Refresh(); } catch { }
                     ShowSaveToast("Kayıt bilgisi güncellendi.");
                     // If the edited property was PassportArrived, also show an explicit save toast

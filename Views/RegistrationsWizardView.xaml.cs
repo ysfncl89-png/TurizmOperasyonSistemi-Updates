@@ -1664,6 +1664,37 @@ namespace TurizmOperasyonSistemi.Views
 
                         db.SaveChanges();
 
+                        // If CargoRequest is not 'Kargo gönderilecek', remove any existing print-queue items
+                        // for this registration and clear inspected flag so it won't be included in A4/print pool.
+                        try
+                        {
+                            if (!string.Equals(cargoRequest, "Kargo gönderilecek", StringComparison.OrdinalIgnoreCase))
+                            {
+                                try
+                                {
+                                    var items = CargoPrintQueue.Instance.Items.ToArray();
+                                    foreach (var it in items)
+                                    {
+                                        try
+                                        {
+                                            if (it.RegistrationId == registration.Id)
+                                                CargoPrintQueue.Instance.Remove(it);
+                                        }
+                                        catch { }
+                                    }
+                                }
+                                catch { }
+
+                                try
+                                {
+                                    var store = new CargoInspectedStore();
+                                    store.Unmark(registration.Id);
+                                }
+                                catch { }
+                            }
+                        }
+                        catch { }
+
                         // Senkronizasyon: Kayıt güncellendiğinde/eklendiğinde
                         // o kişiye ait varsa RoomOccupant kayıtlarını bul ve bağlı
                         // RoomAllocation öğesini kayıt verilerine göre güncelle.
