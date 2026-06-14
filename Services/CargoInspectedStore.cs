@@ -36,6 +36,7 @@ namespace TurizmOperasyonSistemi.Services
             }
         }
 
+
         private void Save()
         {
             try

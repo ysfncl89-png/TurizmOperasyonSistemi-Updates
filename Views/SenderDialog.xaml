@@ -1,7 +1,7 @@
 <Window x:Class="TurizmOperasyonSistemi.Views.SenderDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Gönderici Bilgileri" Height="320" Width="520" WindowStartupLocation="CenterOwner">
+        Title="Gönderici Bilgileri" Height="500" Width="520" WindowStartupLocation="CenterOwner">
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -12,6 +12,14 @@
         <TextBlock Text="Lütfen gönderici bilgilerini girin" FontWeight="Bold" FontSize="14" />
 
         <StackPanel Grid.Row="1" Margin="0,12,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                <StackPanel Width="360">
+                    <TextBlock Text="Kayıtlı Şablonlar"/>
+                    <ComboBox x:Name="CbSenderTemplates" />
+                </StackPanel>
+                <Button x:Name="BtnSaveTemplate" Content="Şablonu Kaydet" Margin="8,22,0,0" Width="120" />
+            </StackPanel>
+
             <TextBlock Text="Gönderici Adı"/>
             <TextBox x:Name="TbSenderName" />
             <TextBlock Text="Gönderici Telefon" Margin="0,8,0,0"/>
