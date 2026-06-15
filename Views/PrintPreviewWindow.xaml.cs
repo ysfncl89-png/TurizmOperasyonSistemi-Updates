@@ -19,6 +19,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private GroupViewModel[] _groups = new GroupViewModel[0];
         private GroupViewModel _selectedGroup = null;
+        private TurizmOperasyonSistemi.Services.PrintQueueItem[] _currentPreviewItems = new TurizmOperasyonSistemi.Services.PrintQueueItem[0];
         public PrintPreviewWindow()
         {
             InitializeComponent();
@@ -33,6 +34,29 @@ namespace TurizmOperasyonSistemi.Views
             this.Loaded += (s, e) => BindQueueList();
             TemplateCombo.SelectionChanged += (s, e) => RefreshPreview();
             OrientationCombo.SelectionChanged += (s, e) => RefreshPreview();
+            // Listen for remove requests originating from generated document buttons
+            TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RemoveRequested += PrintPreviewInteraction_RemoveRequested;
+            Unloaded += (s, e) => TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RemoveRequested -= PrintPreviewInteraction_RemoveRequested;
+        }
+
+        private void PrintPreviewInteraction_RemoveRequested(int registrationId)
+        {
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        var itm = CargoPrintQueue.Instance.Items.FirstOrDefault(x => x.RegistrationId == registrationId);
+                        if (itm != null) CargoPrintQueue.Instance.Remove(itm);
+                        // Refresh groups and preview
+                        BindQueueList();
+                        RefreshPreview();
+                    }
+                    catch { }
+                }));
+            }
+            catch { }
         }
 
         // Sender info applied to all labels in this preview session
@@ -59,8 +83,24 @@ namespace TurizmOperasyonSistemi.Views
                 var sourceItems = items;
                 if (_selectedGroup != null && _selectedGroup.Items != null && _selectedGroup.Items.Length > 0)
                 {
+                    // base set for this preview = the group's items
                     sourceItems = _selectedGroup.Items;
                 }
+                // apply preview-only search filter
+                var q = (SearchTextBox.Text ?? string.Empty).Trim();
+                if (!string.IsNullOrWhiteSpace(q))
+                {
+                    var parts = q.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
+                    sourceItems = sourceItems.Where(it => {
+                        try
+                        {
+                            var hay = ($"{it.FullName} {it.Tc} {it.Phone} {it.Address}").ToLowerInvariant();
+                            return parts.All(p => hay.Contains(p.ToLowerInvariant()));
+                        }
+                        catch { return false; }
+                    }).ToArray();
+                }
+                _currentPreviewItems = sourceItems;
                 // Use Sender property provided by caller
                 var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
                 DocViewer.Document = doc;
@@ -112,6 +152,16 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
+        private void SearchTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            try { RefreshPreview(); } catch { }
+        }
+
+        private void ClearSearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            try { SearchTextBox.Text = string.Empty; } catch { }
+        }
+
         private void RemoveQueueItem_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -157,7 +207,7 @@ namespace TurizmOperasyonSistemi.Views
                     catch { }
                     var items = CargoPrintQueue.Instance.Items.ToArray();
                     var sourceItems = items;
-                    if (_selectedGroup != null && _selectedGroup.Items != null && _selectedGroup.Items.Length > 0) sourceItems = _selectedGroup.Items;
+                    if (_selectedGroup != null && _selectedGroup.Items != null && _selectedGroup.Items.Length > 0) sourceItems = _selectedGroup.Items; // printing uses full group, not preview filter
                     var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
                     // print
                     pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Kargo Etiketleri");
@@ -193,7 +243,7 @@ namespace TurizmOperasyonSistemi.Views
                     catch { }
                     var items = CargoPrintQueue.Instance.Items.ToArray();
                     var sourceItems = items;
-                    if (_selectedGroup != null && _selectedGroup.Items != null && _selectedGroup.Items.Length > 0) sourceItems = _selectedGroup.Items;
+                    if (_selectedGroup != null && _selectedGroup.Items != null && _selectedGroup.Items.Length > 0) sourceItems = _selectedGroup.Items; // export uses full group
                     var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
                     pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Kargo Etiketleri PDF");
                     foreach (var it in sourceItems) CargoPrintQueue.Instance.MarkPrinted(it);

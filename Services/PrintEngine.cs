@@ -97,6 +97,17 @@ namespace TurizmOperasyonSistemi.Services
                         if (idx < total)
                         {
                             var it = grpItems[idx];
+                            // top-right remove button: clicking should request immediate removal from preview queue
+                            try
+                            {
+                                var btn = new System.Windows.Controls.Button { Content = "✖", Width = 22, Height = 22, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, VerticalAlignment = System.Windows.VerticalAlignment.Top, Background = Brushes.Transparent, Foreground = Brushes.DarkRed, BorderThickness = new Thickness(0) };
+                                btn.Click += (s, e) => { TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RequestRemove(it.RegistrationId); };
+                                // place button inside a DockPanel at top of stack
+                                var topDock = new DockPanel();
+                                topDock.Children.Add(btn);
+                                stack.Children.Add(topDock);
+                            }
+                            catch { }
                         // Render sender info on top if provided with a heading
                         if (sender != null)
                         {

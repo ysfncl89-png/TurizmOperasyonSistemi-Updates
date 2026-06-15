@@ -17,6 +17,9 @@
                 <ComboBoxItem>Portrait</ComboBoxItem>
                 <ComboBoxItem>Landscape</ComboBoxItem>
             </ComboBox>
+            <TextBlock Text="Ara:" VerticalAlignment="Center" Margin="16,0,8,0" />
+            <TextBox x:Name="SearchTextBox" Width="220" Margin="0,0,6,0" VerticalAlignment="Center" TextChanged="SearchTextBox_TextChanged" />
+            <Button x:Name="ClearSearchButton" Content="Temizle" Width="70" Click="ClearSearchButton_Click" />
         </StackPanel>
 
         <Grid Grid.Row="1">
