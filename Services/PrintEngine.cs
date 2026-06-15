@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Markup;
+using System.Windows.Input;
 using TurizmOperasyonSistemi.Views;
 
 namespace TurizmOperasyonSistemi.Services
@@ -101,6 +102,8 @@ namespace TurizmOperasyonSistemi.Services
                             try
                             {
                                 var btn = new System.Windows.Controls.Button { Content = "✖", Width = 22, Height = 22, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, VerticalAlignment = System.Windows.VerticalAlignment.Top, Background = Brushes.Transparent, Foreground = Brushes.DarkRed, BorderThickness = new Thickness(0) };
+                                btn.Cursor = Cursors.Hand;
+                                btn.ToolTip = "Önizlemeden kaldır";
                                 btn.Click += (s, e) => { TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RequestRemove(it.RegistrationId); };
                                 // place button inside a DockPanel at top of stack
                                 var topDock = new DockPanel();

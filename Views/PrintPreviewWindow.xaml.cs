@@ -28,7 +28,7 @@ namespace TurizmOperasyonSistemi.Views
                 "3x2 (6)", "3x3 (9)", "3x4 (12)", "3x5 (15)", "3x6 (18)",
                 "3x7 (21)", "3x8 (24)", "3x9 (27)", "3x10 (30)", "3x11 (33)", "3x12 (36)", "3x13 (39)", "3x14 (42)", "3x15 (45)"
             };
-            TemplateCombo.SelectedIndex = 0; // default 2x2
+            TemplateCombo.SelectedIndex = 5; // default 3x4 (12)
             OrientationCombo.SelectedIndex = 0;
             this.Loaded += (s, e) => RefreshPreview();
             this.Loaded += (s, e) => BindQueueList();
@@ -67,7 +67,7 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 // parse selected template like "3x5 (15)" -> cols=3 rows=5
-                var sel = TemplateCombo.SelectedItem?.ToString() ?? "3x5 (15)";
+                var sel = TemplateCombo.SelectedItem?.ToString() ?? "3x4 (12)";
                 int cols = 3, rows = 5;
                 try
                 {
@@ -197,7 +197,7 @@ namespace TurizmOperasyonSistemi.Views
                 var pd = new System.Windows.Controls.PrintDialog();
                 if (pd.ShowDialog() == true)
                 {
-                    var sel = TemplateCombo.SelectedItem?.ToString() ?? "3x5 (15)";
+                    var sel = TemplateCombo.SelectedItem?.ToString() ?? "3x4 (12)";
                     int cols = 3, rows = 5;
                     try
                     {
@@ -233,7 +233,7 @@ namespace TurizmOperasyonSistemi.Views
                 var pd = new System.Windows.Controls.PrintDialog();
                 if (pd.ShowDialog() == true)
                 {
-                    var sel = TemplateCombo.SelectedItem?.ToString() ?? "3x5 (15)";
+                    var sel = TemplateCombo.SelectedItem?.ToString() ?? "3x4 (12)";
                     int cols = 3, rows = 5;
                     try
                     {
