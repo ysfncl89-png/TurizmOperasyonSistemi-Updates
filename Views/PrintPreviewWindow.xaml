@@ -24,21 +24,21 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="320" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" BorderBrush="#334155" BorderThickness="1" Background="#0B1220" Margin="0,0,8,0">
                 <StackPanel>
                     <TextBlock Text="Baskı Havuzu (Kuyruk)" FontWeight="Bold" Margin="8" Foreground="White" />
-                    <ListBox x:Name="QueueListBox" Margin="8" Background="#07121A" BorderThickness="0" SelectionChanged="QueueListBox_SelectionChanged">
+                    <ListBox x:Name="QueueListBox" Margin="8" Background="#07121A" BorderThickness="0" SelectionChanged="QueueListBox_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border BorderBrush="{Binding BorderBrush}" BorderThickness="2" Padding="6" Margin="4" CornerRadius="6" Background="#06121A">
                                     <DockPanel LastChildFill="True">
                                         <Button Content="✖" Width="28" Height="24" DockPanel.Dock="Right" Margin="4,0,0,0" Click="RemoveQueueItem_Click" />
                                         <StackPanel>
-                                            <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="SemiBold" TextWrapping="Wrap" />
                                             <TextBlock Text="{Binding ItemSummary}" Foreground="#AAB" FontSize="11" />
                                         </StackPanel>
                                     </DockPanel>
