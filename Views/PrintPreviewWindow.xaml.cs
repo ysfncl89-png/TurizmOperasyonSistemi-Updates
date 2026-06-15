@@ -104,6 +104,7 @@ namespace TurizmOperasyonSistemi.Views
                 // Use Sender property provided by caller
                 var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
                 DocViewer.Document = doc;
+                try { DocViewer.FitToWidth(); } catch { }
             }
             catch (Exception ex)
             {
