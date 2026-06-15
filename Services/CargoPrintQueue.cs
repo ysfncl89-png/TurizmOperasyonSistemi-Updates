@@ -14,6 +14,9 @@ namespace TurizmOperasyonSistemi.Services
         public string Tc { get; set; }
         public string Phone { get; set; }
         public string Address { get; set; }
+        // New: carry grouping metadata so print pages can be grouped by tour/period
+        public string TourType { get; set; }
+        public string Period { get; set; }
         public DateTime AddedAt { get; set; }
         public bool Printed { get; set; }
     }

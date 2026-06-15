@@ -24,62 +24,79 @@ namespace TurizmOperasyonSistemi.Services
 
             var doc = new FixedDocument();
             int perPage = cols * rows;
-            int total = items?.Length ?? 0;
-            int pageCount = Math.Max(1, (int)Math.Ceiling((double)total / perPage));
 
-            for (int p = 0; p < pageCount; p++)
+            // Group items by TourType+Period to avoid mixing different tours/periods across page A4 boundaries
+            var groups = new Dictionary<string, List<PrintQueueItem>>();
+            if (items != null)
             {
-                var page = new PageContent();
-                var fixedPage = new FixedPage();
-                fixedPage.Width = pageWidth;
-                fixedPage.Height = pageHeight;
-
-                // margins
-                double marginMm = 8; // 8mm
-                double margin = marginMm * mmToDip;
-                double usableW = pageWidth - margin * 2;
-                double usableH = pageHeight - margin * 2;
-
-                double cellW = usableW / cols;
-                double cellH = usableH / rows;
-
-                for (int i = 0; i < perPage; i++)
+                foreach (var it in items)
                 {
-                    int idx = p * perPage + i;
-                    int r = i / cols;
-                    int c = i % cols;
-                    double x = margin + c * cellW;
-                    double y = margin + r * cellH;
+                    var key = (it.TourType ?? string.Empty) + "|" + (it.Period ?? string.Empty);
+                    if (!groups.ContainsKey(key)) groups[key] = new List<PrintQueueItem>();
+                    groups[key].Add(it);
+                }
+            }
 
-                    var border = new Border
+            // For each group, allocate pages sequentially. This ensures items from different groups are not interleaved.
+            foreach (var grp in groups)
+            {
+                var grpItems = grp.Value;
+                int total = grpItems.Count;
+                int pageCount = Math.Max(1, (int)Math.Ceiling((double)total / perPage));
+
+                for (int p = 0; p < pageCount; p++)
+                {
+                    var page = new PageContent();
+                    var fixedPage = new FixedPage();
+                    fixedPage.Width = pageWidth;
+                    fixedPage.Height = pageHeight;
+
+                    // margins
+                    double marginMm = 8; // 8mm
+                    double margin = marginMm * mmToDip;
+                    double usableW = pageWidth - margin * 2;
+                    double usableH = pageHeight - margin * 2;
+
+                    double cellW = usableW / cols;
+                    double cellH = usableH / rows;
+
+                    for (int i = 0; i < perPage; i++)
                     {
-                        Width = cellW - 6,
-                        Height = cellH - 6,
-                        BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55)),
-                        BorderThickness = new Thickness(1),
-                        Background = Brushes.White
-                    };
+                        int idx = p * perPage + i;
+                        int r = i / cols;
+                        int c = i % cols;
+                        double x = margin + c * cellW;
+                        double y = margin + r * cellH;
 
-                    FixedPage.SetLeft(border, x + 3);
-                    FixedPage.SetTop(border, y + 3);
+                        var border = new Border
+                        {
+                            Width = cellW - 6,
+                            Height = cellH - 6,
+                            BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55)),
+                            BorderThickness = new Thickness(1),
+                            Background = Brushes.White
+                        };
 
-                    // compute scale factor relative to a base template (3x5) so fonts scale logically
-                    var baseCols = 3; var baseRows = 5;
-                    double baseCellW = usableW / baseCols;
-                    double baseCellH = usableH / baseRows;
-                    double scale = 1.0;
-                    try
-                    {
-                        scale = Math.Min(cellW / baseCellW, cellH / baseCellH);
-                        // clamp scale to avoid unreadably small/large text
-                        scale = Math.Max(0.5, Math.Min(1.6, scale));
-                    }
-                    catch { scale = 1.0; }
+                        FixedPage.SetLeft(border, x + 3);
+                        FixedPage.SetTop(border, y + 3);
 
-                    var stack = new StackPanel { Margin = new Thickness(6 * scale) };
-                    if (idx < total)
-                    {
-                        var it = items[idx];
+                        // compute scale factor relative to a base template (3x5) so fonts scale logically
+                        var baseCols = 3; var baseRows = 5;
+                        double baseCellW = usableW / baseCols;
+                        double baseCellH = usableH / baseRows;
+                        double scale = 1.0;
+                        try
+                        {
+                            scale = Math.Min(cellW / baseCellW, cellH / baseCellH);
+                            // clamp scale to avoid unreadably small/large text
+                            scale = Math.Max(0.5, Math.Min(1.6, scale));
+                        }
+                        catch { scale = 1.0; }
+
+                        var stack = new StackPanel { Margin = new Thickness(6 * scale) };
+                        if (idx < total)
+                        {
+                            var it = grpItems[idx];
                         // Render sender info on top if provided with a heading
                         if (sender != null)
                         {
@@ -116,6 +133,7 @@ namespace TurizmOperasyonSistemi.Services
 
                 ((IAddChild)page).AddChild(fixedPage);
                 doc.Pages.Add(page);
+                }
             }
 
             return doc;

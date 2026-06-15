@@ -153,6 +153,20 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                     // Only add to print queue when this page is in Cargo Evrak Hazırlama mode
                     if (IsCargoDocsMode)
                     {
+                        // load registration to capture TourType/Period grouping metadata
+                        string tourType = null; string period = null;
+                        try
+                        {
+                            using var db2 = new TurizmOperasyonSistemi.Data.AppDbContext();
+                            var regFull = db2.Registrations.FirstOrDefault(x => x.Id == row.RegistrationId);
+                            if (regFull != null)
+                            {
+                                tourType = regFull.TourType ?? string.Empty;
+                                period = regFull.Period ?? string.Empty;
+                            }
+                        }
+                        catch { }
+
                         var item = new Services.PrintQueueItem
                         {
                             RegistrationId = row.RegistrationId,
@@ -160,6 +174,8 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                             Tc = row.TcKimlikNoRaw ?? row.TcKimlikNo ?? string.Empty,
                             Phone = row.PhoneNumberRaw ?? row.PhoneNumber ?? string.Empty,
                             Address = row.AddressRaw ?? row.Address ?? string.Empty,
+                            TourType = tourType ?? string.Empty,
+                            Period = period ?? string.Empty,
                             Printed = false
                         };
                         Services.CargoPrintQueue.Instance.Add(item);
