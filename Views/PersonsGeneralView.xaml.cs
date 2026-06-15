@@ -40,6 +40,31 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        private void IncreaseCargoQty_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is FrameworkElement fe)) return;
+                // the DataContext is the row because buttons are inside the DataTemplate
+                var row = fe.DataContext as GeneralRow;
+                if (row == null) return;
+                row.CargoQuantity = row.CargoQuantity + 1;
+            }
+            catch { }
+        }
+
+        private void DecreaseCargoQty_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is FrameworkElement fe)) return;
+                var row = fe.DataContext as GeneralRow;
+                if (row == null) return;
+                if (row.CargoQuantity > 1) row.CargoQuantity = row.CargoQuantity - 1;
+            }
+            catch { }
+        }
+
         private void ExportPreview_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -176,6 +201,7 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                             Address = row.AddressRaw ?? row.Address ?? string.Empty,
                             TourType = tourType ?? string.Empty,
                             Period = period ?? string.Empty,
+                            Quantity = row.CargoQuantity <= 0 ? 1 : row.CargoQuantity,
                             Printed = false
                         };
                         Services.CargoPrintQueue.Instance.Add(item);
@@ -3748,6 +3774,20 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             public string CargoRequest { get; set; }
             public string CargoRequestRaw { get; set; }
             public bool IsCargoInspected { get; set; }
+            private int _cargoQuantity = 1;
+            public int CargoQuantity
+            {
+                get => _cargoQuantity;
+                set
+                {
+                    if (value < 1) value = 1;
+                    if (_cargoQuantity != value)
+                    {
+                        _cargoQuantity = value;
+                        OnPropertyChanged(nameof(CargoQuantity));
+                    }
+                }
+            }
             private bool _isSentToCargo;
             public bool IsSentToCargo
             {

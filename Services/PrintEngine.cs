@@ -26,23 +26,31 @@ namespace TurizmOperasyonSistemi.Services
             var doc = new FixedDocument();
             int perPage = cols * rows;
 
-            // Group items by TourType+Period to avoid mixing different tours/periods across page A4 boundaries
-            var groups = new Dictionary<string, List<PrintQueueItem>>();
+            // Expand items according to Quantity so each copy prints as a separate card
+            var expanded = new List<PrintQueueItem>();
             if (items != null)
             {
                 foreach (var it in items)
                 {
-                    var key = (it.TourType ?? string.Empty) + "|" + (it.Period ?? string.Empty);
-                    if (!groups.ContainsKey(key)) groups[key] = new List<PrintQueueItem>();
-                    groups[key].Add(it);
+                    int qty = Math.Max(1, it.Quantity);
+                    for (int q = 0; q < qty; q++) expanded.Add(it);
                 }
+            }
+
+            // Group expanded items by TourType+Period to avoid mixing different tours/periods across page A4 boundaries
+            var groups = new Dictionary<string, List<PrintQueueItem>>();
+            foreach (var it in expanded)
+            {
+                var key = (it.TourType ?? string.Empty) + "|" + (it.Period ?? string.Empty);
+                if (!groups.ContainsKey(key)) groups[key] = new List<PrintQueueItem>();
+                groups[key].Add(it);
             }
 
             // For each group, allocate pages sequentially. This ensures items from different groups are not interleaved.
             foreach (var grp in groups)
             {
                 var grpItems = grp.Value;
-                int total = grpItems.Count;
+                int total = grpItems.Count; // already expanded by quantity
                 int pageCount = Math.Max(1, (int)Math.Ceiling((double)total / perPage));
 
                 for (int p = 0; p < pageCount; p++)

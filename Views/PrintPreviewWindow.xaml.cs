@@ -133,7 +133,10 @@ namespace TurizmOperasyonSistemi.Views
                     var title = string.IsNullOrWhiteSpace(parts[0]) ? "(Bilinmeyen Tur)" : parts[0];
                     if (!string.IsNullOrWhiteSpace(parts.Length > 1 ? parts[1] : null)) title += " - " + parts[1];
                     var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb((byte)rnd.Next(60,200), (byte)rnd.Next(60,200), (byte)rnd.Next(60,200)));
-                    cols.Add(new GroupViewModel { Key = kv.Key, Title = title, ItemSummary = $"{kv.Value.Count} öğe", BorderBrush = brush, Items = kv.Value.ToArray() });
+                    // compute total cards by summing Quantity (at least 1 each)
+                    int totalCards = 0;
+                    try { totalCards = kv.Value.Sum(it => Math.Max(1, it.Quantity)); } catch { totalCards = kv.Value.Count; }
+                    cols.Add(new GroupViewModel { Key = kv.Key, Title = title, ItemSummary = $"{totalCards} adet kart", BorderBrush = brush, Items = kv.Value.ToArray() });
                 }
                 _groups = cols.ToArray();
                 QueueListBox.ItemsSource = _groups;
