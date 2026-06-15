@@ -41,7 +41,8 @@ namespace TurizmOperasyonSistemi.Services
             var groups = new Dictionary<string, List<PrintQueueItem>>();
             foreach (var it in expanded)
             {
-                var key = (it.TourType ?? string.Empty) + "|" + (it.Period ?? string.Empty);
+                // include GroupType and DaysCount in grouping key so mismatched items form their own groups
+                var key = string.Join("|", new[] { it.TourType ?? string.Empty, it.Period ?? string.Empty, it.GroupType ?? string.Empty, it.DaysCount ?? string.Empty });
                 if (!groups.ContainsKey(key)) groups[key] = new List<PrintQueueItem>();
                 groups[key].Add(it);
             }

@@ -121,7 +121,7 @@ namespace TurizmOperasyonSistemi.Views
                 var dict = new Dictionary<string, List<TurizmOperasyonSistemi.Services.PrintQueueItem>>();
                 foreach (var it in items)
                 {
-                    var key = (it.TourType ?? string.Empty) + "|" + (it.Period ?? string.Empty);
+                    var key = string.Join("|", new[] { it.TourType ?? string.Empty, it.Period ?? string.Empty, it.GroupType ?? string.Empty, it.DaysCount ?? string.Empty });
                     if (!dict.ContainsKey(key)) dict[key] = new List<TurizmOperasyonSistemi.Services.PrintQueueItem>();
                     dict[key].Add(it);
                 }
@@ -132,6 +132,9 @@ namespace TurizmOperasyonSistemi.Views
                     var parts = kv.Key.Split('|');
                     var title = string.IsNullOrWhiteSpace(parts[0]) ? "(Bilinmeyen Tur)" : parts[0];
                     if (!string.IsNullOrWhiteSpace(parts.Length > 1 ? parts[1] : null)) title += " - " + parts[1];
+                    // append group type and days for clarity when non-matching
+                    if (!string.IsNullOrWhiteSpace(parts.Length > 2 ? parts[2] : null)) title += " | " + parts[2];
+                    if (!string.IsNullOrWhiteSpace(parts.Length > 3 ? parts[3] : null)) title += " - " + parts[3];
                     var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb((byte)rnd.Next(60,200), (byte)rnd.Next(60,200), (byte)rnd.Next(60,200)));
                     // compute total cards by summing Quantity (at least 1 each)
                     int totalCards = 0;

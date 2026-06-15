@@ -17,6 +17,8 @@ namespace TurizmOperasyonSistemi.Services
         // New: carry grouping metadata so print pages can be grouped by tour/period
         public string TourType { get; set; }
         public string Period { get; set; }
+        public string GroupType { get; set; }
+        public string DaysCount { get; set; }
         // How many copies of this card should be printed
         public int Quantity { get; set; } = 1;
         public DateTime AddedAt { get; set; }

@@ -180,10 +180,11 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                     {
                         // load registration to capture TourType/Period grouping metadata
                         string tourType = null; string period = null;
+                        TurizmOperasyonSistemi.Models.Registration regFull = null;
                         try
                         {
                             using var db2 = new TurizmOperasyonSistemi.Data.AppDbContext();
-                            var regFull = db2.Registrations.FirstOrDefault(x => x.Id == row.RegistrationId);
+                            regFull = db2.Registrations.FirstOrDefault(x => x.Id == row.RegistrationId);
                             if (regFull != null)
                             {
                                 tourType = regFull.TourType ?? string.Empty;
@@ -201,6 +202,9 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                             Address = row.AddressRaw ?? row.Address ?? string.Empty,
                             TourType = tourType ?? string.Empty,
                             Period = period ?? string.Empty,
+                            // attempt to read GroupType/DaysCount from registration
+                            GroupType = (regFull?.GroupType) ?? string.Empty,
+                            DaysCount = (regFull?.DaysCount) ?? string.Empty,
                             Quantity = row.CargoQuantity <= 0 ? 1 : row.CargoQuantity,
                             Printed = false
                         };
