@@ -102,7 +102,7 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 _currentPreviewItems = sourceItems;
                 // Use Sender property provided by caller
-                var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
+                var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender, hideTc: true);
                 DocViewer.Document = doc;
                 try { DocViewer.FitToWidth(); } catch { }
             }
@@ -209,7 +209,7 @@ namespace TurizmOperasyonSistemi.Views
                     var items = CargoPrintQueue.Instance.Items.ToArray();
                     var sourceItems = items;
                     if (_selectedGroup != null && _selectedGroup.Items != null && _selectedGroup.Items.Length > 0) sourceItems = _selectedGroup.Items; // printing uses full group, not preview filter
-                    var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
+                    var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender, hideTc: true);
                     // print
                     pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Kargo Etiketleri");
 
@@ -245,7 +245,7 @@ namespace TurizmOperasyonSistemi.Views
                     var items = CargoPrintQueue.Instance.Items.ToArray();
                     var sourceItems = items;
                     if (_selectedGroup != null && _selectedGroup.Items != null && _selectedGroup.Items.Length > 0) sourceItems = _selectedGroup.Items; // export uses full group
-                    var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender);
+                    var doc = PrintEngine.BuildFixedDocument(sourceItems, cols, rows, OrientationCombo.SelectedIndex == 1, this.Sender, hideTc: true);
                     pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Kargo Etiketleri PDF");
                     foreach (var it in sourceItems) CargoPrintQueue.Instance.MarkPrinted(it);
                     BindQueueList();

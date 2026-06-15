@@ -12,7 +12,7 @@ namespace TurizmOperasyonSistemi.Services
 {
     public static class PrintEngine
     {
-        public static FixedDocument BuildFixedDocument(PrintQueueItem[] items, int cols, int rows, bool landscape, SenderInfo sender = null)
+        public static FixedDocument BuildFixedDocument(PrintQueueItem[] items, int cols, int rows, bool landscape, SenderInfo sender = null, bool hideTc = false)
         {
             // cols and rows specify template grid (e.g., cols=3, rows=5)
             if (cols <= 0) cols = 3;
@@ -130,7 +130,10 @@ namespace TurizmOperasyonSistemi.Services
                         }
 
                         stack.Children.Add(new TextBlock { Text = it.FullName ?? string.Empty, FontSize = 11 * scale, FontWeight = FontWeights.SemiBold });
-                        stack.Children.Add(new TextBlock { Text = $"TC: {it.Tc}", FontSize = 10 * scale });
+                        if (!hideTc)
+                        {
+                            stack.Children.Add(new TextBlock { Text = $"TC: {it.Tc}", FontSize = 10 * scale });
+                        }
                         stack.Children.Add(new TextBlock { Text = $"Tel: {it.Phone}", FontSize = 10 * scale });
                         var addr = new TextBlock { Text = it.Address ?? string.Empty, FontSize = 9 * scale, TextWrapping = TextWrapping.Wrap };
                         stack.Children.Add(addr);
