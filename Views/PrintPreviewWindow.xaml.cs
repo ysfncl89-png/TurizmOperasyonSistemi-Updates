@@ -6,35 +6,6 @@ using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi.Views
 {
-    // Converter: get initials from full name (top-level so XAML can reference)
-    public class InitialsConverter : System.Windows.Data.IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            var s = (value as string) ?? string.Empty;
-            var parts = s.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 0) return string.Empty;
-            if (parts.Length == 1) return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpperInvariant();
-            return (parts[0].Substring(0,1) + parts[parts.Length-1].Substring(0,1)).ToUpperInvariant();
-        }
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotImplementedException();
-    }
-
-    // Converter: deterministic color from name (top-level so XAML can reference)
-    public class NameToBrushConverter : System.Windows.Data.IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            var s = (value as string) ?? string.Empty;
-            int hash = 0; foreach (var ch in s) hash = (hash * 31) + ch;
-            var r = (byte)(100 + (Math.Abs(hash) % 120));
-            var g = (byte)(60 + (Math.Abs(hash/7) % 160));
-            var b = (byte)(80 + (Math.Abs(hash/13) % 140));
-            return new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(r,g,b));
-        }
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotImplementedException();
-    }
-
     public partial class PrintPreviewWindow : Window
     {
         private class GroupViewModel
@@ -44,19 +15,6 @@ namespace TurizmOperasyonSistemi.Views
             public string ItemSummary { get; set; }
             public System.Windows.Media.Brush BorderBrush { get; set; }
             public TurizmOperasyonSistemi.Services.PrintQueueItem[] Items { get; set; }
-        }
-
-        private void RemovePerson_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (!(sender is System.Windows.Controls.Button btn)) return;
-                if (!(btn.DataContext is TurizmOperasyonSistemi.Services.PrintQueueItem it)) return;
-                CargoPrintQueue.Instance.Remove(it);
-                BindQueueList();
-                RefreshPreview();
-            }
-            catch { }
         }
 
         private GroupViewModel[] _groups = new GroupViewModel[0];
