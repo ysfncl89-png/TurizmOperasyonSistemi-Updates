@@ -108,7 +108,30 @@ namespace TurizmOperasyonSistemi.Services
                 ["Connection"] = GetValue(row, "Connection")
             };
 
-            if (string.IsNullOrWhiteSpace(normalized["Oda No"]))
+            // Preserve any special flags from the source row so downstream builders
+            // (e.g., BuildRoomTable) can adjust formatting accordingly.
+            var incFlag = row != null && row.TryGetValue("__List_OdaArama_IncreaseOccupantRowHeight", out var incVal) && incVal == "1";
+            if (incFlag)
+            {
+                normalized["__List_OdaArama_IncreaseOccupantRowHeight"] = "1";
+            }
+            var suppressSourceFlag = row != null && row.TryGetValue("__List_OdaArama_SuppressRoomNumber", out var supVal) && supVal == "1";
+            if (suppressSourceFlag)
+            {
+                normalized["__List_OdaArama_SuppressRoomNumber"] = "1";
+            }
+
+            // Propagate a flag that indicates occupant names should be emphasized (larger/bold) in exports.
+            // The flag may come from multiple possible source keys; normalize into __EmphasizeOccupants.
+            var emphasizeFlag = row != null &&
+                                 ((row.TryGetValue("__List_OdaArama_EmphasizeOccupants", out var ef1) && ef1 == "1") ||
+                                  (row.TryGetValue("__EmphasizeOccupants", out var ef2) && ef2 == "1"));
+            normalized["__EmphasizeOccupants"] = emphasizeFlag ? "1" : "0";
+
+            // If export originates from the Lists -> Oda Listesi card we may intentionally
+            // suppress auto-numbering so the exported Oda No cell is left blank for manual filling.
+            var suppressFlag = suppressSourceFlag;
+            if (string.IsNullOrWhiteSpace(normalized["Oda No"]) && !suppressFlag)
             {
                 normalized["Oda No"] = (index + 1).ToString();
             }
@@ -218,15 +241,34 @@ namespace TurizmOperasyonSistemi.Services
                     }
                     else if (header == "Yerleşen Kişiler")
                     {
-                        cells.Add(BuildBodyCell(BuildParagraph(value, "left", "1F2937", 18, false), widths[i], fill));
+                        var increase = row != null && row.ContainsKey("__List_OdaArama_IncreaseOccupantRowHeight");
+                        if (increase)
+                        {
+                            cells.Add(BuildBodyCell(BuildParagraph(value, "left", "1F2937", 20, true), widths[i], fill));
+                        }
+                        else
+                        {
+                            cells.Add(BuildBodyCell(BuildParagraph(value, "left", "1F2937", 18, false), widths[i], fill));
+                        }
                     }
                     else
                     {
-                        cells.Add(BuildBodyCell(BuildParagraph(string.IsNullOrWhiteSpace(value) ? "-" : value, "center", "1F2937", 18, false), widths[i], fill));
+                        if (header == "Oda No" && row != null && row.ContainsKey("__List_OdaArama_SuppressRoomNumber"))
+                        {
+                            // leave Oda No cell empty for manual filling when suppression flag set
+                            cells.Add(BuildBodyCell(BuildParagraph(string.Empty, "center", "1F2937", 18, false), widths[i], fill));
+                        }
+                        else
+                        {
+                            cells.Add(BuildBodyCell(BuildParagraph(string.IsNullOrWhiteSpace(value) ? "-" : value, "center", "1F2937", 18, false), widths[i], fill));
+                        }
                     }
                 }
 
-                rowsXml.Add($"<w:tr>{string.Join(string.Empty, cells)}</w:tr>");
+                // Allow increasing the row height for occupant-heavy rows when requested by the source page
+                var increaseHeight = row != null && row.ContainsKey("__List_OdaArama_IncreaseOccupantRowHeight");
+                var rowPr = increaseHeight ? "<w:trPr><w:trHeight w:val=\"360\"/></w:trPr>" : string.Empty;
+                rowsXml.Add($"<w:tr>{rowPr}{string.Join(string.Empty, cells)}</w:tr>");
             }
 
             var grid = string.Join(Environment.NewLine, widths.Select(width => $"    <w:gridCol w:w=\"{width}\"/>"));

@@ -179,12 +179,17 @@ namespace TurizmOperasyonSistemi.Views
 
                         rows.Add(new Dictionary<string, string>
                         {
-                            ["Oda No"] = allocation.RoomNumber ?? string.Empty,
+                            // For Listeler -> Oda Listesi exports we intentionally leave "Oda No" empty
+                            // so the exported documents contain a blank cell for manual filling.
+                            ["Oda No"] = string.Empty,
                             ["Oda Türü"] = allocation.RoomType ?? string.Empty,
                             ["Kapasite"] = capacity.ToString(),
                             ["Yerleşen Kişi Sayısı"] = occupantCount.ToString(),
                             ["Yerleşen Kişiler"] = occupantCount > 0 ? string.Join(", ", occupants) : "Boş Oda",
                             ["Connection"] = connectionLabel
+                            // Special flags used only for exports originating from the Lists->Oda Listesi card
+                            , ["__List_OdaArama_SuppressRoomNumber"] = "1"
+                            , ["__List_OdaArama_IncreaseOccupantRowHeight"] = "1"
                         });
                     }
 

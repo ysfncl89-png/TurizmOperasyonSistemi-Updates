@@ -321,8 +321,26 @@ namespace TurizmOperasyonSistemi.Services
                     }
 
                     var align = header == "Yerleşen Kişiler" ? "left" : "center";
-                    var content = BuildParagraph(string.IsNullOrWhiteSpace(value) ? "-" : value, align, "1F2937", 18, false);
-                    cells.Add(BuildTableCell(content, widths[i], fill, "D8E0EC", align));
+                    // If the source requested increased occupant prominence, render occupant names larger/bold
+                    if (header == "Yerleşen Kişiler" && row.ContainsKey("__List_OdaArama_IncreaseOccupantRowHeight"))
+                    {
+                        var val = string.IsNullOrWhiteSpace(value) ? "-" : value;
+                        var cellXmlLarge = BuildParagraph(val, align, "1F2937", 20, true);
+                        cells.Add(BuildTableCell(cellXmlLarge, widths[i], fill, "D8E0EC", align));
+                        continue;
+                    }
+
+                    if (header == "Oda No" && row.ContainsKey("__List_OdaArama_SuppressRoomNumber"))
+                    {
+                        // leave empty instead of '-' for Oda No when suppression flag present
+                        var emptyXml = BuildParagraph(string.Empty, align, "1F2937", 18, false);
+                        cells.Add(BuildTableCell(emptyXml, widths[i], fill, "D8E0EC", align));
+                    }
+                    else
+                    {
+                        var cellXmlNormal = BuildParagraph(string.IsNullOrWhiteSpace(value) ? "-" : value, align, "1F2937", 18, false);
+                        cells.Add(BuildTableCell(cellXmlNormal, widths[i], fill, "D8E0EC", align));
+                    }
                 }
 
                 tableRows.Add($"<w:tr>{string.Join(string.Empty, cells)}</w:tr>");
@@ -630,10 +648,11 @@ namespace TurizmOperasyonSistemi.Services
         {
             var styles = @"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>
 <styleSheet xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"">
-  <fonts count=""3"">
+  <fonts count=""4"">
     <font><sz val=""11""/><name val=""Calibri""/></font>
     <font><b/><sz val=""11""/><color rgb=""FFFFFFFF""/><name val=""Calibri""/></font>
     <font><b/><sz val=""11""/><color rgb=""FF173B72""/><name val=""Calibri""/></font>
+    <font><b/><sz val=""12""/><color rgb=""FF173B72""/><name val=""Calibri""/></font>
   </fonts>
   <fills count=""4"">
     <fill><patternFill patternType=""none""/></fill>
@@ -654,7 +673,7 @@ namespace TurizmOperasyonSistemi.Services
   <cellStyleXfs count=""1"">
     <xf numFmtId=""0"" fontId=""0"" fillId=""0"" borderId=""0""/>
   </cellStyleXfs>
-  <cellXfs count=""7"">
+  <cellXfs count=""8"">
     <xf numFmtId=""0"" fontId=""0"" fillId=""0"" borderId=""1"" xfId=""0"" applyBorder=""1"" applyAlignment=""1"">
       <alignment horizontal=""center"" vertical=""center"" wrapText=""1""/>
     </xf>
@@ -675,6 +694,9 @@ namespace TurizmOperasyonSistemi.Services
     </xf>
     <xf numFmtId=""0"" fontId=""1"" fillId=""3"" borderId=""1"" xfId=""0"" applyFont=""1"" applyFill=""1"" applyBorder=""1"" applyAlignment=""1"">
       <alignment horizontal=""center"" vertical=""center"" wrapText=""1""/>
+    </xf>
+    <xf numFmtId=""0"" fontId=""3"" fillId=""3"" borderId=""1"" xfId=""0"" applyFont=""1"" applyFill=""1"" applyBorder=""1"" applyAlignment=""1"">
+      <alignment horizontal=""left"" vertical=""center"" wrapText=""1""/>
     </xf>
   </cellXfs>
 </styleSheet>";
@@ -747,15 +769,36 @@ namespace TurizmOperasyonSistemi.Services
             for (var i = 0; i < rows.Count; i++)
             {
                 var data = headers.Select(h => rows[i].ContainsKey(h) ? rows[i][h] : string.Empty).ToList();
-                rowXml.Add(BuildXlsxRow(currentRow++, data, false, (index, value) =>
+                var hasIncreasedHeight = rows[i] != null && rows[i].ContainsKey("__List_OdaArama_IncreaseOccupantRowHeight");
+                // if hasIncreasedHeight, mark occupant cell (index 4) so BuildXlsxRow can apply larger style
+                if (hasIncreasedHeight && data.Count > 4)
+                {
+                    data[4] = "!!LARGE!!" + data[4];
+                }
+
+                var rowXmlContent = BuildXlsxRow(currentRow, data, false, (index, value) =>
                 {
                     if (headers[index] == "Connection")
                     {
                         return string.Equals(value, "Hayır", StringComparison.OrdinalIgnoreCase) ? 5 : 2;
                     }
 
+                    // If value contains marker, let BuildXlsxRow choose the special large occupant XF
                     return index == 4 ? 4 : 3;
-                }));
+                });
+
+                if (hasIncreasedHeight)
+                {
+                    // Inject custom row height attribute (e.g., 26 pts) into the <row ...> element
+                    var customRow = rowXmlContent.Replace($"<row r=\"{currentRow}\"", $"<row r=\"{currentRow}\" ht=\"26\" customHeight=\"1\"");
+                    rowXml.Add(customRow);
+                }
+                else
+                {
+                    rowXml.Add(rowXmlContent);
+                }
+
+                currentRow++;
             }
 
             var summaryStartRow = currentRow + 1;
@@ -858,9 +901,17 @@ namespace TurizmOperasyonSistemi.Services
                 }
 
                 var cellRef = $"{ColumnName(i + 1)}{rowNumber}";
-                var styleIndex = header ? 1 : (styleSelector != null ? styleSelector(i, values[i] ?? string.Empty) : 3);
-                var styleAttr = $" s=\"{styleIndex}\"";
                 var raw = values[i] ?? string.Empty;
+                var styleIndex = header ? 1 : (styleSelector != null ? styleSelector(i, raw) : 3);
+                var rawValue = raw;
+                var largeMarker = "!!LARGE!!";
+                if (!header && rawValue.StartsWith(largeMarker))
+                {
+                    // XF index 7 is our large occupant style (added to styles.xml)
+                    styleIndex = 7;
+                    rawValue = rawValue.Substring(largeMarker.Length);
+                }
+                var styleAttr = $" s=\"{styleIndex}\"";
 
                 // If not a header and value is numeric, write as numeric cell to avoid Excel "number stored as text" indicators.
                 if (!header && double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var numeric))
@@ -871,7 +922,7 @@ namespace TurizmOperasyonSistemi.Services
                 }
                 else
                 {
-                    var txt = EscapeXml(raw).Replace("\n", "&#10;");
+                    var txt = EscapeXml(rawValue).Replace("\n", "&#10;");
                     cells.Add($"<c r=\"{cellRef}\" t=\"inlineStr\"{styleAttr}><is><t xml:space=\"preserve\">{txt}</t></is></c>");
                 }
             }
@@ -954,9 +1005,24 @@ namespace TurizmOperasyonSistemi.Services
                 }
 
                 var values = headersList.Select(header => row.ContainsKey(header) ? row[header] : string.Empty).ToList();
+                // If source requested increased occupant prominence, mark occupant cell so DrawPdfTableCell renders larger/bold
+                var increaseFlag = row != null && row.ContainsKey("__List_OdaArama_IncreaseOccupantRowHeight");
+                if (increaseFlag && values.Count > 4)
+                {
+                    values[4] = "!!LARGE!!" + values[4];
+                }
                 var occupantsText = values.Count > 4 ? values[4] : string.Empty;
                 var occupantLines = Math.Max(1, occupantsText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Length);
                 var rowHeight = Math.Max(20, 14 * occupantLines + 6);
+
+                // If export originates from Lists->Oda Listesi and requests increased occupant cell height,
+                // enlarge the computed PDF row height by 20% so the cell appears taller.
+                var increaseHeight = row != null && row.ContainsKey("__List_OdaArama_IncreaseOccupantRowHeight");
+                if (increaseHeight)
+                {
+                    rowHeight = (int)Math.Ceiling(rowHeight * 1.2);
+                }
+
                 DrawPdfTableRow(content, margin, y, columnWidths, values, rowHeight);
                 y -= rowHeight;
             }
@@ -1048,6 +1114,13 @@ namespace TurizmOperasyonSistemi.Services
         private static void DrawPdfTableCell(List<string> content, double x, double y, double width, double height, string value, bool header, bool leftAlign, bool connectionColumn)
         {
             var text = value ?? string.Empty;
+            var largeMarker = "!!LARGE!!";
+            var useLargeFont = false;
+            if (leftAlign && text.StartsWith(largeMarker))
+            {
+                useLargeFont = true;
+                text = text.Substring(largeMarker.Length);
+            }
             if (leftAlign)
             {
                 text = FormatPdfOccupants(text);
@@ -1069,8 +1142,8 @@ namespace TurizmOperasyonSistemi.Services
             for (var i = 0; i < lines.Length; i++)
             {
                 var line = header ? lines[i].ToUpperInvariant() : lines[i];
-                var font = header ? "/F2" : "/F1";
-                var size = header ? 8.5 : 7.8;
+                var font = header ? "/F2" : (useLargeFont ? "/F2" : "/F1");
+                var size = header ? 8.5 : (useLargeFont ? 9.5 : 7.8);
                 content.Add($"BT {font} {size.ToString(System.Globalization.CultureInfo.InvariantCulture)} Tf {textX.ToString(System.Globalization.CultureInfo.InvariantCulture)} {textY.ToString(System.Globalization.CultureInfo.InvariantCulture)} Td ({EscapePdfText(line)}) Tj ET");
                 textY -= 9;
             }
