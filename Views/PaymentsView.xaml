@@ -109,7 +109,7 @@
                         <StackPanel>
                             <Rectangle Height="6" Fill="#06B6D4" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="💸" FontSize="30" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Ödeme Hareketleri" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
+                            <TextBlock Text="Ödeme Hareketleri Kaydet" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
                             <TextBlock Text="Tüm ödeme ve tahsilat hareketleri" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>
@@ -136,7 +136,7 @@
                         <StackPanel>
                             <Rectangle Height="6" Fill="#10B981" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="📋" FontSize="30" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Ödeme Listesi" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
+                            <TextBlock Text="Ödeme Listesi İndir" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
                             <TextBlock Text="Planlı ödemeler ve liste yönetimi" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>
