@@ -18,7 +18,11 @@ namespace TurizmOperasyonSistemi.Views
 
         private void Ledger_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Cari Hesap tıklandı - detay sayfası yapılacak.");
+            var mw = System.Windows.Application.Current.MainWindow as MainWindow;
+            if (mw != null)
+            {
+                mw.NavigateTo(new LedgerView());
+            }
         }
 
         private void Documents_Click(object sender, RoutedEventArgs e)

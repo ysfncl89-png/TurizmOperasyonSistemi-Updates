@@ -1,0 +1,167 @@
+<UserControl x:Class="TurizmOperasyonSistemi.Views.LedgerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#0F172A">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CardBackground" Color="#152234" />
+        <SolidColorBrush x:Key="PanelBackground" Color="#0F172A" />
+        <SolidColorBrush x:Key="HeaderBackground" Color="#22324A" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#8B5CF6" />
+        <SolidColorBrush x:Key="TextBrush" Color="#E2F8FF" />
+        <SolidColorBrush x:Key="SubTextBrush" Color="#9CAFC0" />
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="{StaticResource CardBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="RowBackground" Value="#152234"/>
+            <Setter Property="AlternatingRowBackground" Value="#12313F"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{StaticResource HeaderBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                    <Setter Property="Foreground" Value="Black" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,12">
+            <Button x:Name="BackButton" Content="← Geri" Width="100" Height="40" Margin="0,0,12,0" Click="BackButton_Click"
+                    Background="{StaticResource PanelBackground}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" FontSize="14" BorderBrush="#334155" BorderThickness="1" Cursor="Hand"/>
+
+            <Grid Width="520" Height="40">
+                <TextBox x:Name="SearchTextBox" Height="40" FontSize="14" Padding="12,6" VerticalContentAlignment="Center"
+                         Background="{StaticResource PanelBackground}" Foreground="{StaticResource TextBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="2"
+                         TextChanged="SearchTextBox_TextChanged"/>
+                <TextBlock IsHitTestVisible="False" Margin="18,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource SubTextBrush}" FontSize="13"
+                           x:Name="SearchHint" FontStyle="Italic" Opacity="0.85">Cari hesaplarda aramak için isim, TC veya pasaport yazın</TextBlock>
+            </Grid>
+
+            <!-- Bilgilendirme kutusu: hesap sayısı ve toplamlar -->
+            <Border Background="#0B1220" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="10" Margin="12,0,0,0" VerticalAlignment="Center">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock x:Name="InfoCountText" Text="Cari hesap: 0" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="InfoTotalsText" Text="Toplamlar: -" Foreground="{StaticResource SubTextBrush}" FontSize="12" TextWrapping="Wrap" Width="320" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="{StaticResource CardBackground}" CornerRadius="12" Padding="12">
+            <DataGrid x:Name="LedgerDataGrid" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="36" CanUserResizeColumns="True" SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Sıra" Binding="{Binding Sequence}" Width="60"/>
+                    <!-- daha sıkı hizalama: sabit genişlikler, çok fazla yakınlaştırma yok -->
+                    <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="160"/>
+                    <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="160"/>
+                    <DataGridTextColumn Header="TC / Pasaport" Binding="{Binding TcOrPassport}" Width="200">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#FFF59E0B"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="White" BlurRadius="8" ShadowDepth="0" Opacity="0.28" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Toplam Tur Bedeli" Binding="{Binding TotalPrice, StringFormat=N2}" Width="140">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="White" BlurRadius="6" ShadowDepth="0" Opacity="0.18" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Toplam Ödenen" Binding="{Binding PaidAmount, StringFormat=N2}" Width="140">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#10B981"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="White" BlurRadius="8" ShadowDepth="0" Opacity="0.28" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Toplam Kalan" Binding="{Binding RemainingDebt, StringFormat=N2}" Width="140">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#DC2626"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="White" BlurRadius="8" ShadowDepth="0" Opacity="0.28" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="100">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                <Setter Property="HorizontalAlignment" Value="Center" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <!-- İncele butonu: tıklandığında kod-behavioru daha sonra verilecek -->
+                    <DataGridTemplateColumn Header="" Width="160">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Cari Hesap İncele" Width="140" Height="30" Click="InspectAccount_Click"
+                                        Background="#123046" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1.2"
+                                        Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center" Cursor="Hand"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>
