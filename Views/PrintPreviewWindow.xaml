@@ -32,9 +32,45 @@
                 <StackPanel>
                     <TextBlock Text="Baskı Havuzu (Kuyruk)" FontWeight="Bold" Margin="8" Foreground="White" />
                     <ListBox x:Name="QueueListBox" Margin="8" Background="#07121A" BorderThickness="0" SelectionChanged="QueueListBox_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Opacity" Value="0.6" />
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Opacity" Value="1" />
+                                        <Setter Property="Panel.ZIndex" Value="2" />
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#8B5CF6" BlurRadius="12" ShadowDepth="0" Opacity="0.7" />
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard x:Name="NeonBlinkStoryboard">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(Effect).BlurRadius" From="12" To="28" Duration="0:0:0.9" AutoReverse="True" RepeatBehavior="Forever" />
+                                                    <DoubleAnimation Storyboard.TargetProperty="(Effect).Opacity" From="0.6" To="1.0" Duration="0:0:0.9" AutoReverse="True" RepeatBehavior="Forever" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.EnterActions>
+                                        <Trigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="NeonBlinkStoryboard" />
+                                        </Trigger.ExitActions>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border BorderBrush="{Binding BorderBrush}" BorderThickness="2" Padding="6" Margin="4" CornerRadius="6" Background="#06121A">
+                                <Border x:Name="OuterBorder" BorderBrush="{Binding BorderBrush}" BorderThickness="2" Padding="6" Margin="4" CornerRadius="6" Background="#06121A">
                                     <DockPanel LastChildFill="True">
                                         <Button Content="✖" Width="28" Height="24" DockPanel.Dock="Right" Margin="4,0,0,0" Click="RemoveQueueItem_Click" />
                                         <StackPanel>
@@ -43,6 +79,14 @@
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="False">
+                                        <Setter TargetName="OuterBorder" Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                        <Setter TargetName="OuterBorder" Property="BorderThickness" Value="2" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
