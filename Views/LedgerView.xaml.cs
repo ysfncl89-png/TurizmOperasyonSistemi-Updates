@@ -88,12 +88,17 @@ namespace TurizmOperasyonSistemi.Views
             var rows = (source ?? _rows).ToList();
             InfoCountText.Text = $"Cari hesap: {rows.Count}";
 
-            // basit toplamlar (tüm para birimleri birlikte toplanır)
-            var totalTotal = rows.Sum(x => x.TotalPrice);
-            var totalPaid = rows.Sum(x => x.PaidAmount);
-            var totalRemaining = rows.Sum(x => x.RemainingDebt);
+            // Para birimi bazında toplamlar göster
+            var groups = rows.GroupBy(r => string.IsNullOrEmpty(r.Currency) ? "Seçilmedi" : r.Currency)
+                .Select(g => new
+                {
+                    Currency = g.Key,
+                    Total = g.Sum(x => x.TotalPrice),
+                    Paid = g.Sum(x => x.PaidAmount),
+                    Remaining = g.Sum(x => x.RemainingDebt)
+                }).ToList();
 
-            InfoTotalsText.Text = $"Toplam Tur Bedeli: {totalTotal:N2}   Tahsil Edilen: {totalPaid:N2}   Kalan: {totalRemaining:N2}";
+            InfoTotalsText.Text = string.Join("\n", groups.Select(g => $"{g.Currency}: Toplam {g.Total:N2}  Tahsil {g.Paid:N2}  Kalan {g.Remaining:N2}"));
         }
 
         private void BackButton_Click(object sender, RoutedEventArgs e)

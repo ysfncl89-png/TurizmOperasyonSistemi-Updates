@@ -46,5 +46,13 @@ namespace TurizmOperasyonSistemi.Views
         {
             this.Close();
         }
+
+        private void PaymentRecord_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as System.Windows.Controls.Button;
+            if (btn == null) return;
+            var item = btn.DataContext; // anonymous type from list
+            MessageBox.Show("Ödeme Kaydı butonu tıklandı. İşlem davranışı daha sonra eklenecek.");
+        }
     }
 }

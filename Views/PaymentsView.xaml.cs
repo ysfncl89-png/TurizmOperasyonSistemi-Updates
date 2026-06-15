@@ -11,10 +11,7 @@ namespace TurizmOperasyonSistemi.Views
             InitializeComponent();
         }
 
-        private void PaymentMovements_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Ödeme Hareketleri Kaydet tıklandı - detay sayfası yapılacak.");
-        }
+
 
         private void Ledger_Click(object sender, RoutedEventArgs e)
         {

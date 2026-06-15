@@ -102,17 +102,10 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Kartlar -->
-                <UniformGrid Columns="4" Rows="1" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,0,0,30">
+                <!-- Kartlar (3 adet kart için düzen) -->
+                <UniformGrid Columns="3" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,0,0,30">
 
-                    <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="PaymentMovements_Click" BorderBrush="#06B6D4">
-                        <StackPanel>
-                            <Rectangle Height="6" Fill="#06B6D4" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
-                            <TextBlock Text="💸" FontSize="30" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Ödeme Hareketleri Kaydet" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
-                            <TextBlock Text="Tüm ödeme ve tahsilat hareketleri" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Ödeme Hareketleri kartı kaldırıldı -->
 
                     <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="Ledger_Click" BorderBrush="#8B5CF6">
                         <StackPanel>
