@@ -34,6 +34,7 @@ namespace TurizmOperasyonSistemi.Views
                 r.Period,
                 r.GroupType,
                 DaysCount = r.DaysCount,
+                Currency = r.Currency,
                 r.TotalPrice,
                 r.PaidAmount,
                 r.RemainingDebt
