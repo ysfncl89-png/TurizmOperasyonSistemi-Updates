@@ -53,6 +53,7 @@ namespace TurizmOperasyonSistemi.Views
                 _rows.Add(new LedgerRow
                 {
                     Sequence = seq++,
+                    PersonId = item.PersonId,
                     FirstName = item.FirstName,
                     LastName = item.LastName,
                     TcOrPassport = string.IsNullOrWhiteSpace(item.Tc) ? item.Passport : item.Tc,
@@ -107,13 +108,20 @@ namespace TurizmOperasyonSistemi.Views
 
         private void InspectAccount_Click(object sender, RoutedEventArgs e)
         {
-            // Placeholder: kullanıcı hangi satırı tıkladığını almak için daha sonra doldurulacak
-            MessageBox.Show("Cari Hesap İncele butonu tıklandı. Davranış daha sonra eklenecek.");
+            var btn = sender as System.Windows.Controls.Button;
+            if (btn == null) return;
+            var row = btn.DataContext as LedgerRow;
+            if (row == null) return;
+
+            var wnd = new LedgerDetailWindow(row.PersonId);
+            wnd.Owner = System.Windows.Application.Current.MainWindow;
+            wnd.ShowDialog();
         }
     }
 
     public class LedgerRow
     {
+        public int PersonId { get; set; }
         public int Sequence { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
