@@ -96,11 +96,11 @@ namespace TurizmOperasyonSistemi.Views
             }
             else if (choiceWnd.Choice == UploadChoiceWindow.UploadChoice.Qr)
             {
-                // open QR upload window; when file saved, callback updates uploaded path
-                var qrWnd = new QRUploadWindow(path =>
+                // open QR upload window; when file saved, callback updates uploaded path and shows original filename
+                var qrWnd = new QRUploadWindow((savedPath, originalName) =>
                 {
-                    _uploadedPath = path;
-                    UploadedFileName.Text = System.IO.Path.GetFileName(_uploadedPath);
+                    _uploadedPath = savedPath;
+                    UploadedFileName.Text = originalName ?? System.IO.Path.GetFileName(_uploadedPath);
                 });
                 qrWnd.Owner = this;
                 qrWnd.ShowDialog();

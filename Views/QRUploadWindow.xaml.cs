@@ -10,6 +10,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using QRCoder;
 using System.Windows;
+using System.Diagnostics;
+using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
 namespace TurizmOperasyonSistemi.Views
@@ -18,13 +20,89 @@ namespace TurizmOperasyonSistemi.Views
     {
         private TcpListener _tcpListener;
         private int _port;
-        private readonly Action<string> _onFileSaved;
+        private readonly Action<string, string> _onFileSaved;
+        private readonly string _token;
+        private readonly DateTime _tokenCreatedUtc;
+        private readonly TimeSpan _tokenLifetime = TimeSpan.FromMinutes(10);
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Generic.List<DateTime>> _ipUploadTimestamps =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Generic.List<DateTime>>();
+        // rate limit settings
+        private readonly int _maxUploadsPerWindow = 5;
+        private readonly TimeSpan _rateLimitWindow = TimeSpan.FromMinutes(1);
 
-        public QRUploadWindow(Action<string> onFileSaved)
+        public QRUploadWindow(Action<string, string> onFileSaved)
         {
             InitializeComponent();
             _onFileSaved = onFileSaved;
+            _token = Guid.NewGuid().ToString("N");
+            _tokenCreatedUtc = DateTime.UtcNow;
             StartListener();
+        }
+
+        private bool IsRateLimited(string ip)
+        {
+            try
+            {
+                var list = _ipUploadTimestamps.GetOrAdd(ip ?? "unknown", _ => new List<DateTime>());
+                lock (list)
+                {
+                    var cutoff = DateTime.UtcNow - _rateLimitWindow;
+                    list.RemoveAll(d => d < cutoff);
+                    if (list.Count >= _maxUploadsPerWindow) return true;
+                    list.Add(DateTime.UtcNow);
+                    return false;
+                }
+            }
+            catch { return false; }
+        }
+
+        private void LogEvent(string message)
+        {
+            try
+            {
+                var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TurizmOperasyonSistemi", "Logs");
+                Directory.CreateDirectory(logDir);
+                var logFile = Path.Combine(logDir, "upload.log");
+                var line = $"[{DateTime.UtcNow:O}] {message}" + Environment.NewLine;
+                File.AppendAllText(logFile, line);
+            }
+            catch { }
+        }
+
+        private bool ScanFileWithWindowsDefender(string path)
+        {
+            try
+            {
+                // Common locations for MpCmdRun
+                var candidates = new[] {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Windows Defender", "MpCmdRun.exe"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Windows Defender", "MpCmdRun.exe")
+                };
+                string exe = candidates.FirstOrDefault(File.Exists);
+                if (exe == null) return true; // no scanner available -> treat as pass
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = exe,
+                    Arguments = $"-Scan -ScanType 3 -File \"{path}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                using (var p = Process.Start(psi))
+                {
+                    p.WaitForExit(30000); // wait up to 30s
+                    var exit = p.ExitCode;
+                    // exit code 0 typically means success/no threats; non-zero may indicate threat or error
+                    return exit == 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                try { LogEvent("Antivirus scan error: " + ex.Message); } catch { }
+                return false;
+            }
         }
 
         private void StartListener()
@@ -116,7 +194,7 @@ namespace TurizmOperasyonSistemi.Views
                         while (true)
                         {
                             var client = await _tcpListener.AcceptTcpClientAsync();
-                            _ = Task.Run(() => HandleClient(client));
+                            Task.Run(() => HandleClient(client));
                         }
                     }
                     catch { }
@@ -131,6 +209,18 @@ namespace TurizmOperasyonSistemi.Views
                 using (client)
                 using (var ns = client.GetStream())
                 {
+                    // Rate limit check per remote IP
+                    string remoteIp = null;
+                    try { remoteIp = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(); } catch { remoteIp = "unknown"; }
+                    if (IsRateLimited(remoteIp))
+                    {
+                        try { LogEvent($"Rate limit exceeded for {remoteIp}"); } catch { }
+                        var tooMany = "HTTP/1.1 429 Too Many Requests\r\nContent-Length: 0\r\n\r\n";
+                        var tm = System.Text.Encoding.UTF8.GetBytes(tooMany);
+                        ns.Write(tm, 0, tm.Length);
+                        return;
+                    }
+
                     // Read headers until CRLF CRLF
                     var headerBuffer = new MemoryStream();
                     var buffer = new byte[8192];
@@ -154,23 +244,57 @@ namespace TurizmOperasyonSistemi.Views
                             var firstLine = headersText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
                             if (firstLine.StartsWith("GET", StringComparison.OrdinalIgnoreCase))
                             {
-                                var html = "<html><body>\n<h3>Dosya yükle</h3>\n<form method='post' enctype='multipart/form-data'>\n<input type='file' name='file' />\n<input type='submit' value='Yükle' />\n</form>\n</body></html>";
+                                // Serve upload form; include token in action
+                                var html = $"<html><body>\n<h3>Dosya yükle</h3>\n<form method='post' enctype='multipart/form-data' action='/upload?t={_token}'>\n<input type='file' name='file' />\n<input type='submit' value='Yükle' />\n</form>\n</body></html>";
                                 var resp = $"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {System.Text.Encoding.UTF8.GetByteCount(html)}\r\n\r\n{html}";
                                 var respBytes = System.Text.Encoding.UTF8.GetBytes(resp);
                                 ns.Write(respBytes, 0, respBytes.Length);
                                 return;
                             }
 
-                            // POST handling: find Content-Length
+                            // POST handling: find Content-Length and validate token
                             var contentLength = 0;
                             var headersLines = headersText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var line in headersLines)
                             {
                                 if (line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    var parts = line.Split(':');
-                                    if (parts.Length > 1 && int.TryParse(parts[1].Trim(), out var cl)) contentLength = cl;
+                                    var headerParts = line.Split(':');
+                                    if (headerParts.Length > 1 && int.TryParse(headerParts[1].Trim(), out var cl)) contentLength = cl;
                                 }
+                            }
+
+                            // Validate token from request path (firstLine contains method and path)
+                            var firstLineParts = firstLine.Split(' ');
+                            var reqPath = firstLineParts.Length > 1 ? firstLineParts[1] : "/upload";
+                            string reqToken = null;
+                            var qidx = reqPath.IndexOf('?');
+                            if (qidx >= 0)
+                            {
+                                var q = reqPath.Substring(qidx + 1);
+                                var qparts = q.Split('&');
+                                foreach (var qp in qparts)
+                                {
+                                    if (qp.StartsWith("t=", StringComparison.OrdinalIgnoreCase)) { reqToken = qp.Substring(2); break; }
+                                }
+                            }
+
+                            if (string.IsNullOrEmpty(reqToken) || reqToken != _token || DateTime.UtcNow - _tokenCreatedUtc > _tokenLifetime)
+                            {
+                                var forbidden = "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n";
+                                var fbytes = System.Text.Encoding.UTF8.GetBytes(forbidden);
+                                ns.Write(fbytes, 0, fbytes.Length);
+                                return;
+                            }
+
+                            // Enforce maximum upload size (10 MB)
+                            const int MaxUploadBytes = 10 * 1024 * 1024;
+                            if (contentLength > MaxUploadBytes)
+                            {
+                                var tooLarge = "HTTP/1.1 413 Payload Too Large\r\nContent-Length: 0\r\n\r\n";
+                                var tbytes = System.Text.Encoding.UTF8.GetBytes(tooLarge);
+                                ns.Write(tbytes, 0, tbytes.Length);
+                                return;
                             }
 
                             var tmpdir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TurizmOperasyonSistemi", "Uploads");
@@ -212,8 +336,8 @@ namespace TurizmOperasyonSistemi.Views
 
                                 if (!string.IsNullOrEmpty(boundary))
                                 {
-                                    var parts = bodyStr.Split(new string[] { "--" + boundary }, StringSplitOptions.RemoveEmptyEntries);
-                                    foreach (var part in parts)
+                                    var bodyParts = bodyStr.Split(new string[] { "--" + boundary }, StringSplitOptions.RemoveEmptyEntries);
+                                    foreach (var part in bodyParts)
                                     {
                                         var p = part.TrimEnd('\r','\n');
                                         if (string.IsNullOrWhiteSpace(p) || p == "--") continue;
@@ -247,9 +371,31 @@ namespace TurizmOperasyonSistemi.Views
                                             Array.Resize(ref contentBytes, contentBytes.Length - 2);
                                         }
 
+                                        // Validate extension whitelist and magic bytes
+                                        var ext = Path.GetExtension(filename).ToLowerInvariant();
+                                        var allowed = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+                                        bool okExt = allowed.Contains(ext);
+                                        if (okExt)
+                                        {
+                                            // Check magic bytes for known types
+                                            if (ext == ".jpg" || ext == ".jpeg") okExt = contentBytes.Length >= 2 && contentBytes[0] == 0xFF && contentBytes[1] == 0xD8;
+                                            else if (ext == ".png") okExt = contentBytes.Length >= 4 && contentBytes[0] == 0x89 && contentBytes[1] == 0x50 && contentBytes[2] == 0x4E && contentBytes[3] == 0x47;
+                                            else if (ext == ".pdf") okExt = contentBytes.Length >= 4 && contentBytes[0] == (byte)'%' && contentBytes[1] == (byte)'P' && contentBytes[2] == (byte)'D' && contentBytes[3] == (byte)'F';
+                                        }
+
+                                        if (!okExt)
+                                        {
+                                            // reject
+                                            var bad = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Length: 0\r\n\r\n";
+                                            var bbytes = System.Text.Encoding.UTF8.GetBytes(bad);
+                                            ns.Write(bbytes, 0, bbytes.Length);
+                                            return;
+                                        }
+
                                         var path = Path.Combine(tmpdir, filename);
                                         File.WriteAllBytes(path, contentBytes);
                                         savedPath = path;
+                                        var originalName = filename;
                                         break;
                                     }
                                 }
@@ -257,6 +403,7 @@ namespace TurizmOperasyonSistemi.Views
                             catch { savedPath = null; }
 
                             // Fallback: if we didn't save via multipart parsing, save raw body
+                            string originalFileName = null;
                             if (savedPath == null)
                             {
                                 var fileName = $"upload_{DateTime.Now:yyyyMMddHHmmss}.bin";
@@ -266,6 +413,32 @@ namespace TurizmOperasyonSistemi.Views
                                     fs.Write(bodyBytes, 0, offset);
                                 }
                                 savedPath = path;
+                                originalFileName = Path.GetFileName(path);
+                            }
+                            else
+                            {
+                                // if we saved via multipart parsing and set originalName above
+                                try { originalFileName = Path.GetFileName(savedPath); } catch { originalFileName = savedPath; }
+                            }
+
+                            // Run antivirus scan (Windows Defender) synchronously; if scan fails or reports problem, delete and reject
+                            try
+                            {
+                                var scanOk = ScanFileWithWindowsDefender(savedPath);
+                                if (!scanOk)
+                                {
+                                    try { File.Delete(savedPath); } catch { }
+                                    var infected = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Length: 0\r\n\r\n";
+                                    var ib = System.Text.Encoding.UTF8.GetBytes(infected);
+                                    ns.Write(ib, 0, ib.Length);
+                                    LogEvent($"File rejected by antivirus: {savedPath}");
+                                    return;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                // If antivirus check fails unexpectedly, log and continue (do not block all uploads)
+                                try { LogEvent($"Antivirus check failed for {savedPath}: {ex.Message}"); } catch { }
                             }
 
                             var okResp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 7\r\n\r\nYüklendi";
@@ -275,7 +448,7 @@ namespace TurizmOperasyonSistemi.Views
                             Dispatcher.Invoke(() =>
                             {
                                 QrStatus.Text = "Dosya alındı: " + Path.GetFileName(savedPath);
-                                _onFileSaved?.Invoke(savedPath);
+                                _onFileSaved?.Invoke(savedPath, originalFileName);
                                 this.DialogResult = true;
                                 this.Close();
                             });
