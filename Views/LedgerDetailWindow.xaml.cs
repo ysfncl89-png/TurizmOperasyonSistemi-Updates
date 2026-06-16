@@ -88,9 +88,9 @@ namespace TurizmOperasyonSistemi.Views
             if (btn == null) return;
             var item = btn.DataContext as RegistrationDetail;
             if (item == null) return;
-
-            // Placeholder: ödeme geçmişi inceleme penceresi
-            MessageBox.Show($"Ödeme geçmişi incelenecek: KayıtId={item.Id}");
+            var wnd = new PaymentHistoryWindow(item.Id);
+            wnd.Owner = this;
+            wnd.ShowDialog();
         }
 
         private class RegistrationDetail

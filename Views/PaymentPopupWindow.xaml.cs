@@ -75,6 +75,7 @@ namespace TurizmOperasyonSistemi.Views
 
                     var selectedCurrency = CbCurrency.SelectedItem as string;
                     decimal added = 0;
+                    decimal? rateUsed = null;
 
                     if (!string.IsNullOrEmpty(selectedCurrency) && (
                         selectedCurrency.IndexOf("Türk", StringComparison.OrdinalIgnoreCase) >= 0
@@ -91,12 +92,26 @@ namespace TurizmOperasyonSistemi.Views
 
                         // convert TL to registration currency by dividing by rate
                         added = amount / rate;
+                        rateUsed = rate;
                     }
                     else
                     {
                         // same currency or other currency selected: assume amount is already in registration currency
                         added = amount;
                     }
+
+                    // create payment record
+                    db.EnsurePaymentsTableExists();
+                    var payment = new TurizmOperasyonSistemi.Models.Payment
+                    {
+                        RegistrationId = _registrationId,
+                        OriginalAmount = amount,
+                        OriginalCurrency = selectedCurrency,
+                        AmountInRegistrationCurrency = added,
+                        Rate = rateUsed,
+                        Note = TbNote.Text
+                    };
+                    db.Payments.Add(payment);
 
                     // Güncelleme: PaidAmount ve RemainingDebt'ı güncelle (kayıt birimine göre)
                     reg.PaidAmount += added;

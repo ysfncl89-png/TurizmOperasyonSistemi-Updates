@@ -12,6 +12,7 @@ namespace TurizmOperasyonSistemi.Data
         public DbSet<Person> Persons { get; set; }
         public DbSet<AppSetting> AppSettings { get; set; }
         public DbSet<Registration> Registrations { get; set; }
+        public DbSet<Models.Payment> Payments { get; set; }
         public DbSet<Hotel> Hotels { get; set; }
         public DbSet<RoomAllocation> RoomAllocations { get; set; }
         public DbSet<RoomOccupant> RoomOccupants { get; set; }
@@ -19,6 +20,36 @@ namespace TurizmOperasyonSistemi.Data
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite(@"Data Source=C:\TurizmDB\turizm.db");
+        }
+
+        public void EnsurePaymentsTableExists()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"CREATE TABLE IF NOT EXISTS Payments (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        RegistrationId INTEGER,
+                        CreatedAt TEXT,
+                        OriginalAmount REAL,
+                        OriginalCurrency TEXT,
+                        AmountInRegistrationCurrency REAL,
+                        Rate REAL,
+                        Note TEXT,
+                        UploadedDocumentPath TEXT
+                    );";
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsurePaymentsTableExists hata: {ex.Message}");
+            }
         }
 
         // Eğer Registrations tablosunda PassportArrived sütunu yoksa ekleyen yardımcı metot
