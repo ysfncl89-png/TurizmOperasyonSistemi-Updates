@@ -44,7 +44,8 @@ namespace TurizmOperasyonSistemi.Views
                 Currency = r.Currency,
                 TotalPrice = r.TotalPrice,
                 PaidAmount = r.PaidAmount,
-                RemainingDebt = r.RemainingDebt
+                RemainingDebt = r.RemainingDebt,
+                IsOverpaid = r.RemainingDebt < 0
             }).ToList();
                 DetailGrid.ItemsSource = list;
             }
@@ -72,7 +73,7 @@ namespace TurizmOperasyonSistemi.Views
             var item = btn.DataContext as RegistrationDetail;
             if (item == null) return;
 
-            var wnd = new PaymentPopupWindow(item.Id);
+            var wnd = new PaymentPopupWindow(item.Id, item.IsOverpaid);
             wnd.Owner = this;
             var res = wnd.ShowDialog();
             if (res == true)
@@ -104,6 +105,7 @@ namespace TurizmOperasyonSistemi.Views
             public decimal TotalPrice { get; set; }
             public decimal PaidAmount { get; set; }
             public decimal RemainingDebt { get; set; }
+            public bool IsOverpaid { get; set; }
         }
     }
 }

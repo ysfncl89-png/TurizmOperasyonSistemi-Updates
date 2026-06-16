@@ -11,12 +11,23 @@ namespace TurizmOperasyonSistemi.Views
     {
         private readonly int _registrationId;
         private string _uploadedPath;
+        private bool _isRefund = false;
         public PaymentPopupWindow(int registrationId)
         {
             InitializeComponent();
             _registrationId = registrationId;
             LoadCurrencies();
             LoadPaymentMethods();
+        }
+
+        public PaymentPopupWindow(int registrationId, bool isRefund) : this(registrationId)
+        {
+            _isRefund = isRefund;
+            if (_isRefund)
+            {
+                // change confirm button appearance to indicate refund mode
+                ConfirmBtn.Content = "Onayla (İade)";
+            }
         }
 
         private void CbCurrency_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -127,6 +138,13 @@ namespace TurizmOperasyonSistemi.Views
                         // same currency or other currency selected: assume amount is already in registration currency
                         added = amount;
                     }
+                    // If refund mode, record negative amount so PaidAmount decreases
+                    if (_isRefund)
+                    {
+                        added = -added;
+                        // store original amount negative to indicate refund in history
+                        amount = -amount;
+                    }
 
                     // create payment record
                     db.EnsurePaymentsTableExists();
@@ -145,7 +163,8 @@ namespace TurizmOperasyonSistemi.Views
 
                     // Güncelleme: PaidAmount ve RemainingDebt'ı güncelle (kayıt birimine göre)
                     reg.PaidAmount += added;
-                    reg.RemainingDebt = Math.Max(0, reg.TotalPrice - reg.PaidAmount);
+                    // Allow RemainingDebt to go negative if overpayment occurs
+                    reg.RemainingDebt = reg.TotalPrice - reg.PaidAmount;
                     db.SaveChanges();
                 }
 

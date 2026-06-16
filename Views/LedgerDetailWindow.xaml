@@ -90,8 +90,22 @@
                         <DataGridTemplateColumn Header="İşlem" Width="130">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="Ödeme Kaydı +" Width="110" Height="28" Click="PaymentRecord_Click"
-                                            Background="#10B981" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                                    <Button Width="110" Height="28" Click="PaymentRecord_Click" BorderThickness="0" Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Content" Value="Ödeme Kaydı +" />
+                                                <Setter Property="Background" Value="#10B981" />
+                                                <Setter Property="Foreground" Value="White" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOverpaid}" Value="True">
+                                                        <Setter Property="Content" Value="Ödeme yap -" />
+                                                        <Setter Property="Background" Value="#DC2626" />
+                                                        <Setter Property="Foreground" Value="White" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

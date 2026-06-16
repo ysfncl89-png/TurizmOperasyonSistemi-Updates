@@ -33,6 +33,19 @@
                 <Setter Property="Padding" Value="6,4" />
                 <Setter Property="BorderThickness" Value="0" />
             </Style>
+
+            <!-- Cell style to color amounts: refunds (IsRefund true) -> red, payments -> green -->
+            <Style x:Key="AmountCellStyle" TargetType="DataGridCell">
+                <Setter Property="Foreground" Value="#E2F8FF" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsRefund}" Value="True">
+                        <Setter Property="Foreground" Value="#DC2626" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IsRefund}" Value="False">
+                        <Setter Property="Foreground" Value="#10B981" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
         </Border.Resources>
 
         <Grid>
@@ -47,15 +60,26 @@
             <DataGrid x:Name="PaymentsGrid" Grid.Row="1" AutoGenerateColumns="False" RowHeight="30" Background="#152234" Foreground="#E2F8FF">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Tarih" Binding="{Binding CreatedAt, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="160"/>
-                    <DataGridTextColumn Header="Miktar (Orj)" Binding="{Binding OriginalAmountDisplay}" Width="140"/>
-                    <DataGridTextColumn Header="Dönüştürülmüş" Binding="{Binding ConvertedDisplay}" Width="140"/>
+                    <DataGridTextColumn Header="Miktar (Orj)" Binding="{Binding OriginalAmountDisplay}" Width="140">
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource AmountCellStyle}" />
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Dönüştürülmüş" Binding="{Binding ConvertedDisplay}" Width="140">
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource AmountCellStyle}" />
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
                     <DataGridTextColumn Header="Kur" Binding="{Binding Rate}" Width="90"/>
                     <DataGridTextColumn Header="Ödeme Yöntemi" Binding="{Binding PaymentMethod}" Width="140"/>
                     <DataGridTextColumn Header="Açıklama" Binding="{Binding Note}" Width="*"/>
                     <DataGridTemplateColumn Header="Dekont" Width="140">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Dekont görüntüle" Padding="6,2" Click="OpenDocumentBtn_Click" CommandParameter="{Binding UploadedDocumentPath}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Dekont görüntüle" Padding="6,2" Click="OpenDocumentBtn_Click" CommandParameter="{Binding UploadedDocumentPath}" />
+                                    <Button Content="Sil" Padding="6,2" Margin="8,0,0,0" Click="DeletePaymentBtn_Click" CommandParameter="{Binding Id}" Background="#DC2626" Foreground="White" />
+                                </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

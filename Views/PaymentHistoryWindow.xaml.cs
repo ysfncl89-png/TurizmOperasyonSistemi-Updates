@@ -7,9 +7,11 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class PaymentHistoryWindow : Window
     {
+        private int _registrationId;
         public PaymentHistoryWindow(int registrationId)
         {
             InitializeComponent();
+            _registrationId = registrationId;
             LoadPayments(registrationId);
         }
 
@@ -27,17 +29,67 @@ namespace TurizmOperasyonSistemi.Views
 
                 var list = payments.Select(p => new
                 {
+                    p.Id,
                     p.CreatedAt,
                     OriginalAmountDisplay = (p.OriginalAmount.ToString("N2") + " " + (p.OriginalCurrency ?? "")),
                     p.AmountInRegistrationCurrency,
                     ConvertedDisplay = (p.AmountInRegistrationCurrency.ToString("N2") + " " + (p.Registration?.Currency ?? "")),
                     Rate = p.Rate,
+                    IsRefund = p.AmountInRegistrationCurrency < 0,
                     PaymentMethod = p.PaymentMethod ?? "",
+                    UploadedDocumentPath = p.UploadedDocumentPath,
                     UploadedFileName = string.IsNullOrEmpty(p.UploadedDocumentPath) ? "" : System.IO.Path.GetFileName(p.UploadedDocumentPath),
                     Note = p.Note ?? ""
                 }).ToList();
 
                 PaymentsGrid.ItemsSource = list;
+            }
+        }
+
+        private void DeletePaymentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as System.Windows.Controls.Button;
+            if (btn == null) return;
+            if (!int.TryParse(btn.CommandParameter?.ToString(), out var paymentId)) return;
+
+            var res = MessageBox.Show("Seçili ödeme kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", "Onay", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (res != MessageBoxResult.Yes) return;
+
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var payment = db.Payments.FirstOrDefault(p => p.Id == paymentId);
+                    if (payment == null)
+                    {
+                        MessageBox.Show("Ödeme kaydı bulunamadı.");
+                        return;
+                    }
+
+                    var regId = payment.RegistrationId;
+                    db.Payments.Remove(payment);
+                    db.SaveChanges();
+
+                    // Recalculate registration sums from remaining payments
+                    var reg = db.Registrations.FirstOrDefault(r => r.Id == regId);
+                    if (reg != null)
+                    {
+                        var paid = db.Payments.Where(p => p.RegistrationId == regId).Sum(p => p.AmountInRegistrationCurrency);
+                        reg.PaidAmount = paid;
+                        reg.RemainingDebt = reg.TotalPrice - reg.PaidAmount;
+                        db.SaveChanges();
+                    }
+
+                    // publish notification so ledger views refresh
+                    TurizmOperasyonSistemi.Services.NotificationCenter.Publish("payment.updated", regId);
+                }
+
+                // reload list
+                LoadPayments(_registrationId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ödeme silinirken hata: " + ex.Message);
             }
         }
 
