@@ -244,37 +244,81 @@ namespace TurizmOperasyonSistemi.Views
                             var firstLine = headersText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
                             if (firstLine.StartsWith("GET", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Serve a responsive, theme-matching upload form; include token in action
-                                var html = $@"<html><head>
+                                // Serve a responsive, themed upload form with enhanced UX; include token in action
+                                var htmlTemplate = @"<html><head>
 <meta name='viewport' content='width=device-width,initial-scale=1'>
 <style>
-  :root{{--bg:#0F172A;--panel:#1E293B;--panel2:#1F2937;--accent:#06B6D4;--accent-strong:#38BDF8;--muted:#94A3B8;--white:#FFFFFF}}
-  html,body{{height:100%;margin:0;padding:0;background:var(--bg);font-family:Segoe UI,Helvetica,Arial,sans-serif;color:var(--white)}}
-  .wrap{{min-height:100%;display:flex;align-items:center;justify-content:center;padding:20px}}
-  .panel{{width:100%;max-width:520px;background:var(--panel);border-radius:14px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02)}}
-  h3{{margin:0 0 10px 0;font-size:20px;color:var(--white)}}
-  .desc{{color:var(--muted);font-size:13px;margin-bottom:12px}}
-  .form-row{{margin:14px 0;display:flex;flex-direction:column;gap:8px}}
-  input[type=file]{{background:var(--panel2);border:1px solid rgba(255,255,255,0.03);color:var(--white);padding:12px;border-radius:8px}}
-  .btn{{display:inline-block;background:linear-gradient(180deg,var(--accent),#0596b8);color:var(--white);border:none;padding:12px 18px;border-radius:10px;font-size:16px;cursor:pointer;box-shadow:0 6px 18px rgba(6,182,212,0.12)}}
-  .help{{font-size:12px;color:var(--muted);margin-top:8px}}
-  @media (max-width:420px){{.panel{{padding:14px;border-radius:10px}} input[type=file]{{padding:10px}} .btn{{width:100%}}}}
+  :root{--bg:#0F172A;--panel:#1E293B;--panel2:#1F2937;--accent:#06B6D4;--accent-strong:#38BDF8;--muted:#94A3B8;--white:#FFFFFF}
+  html,body{height:100%;margin:0;padding:0;background:var(--bg);font-family:Segoe UI,Helvetica,Arial,sans-serif;color:var(--white)}
+  .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:20px}
+  .panel{width:100%;max-width:560px;background:var(--panel);border-radius:14px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02)}
+  h3{margin:0 0 6px 0;font-size:20px;color:var(--white)}
+  .desc{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .dropzone{border:2px dashed rgba(255,255,255,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);padding:18px;border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer}
+  .dropzone.dragover{border-color:var(--accent-strong);box-shadow:0 8px 20px rgba(56,189,248,0.08)}
+  .drop-text{color:var(--muted);font-size:14px}
+  #fileLabel{color:var(--white);font-weight:600}
+  #preview{max-width:220px;max-height:160px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);display:none}
+  .controls{display:flex;gap:12px;align-items:center;margin-top:12px}
+  .btn-choose{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--white);padding:10px 14px;border-radius:8px;cursor:pointer}
+  .btn-upload{background:linear-gradient(180deg,var(--accent),#0596b8);color:var(--white);border:none;padding:10px 16px;border-radius:10px;font-size:16px;cursor:pointer}
+  .btn-upload[disabled]{opacity:0.5;cursor:not-allowed}
+  .help{font-size:12px;color:var(--muted);margin-top:10px}
+  @media (max-width:420px){.panel{padding:14px;border-radius:10px} #preview{max-width:160px;max-height:120px} .btn-upload{width:100%}}
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var fileInput = document.getElementById('fileInput');
+  var uploadBtn = document.getElementById('uploadBtn');
+  var fileLabel = document.getElementById('fileLabel');
+  var preview = document.getElementById('preview');
+  var drop = document.getElementById('dropzone');
+  uploadBtn.disabled = true;
+  drop.addEventListener('click', function(e){ fileInput.click(); });
+  var chooseBtn = document.querySelector('.btn-choose');
+  if (chooseBtn) chooseBtn.addEventListener('click', function(e){ fileInput.click(); });
+  fileInput.addEventListener('change', function(){
+    if (fileInput.files && fileInput.files.length>0){
+      var f = fileInput.files[0];
+      fileLabel.textContent = f.name;
+      uploadBtn.disabled = false;
+      if (f.type && f.type.startsWith('image/')){
+        var reader = new FileReader();
+        reader.onload = function(ev){ preview.src = ev.target.result; preview.style.display='block'; };
+        reader.readAsDataURL(f);
+      } else { preview.style.display='none'; }
+    } else { fileLabel.textContent='Dosya seçilmedi'; preview.style.display='none'; uploadBtn.disabled = true; }
+  });
+  drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('dragover'); });
+  drop.addEventListener('dragleave', function(e){ drop.classList.remove('dragover'); });
+  drop.addEventListener('drop', function(e){
+    e.preventDefault(); drop.classList.remove('dragover');
+    var dt = new DataTransfer();
+    for(var i=0;i<e.dataTransfer.files.length;i++) dt.items.add(e.dataTransfer.files[i]);
+    fileInput.files = dt.files;
+    fileInput.dispatchEvent(new Event('change'));
+  });
+});
+</script>
 </head><body>
 <div class='wrap'><div class='panel'>
   <h3>Dekont / Belge Yükle</h3>
   <div class='desc'>Telefonunuzdan QR okuyarak hızlıca belge yükleyin. Güvenlik: token ile korumalı, maksimum 10 MB.</div>
-  <form method='post' enctype='multipart/form-data' action='/upload?t={_token}'>
-    <div class='form-row'>
-      <input type='file' name='file' accept='.pdf,image/*' />
+  <form method='post' enctype='multipart/form-data' action='/upload?t={TOKEN}'>
+    <div id='dropzone' class='dropzone'>
+      <div id='fileLabel' class='drop-text'>Sürükle veya seçmek için tıklayın</div>
+      <img id='preview' src='' alt='preview' />
+      <input id='fileInput' type='file' name='file' accept='.pdf,image/*' style='display:none' />
     </div>
-    <div class='form-row'>
-      <button class='btn' type='submit'>Yükle</button>
+    <div class='controls'>
+      <button type='button' class='btn-choose'>Dosya Seç</button>
+      <button id='uploadBtn' class='btn-upload' type='submit'>Yükle</button>
     </div>
     <div class='help'>İzin verilen türler: PDF, JPG, PNG. Maksimum: 10 MB.</div>
   </form>
 </div></div>
 </body></html>";
+                                var html = htmlTemplate.Replace("{TOKEN}", _token);
                                 var resp = $"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {System.Text.Encoding.UTF8.GetByteCount(html)}\r\n\r\n{html}";
                                 var respBytes = System.Text.Encoding.UTF8.GetBytes(resp);
                                 ns.Write(respBytes, 0, respBytes.Length);
