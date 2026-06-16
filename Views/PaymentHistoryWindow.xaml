@@ -1,7 +1,7 @@
 <Window x:Class="TurizmOperasyonSistemi.Views.PaymentHistoryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Ödeme Hareketleri" Height="360" Width="900" WindowStartupLocation="CenterOwner" Background="#00FFFFFF" WindowStyle="None" AllowsTransparency="True">
+        Title="Ödeme Hareketleri" Height="360" Width="1000" WindowStartupLocation="CenterOwner" Background="#00FFFFFF" WindowStyle="None" AllowsTransparency="True">
     <Border Background="#1F3443" CornerRadius="10" Padding="14" BorderBrush="#3A6B7B" BorderThickness="1.2">
         <Border.Resources>
             <Style TargetType="DataGrid">
@@ -60,25 +60,25 @@
             <DataGrid x:Name="PaymentsGrid" Grid.Row="1" AutoGenerateColumns="False" RowHeight="30" Background="#152234" Foreground="#E2F8FF">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Tarih" Binding="{Binding CreatedAt, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="160"/>
-                    <DataGridTextColumn Header="Miktar (Orj)" Binding="{Binding OriginalAmountDisplay}" Width="140">
+                    <DataGridTextColumn Header="Miktar (Orj)" Binding="{Binding OriginalAmountDisplay}" Width="120">
                         <DataGridTextColumn.CellStyle>
                             <Style TargetType="DataGridCell" BasedOn="{StaticResource AmountCellStyle}" />
                         </DataGridTextColumn.CellStyle>
                     </DataGridTextColumn>
-                    <DataGridTextColumn Header="Dönüştürülmüş" Binding="{Binding ConvertedDisplay}" Width="140">
+                    <DataGridTextColumn Header="Dönüştürülmüş" Binding="{Binding ConvertedDisplay}" Width="160">
                         <DataGridTextColumn.CellStyle>
                             <Style TargetType="DataGridCell" BasedOn="{StaticResource AmountCellStyle}" />
                         </DataGridTextColumn.CellStyle>
                     </DataGridTextColumn>
-                    <DataGridTextColumn Header="Kur" Binding="{Binding Rate}" Width="90"/>
+                    <DataGridTextColumn Header="Kur" Binding="{Binding Rate}" Width="60"/>
                     <DataGridTextColumn Header="Ödeme Yöntemi" Binding="{Binding PaymentMethod}" Width="140"/>
                     <DataGridTextColumn Header="Açıklama" Binding="{Binding Note}" Width="*"/>
-                    <DataGridTemplateColumn Header="Dekont" Width="140">
+                    <DataGridTemplateColumn Header="Dekont" Width="180">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="Dekont görüntüle" Padding="6,2" Click="OpenDocumentBtn_Click" CommandParameter="{Binding UploadedDocumentPath}" />
-                                    <Button Content="Sil" Padding="6,2" Margin="8,0,0,0" Click="DeletePaymentBtn_Click" CommandParameter="{Binding Id}" Background="#DC2626" Foreground="White" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Content="Göster" Width="100" Height="28" Margin="0,0,6,0" Click="OpenDocumentBtn_Click" CommandParameter="{Binding UploadedDocumentPath}" />
+                                    <Button Content="Sil" Width="60" Height="28" Click="DeletePaymentBtn_Click" CommandParameter="{Binding Id}" Background="#DC2626" Foreground="White" />
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

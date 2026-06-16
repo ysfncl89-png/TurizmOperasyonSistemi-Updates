@@ -74,7 +74,9 @@ namespace TurizmOperasyonSistemi.Views
                     var reg = db.Registrations.FirstOrDefault(r => r.Id == regId);
                     if (reg != null)
                     {
-                        var paid = db.Payments.Where(p => p.RegistrationId == regId).Sum(p => p.AmountInRegistrationCurrency);
+                        // SQLite may store numeric columns as TEXT; perform aggregation on client side to avoid provider errors
+                        var paymentAmounts = db.Payments.Where(p => p.RegistrationId == regId).Select(p => p.AmountInRegistrationCurrency).ToList();
+                        var paid = paymentAmounts.Sum();
                         reg.PaidAmount = paid;
                         reg.RemainingDebt = reg.TotalPrice - reg.PaidAmount;
                         db.SaveChanges();
