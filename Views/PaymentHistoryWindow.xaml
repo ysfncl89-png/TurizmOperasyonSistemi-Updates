@@ -1,7 +1,7 @@
 <Window x:Class="TurizmOperasyonSistemi.Views.PaymentHistoryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Ödeme Hareketleri" Height="360" Width="700" WindowStartupLocation="CenterOwner" Background="#00FFFFFF" WindowStyle="None" AllowsTransparency="True">
+        Title="Ödeme Hareketleri" Height="360" Width="900" WindowStartupLocation="CenterOwner" Background="#00FFFFFF" WindowStyle="None" AllowsTransparency="True">
     <Border Background="#1F3443" CornerRadius="10" Padding="14" BorderBrush="#3A6B7B" BorderThickness="1.2">
         <Border.Resources>
             <Style TargetType="DataGrid">
@@ -51,8 +51,14 @@
                     <DataGridTextColumn Header="Dönüştürülmüş" Binding="{Binding ConvertedDisplay}" Width="140"/>
                     <DataGridTextColumn Header="Kur" Binding="{Binding Rate}" Width="90"/>
                     <DataGridTextColumn Header="Ödeme Yöntemi" Binding="{Binding PaymentMethod}" Width="140"/>
-                    <DataGridTextColumn Header="Dekont" Binding="{Binding UploadedFileName}" Width="140"/>
                     <DataGridTextColumn Header="Açıklama" Binding="{Binding Note}" Width="*"/>
+                    <DataGridTemplateColumn Header="Dekont" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Dekont görüntüle" Padding="6,2" Click="OpenDocumentBtn_Click" CommandParameter="{Binding UploadedDocumentPath}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
 

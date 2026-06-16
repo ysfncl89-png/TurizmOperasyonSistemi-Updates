@@ -1,7 +1,7 @@
 <Window x:Class="TurizmOperasyonSistemi.Views.PaymentPopupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Ödeme Kaydı" Height="400" Width="520" WindowStartupLocation="CenterOwner" Background="#00FFFFFF" WindowStyle="None" AllowsTransparency="True">
+        Title="Ödeme Kaydı" Height="500" Width="520" WindowStartupLocation="CenterOwner" Background="#00FFFFFF" WindowStyle="None" AllowsTransparency="True">
     <Border Background="#1F3443" CornerRadius="10" Padding="14" BorderBrush="#3A6B7B" BorderThickness="1.2">
         <Grid>
             <Grid.RowDefinitions>

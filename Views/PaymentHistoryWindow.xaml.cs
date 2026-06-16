@@ -45,5 +45,30 @@ namespace TurizmOperasyonSistemi.Views
         {
             this.Close();
         }
+
+        private void OpenDocumentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as System.Windows.Controls.Button;
+            if (btn == null) return;
+            var path = btn.CommandParameter as string;
+            if (string.IsNullOrEmpty(path))
+            {
+                MessageBox.Show("Bu ödeme için kayıtlı bir dekont bulunamadı.");
+                return;
+            }
+
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Dekont açılamadı: " + ex.Message);
+            }
+        }
     }
 }
