@@ -25,6 +25,11 @@
     <Page Remove="Views\SettingDialogCities.xaml" />
   </ItemGroup>
 
+  <!-- Exclude test helper top-level Program from build so WPF App.xaml entry point runs -->
+  <ItemGroup>
+    <Compile Remove="TestApp\Program.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <Folder Include="Themes\" />
   </ItemGroup>
