@@ -1,9 +1,9 @@
 <Window x:Class="TurizmOperasyonSistemi.Views.LedgerDetailWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Cari Hesap Detayı" Height="520" Width="1100" WindowStartupLocation="CenterOwner" Background="#40000000" AllowsTransparency="True" WindowStyle="None">
+        Title="Cari Hesap Detayı" Height="520" Width="1250" WindowStartupLocation="CenterOwner" Background="#40000000" AllowsTransparency="True" WindowStyle="None">
 
-    <Border Background="#2A4856" CornerRadius="10" Padding="14" BorderBrush="#3A6B7B" BorderThickness="1.2">
+    <Border Background="#335E6B" CornerRadius="10" Padding="14" BorderBrush="#4A7B8B" BorderThickness="1.2">
         <Border.Effect>
             <DropShadowEffect Color="#000000" BlurRadius="22" ShadowDepth="0" Opacity="0.45" />
         </Border.Effect>
@@ -90,7 +90,7 @@
                         <DataGridTemplateColumn Header="İşlem" Width="130">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="Ödeme Kaydı" Width="110" Height="28" Click="PaymentRecord_Click"
+                                    <Button Content="Ödeme Kaydı +" Width="110" Height="28" Click="PaymentRecord_Click"
                                             Background="#10B981" Foreground="White" BorderThickness="0" Cursor="Hand"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>

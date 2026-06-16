@@ -10,6 +10,7 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class LedgerView : UserControl
     {
+        // kept long-lived context to avoid Edit-and-Continue removal issues; load uses short-lived contexts
         private readonly AppDbContext _db = new AppDbContext();
         private ObservableCollection<LedgerRow> _rows = new ObservableCollection<LedgerRow>();
 
@@ -23,45 +24,59 @@ namespace TurizmOperasyonSistemi.Views
             SearchTextBox.GotFocus += (s, e) => SearchHint.Visibility = Visibility.Collapsed;
             SearchTextBox.LostFocus += (s, e) => { if (string.IsNullOrEmpty(SearchTextBox.Text)) SearchHint.Visibility = Visibility.Visible; };
             UpdateInfoBox();
+            TurizmOperasyonSistemi.Services.NotificationCenter.Subscribe(OnNotification);
+            this.Unloaded += (s, e) => TurizmOperasyonSistemi.Services.NotificationCenter.Unsubscribe(OnNotification);
+        }
+
+        private void OnNotification(string key, object payload)
+        {
+            if (key == "payment.updated")
+            {
+                // reload data
+                this.Dispatcher.Invoke(() => { LoadData(); LedgerDataGrid.ItemsSource = _rows; UpdateInfoBox(); });
+            }
         }
 
         private void LoadData()
         {
-            // Group registrations by person and compute totals per currency
-            var query = _db.Registrations
-                .Include(r => r.Person)
-                .AsEnumerable()
-                .GroupBy(r => r.PersonId)
-                .Select(g => new
-                {
-                    PersonId = g.Key,
-                    FirstName = g.FirstOrDefault()?.Person?.FirstName ?? g.FirstOrDefault()?.Person?.FirstName ?? "",
-                    LastName = g.FirstOrDefault()?.Person?.LastName ?? "",
-                    Tc = g.FirstOrDefault()?.Person?.TcKimlikNo ?? "",
-                    Passport = g.FirstOrDefault()?.Person?.PassportNumber ?? "",
-                    Currency = g.FirstOrDefault()?.Currency ?? "",
-                    TotalPrice = g.Sum(x => x.TotalPrice),
-                    Paid = g.Sum(x => x.PaidAmount),
-                    Remaining = g.Sum(x => x.RemainingDebt)
-                })
-                .ToList();
-
-            _rows.Clear();
-            int seq = 1;
-            foreach (var item in query)
+            // Use short-lived context so we see external updates immediately
+            using (var db = new AppDbContext())
             {
-                _rows.Add(new LedgerRow
+                var query = db.Registrations
+                    .Include(r => r.Person)
+                    .AsEnumerable()
+                    .GroupBy(r => r.PersonId)
+                    .Select(g => new
+                    {
+                        PersonId = g.Key,
+                        FirstName = g.FirstOrDefault()?.Person?.FirstName ?? g.FirstOrDefault()?.Person?.FirstName ?? "",
+                        LastName = g.FirstOrDefault()?.Person?.LastName ?? "",
+                        Tc = g.FirstOrDefault()?.Person?.TcKimlikNo ?? "",
+                        Passport = g.FirstOrDefault()?.Person?.PassportNumber ?? "",
+                        Currency = g.FirstOrDefault()?.Currency ?? "",
+                        TotalPrice = g.Sum(x => x.TotalPrice),
+                        Paid = g.Sum(x => x.PaidAmount),
+                        Remaining = g.Sum(x => x.RemainingDebt)
+                    })
+                    .ToList();
+
+                _rows.Clear();
+                int seq = 1;
+                foreach (var item in query)
                 {
-                    Sequence = seq++,
-                    PersonId = item.PersonId,
-                    FirstName = item.FirstName,
-                    LastName = item.LastName,
-                    TcOrPassport = string.IsNullOrWhiteSpace(item.Tc) ? item.Passport : item.Tc,
-                    TotalPrice = item.TotalPrice,
-                    PaidAmount = item.Paid,
-                    RemainingDebt = item.Remaining,
-                    Currency = item.Currency
-                });
+                    _rows.Add(new LedgerRow
+                    {
+                        Sequence = seq++,
+                        PersonId = item.PersonId,
+                        FirstName = item.FirstName,
+                        LastName = item.LastName,
+                        TcOrPassport = string.IsNullOrWhiteSpace(item.Tc) ? item.Passport : item.Tc,
+                        TotalPrice = item.TotalPrice,
+                        PaidAmount = item.Paid,
+                        RemainingDebt = item.Remaining,
+                        Currency = item.Currency
+                    });
+                }
             }
             UpdateInfoBox();
         }
