@@ -1653,6 +1653,12 @@ namespace TurizmOperasyonSistemi.Views
                         registration.District = district;
                         registration.TotalPrice = totalPrice;
                         registration.Currency = currency;
+                        // capture original paid amount for edit mode to produce a payment history entry
+                        decimal originalPaid = 0m;
+                        if (isEditMode)
+                        {
+                            originalPaid = registration.PaidAmount;
+                        }
                         registration.PaidAmount = paidAmount;
                         registration.RemainingDebt = remainingDebt;
                         registration.Reference = reference;
@@ -1663,6 +1669,37 @@ namespace TurizmOperasyonSistemi.Views
                         }
 
                         db.SaveChanges();
+
+                        // If paid amount changed (either new registration with initial payment or edited), create a Payment record
+                        try
+                        {
+                            var delta = registration.PaidAmount - originalPaid;
+                            if (delta != 0)
+                            {
+                                db.EnsurePaymentsTableExists();
+                                var payment = new TurizmOperasyonSistemi.Models.Payment
+                                {
+                                    RegistrationId = registration.Id,
+                                    CreatedAt = DateTime.Now,
+                                    OriginalAmount = delta,
+                                    OriginalCurrency = registration.Currency,
+                                    AmountInRegistrationCurrency = delta,
+                                    Rate = null,
+                                    Note = "Kayıt işlemiyle eklenen ödeme",
+                                    PaymentMethod = "Kayıt (Wizard)",
+                                    UploadedDocumentPath = ""
+                                };
+                                db.Payments.Add(payment);
+                                // update registration aggregates to reflect the payment (already set above, but ensure consistency)
+                                registration.PaidAmount = originalPaid + delta;
+                                registration.RemainingDebt = registration.TotalPrice - registration.PaidAmount;
+                                db.SaveChanges();
+
+                                // publish notification to update UI elsewhere
+                                TurizmOperasyonSistemi.Services.NotificationCenter.Publish("payment.updated", registration.Id);
+                            }
+                        }
+                        catch { }
 
                         // If CargoRequest is not 'Kargo gönderilecek', remove any existing print-queue items
                         // for this registration and clear inspected flag so it won't be included in A4/print pool.

@@ -78,12 +78,32 @@ namespace TurizmOperasyonSistemi.Views
 
         private void UploadBtn_Click(object sender, RoutedEventArgs e)
         {
-            var ofd = new OpenFileDialog();
-            ofd.Filter = "Tüm Dosyalar|*.*";
-            if (ofd.ShowDialog() == true)
+            // show choice window: QR or File
+            var choiceWnd = new UploadChoiceWindow();
+            choiceWnd.Owner = this;
+            var res = choiceWnd.ShowDialog();
+            if (res != true) return;
+
+            if (choiceWnd.Choice == UploadChoiceWindow.UploadChoice.File)
             {
-                _uploadedPath = ofd.FileName;
-                UploadedFileName.Text = System.IO.Path.GetFileName(_uploadedPath);
+                var ofd = new OpenFileDialog();
+                ofd.Filter = "Tüm Dosyalar|*.*";
+                if (ofd.ShowDialog() == true)
+                {
+                    _uploadedPath = ofd.FileName;
+                    UploadedFileName.Text = System.IO.Path.GetFileName(_uploadedPath);
+                }
+            }
+            else if (choiceWnd.Choice == UploadChoiceWindow.UploadChoice.Qr)
+            {
+                // open QR upload window; when file saved, callback updates uploaded path
+                var qrWnd = new QRUploadWindow(path =>
+                {
+                    _uploadedPath = path;
+                    UploadedFileName.Text = System.IO.Path.GetFileName(_uploadedPath);
+                });
+                qrWnd.Owner = this;
+                qrWnd.ShowDialog();
             }
         }
 

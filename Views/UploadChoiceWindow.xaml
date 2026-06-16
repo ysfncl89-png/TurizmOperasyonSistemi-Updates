@@ -1,0 +1,26 @@
+<Window x:Class="TurizmOperasyonSistemi.Views.UploadChoiceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dekont Yükle" Height="220" Width="360" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Dekont/Belge Yükleme" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Button x:Name="BtnQr" Width="140" Height="100" Click="BtnQr_Click" Margin="0,0,12,0">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="QR ile yükle" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="BtnFile" Width="140" Height="100" Click="BtnFile_Click">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="Bilgisayardan yükle" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>
