@@ -244,8 +244,37 @@ namespace TurizmOperasyonSistemi.Views
                             var firstLine = headersText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
                             if (firstLine.StartsWith("GET", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Serve upload form; include token in action
-                                var html = $"<html><body>\n<h3>Dosya yükle</h3>\n<form method='post' enctype='multipart/form-data' action='/upload?t={_token}'>\n<input type='file' name='file' />\n<input type='submit' value='Yükle' />\n</form>\n</body></html>";
+                                // Serve a responsive, theme-matching upload form; include token in action
+                                var html = $@"<html><head>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<style>
+  :root{{--bg:#0F172A;--panel:#1E293B;--panel2:#1F2937;--accent:#06B6D4;--accent-strong:#38BDF8;--muted:#94A3B8;--white:#FFFFFF}}
+  html,body{{height:100%;margin:0;padding:0;background:var(--bg);font-family:Segoe UI,Helvetica,Arial,sans-serif;color:var(--white)}}
+  .wrap{{min-height:100%;display:flex;align-items:center;justify-content:center;padding:20px}}
+  .panel{{width:100%;max-width:520px;background:var(--panel);border-radius:14px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02)}}
+  h3{{margin:0 0 10px 0;font-size:20px;color:var(--white)}}
+  .desc{{color:var(--muted);font-size:13px;margin-bottom:12px}}
+  .form-row{{margin:14px 0;display:flex;flex-direction:column;gap:8px}}
+  input[type=file]{{background:var(--panel2);border:1px solid rgba(255,255,255,0.03);color:var(--white);padding:12px;border-radius:8px}}
+  .btn{{display:inline-block;background:linear-gradient(180deg,var(--accent),#0596b8);color:var(--white);border:none;padding:12px 18px;border-radius:10px;font-size:16px;cursor:pointer;box-shadow:0 6px 18px rgba(6,182,212,0.12)}}
+  .help{{font-size:12px;color:var(--muted);margin-top:8px}}
+  @media (max-width:420px){{.panel{{padding:14px;border-radius:10px}} input[type=file]{{padding:10px}} .btn{{width:100%}}}}
+</style>
+</head><body>
+<div class='wrap'><div class='panel'>
+  <h3>Dekont / Belge Yükle</h3>
+  <div class='desc'>Telefonunuzdan QR okuyarak hızlıca belge yükleyin. Güvenlik: token ile korumalı, maksimum 10 MB.</div>
+  <form method='post' enctype='multipart/form-data' action='/upload?t={_token}'>
+    <div class='form-row'>
+      <input type='file' name='file' accept='.pdf,image/*' />
+    </div>
+    <div class='form-row'>
+      <button class='btn' type='submit'>Yükle</button>
+    </div>
+    <div class='help'>İzin verilen türler: PDF, JPG, PNG. Maksimum: 10 MB.</div>
+  </form>
+</div></div>
+</body></html>";
                                 var resp = $"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {System.Text.Encoding.UTF8.GetByteCount(html)}\r\n\r\n{html}";
                                 var respBytes = System.Text.Encoding.UTF8.GetBytes(resp);
                                 ns.Write(respBytes, 0, respBytes.Length);
@@ -316,6 +345,7 @@ namespace TurizmOperasyonSistemi.Views
                             }
 
                             string savedPath = null;
+                            string boundaryBefore = null;
 
                             try
                             {
@@ -336,6 +366,7 @@ namespace TurizmOperasyonSistemi.Views
 
                                 if (!string.IsNullOrEmpty(boundary))
                                 {
+                                    boundaryBefore = boundary;
                                     var bodyParts = bodyStr.Split(new string[] { "--" + boundary }, StringSplitOptions.RemoveEmptyEntries);
                                     foreach (var part in bodyParts)
                                     {
@@ -401,6 +432,17 @@ namespace TurizmOperasyonSistemi.Views
                                 }
                             }
                             catch { savedPath = null; }
+
+                            // If the request was multipart/form-data (had a boundary) but we didn't extract a file,
+                            // treat as bad request (user submitted without selecting a file) instead of saving raw bytes.
+                            if (!string.IsNullOrEmpty(boundaryBefore) && savedPath == null)
+                            {
+                                var badReq = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n";
+                                var br = System.Text.Encoding.UTF8.GetBytes(badReq);
+                                ns.Write(br, 0, br.Length);
+                                Dispatcher.Invoke(() => { QrStatus.Text = "Yükleme başarısız: dosya seçilmedi."; });
+                                return;
+                            }
 
                             // Fallback: if we didn't save via multipart parsing, save raw body
                             string originalFileName = null;

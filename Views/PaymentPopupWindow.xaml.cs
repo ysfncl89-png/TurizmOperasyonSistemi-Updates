@@ -78,6 +78,9 @@ namespace TurizmOperasyonSistemi.Views
 
         private void UploadBtn_Click(object sender, RoutedEventArgs e)
         {
+            // hide previous success indicator when user starts a new upload flow
+            try { UploadSuccessIndicator.Visibility = System.Windows.Visibility.Collapsed; UploadSuccessIndicator.Opacity = 0; } catch { }
+
             // show choice window: QR or File
             var choiceWnd = new UploadChoiceWindow();
             choiceWnd.Owner = this;
@@ -92,6 +95,7 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     _uploadedPath = ofd.FileName;
                     UploadedFileName.Text = System.IO.Path.GetFileName(_uploadedPath);
+                    ShowUploadSuccess();
                 }
             }
             else if (choiceWnd.Choice == UploadChoiceWindow.UploadChoice.Qr)
@@ -101,10 +105,21 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     _uploadedPath = savedPath;
                     UploadedFileName.Text = originalName ?? System.IO.Path.GetFileName(_uploadedPath);
+                    ShowUploadSuccess();
                 });
                 qrWnd.Owner = this;
                 qrWnd.ShowDialog();
             }
+        }
+
+        private void ShowUploadSuccess()
+        {
+            try
+            {
+                UploadSuccessIndicator.Visibility = System.Windows.Visibility.Visible;
+                UploadSuccessIndicator.Opacity = 1;
+            }
+            catch { }
         }
 
         private void CancelBtn_Click(object sender, RoutedEventArgs e)
@@ -193,6 +208,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 this.DialogResult = true;
                 this.Close();
+                try { UploadSuccessIndicator.Visibility = System.Windows.Visibility.Collapsed; UploadSuccessIndicator.Opacity = 0; } catch { }
             }
             catch (Exception ex)
             {
