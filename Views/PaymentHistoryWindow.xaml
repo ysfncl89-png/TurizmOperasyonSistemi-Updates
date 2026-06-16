@@ -50,6 +50,8 @@
                     <DataGridTextColumn Header="Miktar (Orj)" Binding="{Binding OriginalAmountDisplay}" Width="140"/>
                     <DataGridTextColumn Header="Dönüştürülmüş" Binding="{Binding ConvertedDisplay}" Width="140"/>
                     <DataGridTextColumn Header="Kur" Binding="{Binding Rate}" Width="90"/>
+                    <DataGridTextColumn Header="Ödeme Yöntemi" Binding="{Binding PaymentMethod}" Width="140"/>
+                    <DataGridTextColumn Header="Dekont" Binding="{Binding UploadedFileName}" Width="140"/>
                     <DataGridTextColumn Header="Açıklama" Binding="{Binding Note}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>

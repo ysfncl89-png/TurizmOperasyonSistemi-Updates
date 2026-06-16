@@ -219,6 +219,10 @@
                         Style="{StaticResource SettingCardStyle}"
                         Click="SettingButton_Click"/>
 
+                <Button Content="Ödeme Yöntemi"
+                        Style="{StaticResource SettingCardStyle}"
+                        Click="SettingButton_Click"/>
+
                 <Button Content="Oda Türü"
                         Style="{StaticResource SettingCardStyle}"
                         Click="SettingButton_Click"/>

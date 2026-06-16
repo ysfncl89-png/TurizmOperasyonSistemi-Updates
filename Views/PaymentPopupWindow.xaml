@@ -11,6 +11,8 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <TextBlock Text="Ödeme Miktarı" Foreground="#E2F8FF"/>
@@ -21,19 +23,25 @@
                 <ComboBox x:Name="CbCurrency" Height="34" Background="#0F172A" Foreground="#E2F8FF" BorderBrush="#334155" SelectionChanged="CbCurrency_SelectionChanged"/>
             </StackPanel>
 
+            <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,6,0,6">
+                <TextBlock Text="Ödeme Yöntemi" Foreground="#E2F8FF"/>
+                <ComboBox x:Name="CbPaymentMethod" Height="34" Background="#0F172A" Foreground="#E2F8FF" BorderBrush="#334155" />
+            </StackPanel>
+
             <!-- Kur panel: sadece TL seçildiyse görünür -->
-            <StackPanel x:Name="RatePanel" Grid.Row="3" Orientation="Vertical" Margin="0,6,0,6" Visibility="Collapsed">
+            <StackPanel x:Name="RatePanel" Grid.Row="4" Orientation="Vertical" Margin="0,6,0,6" Visibility="Collapsed">
                 <TextBlock Text="Güncel kur" Foreground="#E2F8FF"/>
                 <TextBox x:Name="TbRate" Height="34" Margin="0,6,0,0" Background="#0F172A" Foreground="#E2F8FF" BorderBrush="#334155" />
             </StackPanel>
 
-            <StackPanel Grid.Row="4" Orientation="Vertical" Margin="0,6,0,6">
+            <StackPanel Grid.Row="5" Orientation="Vertical" Margin="0,6,0,6">
                 <TextBlock Text="Açıklama" Foreground="#E2F8FF"/>
                 <TextBox x:Name="TbNote" Height="60" Background="#0F172A" Foreground="#E2F8FF" BorderBrush="#334155" TextWrapping="Wrap"/>
             </StackPanel>
+            <TextBlock x:Name="UploadedFileName" Grid.Row="6" Text="" Foreground="#C7D2DA" Margin="0,6,0,0" />
 
-            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                <Button x:Name="UploadBtn" Content="Dekont/Belge Yükle" Background="#F59E0B" Foreground="Black" Padding="12,6" Margin="0,0,12,0"/>
+            <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                <Button x:Name="UploadBtn" Content="Dekont/Belge Yükle" Background="#F59E0B" Foreground="Black" Padding="12,6" Margin="0,0,12,0" Click="UploadBtn_Click"/>
                 <Button x:Name="CancelBtn" Content="İptal" Width="90" Height="34" Click="CancelBtn_Click" Background="#334155" Foreground="#E2F8FF" Margin="0,0,8,0"/>
                 <Button x:Name="ConfirmBtn" Content="Onayla" Width="110" Height="34" Click="ConfirmBtn_Click" Background="#10B981" Foreground="White"/>
             </StackPanel>

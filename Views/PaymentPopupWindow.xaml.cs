@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Windows;
 using Microsoft.Win32;
+using System.Windows.Controls;
 using TurizmOperasyonSistemi.Data;
 
 namespace TurizmOperasyonSistemi.Views
@@ -9,11 +10,13 @@ namespace TurizmOperasyonSistemi.Views
     public partial class PaymentPopupWindow : Window
     {
         private readonly int _registrationId;
+        private string _uploadedPath;
         public PaymentPopupWindow(int registrationId)
         {
             InitializeComponent();
             _registrationId = registrationId;
             LoadCurrencies();
+            LoadPaymentMethods();
         }
 
         private void CbCurrency_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -46,6 +49,31 @@ namespace TurizmOperasyonSistemi.Views
                 }
             }
             catch { }
+        }
+
+        private void LoadPaymentMethods()
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var list = db.AppSettings.Where(x => x.Type == "Ödeme Yöntemi").Select(x => x.Value).ToList();
+                    CbPaymentMethod.ItemsSource = list;
+                    if (list.Any()) CbPaymentMethod.SelectedIndex = 0;
+                }
+            }
+            catch { }
+        }
+
+        private void UploadBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog();
+            ofd.Filter = "Tüm Dosyalar|*.*";
+            if (ofd.ShowDialog() == true)
+            {
+                _uploadedPath = ofd.FileName;
+                UploadedFileName.Text = System.IO.Path.GetFileName(_uploadedPath);
+            }
         }
 
         private void CancelBtn_Click(object sender, RoutedEventArgs e)
@@ -109,7 +137,9 @@ namespace TurizmOperasyonSistemi.Views
                         OriginalCurrency = selectedCurrency,
                         AmountInRegistrationCurrency = added,
                         Rate = rateUsed,
-                        Note = TbNote.Text
+                        Note = TbNote.Text,
+                        PaymentMethod = CbPaymentMethod.SelectedItem as string,
+                        UploadedDocumentPath = _uploadedPath
                     };
                     db.Payments.Add(payment);
 

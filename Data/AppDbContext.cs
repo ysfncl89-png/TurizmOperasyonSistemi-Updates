@@ -41,9 +41,51 @@ namespace TurizmOperasyonSistemi.Data
                         AmountInRegistrationCurrency REAL,
                         Rate REAL,
                         Note TEXT,
-                        UploadedDocumentPath TEXT
+                        UploadedDocumentPath TEXT,
+                        PaymentMethod TEXT
                     );";
                     cmd.ExecuteNonQuery();
+
+                // Ensure new columns exist for older databases (migrations not always run)
+                EnsureColumnExists(conn, "Payments", "PaymentMethod", "TEXT");
+                EnsureColumnExists(conn, "Payments", "UploadedDocumentPath", "TEXT");
+
+                // Normalize numeric NULLs to 0 to avoid runtime read errors when model expects non-nullable types
+                using (var up = conn.CreateCommand())
+                {
+                    up.CommandText = "UPDATE Payments SET AmountInRegistrationCurrency = 0 WHERE AmountInRegistrationCurrency IS NULL;";
+                    up.ExecuteNonQuery();
+                }
+                using (var up2 = conn.CreateCommand())
+                {
+                    up2.CommandText = "UPDATE Payments SET Rate = 0 WHERE Rate IS NULL;";
+                    up2.ExecuteNonQuery();
+                }
+                using (var up3 = conn.CreateCommand())
+                {
+                    up3.CommandText = "UPDATE Payments SET OriginalAmount = 0 WHERE OriginalAmount IS NULL;";
+                    up3.ExecuteNonQuery();
+                }
+                using (var up4 = conn.CreateCommand())
+                {
+                    up4.CommandText = "UPDATE Payments SET PaymentMethod = '' WHERE PaymentMethod IS NULL;";
+                    up4.ExecuteNonQuery();
+                }
+                using (var up5 = conn.CreateCommand())
+                {
+                    up5.CommandText = "UPDATE Payments SET UploadedDocumentPath = '' WHERE UploadedDocumentPath IS NULL;";
+                    up5.ExecuteNonQuery();
+                }
+                using (var up6 = conn.CreateCommand())
+                {
+                    up6.CommandText = "UPDATE Payments SET Note = '' WHERE Note IS NULL;";
+                    up6.ExecuteNonQuery();
+                }
+                using (var up7 = conn.CreateCommand())
+                {
+                    up7.CommandText = "UPDATE Payments SET OriginalCurrency = '' WHERE OriginalCurrency IS NULL;";
+                    up7.ExecuteNonQuery();
+                }
                 }
             }
             catch (Exception ex)

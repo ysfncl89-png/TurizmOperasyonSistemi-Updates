@@ -26,5 +26,7 @@ namespace TurizmOperasyonSistemi.Models
 
         public string Note { get; set; }
         public string UploadedDocumentPath { get; set; }
+        // Payment method chosen from settings (e.g. Nakit, Kredi Kartı)
+        public string PaymentMethod { get; set; }
     }
 }
