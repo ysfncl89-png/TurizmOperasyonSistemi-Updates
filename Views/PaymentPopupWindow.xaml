@@ -1,10 +1,11 @@
 <Window x:Class="TurizmOperasyonSistemi.Views.PaymentPopupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Ödeme Kaydı" Height="320" Width="520" WindowStartupLocation="CenterOwner" Background="#00FFFFFF" WindowStyle="None" AllowsTransparency="True">
+        Title="Ödeme Kaydı" Height="400" Width="520" WindowStartupLocation="CenterOwner" Background="#00FFFFFF" WindowStyle="None" AllowsTransparency="True">
     <Border Background="#1F3443" CornerRadius="10" Padding="14" BorderBrush="#3A6B7B" BorderThickness="1.2">
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -17,15 +18,21 @@
 
             <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,6,0,6">
                 <TextBlock Text="Para Birimi" Foreground="#E2F8FF"/>
-                <ComboBox x:Name="CbCurrency" Height="34" Background="#0F172A" Foreground="#E2F8FF" BorderBrush="#334155"/>
+                <ComboBox x:Name="CbCurrency" Height="34" Background="#0F172A" Foreground="#E2F8FF" BorderBrush="#334155" SelectionChanged="CbCurrency_SelectionChanged"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,6,0,6">
+            <!-- Kur panel: sadece TL seçildiyse görünür -->
+            <StackPanel x:Name="RatePanel" Grid.Row="3" Orientation="Vertical" Margin="0,6,0,6" Visibility="Collapsed">
+                <TextBlock Text="Güncel kur" Foreground="#E2F8FF"/>
+                <TextBox x:Name="TbRate" Height="34" Margin="0,6,0,0" Background="#0F172A" Foreground="#E2F8FF" BorderBrush="#334155" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="4" Orientation="Vertical" Margin="0,6,0,6">
                 <TextBlock Text="Açıklama" Foreground="#E2F8FF"/>
                 <TextBox x:Name="TbNote" Height="60" Background="#0F172A" Foreground="#E2F8FF" BorderBrush="#334155" TextWrapping="Wrap"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
                 <Button x:Name="UploadBtn" Content="Dekont/Belge Yükle" Background="#F59E0B" Foreground="Black" Padding="12,6" Margin="0,0,12,0"/>
                 <Button x:Name="CancelBtn" Content="İptal" Width="90" Height="34" Click="CancelBtn_Click" Background="#334155" Foreground="#E2F8FF" Margin="0,0,8,0"/>
                 <Button x:Name="ConfirmBtn" Content="Onayla" Width="110" Height="34" Click="ConfirmBtn_Click" Background="#10B981" Foreground="White"/>

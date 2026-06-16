@@ -82,6 +82,17 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        private void PaymentHistory_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as System.Windows.Controls.Button;
+            if (btn == null) return;
+            var item = btn.DataContext as RegistrationDetail;
+            if (item == null) return;
+
+            // Placeholder: ödeme geçmişi inceleme penceresi
+            MessageBox.Show($"Ödeme geçmişi incelenecek: KayıtId={item.Id}");
+        }
+
         private class RegistrationDetail
         {
             public int Id { get; set; }

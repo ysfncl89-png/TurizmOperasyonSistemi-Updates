@@ -16,6 +16,24 @@ namespace TurizmOperasyonSistemi.Views
             LoadCurrencies();
         }
 
+        private void CbCurrency_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var sel = CbCurrency.SelectedItem as string;
+            if (string.IsNullOrEmpty(sel))
+            {
+                RatePanel.Visibility = System.Windows.Visibility.Collapsed;
+                return;
+            }
+
+            // show rate input when Turkish Lira selected (support common labels)
+            var isTL = sel.IndexOf("Türk", StringComparison.OrdinalIgnoreCase) >= 0
+                       || sel.IndexOf("TL", StringComparison.OrdinalIgnoreCase) >= 0
+                       || sel.IndexOf("TRY", StringComparison.OrdinalIgnoreCase) >= 0
+                       || sel.IndexOf("₺", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            RatePanel.Visibility = isTL ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        }
+
         private void LoadCurrencies()
         {
             try
@@ -55,8 +73,33 @@ namespace TurizmOperasyonSistemi.Views
                         return;
                     }
 
-                    // Güncelleme: PaidAmount ve RemainingDebt'ı güncelle
-                    reg.PaidAmount += amount;
+                    var selectedCurrency = CbCurrency.SelectedItem as string;
+                    decimal added = 0;
+
+                    if (!string.IsNullOrEmpty(selectedCurrency) && (
+                        selectedCurrency.IndexOf("Türk", StringComparison.OrdinalIgnoreCase) >= 0
+                        || selectedCurrency.IndexOf("TL", StringComparison.OrdinalIgnoreCase) >= 0
+                        || selectedCurrency.IndexOf("TRY", StringComparison.OrdinalIgnoreCase) >= 0
+                        || selectedCurrency.IndexOf("₺", StringComparison.OrdinalIgnoreCase) >= 0))
+                    {
+                        // TL entered; need rate
+                        if (!decimal.TryParse(TbRate.Text, out var rate) || rate <= 0)
+                        {
+                            MessageBox.Show("Lütfen geçerli bir kur değeri girin.");
+                            return;
+                        }
+
+                        // convert TL to registration currency by dividing by rate
+                        added = amount / rate;
+                    }
+                    else
+                    {
+                        // same currency or other currency selected: assume amount is already in registration currency
+                        added = amount;
+                    }
+
+                    // Güncelleme: PaidAmount ve RemainingDebt'ı güncelle (kayıt birimine göre)
+                    reg.PaidAmount += added;
                     reg.RemainingDebt = Math.Max(0, reg.TotalPrice - reg.PaidAmount);
                     db.SaveChanges();
                 }
