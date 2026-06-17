@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using TurizmOperasyonSistemi.Data;
@@ -25,8 +26,29 @@ namespace TurizmOperasyonSistemi.Views
         {
             InitializeComponent();
 
+            // Kartları alfabetik sıraya göre düzenle
+            SortSettingCardsAlphabetically();
+
             // SAYFA AÇILDIĞINDA: SQLite'taki verileri okuyup kartlardaki listelere basıyoruz!
             LoadExistingSettingsIntoUi();
+        }
+
+        // SettingsWrapPanel içindeki butonları Türkçe kültürüne göre alfabetik sıraya göre dizer
+        private void SortSettingCardsAlphabetically()
+        {
+            try
+            {
+                var comparer = StringComparer.Create(new CultureInfo("tr-TR"), false);
+                var buttons = SettingsWrapPanel.Children.OfType<Button>().ToList();
+                var sorted = buttons.OrderBy(b => (b.Content ?? string.Empty).ToString(), comparer).ToList();
+                SettingsWrapPanel.Children.Clear();
+                foreach (var b in sorted)
+                    SettingsWrapPanel.Children.Add(b);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Kartları alfabetik sıraya dizerken hata: {ex.Message}");
+            }
         }
 
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
