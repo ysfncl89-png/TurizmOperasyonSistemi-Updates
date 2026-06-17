@@ -116,16 +116,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="Documents_Click" BorderBrush="#F59E0B">
-                        <StackPanel>
-                            <Rectangle Height="6" Fill="#F59E0B" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
-                            <TextBlock Text="🧾" FontSize="30" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Evrak ve Dekont" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
-                            <TextBlock Text="Dekontlar, makbuzlar ve belgeler" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Button>
-
-                    <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="PaymentList_Click" BorderBrush="#10B981">
+					<Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#10B981">
                         <StackPanel>
                             <Rectangle Height="6" Fill="#10B981" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="📋" FontSize="30" HorizontalAlignment="Left"/>

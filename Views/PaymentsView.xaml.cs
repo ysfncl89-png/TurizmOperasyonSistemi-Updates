@@ -22,11 +22,6 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        private void Documents_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Evrak ve Dekont tıklandı - detay sayfası yapılacak.");
-        }
-
         private void PaymentList_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Ödeme Listesi tıklandı - detay sayfası yapılacak.");
