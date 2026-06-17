@@ -54,6 +54,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <!-- RemainingDebt coloring handled in code-behind -->
     </UserControl.Resources>
 
     <Grid Margin="18">
@@ -132,12 +133,14 @@
                     <DataGridTextColumn Header="Toplam Kalan" Binding="{Binding RemainingDebt, StringFormat=N2}" Width="140">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
+                                <!-- Default: kırmızı (pozitif borç) -->
                                 <Setter Property="Foreground" Value="#DC2626"/>
                                 <Setter Property="Effect">
                                     <Setter.Value>
                                         <DropShadowEffect Color="White" BlurRadius="8" ShadowDepth="0" Opacity="0.28" />
                                     </Setter.Value>
                                 </Setter>
+                                <!-- Styling for zero/negative handled in code-behind -->
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>

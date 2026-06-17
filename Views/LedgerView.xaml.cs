@@ -19,6 +19,8 @@ namespace TurizmOperasyonSistemi.Views
             InitializeComponent();
             LoadData();
             LedgerDataGrid.ItemsSource = _rows;
+            // Apply conditional styling for RemainingDebt column (0 -> white, negative -> ice-blue)
+            ApplyRemainingDebtStyling();
             // initial hint visibility
             SearchHint.Visibility = string.IsNullOrEmpty(SearchTextBox.Text) ? Visibility.Visible : Visibility.Collapsed;
             SearchTextBox.GotFocus += (s, e) => SearchHint.Visibility = Visibility.Collapsed;
@@ -26,6 +28,78 @@ namespace TurizmOperasyonSistemi.Views
             UpdateInfoBox();
             TurizmOperasyonSistemi.Services.NotificationCenter.Subscribe(OnNotification);
             this.Unloaded += (s, e) => TurizmOperasyonSistemi.Services.NotificationCenter.Unsubscribe(OnNotification);
+        }
+
+        private void ApplyRemainingDebtStyling()
+        {
+            // find the column with header "Toplam Kalan"
+            var col = LedgerDataGrid.Columns.FirstOrDefault(c => (c.Header ?? "").ToString() == "Toplam Kalan") as DataGridTextColumn;
+            if (col == null) return;
+
+            // create converters (local implementations)
+            var isZero = new LocalIsZeroConverter();
+            var isNegative = new LocalIsNegativeConverter();
+
+            // style for TextBlock inside the cell
+            var style = new System.Windows.Style(typeof(System.Windows.Controls.TextBlock));
+            // default foreground = red
+            style.Setters.Add(new Setter(System.Windows.Controls.TextBlock.ForegroundProperty, (System.Windows.Media.Brush)new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#DC2626"))));
+            // drop shadow effect
+            var drop = new System.Windows.Media.Effects.DropShadowEffect { Color = System.Windows.Media.Colors.White, BlurRadius = 8, ShadowDepth = 0, Opacity = 0.28 };
+            style.Setters.Add(new Setter(System.Windows.Controls.TextBlock.EffectProperty, drop));
+
+            // DataTriggers for zero and negative values
+            var dataTriggerZero = new System.Windows.DataTrigger
+            {
+                Binding = new System.Windows.Data.Binding("RemainingDebt") { Converter = isZero },
+                Value = true
+            };
+            dataTriggerZero.Setters.Add(new Setter(System.Windows.Controls.TextBlock.ForegroundProperty, System.Windows.Media.Brushes.White));
+
+            var dataTriggerNeg = new System.Windows.DataTrigger
+            {
+                Binding = new System.Windows.Data.Binding("RemainingDebt") { Converter = isNegative },
+                Value = true
+            };
+            // ice-blue color
+            // use yellow for overpaid (sarı)
+            dataTriggerNeg.Setters.Add(new Setter(System.Windows.Controls.TextBlock.ForegroundProperty, new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FBBF24"))));
+
+            // Ensure negative styling takes precedence if both triggers somehow evaluate true
+            style.Triggers.Add(dataTriggerNeg);
+            style.Triggers.Add(dataTriggerZero);
+
+            col.ElementStyle = style;
+        }
+
+        // Local converters used only for styling; kept internal to avoid XAML resolution issues
+        private class LocalIsZeroConverter : System.Windows.Data.IValueConverter
+        {
+            public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            {
+                if (value == null) return false;
+                // For decimal prefer exact zero comparison to avoid treating tiny negatives as zero
+                if (value is decimal dm) return dm == 0m;
+                if (value is double d) return Math.Abs(d) < 0.0001 && Math.Sign(d) == 0;
+                if (double.TryParse(value.ToString(), System.Globalization.NumberStyles.Any, culture, out var parsed)) return Math.Abs(parsed) < 0.0001 && Math.Sign(parsed) == 0;
+                return false;
+            }
+
+            public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
+        }
+
+        private class LocalIsNegativeConverter : System.Windows.Data.IValueConverter
+        {
+            public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            {
+                if (value == null) return false;
+                if (value is decimal dm) return dm < 0;
+                if (value is double d) return d < 0;
+                if (double.TryParse(value.ToString(), out var parsed)) return parsed < 0;
+                return false;
+            }
+
+            public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
         }
 
         private void OnNotification(string key, object payload)

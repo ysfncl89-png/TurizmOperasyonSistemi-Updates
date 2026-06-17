@@ -87,7 +87,48 @@
             </DataGrid>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button x:Name="ExportButton" Content="Çıktı Al / İndir" Width="160" Height="34" Margin="0,0,8,0" Click="ExportButton_Click" Background="#172033" Foreground="#F8FAFC" BorderBrush="#8B5CF6" BorderThickness="1.2">
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Word (.docx)" Click="ExportWord_Click" />
+                            <MenuItem Header="Excel (.xlsx)" Click="ExportExcel_Click" />
+                            <MenuItem Header="PDF (.pdf)" Click="ExportPdf_Click" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
                 <Button Content="Kapat" Width="110" Height="34" Click="CloseBtn_Click" Background="#8B5CF6" Foreground="White"/>
+
+                <!-- Popup for export options (popup placed next to ExportButton) -->
+
+                <Popup x:Name="ExportPopup"
+                       PlacementTarget="{Binding ElementName=ExportButton}"
+                       Placement="Bottom"
+                       StaysOpen="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade">
+                    <Border Background="#0B1220" CornerRadius="8" Padding="10" BorderBrush="#334155" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Width="110" Height="90" Margin="6" Click="ExportWord_Click">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Word" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="İndir" Foreground="#9CAFC0" FontSize="12" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Width="110" Height="90" Margin="6" Click="ExportExcel_Click">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Excel" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="İndir" Foreground="#9CAFC0" FontSize="12" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Width="110" Height="90" Margin="6" Click="ExportPdf_Click">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="PDF" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="İndir" Foreground="#9CAFC0" FontSize="12" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Popup>
             </StackPanel>
         </Grid>
     </Border>
