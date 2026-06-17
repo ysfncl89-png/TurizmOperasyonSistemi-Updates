@@ -27,6 +27,9 @@ namespace TurizmOperasyonSistemi.Views
         // When true, this instance was opened from the Kargo Listesi card (Lists module or Cargo module)
         // and ApplyFilters behavior for CargoRequest should show ALL when no selection is made.
         public bool CargoListCardMode { get; set; } = false;
+        // When true, this instance was opened from the Ödeme Listesi card and should restrict visible
+        // columns to the minimal payment list (Ad, Soyad, TC/Passport, Toplam Fiyat, Ödenen, Kalan, Para Birimi).
+        public bool PaymentsListCardMode { get; set; } = false;
         private readonly DispatcherTimer _saveToastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.2) };
 
         public enum ViewMode
@@ -348,6 +351,38 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                     {
                         headerText = col.Header?.ToString() ?? string.Empty;
                     }
+                    if (allowed.Contains(headerText))
+                    {
+                        col.Visibility = Visibility.Visible;
+                        col.DisplayIndex = idx++;
+                    }
+                    else
+                    {
+                        col.Visibility = Visibility.Collapsed;
+                    }
+                }
+                try { ResultsDataGrid.Items.Refresh(); ResultsDataGrid.UpdateLayout(); } catch { }
+            }
+            catch { }
+        }
+
+        // Ensure only payment-related columns are visible when opened from Ödeme Listesi card
+        private void EnforcePaymentColumns()
+        {
+            try
+            {
+                var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Toplam Fiyat", "Ödenen", "Kalan", "Para Birimi" };
+                int idx = 0;
+                foreach (var col in ResultsDataGrid.Columns)
+                {
+                    string headerText = string.Empty;
+                    try
+                    {
+                        headerText = (col.Header as TextBlock)?.Text ?? col.Header?.ToString() ?? string.Empty;
+                        headerText = headerText.Trim();
+                    }
+                    catch { headerText = col.Header?.ToString() ?? string.Empty; }
+
                     if (allowed.Contains(headerText))
                     {
                         col.Visibility = Visibility.Visible;
@@ -833,6 +868,19 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             };
 
             if (!modeVisibleHeaders.TryGetValue(mode, out var visible)) visible = modeVisibleHeaders[ViewMode.Genel];
+
+            // If this page was opened specifically from the Ödeme Listesi card, restrict to payment-related columns only
+            try
+            {
+                if (this.PaymentsListCardMode)
+                {
+                    visible = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Toplam Fiyat", "Para Birimi", "Ödenen", "Kalan"
+                    };
+                }
+            }
+            catch { }
 
             // If CargoOnlyMode is active, override visible headers to the strict cargo list set
             if (CargoOnlyMode)
@@ -2403,6 +2451,8 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 ResultsDataGrid.ItemsSource = _allRows;
                 // If CargoOnlyMode, make sure only allowed cargo columns are visible regardless of templates
                 try { if (CargoOnlyMode) EnforceCargoColumns(); } catch { }
+                // If opened from Payments list card, restrict to payment columns
+                try { if (PaymentsListCardMode) EnforcePaymentColumns(); } catch { }
             }
             catch (Exception ex)
             {

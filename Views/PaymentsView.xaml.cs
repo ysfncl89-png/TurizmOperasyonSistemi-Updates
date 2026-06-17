@@ -24,7 +24,36 @@ namespace TurizmOperasyonSistemi.Views
 
         private void PaymentList_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Ödeme Listesi tıklandı - detay sayfası yapılacak.");
+            try
+            {
+                var personsView = new PersonsGeneralView();
+                try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
+                try { personsView.PaymentsListCardMode = true; } catch { }
+
+                // If hosted in a NavigationService-capable host, navigate there
+                var nav = System.Windows.Navigation.NavigationService.GetNavigationService(this);
+                if (nav != null)
+                {
+                    nav.Navigate(personsView);
+                    return;
+                }
+
+                // Otherwise open a new window that hosts the page inside a Frame
+                var win = new Window
+                {
+                    Title = "Tur Kayıtları - Genel (Ödeme Listesi)",
+                    Content = new Frame { Content = personsView, NavigationUIVisibility = System.Windows.Navigation.NavigationUIVisibility.Hidden },
+                    Width = 1100,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
