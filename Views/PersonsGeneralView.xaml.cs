@@ -696,6 +696,60 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             _currentMode = mode;
             // apply theme for the newly selected mode (scope: this page only)
             ApplyTheme(mode);
+            // If opened from Ödeme Listesi kartı, apply payment-list specific UI overrides (colors, labels, buttons)
+            try
+            {
+                if (this.PaymentsListCardMode)
+                {
+                    var payColor = (Color)ColorConverter.ConvertFromString("#FF10B981");
+                    // update local resources so NeonCombo and buttons pick up the color
+                    this.Resources["PrimaryStartColor"] = payColor;
+                    this.Resources["PrimaryEndColor"] = payColor;
+                    this.Resources["GlowColor"] = payColor;
+                    this.Resources["PrimaryStartBrush"] = new SolidColorBrush(payColor);
+                    this.Resources["PrimaryEndBrush"] = new SolidColorBrush(payColor);
+                    this.Resources["GlowBrush"] = new SolidColorBrush(payColor);
+                    try { this.Resources["PrimaryGradient"] = new LinearGradientBrush(payColor, payColor, 45); } catch { }
+
+                    // Update header texts to refer to Ödeme Listesi
+                    var prefixTb = this.FindName("FilterTitlePrefix") as TextBlock;
+                    var midTb = this.FindName("ModeInlineText") as TextBlock;
+                    var suffixTb = this.FindName("FilterTitleSuffix") as TextBlock;
+                    try
+                    {
+                        if (prefixTb != null) prefixTb.Text = "Görüntülemek istediğiniz ";
+                        if (midTb != null)
+                        {
+                            midTb.Visibility = Visibility.Visible;
+                            midTb.Text = "Ödeme Listesi";
+                            try { midTb.Foreground = new SolidColorBrush(payColor); } catch { }
+                        }
+                        if (suffixTb != null) suffixTb.Text = " İçin Kriterleri Sırayla seçin";
+                    }
+                    catch { }
+
+                    // Update Apply / Back buttons color
+                    try
+                    {
+                        var brush = new SolidColorBrush(payColor);
+                        var applyBtn = this.FindName("ApplyFiltersButton") as Button;
+                        if (applyBtn != null) { applyBtn.BorderBrush = brush; applyBtn.Background = brush; applyBtn.Foreground = System.Windows.Media.Brushes.White; }
+                        var filtersBack = this.FindName("FiltersBackButton") as Button;
+                        if (filtersBack != null) { filtersBack.BorderBrush = brush; filtersBack.Background = brush; filtersBack.Foreground = System.Windows.Media.Brushes.White; }
+                        var topBack = this.FindName("BackButton") as Button;
+                        if (topBack != null) { topBack.BorderBrush = brush; topBack.Background = brush; topBack.Foreground = System.Windows.Media.Brushes.White; }
+                    }
+                    catch { }
+                    // Ensure CurrentModeLabel reflects Ödeme Listesi when visible
+                    try
+                    {
+                        var cml = this.FindName("CurrentModeLabel") as TextBlock;
+                        if (cml != null) cml.Text = "Ödeme Listesi";
+                    }
+                    catch { }
+                }
+            }
+            catch { }
             // update filter title dynamically
             try
             {
@@ -803,18 +857,29 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 {
                     try
                     {
-                        if (prefixTb != null) prefixTb.Text = "Görüntülemek istediğiniz ";
-                        if (midTb != null) {
-                            midTb.Visibility = Visibility.Visible;
-                            midTb.Text = GetModeTitle();
-                            try { var clr = (Color)FindResource("PrimaryStartColor"); midTb.Foreground = new SolidColorBrush(clr); midTb.FontWeight = FontWeights.ExtraBold; midTb.FontSize = CurrentFilterLabel?.FontSize ?? 30; } catch { }
+                        if (!this.PaymentsListCardMode)
+                        {
+                            if (prefixTb != null) prefixTb.Text = "Görüntülemek istediğiniz ";
+                            if (midTb != null) {
+                                midTb.Visibility = Visibility.Visible;
+                                midTb.Text = GetModeTitle();
+                                try { var clr = (Color)FindResource("PrimaryStartColor"); midTb.Foreground = new SolidColorBrush(clr); midTb.FontWeight = FontWeights.ExtraBold; midTb.FontSize = CurrentFilterLabel?.FontSize ?? 30; } catch { }
+                            }
+                            if (suffixTb != null) suffixTb.Visibility = Visibility.Visible;
                         }
-                        if (suffixTb != null) suffixTb.Visibility = Visibility.Visible;
                     var cml = this.FindName("CurrentModeLabel") as TextBlock;
                     if (cml != null)
                     {
-                        cml.Text = CargoOnlyMode ? "Kargo Listesi" : GetModeTitle();
-                        try { var clr = (Color)FindResource("PrimaryStartColor"); cml.Foreground = new SolidColorBrush(clr); } catch { }
+                        if (this.PaymentsListCardMode)
+                        {
+                            cml.Text = "Ödeme Listesi";
+                            try { cml.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF10B981")); } catch { }
+                        }
+                        else
+                        {
+                            cml.Text = CargoOnlyMode ? "Kargo Listesi" : GetModeTitle();
+                            try { var clr = (Color)FindResource("PrimaryStartColor"); cml.Foreground = new SolidColorBrush(clr); } catch { }
+                        }
                     }
                     // restore export/design buttons when leaving cargo docs mode
                     try
