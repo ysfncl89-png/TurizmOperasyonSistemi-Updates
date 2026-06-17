@@ -61,6 +61,8 @@ namespace TurizmOperasyonSistemi.Views
                 if (tkPasaport != null) tkPasaport.Click += (s, e) => OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Pasaport);
                 var odlCenter = this.FindName("odl_center") as Button;
                 if (odlCenter != null) odlCenter.Click += Odl_center_Click;
+                var odCenter = this.FindName("od_center") as Button;
+                if (odCenter != null) odCenter.Click += Od_center_Click;
                 var kgCenter = this.FindName("kg_center") as Button;
                 if (kgCenter != null) kgCenter.Click += Kg_center_Click;
             }
@@ -97,6 +99,38 @@ namespace TurizmOperasyonSistemi.Views
                 var win = new Window
                 {
                     Title = "Kargo Listesi - Filtreler",
+                    Content = new Frame { Content = personsView, NavigationUIVisibility = NavigationUIVisibility.Hidden },
+                    Width = 1100,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void Od_center_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var personsView = new PersonsGeneralView();
+                // ensure PaymentsListCardMode set before configuring so UI overrides apply
+                try { personsView.PaymentsListCardMode = true; } catch { }
+                try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
+
+                if (this.NavigationService != null)
+                {
+                    this.NavigationService.Navigate(personsView);
+                    return;
+                }
+
+                var win = new Window
+                {
+                    Title = "Tur Kayıtları - Genel (Ödeme Listesi)",
                     Content = new Frame { Content = personsView, NavigationUIVisibility = NavigationUIVisibility.Hidden },
                     Width = 1100,
                     Height = 700,
