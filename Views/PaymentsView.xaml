@@ -44,8 +44,8 @@
                             <EventTrigger RoutedEvent="MouseEnter">
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1.03" Duration="0:0:0.12"/>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1.07" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1.05" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1.05" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0.85" Duration="0:0:0.15"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="BlurRadius" To="30" Duration="0:0:0.15"/>
                                     </Storyboard>
@@ -56,7 +56,7 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.12"/>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1.04" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="BlurRadius" To="6" Duration="0:0:0.12"/>
                                     </Storyboard>
@@ -71,61 +71,130 @@
 
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24">
+            <Grid Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- Başlık ve Finans Özeti -->
-                <StackPanel>
-                    <TextBlock Text="Ödemeler ve Finans"
-                               FontSize="28"
-                               FontWeight="Bold"
-                               Foreground="#8B5CF6"
-                               Margin="0,0,0,12"/>
+                <!-- ÜST: Başlık, KPI'lar ve küçük kur widget -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="320"/>
+                    </Grid.ColumnDefinitions>
 
-                <Border Background="#0F172A" CornerRadius="10" Padding="16" BorderBrush="#334155" BorderThickness="1" Margin="0,0,0,18" MinHeight="110">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="Ödemeler ve Finans" FontSize="26" FontWeight="Bold" Foreground="#8B5CF6"/>
 
-                        <Grid>
-                            <StackPanel Orientation="Vertical">
-                                <TextBlock Text="Finans Özeti" Foreground="#94A3B8" FontSize="14"/>
-                                <TextBlock x:Name="TotalAccountsTextBlock" Text="Cari Hesap: -" Foreground="#E2E8F0" FontSize="16" FontWeight="Bold" Margin="0,6,0,0"/>
-                                <TextBlock x:Name="TotalCollectedTextBlock" Text="Toplam Tahsilat: -" Foreground="#10B981" FontSize="14" Margin="0,6,0,0"/>
-                                <TextBlock x:Name="TotalRemainingTextBlock" Text="Toplam Kalan: -" Foreground="#FCA311" FontSize="14" Margin="0,6,0,0"/>
+                        <!-- KPI Kartları (tek satır, minimal yükseklik) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Left">
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="Cari Hesap" Foreground="#94A3B8" FontSize="11"/>
+                                    <TextBlock x:Name="TotalAccountsTextBlock" Text="-" Foreground="#E2E8F0" FontSize="16" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="Toplam Tahsilat" Foreground="#94A3B8" FontSize="11"/>
+                                    <TextBlock x:Name="TotalCollectedTextBlock" Text="-" Foreground="#14B8A6" FontSize="16" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="Toplam Kalan Tahsilat" Foreground="#94A3B8" FontSize="11"/>
+                                    <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Foreground="#FCA311" FontSize="16" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="Eksik Ödeme Yapan Kişi Sayısı" Foreground="#94A3B8" FontSize="11"/>
+                                    <TextBlock x:Name="IncompleteCountTextBlock" Text="-" Foreground="#F87171" FontSize="16" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="Fazla Ödeme Yapan Kişi Sayısı" Foreground="#94A3B8" FontSize="11"/>
+                                    <TextBlock x:Name="OverpaidCountTextBlock" Text="-" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Sağ üst: küçük, düşük kontrastlı TCMB widget -->
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Border Background="#071022" CornerRadius="8" Padding="8" BorderBrush="#13202A" BorderThickness="1" Width="300">
+                            <StackPanel>
+                                <TextBlock Text="Kurlar (TCMB)" Foreground="#6B737A" FontSize="12" HorizontalAlignment="Right"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                                    <TextBlock Text="USD:" Foreground="#81909A" Width="48"/>
+                                    <TextBlock x:Name="UsdText" Text="-" Foreground="#AEB8BF"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="EUR:" Foreground="#81909A" Width="48"/>
+                                    <TextBlock x:Name="EurText" Text="-" Foreground="#AEB8BF"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="GBP:" Foreground="#81909A" Width="48"/>
+                                    <TextBlock x:Name="GbpText" Text="-" Foreground="#AEB8BF"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="SAR:" Foreground="#81909A" Width="48"/>
+                                    <TextBlock x:Name="SarText" Text="-" Foreground="#AEB8BF"/>
+                                </StackPanel>
+                                <TextBlock x:Name="LastRateUpdateText" Text="-" Foreground="#6B737A" FontSize="11" HorizontalAlignment="Right" Margin="0,6,0,0"/>
                             </StackPanel>
-                        </Grid>
-                        </Grid>
-                    </Border>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Filtreler: Collapsible panel (varsayılan collapsed) -->
+                <Expander Grid.Row="1" Header="Filtreler" IsExpanded="False" Foreground="#94A3B8" Background="#081225" BorderBrush="#21303F" Margin="0,12,0,12" Padding="8">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                        <TextBlock Text="Tur Türü:" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CbTourType" Width="160" Margin="0,0,12,0" SelectionChanged="Filter_SelectionChanged"/>
+                        <TextBlock Text="Dönem:" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CbPeriod" Width="160" Margin="0,0,12,0" SelectionChanged="Filter_SelectionChanged"/>
+                        <TextBlock Text="Grup Türü:" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CbGroupType" Width="140" Margin="0,0,12,0" SelectionChanged="Filter_SelectionChanged"/>
+                        <TextBlock Text="Gün Sayısı:" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CbDayCount" Width="80" SelectionChanged="Filter_SelectionChanged"/>
+                    </StackPanel>
+                </Expander>
+
+                <!-- ANA İÇERİK: Büyük işlem kartları (action center) -->
+                <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                        <Button Style="{StaticResource CardButtonStyle}" Click="Ledger_Click" BorderBrush="#8B5CF6" Margin="16" MinWidth="320" MinHeight="220">
+                            <StackPanel HorizontalAlignment="Left" Margin="12">
+                                <TextBlock Text="📒" FontSize="48"/>
+                                <TextBlock Text="Cari İşlemler" FontSize="20" FontWeight="Bold" Margin="0,10,0,0"/>
+                                <TextBlock Text="Müşteri/Satıcı cari hesap yönetimi ve ödeme hareketleri." Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#14B8A6" Margin="16" MinWidth="320" MinHeight="220">
+                            <StackPanel HorizontalAlignment="Left" Margin="12">
+                                <TextBlock Text="📋" FontSize="48"/>
+                                <TextBlock Text="Ödeme Listesi İndir" FontSize="20" FontWeight="Bold" Margin="0,10,0,0"/>
+                                <TextBlock Text="Tur ve dönemlere göre ödeme listesi görüntüleme ve indirme." Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </StackPanel>
 
-                <!-- Kartlar: kare görünüm ve yaklaşık 16 cm² olacak şekilde yeniden boyutlandırıldı -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,30">
-
-                    <!-- Cari Hesap kartı - kare (4cm x 4cm ~= 151px x 151px) -->
-                    <Button Style="{StaticResource CardButtonStyle}" Margin="12" Click="Ledger_Click" BorderBrush="#8B5CF6" Width="244" Height="244">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left">
-                            <Rectangle Height="6" Fill="#8B5CF6" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
-                            <TextBlock Text="📒" FontSize="30" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Cari Hesap" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
-                            <TextBlock Text="Müşteri/Satıcı cari hesap yönetimi , Ödeme Kaydet + , Ödeme Hareketleri İncele " FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Button>
-
-                    <!-- Ödeme Listesi İndir kartı - kare (4cm x 4cm ~= 151px x 151px) -->
-                    <Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#10B981" Margin="12" Width="244" Height="244">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left">
-                            <Rectangle Height="6" Fill="#10B981" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
-                            <TextBlock Text="📋" FontSize="30" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Ödeme Listesi İndir" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
-                            <TextBlock Text="Tur ve Gönemlere Göre Ödeme Listesi Görüntüleme Ekranı " FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Button>
-
-                </StackPanel>
-
-            </StackPanel>
+                <!-- Alt: sistem bilgisi çubuğu -->
+                <Border Grid.Row="3" Background="#071023" CornerRadius="6" Padding="10" Margin="0,6,0,0" BorderBrush="#21303F" BorderThickness="1">
+                    <TextBlock x:Name="SystemInfoTextBlock" Text="Aktif para birimi: -    Toplam işlem: -" Foreground="#94A3B8" FontSize="12"/>
+                </Border>
+            </Grid>
         </ScrollViewer>
     </Grid>
 
