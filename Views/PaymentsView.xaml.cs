@@ -27,8 +27,9 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 var personsView = new PersonsGeneralView();
-                try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
+                // Ensure PaymentsListCardMode is set before configuring mode so UI overrides (combobox color, labels)
                 try { personsView.PaymentsListCardMode = true; } catch { }
+                try { personsView.ConfigureMode(PersonsGeneralView.ViewMode.Genel); } catch { }
 
                 // If hosted in a NavigationService-capable host, navigate there
                 var nav = System.Windows.Navigation.NavigationService.GetNavigationService(this);

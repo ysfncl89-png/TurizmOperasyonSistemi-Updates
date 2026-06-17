@@ -740,6 +740,45 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                         if (topBack != null) { topBack.BorderBrush = brush; topBack.Background = brush; topBack.Foreground = System.Windows.Media.Brushes.White; }
                     }
                     catch { }
+
+                    // Also explicitly update named ComboBoxes so their BorderBrush, Effect and item styles use the payment color
+                    try
+                    {
+                        var cbNames = new[] { "CbTourType", "CbPeriod", "CbGroupType", "CbGroupDays", "CbTicketRequest", "CbHasTransfer", "CbVisaRequest", "Cb_CargoRequest" };
+                        // create item container style that mimics NeonComboBoxItemStyle but uses payColor
+                        var itemStyle = new Style(typeof(ComboBoxItem));
+                        itemStyle.Setters.Add(new Setter(Control.BackgroundProperty, System.Windows.Media.Brushes.Transparent));
+                        itemStyle.Setters.Add(new Setter(Control.ForegroundProperty, (System.Windows.Media.Brush)new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)ColorConverter.ConvertFromString("#E2F8FF"))));
+                        itemStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(6,4,6,4)));
+                        itemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+
+                        var mouseOverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+                        mouseOverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(0x20, payColor.R, payColor.G, payColor.B))));
+                        mouseOverTrigger.Setters.Add(new Setter(Control.ForegroundProperty, System.Windows.Media.Brushes.White));
+
+                        var selectedTrigger = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
+                        selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(0x40, payColor.R, payColor.G, payColor.B))));
+                        selectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, System.Windows.Media.Brushes.White));
+
+                        itemStyle.Triggers.Add(mouseOverTrigger);
+                        itemStyle.Triggers.Add(selectedTrigger);
+
+                        foreach (var n in cbNames)
+                        {
+                            try
+                            {
+                                var obj = this.FindName(n) as ComboBox;
+                                if (obj != null)
+                                {
+                                    obj.BorderBrush = new SolidColorBrush(payColor);
+                                    obj.Effect = new DropShadowEffect { Color = payColor, BlurRadius = 10, ShadowDepth = 0, Opacity = 0.18 };
+                                    obj.ItemContainerStyle = itemStyle;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
                     // Ensure CurrentModeLabel reflects Ödeme Listesi when visible
                     try
                     {
@@ -1000,7 +1039,9 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             try
             {
                 var store = new Services.ListTemplateStore();
-                var tpl = store.LoadTemplate(mode.ToString());
+                // If opened from Ödeme Listesi card, prefer a payments-scoped template key so edits do not overwrite the general mode template
+                string modeKey = this.PaymentsListCardMode ? mode.ToString() + ".PaymentsList" : mode.ToString();
+                var tpl = store.LoadTemplate(modeKey);
                 if (tpl != null && tpl.Count > 0)
                 {
                     // apply saved template order and visibility
@@ -1129,7 +1170,14 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             }
         }
 
-        private string CurrentModeName => CargoOnlyMode ? "Kargo Listesi" : GetModeTitle();
+        private string CurrentModeName
+        {
+            get
+            {
+                if (this.PaymentsListCardMode) return "Ödeme Listesi";
+                return CargoOnlyMode ? "Kargo Listesi" : GetModeTitle();
+            }
+        }
         private List<GeneralRow> _allRows = new List<GeneralRow>();
         private Button _applyButton;
         private DataGridColumn _editingColumn;
@@ -3633,7 +3681,9 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                                .Any(x => string.Equals(x, h, StringComparison.OrdinalIgnoreCase));
                     }).ToList();
                 }
-                var dialog = new ListDesignDialog(cols, _currentMode.ToString(), ResultsDataGrid);
+                // Use a separate mode key for PaymentsListCardMode to keep templates isolated from general mode
+                var dialogModeKey = this.PaymentsListCardMode ? _currentMode.ToString() + ".PaymentsList" : _currentMode.ToString();
+                var dialog = new ListDesignDialog(cols, dialogModeKey, ResultsDataGrid);
                 dialog.Owner = Application.Current?.MainWindow;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
