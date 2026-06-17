@@ -108,21 +108,24 @@
                        PopupAnimation="Fade">
                     <Border Background="#0B1220" CornerRadius="8" Padding="10" BorderBrush="#334155" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
-                            <Button Width="110" Height="90" Margin="6" Click="ExportWord_Click">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="Word" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                            <Button Width="110" Height="90" Margin="6" Click="ExportWord_Click" Background="Transparent" BorderThickness="0">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Source="/TurizmOperasyonSistemi;component/Assets/Icons/word.png" Width="40" Height="40" Stretch="Uniform" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Word" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,6,0,0" />
                                     <TextBlock Text="İndir" Foreground="#9CAFC0" FontSize="12" HorizontalAlignment="Center" />
                                 </StackPanel>
                             </Button>
-                            <Button Width="110" Height="90" Margin="6" Click="ExportExcel_Click">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="Excel" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                            <Button Width="110" Height="90" Margin="6" Click="ExportExcel_Click" Background="Transparent" BorderThickness="0">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Source="/TurizmOperasyonSistemi;component/Assets/Icons/excel.png" Width="40" Height="40" Stretch="Uniform" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Excel" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,6,0,0" />
                                     <TextBlock Text="İndir" Foreground="#9CAFC0" FontSize="12" HorizontalAlignment="Center" />
                                 </StackPanel>
                             </Button>
-                            <Button Width="110" Height="90" Margin="6" Click="ExportPdf_Click">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="PDF" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                            <Button Width="110" Height="90" Margin="6" Click="ExportPdf_Click" Background="Transparent" BorderThickness="0">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Source="/TurizmOperasyonSistemi;component/Assets/Icons/pdf.png" Width="40" Height="40" Stretch="Uniform" HorizontalAlignment="Center" />
+                                    <TextBlock Text="PDF" Foreground="#E2F8FF" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,6,0,0" />
                                     <TextBlock Text="İndir" Foreground="#9CAFC0" FontSize="12" HorizontalAlignment="Center" />
                                 </StackPanel>
                             </Button>
