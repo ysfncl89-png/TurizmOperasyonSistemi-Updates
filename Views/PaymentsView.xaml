@@ -88,16 +88,14 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
+                        <Grid>
                             <StackPanel Orientation="Vertical">
                                 <TextBlock Text="Finans Özeti" Foreground="#94A3B8" FontSize="14"/>
-                                <TextBlock Text="Toplam Borç: 125.400 ₺" Foreground="#E2E8F0" FontSize="20" FontWeight="Bold" Margin="0,6,0,0"/>
-                                <TextBlock Text="Toplam Alacak: 98.200 ₺" Foreground="#10B981" FontSize="14" Margin="0,6,0,0"/>
+                                <TextBlock x:Name="TotalAccountsTextBlock" Text="Cari Hesap: -" Foreground="#E2E8F0" FontSize="16" FontWeight="Bold" Margin="0,6,0,0"/>
+                                <TextBlock x:Name="TotalCollectedTextBlock" Text="Toplam Tahsilat: -" Foreground="#10B981" FontSize="14" Margin="0,6,0,0"/>
+                                <TextBlock x:Name="TotalRemainingTextBlock" Text="Toplam Kalan: -" Foreground="#FCA311" FontSize="14" Margin="0,6,0,0"/>
                             </StackPanel>
-
-                            <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Right">
-                                <TextBlock Text="Son Hareket" Foreground="#94A3B8" FontSize="14" HorizontalAlignment="Right"/>
-                                <TextBlock Text="01.06.2026 - 4.200 ₺ ödeme alındı" Foreground="#E2E8F0" FontSize="13" HorizontalAlignment="Right" Margin="0,6,0,0"/>
-                            </StackPanel>
+                        </Grid>
                         </Grid>
                     </Border>
                 </StackPanel>
