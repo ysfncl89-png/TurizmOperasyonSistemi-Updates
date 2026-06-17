@@ -99,20 +99,66 @@ namespace TurizmOperasyonSistemi.Views
                     }
                 }
 
-                // Build a small context menu at the button to choose format
-                var context = new ContextMenu();
-                var miWord = new MenuItem { Header = "Word (.docx)" };
-                miWord.Click += (s, ev) => { ExportSavedAllocation(row, "docx"); };
-                var miExcel = new MenuItem { Header = "Excel (.xlsx)" };
-                miExcel.Click += (s, ev) => { ExportSavedAllocation(row, "xlsx"); };
-                var miPdf = new MenuItem { Header = "PDF (.pdf)" };
-                miPdf.Click += (s, ev) => { ExportSavedAllocation(row, "pdf"); };
-                context.Items.Add(miWord);
-                context.Items.Add(miExcel);
-                context.Items.Add(miPdf);
-                context.PlacementTarget = btn;
-                context.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-                context.IsOpen = true;
+                // Build a small popup with icon buttons (Word/Excel/PDF) and show it below the button
+                var popup = new System.Windows.Controls.Primitives.Popup
+                {
+                    PlacementTarget = btn,
+                    Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
+                    StaysOpen = false,
+                    AllowsTransparency = true,
+                    PopupAnimation = System.Windows.Controls.Primitives.PopupAnimation.Fade
+                };
+
+                var border = new Border
+                {
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    Padding = new Thickness(6)
+                };
+
+                var innerBorder = new Border
+                {
+                    Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#0B1220"),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(8),
+                    BorderBrush = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#334155"),
+                    BorderThickness = new Thickness(1)
+                };
+
+                var panel = new StackPanel { Orientation = Orientation.Horizontal };
+
+                // helper to create icon button
+                Func<string, string, RoutedEventHandler, Button> makeButton = (label, iconPath, handler) =>
+                {
+                    var b = new Button { Width = 110, Height = 90, Margin = new Thickness(6), Background = System.Windows.Media.Brushes.Transparent, BorderThickness = new Thickness(0) };
+                    var sp = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                    try
+                    {
+                        var img = new System.Windows.Controls.Image { Width = 40, Height = 40, Stretch = System.Windows.Media.Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center };
+                        try { img.Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(iconPath, UriKind.RelativeOrAbsolute)); } catch { }
+                        sp.Children.Add(img);
+                    }
+                    catch { }
+                    sp.Children.Add(new TextBlock { Text = label, Foreground = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#E2F8FF"), FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0,6,0,0) });
+                    sp.Children.Add(new TextBlock { Text = "İndir", Foreground = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#9CAFC0"), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center });
+                    b.Content = sp;
+                    if (handler != null) b.Click += handler;
+                    return b;
+                };
+
+                var asmPrefix = "/TurizmOperasyonSistemi;component/Assets/Icons/";
+
+                var btnWord = makeButton("Word", asmPrefix + "word.png", (s2, ev2) => { popup.IsOpen = false; ExportSavedAllocation(row, "docx"); });
+                var btnExcel = makeButton("Excel", asmPrefix + "excel.png", (s2, ev2) => { popup.IsOpen = false; ExportSavedAllocation(row, "xlsx"); });
+                var btnPdf = makeButton("PDF", asmPrefix + "pdf.png", (s2, ev2) => { popup.IsOpen = false; ExportSavedAllocation(row, "pdf"); });
+
+                panel.Children.Add(btnWord);
+                panel.Children.Add(btnExcel);
+                panel.Children.Add(btnPdf);
+
+                innerBorder.Child = panel;
+                border.Child = innerBorder;
+                popup.Child = border;
+                popup.IsOpen = true;
             }
             catch (Exception ex)
             {
