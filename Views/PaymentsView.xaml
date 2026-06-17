@@ -132,8 +132,12 @@
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
                         <Border Background="#071022" CornerRadius="8" Padding="8" BorderBrush="#13202A" BorderThickness="1" Width="300">
                             <StackPanel>
-                                <TextBlock Text="Kurlar (TCMB)" Foreground="#6B737A" FontSize="12" HorizontalAlignment="Right"/>
+                               
+                                <TextBlock Text="Dikkat! TCMB her gün saat 15:30'da  " Foreground="#6B737A" FontSize="12" HorizontalAlignment="Right"/>
+                                <TextBlock Text="sadece 1 defa kur açıklar . " Foreground="#6B737A" FontSize="12" HorizontalAlignment="Right"/>
+                                <TextBlock Text="Güncel kur için güncel verileri kontrol edin ." Foreground="#6B737A" FontSize="12" HorizontalAlignment="Right"/>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                                   
                                     <TextBlock Text="USD:" Foreground="#81909A" Width="48"/>
                                     <TextBlock x:Name="UsdText" Text="-" Foreground="#AEB8BF"/>
                                 </StackPanel>
