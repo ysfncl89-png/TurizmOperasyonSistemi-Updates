@@ -102,30 +102,30 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Kartlar (3 adet kart için düzen) -->
-                <UniformGrid Columns="3" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,0,0,30">
+                <!-- Kartlar: kare görünüm ve yaklaşık 16 cm² olacak şekilde yeniden boyutlandırıldı -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,30">
 
-                    <!-- Ödeme Hareketleri kartı kaldırıldı -->
-
-                    <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="Ledger_Click" BorderBrush="#8B5CF6">
-                        <StackPanel>
+                    <!-- Cari Hesap kartı - kare (4cm x 4cm ~= 151px x 151px) -->
+                    <Button Style="{StaticResource CardButtonStyle}" Margin="12" Click="Ledger_Click" BorderBrush="#8B5CF6" Width="212" Height="212">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left">
                             <Rectangle Height="6" Fill="#8B5CF6" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="📒" FontSize="30" HorizontalAlignment="Left"/>
                             <TextBlock Text="Cari Hesap" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
-                            <TextBlock Text="Müşteri/Satıcı cari hesap yönetimi" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Text="Müşteri/Satıcı cari hesap yönetimi , Ödeme Kaydet + , Ödeme Hareketleri İncele " FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>
 
-					<Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#10B981">
-                        <StackPanel>
+                    <!-- Ödeme Listesi İndir kartı - kare (4cm x 4cm ~= 151px x 151px) -->
+                    <Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#10B981" Margin="12" Width="212" Height="212">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left">
                             <Rectangle Height="6" Fill="#10B981" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="📋" FontSize="30" HorizontalAlignment="Left"/>
                             <TextBlock Text="Ödeme Listesi İndir" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
-                            <TextBlock Text="Planlı ödemeler ve liste yönetimi" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Text="Tur ve Gönemlere Göre Ödeme Listesi Görüntüleme Ekranı " FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>
 
-                </UniformGrid>
+                </StackPanel>
 
             </StackPanel>
         </ScrollViewer>
