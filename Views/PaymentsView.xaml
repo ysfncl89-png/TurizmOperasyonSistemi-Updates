@@ -106,7 +106,7 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,30">
 
                     <!-- Cari Hesap kartı - kare (4cm x 4cm ~= 151px x 151px) -->
-                    <Button Style="{StaticResource CardButtonStyle}" Margin="12" Click="Ledger_Click" BorderBrush="#8B5CF6" Width="212" Height="212">
+                    <Button Style="{StaticResource CardButtonStyle}" Margin="12" Click="Ledger_Click" BorderBrush="#8B5CF6" Width="244" Height="244">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left">
                             <Rectangle Height="6" Fill="#8B5CF6" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="📒" FontSize="30" HorizontalAlignment="Left"/>
@@ -116,7 +116,7 @@
                     </Button>
 
                     <!-- Ödeme Listesi İndir kartı - kare (4cm x 4cm ~= 151px x 151px) -->
-                    <Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#10B981" Margin="12" Width="212" Height="212">
+                    <Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#10B981" Margin="12" Width="244" Height="244">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left">
                             <Rectangle Height="6" Fill="#10B981" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="📋" FontSize="30" HorizontalAlignment="Left"/>
