@@ -95,10 +95,67 @@ namespace TurizmOperasyonSistemi.Views
             var name = "Ödeme Hareketleri";
             try
             {
-                name += " - " + _registrationId.ToString();
+                // Try to resolve person name and registration's tour metadata to make filename more meaningful
+                try
+                {
+                    using (var db = new AppDbContext())
+                    {
+                        var reg = db.Registrations
+                            .Include(r => r.Person)
+                            .FirstOrDefault(r => r.Id == _registrationId);
+                        if (reg != null)
+                        {
+                            var personName = (reg.Person?.FirstName ?? "").Trim() + " " + (reg.Person?.LastName ?? "").Trim();
+                            personName = personName.Trim();
+                            if (!string.IsNullOrEmpty(personName))
+                            {
+                                name += " - " + personName;
+                            }
+                            else
+                            {
+                                name += " - " + _registrationId.ToString();
+                            }
+
+                            // collect tour metadata
+                            var tourParts = new List<string>();
+                            if (!string.IsNullOrWhiteSpace(reg.TourType)) tourParts.Add(reg.TourType.Trim());
+                            if (!string.IsNullOrWhiteSpace(reg.Period)) tourParts.Add(reg.Period.Trim());
+                            if (!string.IsNullOrWhiteSpace(reg.GroupType)) tourParts.Add(reg.GroupType.Trim());
+
+                            var daysDisplay = (reg.DaysCount ?? string.Empty).Trim();
+                            if (!string.IsNullOrEmpty(daysDisplay))
+                            {
+                                // normalize plain numeric day counts to include 'Gün'
+                                if (int.TryParse(daysDisplay, out var di)) daysDisplay = di + " Gün";
+                                tourParts.Add(daysDisplay);
+                            }
+
+                            if (tourParts.Count > 0)
+                            {
+                                var meta = string.Join(" ", tourParts).Trim();
+                                if (!string.IsNullOrEmpty(meta))
+                                {
+                                    name += " - " + meta;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            name += " - " + _registrationId.ToString();
+                        }
+                    }
+                }
+                catch { name += " - " + _registrationId.ToString(); }
             }
             catch { }
+
+            // sanitize filename
             foreach (var c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '-');
+
+            // limit length to avoid issues with very long registrations
+            const int maxLength = 120;
+            if (name.Length > maxLength) name = name.Substring(0, maxLength).Trim();
+
             return name + "." + extWithoutDot;
         }
 
