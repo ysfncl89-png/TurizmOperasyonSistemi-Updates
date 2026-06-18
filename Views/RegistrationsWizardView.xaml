@@ -1107,6 +1107,7 @@
                                       Foreground="White"
                                       BorderBrush="#FBBF24"
                                       BorderThickness="2"
+                                      IsTextSearchEnabled="False"
                                       Padding="8"
                                       FontSize="13"
                                       SelectionChanged="RegistrationPeriodGuideComboBox_SelectionChanged"/>

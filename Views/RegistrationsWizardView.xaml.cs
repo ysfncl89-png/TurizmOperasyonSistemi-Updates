@@ -13,11 +13,17 @@ using Microsoft.EntityFrameworkCore;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 using TurizmOperasyonSistemi.Services;
+using System.Text.RegularExpressions;
 
 namespace TurizmOperasyonSistemi.Views
 {
     public partial class RegistrationsWizardView : Page
     {
+        // For RegistrationPeriodGuide combobox incremental search/filter
+        private ICollectionView _registrationPeriodGuideView;
+        private string _periodGuideBuffer = string.Empty; // holds typed letters or digits
+        // no timer: buffer cleared only by explicit keys (Backspace/Escape) or closing dropdown
+
         private bool _isApplyingAutoSelection = false;
         private const int MaxStep = 10;
         private List<AppSetting> _passportArrivedOptionsAll = new();
@@ -51,8 +57,13 @@ namespace TurizmOperasyonSistemi.Views
                     db.EnsureRegistrationStatusChoiceColumnsExist();
                     db.NormalizeRegistrationNullValues();
                 }
+
+
+
             }
             catch { }
+
+            // after ensuring DB schema, finish constructor initialization
             LoadPersons();
             LoadRegistrations();
             LoadSettingsToComboBoxes();
@@ -68,6 +79,204 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
             // Attach click handlers to all ComboBox controls on this page so clicking anywhere opens the dropdown
             AttachComboBoxClickHandlers(this);
+
+            // Setup incremental search helpers for the registration period guide combobox
+            try
+            {
+                RegistrationPeriodGuideComboBox.DropDownOpened += RegistrationPeriodGuideComboBox_DropDownOpened;
+                RegistrationPeriodGuideComboBox.DropDownClosed += RegistrationPeriodGuideComboBox_DropDownClosed;
+                RegistrationPeriodGuideComboBox.PreviewTextInput += RegistrationPeriodGuideComboBox_PreviewTextInput;
+                RegistrationPeriodGuideComboBox.PreviewKeyDown += RegistrationPeriodGuideComboBox_PreviewKeyDown;
+
+                // no timeout timer — buffer persists until explicit Backspace/Escape or dropdown close
+            }
+            catch { }
+        }
+
+        // Registration period guide helpers (moved outside constructor)
+        private string _periodGuideNumericBuffer = string.Empty; // holds digits when user types year after month
+        private void RegistrationPeriodGuideComboBox_DropDownOpened(object sender, EventArgs e)
+        {
+            try
+            {
+                if (RegistrationPeriodGuideComboBox?.ItemsSource == null) return;
+                _registrationPeriodGuideView = CollectionViewSource.GetDefaultView(RegistrationPeriodGuideComboBox.ItemsSource);
+                if (_registrationPeriodGuideView != null)
+                {
+                    _registrationPeriodGuideView.Filter = PeriodGuideFilter;
+                }
+                _periodGuideBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void RegistrationPeriodGuideComboBox_DropDownClosed(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_registrationPeriodGuideView != null)
+                {
+                    _registrationPeriodGuideView.Filter = null;
+                    _registrationPeriodGuideView = null;
+                }
+                _periodGuideBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void RegistrationPeriodGuideComboBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                if (RegistrationPeriodGuideComboBox == null || !RegistrationPeriodGuideComboBox.IsDropDownOpen) return;
+
+                var ch = (e.Text ?? string.Empty);
+                if (string.IsNullOrEmpty(ch)) return;
+
+                if (char.IsDigit(ch[0]))
+                {
+                    // Always append digit to numeric buffer
+                    _periodGuideNumericBuffer += ch;
+
+                    // Refresh view so filtering applies month+year constraints
+                    _registrationPeriodGuideView?.Refresh();
+
+                    // Try to highlight the best match among visible items (do not close dropdown)
+                    IEnumerable<string> items = RegistrationPeriodGuideComboBox.ItemsSource?.Cast<string>() ?? Enumerable.Empty<string>();
+                    if (_registrationPeriodGuideView != null)
+                    {
+                        try { items = _registrationPeriodGuideView.Cast<string>(); } catch { }
+                    }
+
+                    // Find all items that match both month buffer (if present) and whose year token starts with numeric buffer.
+                    var matches = items.Where(it =>
+                    {
+                        if (it == null) return false;
+                        if (!string.IsNullOrEmpty(_periodGuideBuffer))
+                        {
+                            var monthPart = it.Split(' ')[0];
+                            if (!Normalize(monthPart).StartsWith(Normalize(_periodGuideBuffer))) return false;
+                        }
+                        var yearTok = ExtractNumericToken(it);
+                        if (string.IsNullOrEmpty(_periodGuideNumericBuffer)) return true;
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodGuideNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }).ToList();
+
+                    if (matches.Count == 1)
+                    {
+                        // Only auto-select when there is a single unambiguous match.
+                        RegistrationPeriodGuideComboBox.SelectedItem = matches[0];
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        // Multiple candidates remain: do not change selection so user can continue typing to disambiguate.
+                        // Optionally, ensure the dropdown shows the filtered candidates (filter already applied).
+                        e.Handled = true;
+                    }
+
+                    return;
+                }
+
+                if (char.IsLetter(ch[0]))
+                {
+                    // typing a letter clears numeric buffer and updates month filter
+                    _periodGuideNumericBuffer = string.Empty;
+                    _periodGuideBuffer += ch;
+                    _registrationPeriodGuideView?.Refresh();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private void RegistrationPeriodGuideComboBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (RegistrationPeriodGuideComboBox == null || !RegistrationPeriodGuideComboBox.IsDropDownOpen) return;
+
+                if (e.Key == Key.Back)
+                {
+                    // Prefer deleting numeric buffer first when present
+                    if (!string.IsNullOrEmpty(_periodGuideNumericBuffer))
+                    {
+                        _periodGuideNumericBuffer = _periodGuideNumericBuffer[..Math.Max(0, _periodGuideNumericBuffer.Length - 1)];
+                        e.Handled = true;
+                    }
+                    else if (!string.IsNullOrEmpty(_periodGuideBuffer))
+                    {
+                        _periodGuideBuffer = _periodGuideBuffer[..Math.Max(0, _periodGuideBuffer.Length - 1)];
+                        _registrationPeriodGuideView?.Refresh();
+                        e.Handled = true;
+                    }
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    ResetPeriodGuideBuffer();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private bool PeriodGuideFilter(object obj)
+        {
+            try
+            {
+                if (obj is not string s) return true;
+                // Keep the special "Tüm Dönemler" option visible so user can always select it
+                if (s.Equals("Tüm Dönemler", StringComparison.CurrentCultureIgnoreCase)) return true;
+
+                // If user has typed only digits (no month buffer), match items that contain the numeric buffer
+                if (string.IsNullOrEmpty(_periodGuideBuffer) && !string.IsNullOrEmpty(_periodGuideNumericBuffer))
+                {
+                    var yearTok = ExtractNumericToken(s);
+                    return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodGuideNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                }
+
+                // If user typed month (letters), require month prefix; if also typed numeric buffer, require that too
+                if (!string.IsNullOrEmpty(_periodGuideBuffer))
+                {
+                    var monthPart = s.Split(' ')[0];
+                    var normalizedMonth = Normalize(monthPart);
+                    var normalizedBuffer = Normalize(_periodGuideBuffer);
+                    bool monthMatches = normalizedMonth.StartsWith(normalizedBuffer);
+                    if (!monthMatches) return false;
+                    if (!string.IsNullOrEmpty(_periodGuideNumericBuffer))
+                    {
+                        var yearTok = ExtractNumericToken(s);
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodGuideNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }
+                    return true;
+                }
+
+                return true;
+            }
+            catch { return true; }
+        }
+
+        private void ResetPeriodGuideBuffer()
+        {
+            try
+            {
+                _periodGuideBuffer = string.Empty;
+                _registrationPeriodGuideView?.Refresh();
+            }
+            catch { }
+        }
+
+        // Returns the first numeric token (sequence of digits) found in the text, prefer 4-digit year tokens or the last numeric token
+        private string ExtractNumericToken(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var tokens = text.Split(new[] { ' ', '-', '/', '_', '.' }, StringSplitOptions.RemoveEmptyEntries);
+            // prefer a 4-digit token
+            var four = tokens.Reverse().FirstOrDefault(t => t.All(char.IsDigit) && t.Length >= 4);
+            if (!string.IsNullOrEmpty(four)) return four;
+            // otherwise return the last numeric token with length >= 2
+            var last = tokens.Reverse().FirstOrDefault(t => t.All(char.IsDigit) && t.Length >= 1);
+            return last ?? string.Empty;
         }
 
         private void RegistrationsDataGrid_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -109,6 +318,9 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
+        // Reserved placeholder for upcoming method insertions. Do not remove.
+
+        // Patch alignment no-op: reserved line to ensure context matching for future patches.
         private int ResolveRoomCapacity(string roomType)
         {
             string selectedRoomType = (roomType ?? string.Empty).ToUpper();
