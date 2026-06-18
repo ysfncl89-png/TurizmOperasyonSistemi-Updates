@@ -382,25 +382,106 @@ namespace TurizmOperasyonSistemi.Views
         {
             var btn = sender as System.Windows.Controls.Button;
             if (btn == null) return;
-            var path = btn.CommandParameter as string;
-            if (string.IsNullOrEmpty(path))
-            {
-                MessageBox.Show("Bu ödeme için kayıtlı bir dekont bulunamadı.");
-                return;
-            }
+            // CommandParameter contains payment Id
+            if (!int.TryParse(btn.CommandParameter?.ToString(), out var paymentId)) return;
 
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                using var db = new AppDbContext();
+                var payment = db.Payments.FirstOrDefault(p => p.Id == paymentId);
+                if (payment == null)
                 {
-                    FileName = path,
-                    UseShellExecute = true
-                });
+                    MessageBox.Show("Ödeme kaydı bulunamadı.");
+                    return;
+                }
+
+                var path = payment.UploadedDocumentPath;
+                if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                {
+                    // Reuse existing UploadChoiceWindow and QRUploadWindow from PaymentPopupWindow
+                    var choiceWnd = new UploadChoiceWindow();
+                    choiceWnd.Owner = this;
+                    var res = choiceWnd.ShowDialog();
+                    if (res != true) return;
+
+                    if (choiceWnd.Choice == UploadChoiceWindow.UploadChoice.File)
+                    {
+                        var dlg = new OpenFileDialog();
+                        dlg.Title = "Dekont seçin (PDF/resim)";
+                        dlg.Filter = "Tüm desteklenen dosyalar|*.pdf;*.jpg;*.jpeg;*.png;*.bmp|PDF Dosyaları (*.pdf)|*.pdf|Resimler (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp|Tüm dosyalar (*.*)|*.*";
+                        if (dlg.ShowDialog() != true) return;
+
+                        try
+                        {
+                            var appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TurizmOperasyonSistemi", "UploadedDocuments");
+                            Directory.CreateDirectory(appDir);
+                            var destFileName = paymentId + "_" + System.DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Path.GetFileName(dlg.FileName);
+                            var destPath = Path.Combine(appDir, destFileName);
+                            File.Copy(dlg.FileName, destPath, true);
+
+                            payment.UploadedDocumentPath = destPath;
+                            db.SaveChanges();
+
+                            MessageBox.Show("Dekont başarıyla yüklendi.");
+                            // reload grid
+                            LoadPayments(_registrationId);
+                            return;
+                        }
+                        catch (System.Exception ex)
+                        {
+                            MessageBox.Show("Dekont yüklenirken hata: " + ex.Message);
+                            return;
+                        }
+                    }
+
+                    if (choiceWnd.Choice == UploadChoiceWindow.UploadChoice.Qr)
+                    {
+                        var qrWnd = new QRUploadWindow((savedPath, originalName) =>
+                        {
+                            try
+                            {
+                                using var db2 = new AppDbContext();
+                                var p2 = db2.Payments.FirstOrDefault(p => p.Id == paymentId);
+                                if (p2 != null)
+                                {
+                                    p2.UploadedDocumentPath = savedPath;
+                                    db2.SaveChanges();
+                                }
+                            }
+                            catch { }
+
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                try { MessageBox.Show("Dekont başarıyla yüklendi via QR."); } catch { }
+                                try { LoadPayments(_registrationId); } catch { }
+                            });
+                        });
+                        qrWnd.Owner = this;
+                        qrWnd.ShowDialog();
+                        return;
+                    }
+                }
+
+                // Open existing file
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = path,
+                        UseShellExecute = true
+                    });
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show("Dekont açılamadı: " + ex.Message);
+                }
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
-                MessageBox.Show("Dekont açılamadı: " + ex.Message);
+                MessageBox.Show("İşlem sırasında hata: " + ex.Message);
             }
         }
+
+        // Note: QR/file upload UI reuse implemented via UploadChoiceWindow and QRUploadWindow
     }
 }
