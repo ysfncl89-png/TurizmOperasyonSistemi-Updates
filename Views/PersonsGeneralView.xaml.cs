@@ -24,6 +24,9 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class PersonsGeneralView : Page
     {
+        // When true, this instance was opened from Lists module -> Tur Kayıtları card
+        // Used to apply Tur Kayıtları-specific column visibility rules (hide İşlem/Detay)
+        public bool OpenedFromListsTurKayitlari { get; set; } = false;
         // When true, this instance was opened from the Kargo Listesi card (Lists module or Cargo module)
         // and ApplyFilters behavior for CargoRequest should show ALL when no selection is made.
         public bool CargoListCardMode { get; set; } = false;
@@ -972,6 +975,22 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             };
 
             if (!modeVisibleHeaders.TryGetValue(mode, out var visible)) visible = modeVisibleHeaders[ViewMode.Genel];
+            // If this page was opened specifically from the Lists module "Tur kayıtları" card,
+            // remove the action columns İşlem and Detay for the Tur kayıtları modes requested by user.
+            try
+            {
+                if (this.OpenedFromListsTurKayitlari)
+                {
+                    var turModes = new[] { ViewMode.Genel, ViewMode.Vize, ViewMode.Pasaport, ViewMode.Bilet, ViewMode.Aktarma, ViewMode.Havayolu, ViewMode.Referans };
+                    if (turModes.Contains(mode))
+                    {
+                        try { visible.Remove("İşlem"); } catch { }
+                        try { visible.Remove("Detay"); } catch { }
+                    }
+                }
+            }
+            catch { }
+
 
             // If this page was opened specifically from the Ödeme Listesi card, restrict to payment-related columns only
             try
@@ -1125,6 +1144,31 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                         }
                         try { ResultsDataGrid.Items.Refresh(); } catch { }
                         try { ResultsDataGrid.UpdateLayout(); } catch { }
+                        // If opened from Lists -> Tur kayıtları card, ensure action columns are hidden regardless of saved template
+                        try
+                        {
+                            if (this.OpenedFromListsTurKayitlari)
+                            {
+                                var turModes = new[] { ViewMode.Genel, ViewMode.Vize, ViewMode.Pasaport, ViewMode.Bilet, ViewMode.Aktarma, ViewMode.Havayolu, ViewMode.Referans };
+                                if (turModes.Contains(mode))
+                                {
+                                    foreach (var c2 in ResultsDataGrid.Columns)
+                                    {
+                                        try
+                                        {
+                                            var h = (c2.Header as TextBlock)?.Text ?? c2.Header?.ToString() ?? string.Empty;
+                                            if (string.Equals(h?.Trim(), "İşlem", StringComparison.OrdinalIgnoreCase) || string.Equals(h?.Trim(), "Detay", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                c2.Visibility = Visibility.Collapsed;
+                                            }
+                                        }
+                                        catch { }
+                                    }
+                                    try { ResultsDataGrid.Items.Refresh(); ResultsDataGrid.UpdateLayout(); } catch { }
+                                }
+                            }
+                        }
+                        catch { }
                     }
                     catch { }
                     return;
@@ -3681,6 +3725,30 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                                .Any(x => string.Equals(x, h, StringComparison.OrdinalIgnoreCase));
                     }).ToList();
                 }
+                // If opened from Lists -> Tur Kayıtları card, remove İşlem and Detay columns from design dialog for those modes
+                try
+                {
+                    if (this.OpenedFromListsTurKayitlari)
+                    {
+                        var turModes = new[] { ViewMode.Genel, ViewMode.Vize, ViewMode.Pasaport, ViewMode.Bilet, ViewMode.Aktarma, ViewMode.Havayolu, ViewMode.Referans };
+                        if (turModes.Contains(_currentMode))
+                        {
+                            cols = cols.Where(c =>
+                            {
+                                try
+                                {
+                                    var h = (c.Header as TextBlock)?.Text ?? c.Header?.ToString() ?? string.Empty;
+                                    h = h.Trim();
+                                    if (string.Equals(h, "İşlem", StringComparison.OrdinalIgnoreCase)) return false;
+                                    if (string.Equals(h, "Detay", StringComparison.OrdinalIgnoreCase)) return false;
+                                }
+                                catch { }
+                                return true;
+                            }).ToList();
+                        }
+                    }
+                }
+                catch { }
                 // Use a separate mode key for PaymentsListCardMode to keep templates isolated from general mode
                 var dialogModeKey = this.PaymentsListCardMode ? _currentMode.ToString() + ".PaymentsList" : _currentMode.ToString();
                 var dialog = new ListDesignDialog(cols, dialogModeKey, ResultsDataGrid);
@@ -3698,6 +3766,31 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                     {
                         // If not saved, the dialog already applied temporary changes to the grid.
                         // Keep them until the user leaves the module (handled by Unloaded event).
+                    }
+                }
+                catch { }
+                // Regardless of saved or temporary apply, ensure İşlem and Detay remain hidden for Tur kayıtları card
+                try
+                {
+                    if (this.OpenedFromListsTurKayitlari)
+                    {
+                        var turModes = new[] { ViewMode.Genel, ViewMode.Vize, ViewMode.Pasaport, ViewMode.Bilet, ViewMode.Aktarma, ViewMode.Havayolu, ViewMode.Referans };
+                        if (turModes.Contains(_currentMode))
+                        {
+                            foreach (var c in ResultsDataGrid.Columns)
+                            {
+                                try
+                                {
+                                    var h = (c.Header as TextBlock)?.Text ?? c.Header?.ToString() ?? string.Empty;
+                                    if (string.Equals(h?.Trim(), "İşlem", StringComparison.OrdinalIgnoreCase) || string.Equals(h?.Trim(), "Detay", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        c.Visibility = Visibility.Collapsed;
+                                    }
+                                }
+                                catch { }
+                            }
+                            try { ResultsDataGrid.Items.Refresh(); ResultsDataGrid.UpdateLayout(); } catch { }
+                        }
                     }
                 }
                 catch { }

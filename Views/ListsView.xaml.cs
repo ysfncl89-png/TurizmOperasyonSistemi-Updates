@@ -400,6 +400,9 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 var personsView = new PersonsGeneralView();
+                // mark this instance as opened from Lists -> Tur Kayıtları card so PersonsGeneralView
+                // can apply Tur Kayıtları-specific UI rules (hide İşlem/Detay)
+                try { personsView.OpenedFromListsTurKayitlari = true; } catch { }
                 try { personsView.ConfigureMode(mode); } catch { }
 
                 if (this.NavigationService != null)
