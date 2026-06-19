@@ -84,11 +84,18 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Text="Kargo İşlemleri"
-                           FontSize="28"
-                           FontWeight="Bold"
-                           Foreground="#3B82F6"
-                           Margin="0,0,0,12"/>
+                <!-- Başlığı, kartların hizasına göre ortalanmış geniş bir konteyner içine alıp
+                     konteynerin soluna hizalayarak daha dengeli bir görünüm sağlıyoruz -->
+                <Grid Grid.Row="0" HorizontalAlignment="Center">
+                    <Grid Width="1100">
+                        <TextBlock Text="Kargo İşlemleri"
+                                   FontSize="28"
+                                   FontWeight="Bold"
+                                   Foreground="#3B82F6"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,16"/>
+                    </Grid>
+                </Grid>
 
                 <!-- Kargo kartları: kalan alanda hem dikey hem yatay merkezde olsunlar -->
                 <Grid Grid.Row="1">
