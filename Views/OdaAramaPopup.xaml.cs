@@ -177,18 +177,18 @@ namespace TurizmOperasyonSistemi.Views
             string days = DaysFilter.SelectedItem?.ToString();
             string hotel = HotelFilter.SelectedItem?.ToString();
 
-            var filtered = _allRows
-                .Where(x => (string.IsNullOrWhiteSpace(tour) || tour == "Tümü" || string.Equals(x.TourType, tour, StringComparison.OrdinalIgnoreCase)))
-                .Where(x => (string.IsNullOrWhiteSpace(period) || period == "Tümü" || string.Equals(x.Period, period, StringComparison.OrdinalIgnoreCase)))
-                .Where(x => (string.IsNullOrWhiteSpace(group) || group == "Tümü" || string.Equals(x.GroupType, group, StringComparison.OrdinalIgnoreCase)))
-                .Where(x => (string.IsNullOrWhiteSpace(days) || days == "Tümü" || string.Equals(x.DaysCount, days, StringComparison.OrdinalIgnoreCase)))
-                .Where(x => (string.IsNullOrWhiteSpace(hotel) || hotel == "Tümü" || string.Equals(x.HotelName, hotel, StringComparison.OrdinalIgnoreCase)))
+                var filtered = _allRows
+                .Where(x => (string.IsNullOrWhiteSpace(tour) || tour == "Tümü" || string.Equals(x.TourType, tour, StringComparison.CurrentCultureIgnoreCase)))
+                .Where(x => (string.IsNullOrWhiteSpace(period) || period == "Tümü" || string.Equals(x.Period, period, StringComparison.CurrentCultureIgnoreCase)))
+                .Where(x => (string.IsNullOrWhiteSpace(group) || group == "Tümü" || string.Equals(x.GroupType, group, StringComparison.CurrentCultureIgnoreCase)))
+                .Where(x => (string.IsNullOrWhiteSpace(days) || days == "Tümü" || string.Equals(x.DaysCount, days, StringComparison.CurrentCultureIgnoreCase)))
+                .Where(x => (string.IsNullOrWhiteSpace(hotel) || hotel == "Tümü" || string.Equals(x.HotelName, hotel, StringComparison.CurrentCultureIgnoreCase)))
                 .Where(x => string.IsNullOrWhiteSpace(search) ||
-                            (x.OccupantNames != null && x.OccupantNames.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0) ||
-                            (x.HotelName != null && x.HotelName.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0) ||
-                            (x.RoomSummary != null && x.RoomSummary.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0) ||
-                            (x.TourType != null && x.TourType.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0) ||
-                            (x.Period != null && x.Period.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+                            (x.OccupantNames != null && x.OccupantNames.IndexOf(search, StringComparison.CurrentCultureIgnoreCase) >= 0) ||
+                            (x.HotelName != null && x.HotelName.IndexOf(search, StringComparison.CurrentCultureIgnoreCase) >= 0) ||
+                            (x.RoomSummary != null && x.RoomSummary.IndexOf(search, StringComparison.CurrentCultureIgnoreCase) >= 0) ||
+                            (x.TourType != null && x.TourType.IndexOf(search, StringComparison.CurrentCultureIgnoreCase) >= 0) ||
+                            (x.Period != null && x.Period.IndexOf(search, StringComparison.CurrentCultureIgnoreCase) >= 0)
                             )
                 .ToList();
 
@@ -320,9 +320,10 @@ namespace TurizmOperasyonSistemi.Views
                 string matched = null;
                 if (char.IsDigit(buffer[0]))
                 {
-                    matched = items.FirstOrDefault(it => it.StartsWith(buffer, StringComparison.OrdinalIgnoreCase));
+                    // For numeric starts we still want culture-aware comparison to handle localized digits/formatting
+                    matched = items.FirstOrDefault(it => it.StartsWith(buffer, true, culture));
                     if (matched == null)
-                        matched = items.FirstOrDefault(it => it.IndexOf(buffer, StringComparison.OrdinalIgnoreCase) >= 0);
+                        matched = items.FirstOrDefault(it => it.IndexOf(buffer, StringComparison.CurrentCultureIgnoreCase) >= 0);
                 }
                 else
                 {
