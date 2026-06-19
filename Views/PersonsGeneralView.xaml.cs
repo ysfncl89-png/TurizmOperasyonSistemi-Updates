@@ -51,6 +51,26 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        // Helper: return a human-readable string for a ComboBox's current selection.
+        // Handles SelectedValue, SelectedItem, ComboBoxItem content and falls back to Text.
+        private string GetComboSelectionString(ComboBox cb)
+        {
+            try
+            {
+                if (cb == null) return string.Empty;
+                if (cb.SelectedValue is string sv) return sv?.Trim() ?? string.Empty;
+                if (cb.SelectedItem is string si) return si?.Trim() ?? string.Empty;
+                if (cb.SelectedItem is ComboBoxItem cbi)
+                {
+                    return (cbi.Content as string ?? cbi.Content?.ToString() ?? string.Empty).Trim();
+                }
+                if (!string.IsNullOrEmpty(cb.Text)) return cb.Text.Trim();
+                if (cb.SelectedItem != null) return cb.SelectedItem.ToString().Trim();
+            }
+            catch { }
+            return string.Empty;
+        }
+
         private void IncreaseCargoQty_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -91,6 +111,20 @@ namespace TurizmOperasyonSistemi.Views
                 }
 
                 var win = new PrintPreviewWindow { Owner = Window.GetWindow(this), Sender = senderInfo };
+                try
+                {
+                    // determine current filter selection to preselect matching group in preview
+                    var cbTour = this.FindName("CbTourType") as ComboBox;
+                    var cbPeriod = this.FindName("CbPeriod") as ComboBox;
+                    var cbGroupType = this.FindName("CbGroupType") as ComboBox;
+                    var cbDays = this.FindName("CbGroupDays") as ComboBox;
+                    var tour = GetComboSelectionString(cbTour);
+                    var period = GetComboSelectionString(cbPeriod);
+                    var gtype = GetComboSelectionString(cbGroupType);
+                    var days = GetComboSelectionString(cbDays);
+                    win.InitialGroupKey = string.Join("|", new[] { tour ?? string.Empty, period ?? string.Empty, gtype ?? string.Empty, days ?? string.Empty });
+                }
+                catch { }
                 win.ShowDialog();
             }
             catch (Exception ex)
@@ -125,6 +159,19 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 }
 
                 var win = new PrintPreviewWindow { Owner = Window.GetWindow(this), Sender = senderInfo };
+                try
+                {
+                    var cbTour = this.FindName("CbTourType") as ComboBox;
+                    var cbPeriod = this.FindName("CbPeriod") as ComboBox;
+                    var cbGroupType = this.FindName("CbGroupType") as ComboBox;
+                    var cbDays = this.FindName("CbGroupDays") as ComboBox;
+                    var tour = GetComboSelectionString(cbTour);
+                    var period = GetComboSelectionString(cbPeriod);
+                    var gtype = GetComboSelectionString(cbGroupType);
+                    var days = GetComboSelectionString(cbDays);
+                    win.InitialGroupKey = string.Join("|", new[] { tour ?? string.Empty, period ?? string.Empty, gtype ?? string.Empty, days ?? string.Empty });
+                }
+                catch { }
                 win.ShowDialog();
                 // After preview/print actions, update queue UI
                 UpdatePrintPreviewButtonVisibility();

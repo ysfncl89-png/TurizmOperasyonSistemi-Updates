@@ -78,6 +78,48 @@ namespace TurizmOperasyonSistemi.Services
             }
         }
 
+        // Decrease the Quantity for an item by the specified amount.
+        // If resulting quantity is <= 0 the item will be removed from the queue.
+        public void DecrementQuantity(PrintQueueItem item, int amount = 1)
+        {
+            if (item == null) return;
+            if (amount <= 0) return;
+            lock (_sync)
+            {
+                try
+                {
+                    // If the item exists in the collection operate on that instance
+                    var existing = Items.FirstOrDefault(i => i == item);
+                    if (existing == null)
+                    {
+                        // Try to locate by RegistrationId fallback
+                        existing = Items.FirstOrDefault(i => i.RegistrationId == item.RegistrationId);
+                    }
+
+                    if (existing == null)
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        existing.Quantity = Math.Max(0, existing.Quantity - amount);
+                    }
+                    catch { existing.Quantity = 0; }
+
+                    if (existing.Quantity <= 0)
+                    {
+                        Items.Remove(existing);
+                        try { ItemRemoved?.Invoke(existing); } catch { }
+                    }
+
+                    // Persist changes
+                    SaveToFile();
+                }
+                catch { }
+            }
+        }
+
         public void MarkPrinted(PrintQueueItem item)
         {
             if (item == null) return;

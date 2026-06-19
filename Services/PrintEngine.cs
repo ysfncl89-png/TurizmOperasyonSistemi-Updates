@@ -64,8 +64,42 @@ namespace TurizmOperasyonSistemi.Services
                     // margins
                     double marginMm = 8; // 8mm
                     double margin = marginMm * mmToDip;
+                    // reserve a small header area at top of each page for group title (Tour / Period / Group)
+                    double headerMm = 10; // 10mm header
+                    double headerH = headerMm * mmToDip;
                     double usableW = pageWidth - margin * 2;
-                    double usableH = pageHeight - margin * 2;
+                    double usableH = pageHeight - margin * 2 - headerH;
+
+                    // compute a human-friendly group title from grouping key
+                    string groupTitle = string.Empty;
+                    try
+                    {
+                        var parts = (grp.Key ?? string.Empty).Split('|');
+                        var title = string.IsNullOrWhiteSpace(parts[0]) ? "(Bilinmeyen Tur)" : parts[0];
+                        if (!string.IsNullOrWhiteSpace(parts.Length > 1 ? parts[1] : null)) title += " - " + parts[1];
+                        if (!string.IsNullOrWhiteSpace(parts.Length > 2 ? parts[2] : null)) title += " | " + parts[2];
+                        if (!string.IsNullOrWhiteSpace(parts.Length > 3 ? parts[3] : null)) title += " - " + parts[3];
+                        groupTitle = title;
+                    }
+                    catch { groupTitle = string.Empty; }
+
+                    // add header TextBlock at top of page
+                    try
+                    {
+                        var headerTb = new System.Windows.Controls.TextBlock
+                        {
+                            Text = groupTitle,
+                            FontSize = 12,
+                            FontWeight = FontWeights.Bold,
+                            TextAlignment = TextAlignment.Center,
+                            Width = usableW,
+                            TextWrapping = TextWrapping.NoWrap
+                        };
+                        FixedPage.SetLeft(headerTb, margin);
+                        FixedPage.SetTop(headerTb, margin);
+                        fixedPage.Children.Add(headerTb);
+                    }
+                    catch { }
 
                     double cellW = usableW / cols;
                     double cellH = usableH / rows;
@@ -76,7 +110,7 @@ namespace TurizmOperasyonSistemi.Services
                         int r = i / cols;
                         int c = i % cols;
                         double x = margin + c * cellW;
-                        double y = margin + r * cellH;
+                        double y = margin + headerH + r * cellH;
 
                         var border = new Border
                         {

@@ -8,6 +8,9 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class PrintPreviewWindow : Window
     {
+        // Optional initial group key set by caller so BindQueueList can pre-select the requested group
+        public string InitialGroupKey { get; set; }
+
         private class GroupViewModel
         {
             public string Key { get; set; }
@@ -48,7 +51,26 @@ namespace TurizmOperasyonSistemi.Views
                     try
                     {
                         var itm = CargoPrintQueue.Instance.Items.FirstOrDefault(x => x.RegistrationId == registrationId);
-                        if (itm != null) CargoPrintQueue.Instance.Remove(itm);
+                        if (itm != null)
+                        {
+                            // If there are multiple copies queued for this registration, decrement quantity by one
+                            // otherwise remove the item completely.
+                            try
+                            {
+                                if (itm.Quantity > 1)
+                                {
+                                    CargoPrintQueue.Instance.DecrementQuantity(itm, 1);
+                                }
+                                else
+                                {
+                                    CargoPrintQueue.Instance.Remove(itm);
+                                }
+                            }
+                            catch
+                            {
+                                try { CargoPrintQueue.Instance.Remove(itm); } catch { }
+                            }
+                        }
                         // Refresh groups and preview
                         BindQueueList();
                         RefreshPreview();
@@ -116,6 +138,10 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // Preserve previous selection key (if any) so UI does not jump to another group after rebuild
+                // If caller provided InitialGroupKey (from PersonsGeneralView filters), prefer that when no previous selection exists
+                var previousKey = _selectedGroup?.Key ?? this.InitialGroupKey;
+
                 // Group queue items by TourType+Period
                 var items = CargoPrintQueue.Instance.Items.ToArray();
                 var dict = new Dictionary<string, List<TurizmOperasyonSistemi.Services.PrintQueueItem>>();
@@ -143,8 +169,28 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 _groups = cols.ToArray();
                 QueueListBox.ItemsSource = _groups;
-                // select first group by default if exists
-                if (_groups.Length > 0) { QueueListBox.SelectedIndex = 0; _selectedGroup = _groups[0]; }
+
+                // Try to restore previous selection if present; otherwise select first group
+                var prev = (previousKey ?? string.Empty).Trim();
+                if (!string.IsNullOrEmpty(prev))
+                {
+                    var idx = Array.FindIndex(_groups, g => string.Equals((g.Key ?? string.Empty).Trim(), prev, StringComparison.OrdinalIgnoreCase));
+                    if (idx >= 0)
+                    {
+                        QueueListBox.SelectedIndex = idx;
+                        _selectedGroup = _groups[idx];
+                    }
+                    else
+                    {
+                        // previous group no longer exists (all items removed) -> select first if exists
+                        if (_groups.Length > 0) { QueueListBox.SelectedIndex = 0; _selectedGroup = _groups[0]; }
+                        else { QueueListBox.SelectedIndex = -1; _selectedGroup = null; }
+                    }
+                }
+                else
+                {
+                    if (_groups.Length > 0) { QueueListBox.SelectedIndex = 0; _selectedGroup = _groups[0]; }
+                }
             }
             catch { }
         }
