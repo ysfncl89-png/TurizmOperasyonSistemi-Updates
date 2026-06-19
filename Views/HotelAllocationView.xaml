@@ -194,7 +194,7 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0"
-                                   Text="🔎 İlgili Turun ODA KAYDINI Yapmak İçin Kriterleri Sırayla Seçin "
+                                   Text="🔎 İlgili Turun ODA KAYDINI Yapmak İçin Kriterleri Seçin "
                                    Foreground="White"
                                    FontSize="17"
                                    FontWeight="Bold"
