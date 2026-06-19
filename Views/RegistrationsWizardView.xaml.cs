@@ -24,6 +24,11 @@ namespace TurizmOperasyonSistemi.Views
         private string _periodGuideBuffer = string.Empty; // holds typed letters or digits
         // no timer: buffer cleared only by explicit keys (Backspace/Escape) or closing dropdown
 
+        // For Period combobox on the "Tur" step (same incremental search behavior as guide)
+        private ICollectionView _periodComboView;
+        private string _periodComboBuffer = string.Empty;
+        private string _periodComboNumericBuffer = string.Empty;
+
         private bool _isApplyingAutoSelection = false;
         private const int MaxStep = 10;
         private List<AppSetting> _passportArrivedOptionsAll = new();
@@ -89,6 +94,16 @@ namespace TurizmOperasyonSistemi.Views
                 RegistrationPeriodGuideComboBox.PreviewKeyDown += RegistrationPeriodGuideComboBox_PreviewKeyDown;
 
                 // no timeout timer — buffer persists until explicit Backspace/Escape or dropdown close
+            }
+            catch { }
+
+            // Setup the same incremental search for the Period combobox in the "Tur" step
+            try
+            {
+                PeriodComboBox.DropDownOpened += PeriodComboBox_DropDownOpened;
+                PeriodComboBox.DropDownClosed += PeriodComboBox_DropDownClosed;
+                PeriodComboBox.PreviewTextInput += PeriodComboBox_PreviewTextInput;
+                PeriodComboBox.PreviewKeyDown += PeriodComboBox_PreviewKeyDown;
             }
             catch { }
         }
@@ -262,6 +277,167 @@ namespace TurizmOperasyonSistemi.Views
             {
                 _periodGuideBuffer = string.Empty;
                 _registrationPeriodGuideView?.Refresh();
+            }
+            catch { }
+        }
+
+        // Period combobox (Tur step) incremental search/filter helpers
+        private void PeriodComboBox_DropDownOpened(object sender, EventArgs e)
+        {
+            try
+            {
+                if (PeriodComboBox?.ItemsSource == null) return;
+                _periodComboView = CollectionViewSource.GetDefaultView(PeriodComboBox.ItemsSource);
+                if (_periodComboView != null)
+                {
+                    _periodComboView.Filter = PeriodFilter;
+                }
+                _periodComboBuffer = string.Empty;
+                _periodComboNumericBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void PeriodComboBox_DropDownClosed(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_periodComboView != null)
+                {
+                    _periodComboView.Filter = null;
+                    _periodComboView = null;
+                }
+                _periodComboBuffer = string.Empty;
+                _periodComboNumericBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void PeriodComboBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                if (PeriodComboBox == null || !PeriodComboBox.IsDropDownOpen) return;
+
+                var ch = (e.Text ?? string.Empty);
+                if (string.IsNullOrEmpty(ch)) return;
+
+                if (char.IsDigit(ch[0]))
+                {
+                    _periodComboNumericBuffer += ch;
+                    _periodComboView?.Refresh();
+
+                    IEnumerable<string> items = PeriodComboBox.ItemsSource?.Cast<string>() ?? Enumerable.Empty<string>();
+                    if (_periodComboView != null)
+                    {
+                        try { items = _periodComboView.Cast<string>(); } catch { }
+                    }
+
+                    var matches = items.Where(it =>
+                    {
+                        if (it == null) return false;
+                        if (!string.IsNullOrEmpty(_periodComboBuffer))
+                        {
+                            var monthPart = it.Split(' ')[0];
+                            if (!Normalize(monthPart).StartsWith(Normalize(_periodComboBuffer))) return false;
+                        }
+                        var yearTok = ExtractNumericToken(it);
+                        if (string.IsNullOrEmpty(_periodComboNumericBuffer)) return true;
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodComboNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }).ToList();
+
+                    if (matches.Count == 1)
+                    {
+                        PeriodComboBox.SelectedItem = matches[0];
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        e.Handled = true;
+                    }
+                    return;
+                }
+
+                if (char.IsLetter(ch[0]))
+                {
+                    _periodComboNumericBuffer = string.Empty;
+                    _periodComboBuffer += ch;
+                    _periodComboView?.Refresh();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private void PeriodComboBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (PeriodComboBox == null || !PeriodComboBox.IsDropDownOpen) return;
+
+                if (e.Key == Key.Back)
+                {
+                    if (!string.IsNullOrEmpty(_periodComboNumericBuffer))
+                    {
+                        _periodComboNumericBuffer = _periodComboNumericBuffer[..Math.Max(0, _periodComboNumericBuffer.Length - 1)];
+                        e.Handled = true;
+                    }
+                    else if (!string.IsNullOrEmpty(_periodComboBuffer))
+                    {
+                        _periodComboBuffer = _periodComboBuffer[..Math.Max(0, _periodComboBuffer.Length - 1)];
+                        _periodComboView?.Refresh();
+                        e.Handled = true;
+                    }
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    ResetPeriodComboBuffer();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private bool PeriodFilter(object obj)
+        {
+            try
+            {
+                if (obj is not string s) return true;
+                if (s.Equals("Tüm Dönemler", StringComparison.CurrentCultureIgnoreCase)) return true;
+
+                if (string.IsNullOrEmpty(_periodComboBuffer) && !string.IsNullOrEmpty(_periodComboNumericBuffer))
+                {
+                    var yearTok = ExtractNumericToken(s);
+                    return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodComboNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                }
+
+                if (!string.IsNullOrEmpty(_periodComboBuffer))
+                {
+                    var monthPart = s.Split(' ')[0];
+                    var normalizedMonth = Normalize(monthPart);
+                    var normalizedBuffer = Normalize(_periodComboBuffer);
+                    bool monthMatches = normalizedMonth.StartsWith(normalizedBuffer);
+                    if (!monthMatches) return false;
+                    if (!string.IsNullOrEmpty(_periodComboNumericBuffer))
+                    {
+                        var yearTok = ExtractNumericToken(s);
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodComboNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }
+                    return true;
+                }
+
+                return true;
+            }
+            catch { return true; }
+        }
+
+        private void ResetPeriodComboBuffer()
+        {
+            try
+            {
+                _periodComboBuffer = string.Empty;
+                _periodComboNumericBuffer = string.Empty;
+                _periodComboView?.Refresh();
             }
             catch { }
         }

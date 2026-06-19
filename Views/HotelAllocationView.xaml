@@ -267,7 +267,9 @@
                                       Foreground="White"
                                       BorderBrush="#334155"
                                       Padding="10,5"
-                                      SelectionChanged="Step1Selection_Changed"/>
+                                      SelectionChanged="Step1Selection_Changed"
+                                      PreviewTextInput="Step1PeriodComboBox_PreviewTextInput"
+                                      PreviewKeyDown="Step1PeriodComboBox_PreviewKeyDown"/>
                         </StackPanel>
                     </Border>
 
@@ -459,7 +461,9 @@
                                                    Margin="0,0,0,4"/>
                                         <ComboBox x:Name="SavedAllocationPeriodFilterComboBox"
                                                   Height="34"
-                                                  SelectionChanged="SavedAllocationFilter_Changed"/>
+                                                  SelectionChanged="SavedAllocationFilter_Changed"
+                                                  PreviewTextInput="Step1PeriodComboBox_PreviewTextInput"
+                                                  PreviewKeyDown="Step1PeriodComboBox_PreviewKeyDown"/>
                                     </StackPanel>
 
                                     <StackPanel Margin="0,0,8,0">
@@ -729,7 +733,9 @@
                                           Background="#1E293B"
                                           Foreground="White"
                                           BorderBrush="#334155"
-                                          SelectionChanged="Step2Selection_Changed"/>
+                                          SelectionChanged="Step2Selection_Changed"
+                                          PreviewTextInput="Step1PeriodComboBox_PreviewTextInput"
+                                          PreviewKeyDown="Step1PeriodComboBox_PreviewKeyDown"/>
                             </Border>
 
                             <TextBlock Text="Grup Türü"

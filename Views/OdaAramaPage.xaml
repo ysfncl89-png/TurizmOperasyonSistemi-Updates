@@ -30,7 +30,9 @@
 
             <StackPanel Grid.Column="1">
                 <TextBlock Text="Dönem" Foreground="#94A3B8" Margin="0,0,0,6"/>
-                <ComboBox x:Name="PeriodFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0" />
+                <ComboBox x:Name="PeriodFilter" Height="34" SelectionChanged="Filter_Changed" Margin="0,0,8,0"
+                          PreviewTextInput="PeriodFilter_PreviewTextInput"
+                          PreviewKeyDown="PeriodFilter_PreviewKeyDown" />
             </StackPanel>
 
             <StackPanel Grid.Column="2">

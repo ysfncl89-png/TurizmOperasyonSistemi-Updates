@@ -7,6 +7,9 @@ using System.Windows.Controls;
 using Microsoft.EntityFrameworkCore;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
+using System.Windows.Threading;
+using System.Windows.Input;
+using System.Globalization;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -14,6 +17,10 @@ namespace TurizmOperasyonSistemi.Views
     {
         private List<SavedAllocationRow> _allRows = new List<SavedAllocationRow>();
         private ObservableCollection<SavedAllocationRow> _rows = new ObservableCollection<SavedAllocationRow>();
+        // Period filter için klavye arama tamponu ve zamanlayıcı
+        private DispatcherTimer _periodFilterTimer;
+        private string _periodFilterBuffer = string.Empty;
+        private readonly int _periodFilterTimeoutMs = 800;
 
         public OdaAramaPopup()
         {
@@ -275,6 +282,95 @@ namespace TurizmOperasyonSistemi.Views
                 return dlg.Tag as SavedAllocationRow;
             }
             return null;
+        }
+
+        // PreviewTextInput handler for PeriodFilter
+        private void PeriodFilter_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(e?.Text)) return;
+                var cb = sender as ComboBox;
+                if (cb == null) return;
+
+                if (_periodFilterTimer == null)
+                {
+                    _periodFilterTimer = new DispatcherTimer(DispatcherPriority.Input)
+                    {
+                        Interval = TimeSpan.FromMilliseconds(_periodFilterTimeoutMs)
+                    };
+                    _periodFilterTimer.Tick += (s, ev) =>
+                    {
+                        _periodFilterTimer.Stop();
+                        _periodFilterBuffer = string.Empty;
+                    };
+                }
+
+                _periodFilterBuffer += e.Text;
+                _periodFilterTimer.Stop();
+                _periodFilterTimer.Start();
+
+                var items = cb.Items.Cast<object>().Select(i => i?.ToString() ?? string.Empty).ToList();
+                if (items.Count == 0) return;
+
+                var culture = CultureInfo.CurrentCulture;
+                string buffer = _periodFilterBuffer.Trim();
+                if (string.IsNullOrEmpty(buffer)) return;
+
+                string matched = null;
+                if (char.IsDigit(buffer[0]))
+                {
+                    matched = items.FirstOrDefault(it => it.StartsWith(buffer, StringComparison.OrdinalIgnoreCase));
+                    if (matched == null)
+                        matched = items.FirstOrDefault(it => it.IndexOf(buffer, StringComparison.OrdinalIgnoreCase) >= 0);
+                }
+                else
+                {
+                    matched = items.FirstOrDefault(it => it.StartsWith(buffer, true, culture));
+                }
+
+                if (matched != null)
+                {
+                    cb.SelectedItem = matched;
+                    if (!cb.IsDropDownOpen) cb.IsDropDownOpen = true;
+                    var container = cb.ItemContainerGenerator.ContainerFromItem(matched) as FrameworkElement;
+                    if (container != null)
+                    {
+                        container.BringIntoView();
+                        try { container.Focus(); } catch { }
+                    }
+                    e.Handled = true;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        private void PeriodFilter_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (e.Key == Key.Back)
+                {
+                    _periodFilterBuffer = string.Empty;
+                    _periodFilterTimer?.Stop();
+                    e.Handled = true;
+                    return;
+                }
+                if (e.Key == Key.Escape)
+                {
+                    _periodFilterBuffer = string.Empty;
+                    _periodFilterTimer?.Stop();
+                    e.Handled = true;
+                    return;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
         }
     }
 }

@@ -9,6 +9,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using System.Windows.Media.Effects;
 using System.Windows.Media;
+using System.Windows.Input;
+using System.Globalization;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 using TurizmOperasyonSistemi.Services;
@@ -32,6 +34,11 @@ namespace TurizmOperasyonSistemi.Views
         private bool _suppressStep1SelectionChanged;
         private bool _suppressStep2SelectionChanged;
         private bool _isPreviewMode;
+
+        // Step1 'Dönem' ComboBox için klavye arama tamponu ve zamanlayıcı
+        private DispatcherTimer _step1PeriodSearchTimer;
+        private string _step1PeriodSearchBuffer = string.Empty;
+        private readonly int _step1PeriodSearchTimeoutMs = 800;
 
         // Seçilen odayı hafızada tutar
         private RoomViewModel _selectedRoomForAllocation = null;
@@ -312,6 +319,111 @@ namespace TurizmOperasyonSistemi.Views
                 current = System.Windows.Media.VisualTreeHelper.GetParent(current);
             }
             return null;
+        }
+
+        // Klavye ile hızlı arama: Step1 'Dönem' ComboBox için PreviewTextInput / PreviewKeyDown handler'ları
+        private void Step1PeriodComboBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(e?.Text)) return;
+                var cb = sender as ComboBox;
+                if (cb == null) return;
+
+                // Başlat / sıfırla zamanlayıcı
+                if (_step1PeriodSearchTimer == null)
+                {
+                    _step1PeriodSearchTimer = new DispatcherTimer(DispatcherPriority.Input)
+                    {
+                        Interval = TimeSpan.FromMilliseconds(_step1PeriodSearchTimeoutMs)
+                    };
+                    _step1PeriodSearchTimer.Tick += (s, ev) =>
+                    {
+                        _step1PeriodSearchTimer.Stop();
+                        _step1PeriodSearchBuffer = string.Empty;
+                    };
+                }
+
+                // Append incoming text to buffer
+                _step1PeriodSearchBuffer += e.Text;
+
+                // restart timer
+                _step1PeriodSearchTimer.Stop();
+                _step1PeriodSearchTimer.Start();
+
+                var items = cb.Items.Cast<object>().Select(i => i?.ToString() ?? string.Empty).ToList();
+                if (items.Count == 0) return;
+
+                var culture = CultureInfo.CurrentCulture;
+                string buffer = _step1PeriodSearchBuffer.Trim();
+                if (string.IsNullOrEmpty(buffer)) return;
+
+                string matched = null;
+
+                // If first char is digit, prefer numeric/year matching (prefix), otherwise string prefix matching
+                if (char.IsDigit(buffer[0]))
+                {
+                    // try prefix match first
+                    matched = items.FirstOrDefault(it => it.StartsWith(buffer, StringComparison.OrdinalIgnoreCase));
+                    // fallback: contains
+                    if (matched == null)
+                        matched = items.FirstOrDefault(it => it.IndexOf(buffer, StringComparison.OrdinalIgnoreCase) >= 0);
+                }
+                else
+                {
+                    matched = items.FirstOrDefault(it => it.StartsWith(buffer, true, culture));
+                }
+
+                if (matched != null)
+                {
+                    // set selection
+                    cb.SelectedItem = matched;
+                    // make visible
+                    if (!cb.IsDropDownOpen) cb.IsDropDownOpen = true;
+
+                    // bring container into view if generated
+                    var container = cb.ItemContainerGenerator.ContainerFromItem(matched) as FrameworkElement;
+                    if (container != null)
+                    {
+                        container.BringIntoView();
+                        try { container.Focus(); } catch { }
+                    }
+
+                    e.Handled = true;
+                }
+            }
+            catch
+            {
+                // ignore errors to avoid breaking UI
+            }
+        }
+
+        private void Step1PeriodComboBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            try
+            {
+                // Backspace clears the current search buffer
+                if (e.Key == System.Windows.Input.Key.Back)
+                {
+                    _step1PeriodSearchBuffer = string.Empty;
+                    _step1PeriodSearchTimer?.Stop();
+                    e.Handled = true;
+                    return;
+                }
+
+                // If user presses Escape, clear buffer
+                if (e.Key == System.Windows.Input.Key.Escape)
+                {
+                    _step1PeriodSearchBuffer = string.Empty;
+                    _step1PeriodSearchTimer?.Stop();
+                    e.Handled = true;
+                    return;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         private void LoadComboBoxData()
