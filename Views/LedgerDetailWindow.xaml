@@ -1,6 +1,7 @@
 <Window x:Class="TurizmOperasyonSistemi.Views.LedgerDetailWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:TurizmOperasyonSistemi.Views.Converters"
         Title="Cari Hesap Detayı" Height="520" Width="1250" WindowStartupLocation="CenterOwner" Background="#40000000" AllowsTransparency="True" WindowStyle="None">
 
     <Border Background="#335E6B" CornerRadius="10" Padding="14" BorderBrush="#4A7B8B" BorderThickness="1.2">
@@ -8,6 +9,7 @@
             <DropShadowEffect Color="#000000" BlurRadius="22" ShadowDepth="0" Opacity="0.45" />
         </Border.Effect>
         <Border.Resources>
+            <converters:RemainingToBrushConverter x:Key="RemainingBrushConverter" />
             <Style TargetType="DataGrid">
                 <Setter Property="Background" Value="#152234" />
                 <Setter Property="Foreground" Value="#E2F8FF" />
@@ -84,8 +86,20 @@
                         <DataGridTextColumn Header="Grup Türü" Binding="{Binding GroupType}" Width="140"/>
                         <DataGridTextColumn Header="Gün" Binding="{Binding DaysCount}" Width="80"/>
                         <DataGridTextColumn Header="Borç" Binding="{Binding TotalPrice, StringFormat=N2}" Width="110"/>
-                        <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmount, StringFormat=N2}" Width="110"/>
-                        <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebt, StringFormat=N2}" Width="110"/>
+                        <DataGridTextColumn Header="Ödenen" Binding="{Binding PaidAmount, StringFormat=N2}" Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#10B981" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Kalan" Binding="{Binding RemainingDebt, StringFormat=N2}" Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{Binding RemainingDebt, Converter={StaticResource RemainingBrushConverter}}" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                         <DataGridTextColumn Header="Para Birimi" Binding="{Binding Currency}" Width="100" />
                         <DataGridTemplateColumn Header="İşlem" Width="130">
                             <DataGridTemplateColumn.CellTemplate>

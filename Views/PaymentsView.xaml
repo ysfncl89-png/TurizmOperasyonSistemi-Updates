@@ -89,8 +89,8 @@
                     <StackPanel Orientation="Vertical">
                         <TextBlock Text="Ödemeler ve Finans" FontSize="26" FontWeight="Bold" Foreground="#8B5CF6"/>
 
-                        <!-- KPI Kartları (tek satır, minimal yükseklik) -->
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Left">
+                        <!-- KPI Kartları (tek satır, minimal yükseklik) - WrapPanel ile taşmayı önle ve kutular görünür olsun -->
+                        <WrapPanel Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Left" ItemHeight="56" ItemWidth="180">
                             <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
                                 <StackPanel>
                                     <TextBlock Text="Cari Hesap" Foreground="#94A3B8" FontSize="11"/>
@@ -98,34 +98,34 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="140" Height="56" BorderBrush="#21303F" BorderThickness="1">
                                 <StackPanel>
                                     <TextBlock Text="Toplam Tahsilat" Foreground="#94A3B8" FontSize="11"/>
                                     <TextBlock x:Name="TotalCollectedTextBlock" Text="-" Foreground="#14B8A6" FontSize="16" FontWeight="Bold"/>
                                 </StackPanel>
                             </Border>
 
-                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="140" Height="56" BorderBrush="#21303F" BorderThickness="1">
                                 <StackPanel>
                                     <TextBlock Text="Toplam Kalan Tahsilat" Foreground="#94A3B8" FontSize="11"/>
                                     <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Foreground="#FCA311" FontSize="16" FontWeight="Bold"/>
                                 </StackPanel>
                             </Border>
 
-                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="140" Height="56" BorderBrush="#21303F" BorderThickness="1">
                                 <StackPanel>
                                     <TextBlock Text="Eksik Ödeme Yapan Kişi Sayısı" Foreground="#94A3B8" FontSize="11"/>
                                     <TextBlock x:Name="IncompleteCountTextBlock" Text="-" Foreground="#F87171" FontSize="16" FontWeight="Bold"/>
                                 </StackPanel>
                             </Border>
 
-                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="160" Height="56" BorderBrush="#21303F" BorderThickness="1">
-                                <StackPanel>
+                            <Border Background="#0B1220" CornerRadius="8" Padding="10" Margin="0,0,10,0" MinWidth="140" Height="56" BorderBrush="#21303F" BorderThickness="1">
+                            <StackPanel>
                                     <TextBlock Text="Fazla Ödeme Yapan Kişi Sayısı" Foreground="#94A3B8" FontSize="11"/>
-                                    <TextBlock x:Name="OverpaidCountTextBlock" Text="-" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"/>
+                                    <TextBlock x:Name="OverpaidCountTextBlock" Text="-" Foreground="#F59E0B" FontSize="16" FontWeight="Bold"/>
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
+                        </WrapPanel>
                     </StackPanel>
 
                     <!-- Sağ üst: küçük, düşük kontrastlı TCMB widget -->
