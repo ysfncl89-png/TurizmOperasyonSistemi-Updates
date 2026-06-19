@@ -14,7 +14,10 @@
                         <Setter Property="Foreground" Value="#E2E8F0"/>
                         <Setter Property="BorderBrush" Value="#334155"/>
                         <Setter Property="BorderThickness" Value="1"/>
-                        <Setter Property="Padding" Value="14"/>
+                        <!-- Daha kare ve büyük kartlar için minimum genişlik/yükseklik -->
+                        <Setter Property="MinWidth" Value="300"/>
+                        <Setter Property="MinHeight" Value="220"/>
+                        <Setter Property="Padding" Value="18"/>
                         <Setter Property="Cursor" Value="Hand"/>
                         <Setter Property="Template">
                             <Setter.Value>
@@ -28,7 +31,8 @@
                                             SnapsToDevicePixels="True"
                                             RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
-                                            <ScaleTransform x:Name="scaleTransform" ScaleX="1" ScaleY="1.04"/>
+                                            <!-- Başlangıçta normal ölçek, hover ile büyüme uygulanacak -->
+                                            <ScaleTransform x:Name="scaleTransform" ScaleX="1" ScaleY="1"/>
                                         </Border.RenderTransform>
 
                                         <Border.Effect>
@@ -36,6 +40,8 @@
                                         </Border.Effect>
 
                                         <Grid>
+                                            <!-- İçerik solda hizalanmış, fakat kart boyutlarına göre ortalanmış görünmesi için
+                                                 dış Grid ile kartları ortalıyoruz -->
                                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Border>
@@ -71,22 +77,29 @@
 
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24">
+            <!-- İçeriği iki satıra ayır: başlık üstte, kartlar kalan alanda ortalanmış şekilde duracak -->
+            <Grid Margin="24">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
                 <TextBlock Text="Kargo İşlemleri"
                            FontSize="28"
                            FontWeight="Bold"
                            Foreground="#3B82F6"
                            Margin="0,0,0,12"/>
 
-                <!-- Kargo kartları -->
-                <UniformGrid Columns="3" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,0,0,30">
+                <!-- Kargo kartları: kalan alanda hem dikey hem yatay merkezde olsunlar -->
+                <Grid Grid.Row="1">
+                    <UniformGrid Columns="3" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,30" MaxWidth="1100">
 
                     <Button Style="{StaticResource CardButtonStyle}" Margin="8" Click="CargoList_Click" BorderBrush="#3B82F6">
                         <StackPanel>
                             <Rectangle Height="6" Fill="#3B82F6" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="📦" FontSize="30" HorizontalAlignment="Left"/>
                             <TextBlock Text="Kargo Listesi" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
-                            <TextBlock Text="Tüm gönderimler ve kayıtlar" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Text="Tüm gönderimler ve kayıtlar İncele / İndir " FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>
 
@@ -95,7 +108,7 @@
                             <Rectangle Height="6" Fill="#F59E0B" RadiusY="3" RadiusX="3" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
                             <TextBlock Text="🧾" FontSize="30" HorizontalAlignment="Left"/>
                             <TextBlock Text="Kargo Evrak Hazırlama" FontSize="16" FontWeight="Bold" Margin="0,8,0,0"/>
-                            <TextBlock Text="Barkod, etiket ve gönderi evrakları" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Text="Barkod, etiket ve gönderi evrakları Tasarla /İndir" FontSize="12" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>
 
@@ -108,9 +121,10 @@
                         </StackPanel>
                     </Button>
 
-                </UniformGrid>
+                    </UniformGrid>
+                </Grid>
 
-            </StackPanel>
+            </Grid>
         </ScrollViewer>
     </Grid>
 

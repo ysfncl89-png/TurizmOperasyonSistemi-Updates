@@ -741,7 +741,7 @@
                             </Button.Effect>
                         </Button>
 
-                        <TextBlock x:Name="odl_desc" Text="Oda kayıtları ve doluluk durumu" Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
+                        <TextBlock x:Name="odl_desc" Text="Dönemlere Göre Odalama Listeleri Görüntüle / İndir" Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
                     </Grid>
                 </Border>
 
@@ -787,7 +787,7 @@
 
                         </Button>
 
-                        <TextBlock x:Name="od_desc" Text="Ödeme yöntemleri ve kayıtları" Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
+                        <TextBlock x:Name="od_desc" Text="Dönemlere Göre Ödemeleri Görüntüle / İndir " Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
                     </Grid>
                 </Border>
 
@@ -835,7 +835,7 @@
 
                         </Button>
 
-                        <TextBlock x:Name="kg_desc" Text="Kargo gönderimleri ve takip" Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
+                        <TextBlock x:Name="kg_desc" Text="Dönemlere Göre Kargo Listesi Görüntüle / İndir" Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
                     </Grid>
                 </Border>
 
