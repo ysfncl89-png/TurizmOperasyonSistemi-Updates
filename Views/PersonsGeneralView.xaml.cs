@@ -13,6 +13,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Data;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 using TurizmOperasyonSistemi.Services;
@@ -34,6 +35,10 @@ namespace TurizmOperasyonSistemi.Views
         // columns to the minimal payment list (Ad, Soyad, TC/Passport, Toplam Fiyat, Ödenen, Kalan, Para Birimi).
         public bool PaymentsListCardMode { get; set; } = false;
         private readonly DispatcherTimer _saveToastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.2) };
+        // Incremental search buffers and view for the Period combobox on this page
+        private System.ComponentModel.ICollectionView _personsPeriodView;
+        private string _personsPeriodBuffer = string.Empty;
+        private string _personsPeriodNumericBuffer = string.Empty;
 
         public enum ViewMode
         {
@@ -169,6 +174,173 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 }
             }
             catch { }
+        }
+
+        // CbPeriod incremental search handlers
+        private void CbPeriod_DropDownOpened(object sender, EventArgs e)
+        {
+            try
+            {
+                if (CbPeriod?.ItemsSource == null) return;
+                _personsPeriodView = CollectionViewSource.GetDefaultView(CbPeriod.ItemsSource);
+                if (_personsPeriodView != null)
+                {
+                    _personsPeriodView.Filter = PersonsPeriodFilter;
+                }
+                _personsPeriodBuffer = string.Empty;
+                _personsPeriodNumericBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void CbPeriod_DropDownClosed(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_personsPeriodView != null)
+                {
+                    _personsPeriodView.Filter = null;
+                    _personsPeriodView = null;
+                }
+                _personsPeriodBuffer = string.Empty;
+                _personsPeriodNumericBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void CbPeriod_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                if (CbPeriod == null || !CbPeriod.IsDropDownOpen) return;
+                var ch = (e.Text ?? string.Empty);
+                if (string.IsNullOrEmpty(ch)) return;
+
+                if (char.IsDigit(ch[0]))
+                {
+                    _personsPeriodNumericBuffer += ch;
+                    _personsPeriodView?.Refresh();
+
+                    IEnumerable<string> items = CbPeriod.ItemsSource?.Cast<string>() ?? Enumerable.Empty<string>();
+                    if (_personsPeriodView != null)
+                    {
+                        try { items = _personsPeriodView.Cast<string>(); } catch { }
+                    }
+
+                    var matches = items.Where(it =>
+                    {
+                        if (it == null) return false;
+                        if (!string.IsNullOrEmpty(_personsPeriodBuffer))
+                        {
+                            var monthPart = it.Split(' ')[0];
+                            if (!Normalize(monthPart).StartsWith(Normalize(_personsPeriodBuffer))) return false;
+                        }
+                        var yearTok = ExtractNumericToken(it);
+                        if (string.IsNullOrEmpty(_personsPeriodNumericBuffer)) return true;
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_personsPeriodNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }).ToList();
+
+                    if (matches.Count == 1)
+                    {
+                        CbPeriod.SelectedItem = matches[0];
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        e.Handled = true;
+                    }
+                    return;
+                }
+
+                if (char.IsLetter(ch[0]))
+                {
+                    _personsPeriodNumericBuffer = string.Empty;
+                    _personsPeriodBuffer += ch;
+                    _personsPeriodView?.Refresh();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private void CbPeriod_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (CbPeriod == null || !CbPeriod.IsDropDownOpen) return;
+
+                if (e.Key == Key.Back)
+                {
+                    if (!string.IsNullOrEmpty(_personsPeriodNumericBuffer))
+                    {
+                        _personsPeriodNumericBuffer = _personsPeriodNumericBuffer[..Math.Max(0, _personsPeriodNumericBuffer.Length - 1)];
+                        e.Handled = true;
+                    }
+                    else if (!string.IsNullOrEmpty(_personsPeriodBuffer))
+                    {
+                        _personsPeriodBuffer = _personsPeriodBuffer[..Math.Max(0, _personsPeriodBuffer.Length - 1)];
+                        _personsPeriodView?.Refresh();
+                        e.Handled = true;
+                    }
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    _personsPeriodBuffer = string.Empty;
+                    _personsPeriodNumericBuffer = string.Empty;
+                    _personsPeriodView?.Refresh();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private bool PersonsPeriodFilter(object obj)
+        {
+            try
+            {
+                if (obj is not string s) return true;
+                if (s.Equals("Tüm Dönemler", StringComparison.CurrentCultureIgnoreCase)) return true;
+
+                if (string.IsNullOrEmpty(_personsPeriodBuffer) && !string.IsNullOrEmpty(_personsPeriodNumericBuffer))
+                {
+                    var yearTok = ExtractNumericToken(s);
+                    return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_personsPeriodNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                }
+
+                if (!string.IsNullOrEmpty(_personsPeriodBuffer))
+                {
+                    var monthPart = s.Split(' ')[0];
+                    var normalizedMonth = Normalize(monthPart);
+                    var normalizedBuffer = Normalize(_personsPeriodBuffer);
+                    bool monthMatches = normalizedMonth.StartsWith(normalizedBuffer);
+                    if (!monthMatches) return false;
+                    if (!string.IsNullOrEmpty(_personsPeriodNumericBuffer))
+                    {
+                        var yearTok = ExtractNumericToken(s);
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_personsPeriodNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }
+                    return true;
+                }
+
+                return true;
+            }
+            catch { return true; }
+        }
+
+        private string ExtractNumericToken(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var tokens = text.Split(new[] { ' ', '-', '/', '_', '.' }, StringSplitOptions.RemoveEmptyEntries);
+            var four = tokens.Reverse().FirstOrDefault(t => t.All(char.IsDigit) && t.Length >= 4);
+            if (!string.IsNullOrEmpty(four)) return four;
+            var last = tokens.Reverse().FirstOrDefault(t => t.All(char.IsDigit) && t.Length >= 1);
+            return last ?? string.Empty;
+        }
+
+        private string Normalize(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            return string.Join(" ", input.Trim().ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
         }
 
         private void SendToCargoPool_Click(object sender, RoutedEventArgs e)
@@ -1291,6 +1463,15 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             ResultsDataGrid.BeginningEdit += ResultsDataGrid_BeginningEdit;
             Loaded += PersonsGeneralView_Loaded;
             LoadFilterOptions();
+            // Attach incremental search handlers to the Period combobox (CbPeriod)
+            try
+            {
+                CbPeriod.DropDownOpened += CbPeriod_DropDownOpened;
+                CbPeriod.DropDownClosed += CbPeriod_DropDownClosed;
+                CbPeriod.PreviewTextInput += CbPeriod_PreviewTextInput;
+                CbPeriod.PreviewKeyDown += CbPeriod_PreviewKeyDown;
+            }
+            catch { }
             // initial state: show filters, hide topbar
             TopBar.Visibility = Visibility.Collapsed;
             FiltersPanel.Visibility = Visibility.Visible;
