@@ -9,6 +9,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
+using System.Windows.Input;
+using System.Windows.Data;
+using System.ComponentModel;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 
@@ -75,6 +78,169 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
+        // CbPeriod incremental search handlers for Health page
+        private void CbPeriod_DropDownOpened(object sender, EventArgs e)
+        {
+            try
+            {
+                if (CbPeriod?.ItemsSource == null) return;
+                _healthPeriodView = CollectionViewSource.GetDefaultView(CbPeriod.ItemsSource);
+                if (_healthPeriodView != null) _healthPeriodView.Filter = HealthPeriodFilter;
+                _healthPeriodBuffer = string.Empty;
+                _healthPeriodNumericBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void CbPeriod_DropDownClosed(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_healthPeriodView != null)
+                {
+                    _healthPeriodView.Filter = null;
+                    _healthPeriodView = null;
+                }
+                _healthPeriodBuffer = string.Empty;
+                _healthPeriodNumericBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void CbPeriod_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                if (CbPeriod == null || !CbPeriod.IsDropDownOpen) return;
+                var ch = (e.Text ?? string.Empty);
+                if (string.IsNullOrEmpty(ch)) return;
+
+                if (char.IsDigit(ch[0]))
+                {
+                    _healthPeriodNumericBuffer += ch;
+                    _healthPeriodView?.Refresh();
+
+                    IEnumerable<string> items = CbPeriod.ItemsSource?.Cast<string>() ?? Enumerable.Empty<string>();
+                    if (_healthPeriodView != null)
+                    {
+                        try { items = _healthPeriodView.Cast<string>(); } catch { }
+                    }
+
+                    var matches = items.Where(it =>
+                    {
+                        if (it == null) return false;
+                        if (!string.IsNullOrEmpty(_healthPeriodBuffer))
+                        {
+                            var monthPart = it.Split(' ')[0];
+                            if (!Normalize(monthPart).StartsWith(Normalize(_healthPeriodBuffer))) return false;
+                        }
+                        var yearTok = ExtractNumericToken(it);
+                        if (string.IsNullOrEmpty(_healthPeriodNumericBuffer)) return true;
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_healthPeriodNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }).ToList();
+
+                    if (matches.Count == 1)
+                    {
+                        CbPeriod.SelectedItem = matches[0];
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        e.Handled = true;
+                    }
+                    return;
+                }
+
+                if (char.IsLetter(ch[0]))
+                {
+                    _healthPeriodNumericBuffer = string.Empty;
+                    _healthPeriodBuffer += ch;
+                    _healthPeriodView?.Refresh();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private void CbPeriod_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (CbPeriod == null || !CbPeriod.IsDropDownOpen) return;
+                if (e.Key == Key.Back)
+                {
+                    if (!string.IsNullOrEmpty(_healthPeriodNumericBuffer))
+                    {
+                        _healthPeriodNumericBuffer = _healthPeriodNumericBuffer[..Math.Max(0, _healthPeriodNumericBuffer.Length - 1)];
+                        e.Handled = true;
+                    }
+                    else if (!string.IsNullOrEmpty(_healthPeriodBuffer))
+                    {
+                        _healthPeriodBuffer = _healthPeriodBuffer[..Math.Max(0, _healthPeriodBuffer.Length - 1)];
+                        _healthPeriodView?.Refresh();
+                        e.Handled = true;
+                    }
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    _healthPeriodBuffer = string.Empty;
+                    _healthPeriodNumericBuffer = string.Empty;
+                    _healthPeriodView?.Refresh();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private bool HealthPeriodFilter(object obj)
+        {
+            try
+            {
+                if (obj is not string s) return true;
+                if (s.Equals("Tüm Dönemler", StringComparison.CurrentCultureIgnoreCase)) return true;
+
+                if (string.IsNullOrEmpty(_healthPeriodBuffer) && !string.IsNullOrEmpty(_healthPeriodNumericBuffer))
+                {
+                    var yearTok = ExtractNumericToken(s);
+                    return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_healthPeriodNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                }
+
+                if (!string.IsNullOrEmpty(_healthPeriodBuffer))
+                {
+                    var monthPart = s.Split(' ')[0];
+                    var normalizedMonth = Normalize(monthPart);
+                    var normalizedBuffer = Normalize(_healthPeriodBuffer);
+                    bool monthMatches = normalizedMonth.StartsWith(normalizedBuffer);
+                    if (!monthMatches) return false;
+                    if (!string.IsNullOrEmpty(_healthPeriodNumericBuffer))
+                    {
+                        var yearTok = ExtractNumericToken(s);
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_healthPeriodNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }
+                    return true;
+                }
+
+                return true;
+            }
+            catch { return true; }
+        }
+
+        private string ExtractNumericToken(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var tokens = text.Split(new[] { ' ', '-', '/', '_', '.' }, StringSplitOptions.RemoveEmptyEntries);
+            var four = tokens.Reverse().FirstOrDefault(t => t.All(char.IsDigit) && t.Length >= 4);
+            if (!string.IsNullOrEmpty(four)) return four;
+            var last = tokens.Reverse().FirstOrDefault(t => t.All(char.IsDigit) && t.Length >= 1);
+            return last ?? string.Empty;
+        }
+
+        private string Normalize(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            return string.Join(" ", input.Trim().ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+        }
+
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -126,6 +292,10 @@ namespace TurizmOperasyonSistemi.Views
         private List<Person> _all;
         public List<string> BloodOptions { get; private set; }
         private Button _applyButton;
+        // Incremental search helpers for CbPeriod on Health page
+        private ICollectionView _healthPeriodView;
+        private string _healthPeriodBuffer = string.Empty;
+        private string _healthPeriodNumericBuffer = string.Empty;
 
         public PersonsHealthView()
         {
@@ -303,6 +473,16 @@ namespace TurizmOperasyonSistemi.Views
 
             // load filter combobox options
             try { LoadFilterOptions(); } catch { }
+
+            // Attach incremental search handlers to CbPeriod after items are loaded
+            try
+            {
+                CbPeriod.DropDownOpened += CbPeriod_DropDownOpened;
+                CbPeriod.DropDownClosed += CbPeriod_DropDownClosed;
+                CbPeriod.PreviewTextInput += CbPeriod_PreviewTextInput;
+                CbPeriod.PreviewKeyDown += CbPeriod_PreviewKeyDown;
+            }
+            catch { }
 
             // apply saved column template for Sağlık mode if present
             try { ApplySavedTemplate(); } catch { }
