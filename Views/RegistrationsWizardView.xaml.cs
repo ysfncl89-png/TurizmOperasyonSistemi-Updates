@@ -28,6 +28,10 @@ namespace TurizmOperasyonSistemi.Views
         private ICollectionView _periodComboView;
         private string _periodComboBuffer = string.Empty;
         private string _periodComboNumericBuffer = string.Empty;
+        // For RegistrationBrowser's period filter combobox inside RegistrationBrowserContentBorder
+        private ICollectionView _registrationFilterView;
+        private string _periodFilterBuffer = string.Empty;
+        private string _periodFilterNumericBuffer = string.Empty;
 
         private bool _isApplyingAutoSelection = false;
         private const int MaxStep = 10;
@@ -104,6 +108,16 @@ namespace TurizmOperasyonSistemi.Views
                 PeriodComboBox.DropDownClosed += PeriodComboBox_DropDownClosed;
                 PeriodComboBox.PreviewTextInput += PeriodComboBox_PreviewTextInput;
                 PeriodComboBox.PreviewKeyDown += PeriodComboBox_PreviewKeyDown;
+            }
+            catch { }
+
+            // Setup incremental search for the Registration browser period filter combobox
+            try
+            {
+                RegistrationPeriodFilterComboBox.DropDownOpened += RegistrationPeriodFilterComboBox_DropDownOpened;
+                RegistrationPeriodFilterComboBox.DropDownClosed += RegistrationPeriodFilterComboBox_DropDownClosed;
+                RegistrationPeriodFilterComboBox.PreviewTextInput += RegistrationPeriodFilterComboBox_PreviewTextInput;
+                RegistrationPeriodFilterComboBox.PreviewKeyDown += RegistrationPeriodFilterComboBox_PreviewKeyDown;
             }
             catch { }
         }
@@ -438,6 +452,167 @@ namespace TurizmOperasyonSistemi.Views
                 _periodComboBuffer = string.Empty;
                 _periodComboNumericBuffer = string.Empty;
                 _periodComboView?.Refresh();
+            }
+            catch { }
+        }
+
+        // Registration browser filter combobox (inside RegistrationBrowserContentBorder) helpers
+        private void RegistrationPeriodFilterComboBox_DropDownOpened(object sender, EventArgs e)
+        {
+            try
+            {
+                if (RegistrationPeriodFilterComboBox?.ItemsSource == null) return;
+                _registrationFilterView = CollectionViewSource.GetDefaultView(RegistrationPeriodFilterComboBox.ItemsSource);
+                if (_registrationFilterView != null)
+                {
+                    _registrationFilterView.Filter = RegistrationFilter;
+                }
+                _periodFilterBuffer = string.Empty;
+                _periodFilterNumericBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void RegistrationPeriodFilterComboBox_DropDownClosed(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_registrationFilterView != null)
+                {
+                    _registrationFilterView.Filter = null;
+                    _registrationFilterView = null;
+                }
+                _periodFilterBuffer = string.Empty;
+                _periodFilterNumericBuffer = string.Empty;
+            }
+            catch { }
+        }
+
+        private void RegistrationPeriodFilterComboBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                if (RegistrationPeriodFilterComboBox == null || !RegistrationPeriodFilterComboBox.IsDropDownOpen) return;
+
+                var ch = (e.Text ?? string.Empty);
+                if (string.IsNullOrEmpty(ch)) return;
+
+                if (char.IsDigit(ch[0]))
+                {
+                    _periodFilterNumericBuffer += ch;
+                    _registrationFilterView?.Refresh();
+
+                    IEnumerable<string> items = RegistrationPeriodFilterComboBox.ItemsSource?.Cast<string>() ?? Enumerable.Empty<string>();
+                    if (_registrationFilterView != null)
+                    {
+                        try { items = _registrationFilterView.Cast<string>(); } catch { }
+                    }
+
+                    var matches = items.Where(it =>
+                    {
+                        if (it == null) return false;
+                        if (!string.IsNullOrEmpty(_periodFilterBuffer))
+                        {
+                            var monthPart = it.Split(' ')[0];
+                            if (!Normalize(monthPart).StartsWith(Normalize(_periodFilterBuffer))) return false;
+                        }
+                        var yearTok = ExtractNumericToken(it);
+                        if (string.IsNullOrEmpty(_periodFilterNumericBuffer)) return true;
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodFilterNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }).ToList();
+
+                    if (matches.Count == 1)
+                    {
+                        RegistrationPeriodFilterComboBox.SelectedItem = matches[0];
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        e.Handled = true;
+                    }
+                    return;
+                }
+
+                if (char.IsLetter(ch[0]))
+                {
+                    _periodFilterNumericBuffer = string.Empty;
+                    _periodFilterBuffer += ch;
+                    _registrationFilterView?.Refresh();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private void RegistrationPeriodFilterComboBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (RegistrationPeriodFilterComboBox == null || !RegistrationPeriodFilterComboBox.IsDropDownOpen) return;
+
+                if (e.Key == Key.Back)
+                {
+                    if (!string.IsNullOrEmpty(_periodFilterNumericBuffer))
+                    {
+                        _periodFilterNumericBuffer = _periodFilterNumericBuffer[..Math.Max(0, _periodFilterNumericBuffer.Length - 1)];
+                        e.Handled = true;
+                    }
+                    else if (!string.IsNullOrEmpty(_periodFilterBuffer))
+                    {
+                        _periodFilterBuffer = _periodFilterBuffer[..Math.Max(0, _periodFilterBuffer.Length - 1)];
+                        _registrationFilterView?.Refresh();
+                        e.Handled = true;
+                    }
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    ResetRegistrationFilterBuffer();
+                    e.Handled = true;
+                }
+            }
+            catch { }
+        }
+
+        private bool RegistrationFilter(object obj)
+        {
+            try
+            {
+                if (obj is not string s) return true;
+                if (s.Equals("Tüm Dönemler", StringComparison.CurrentCultureIgnoreCase)) return true;
+
+                if (string.IsNullOrEmpty(_periodFilterBuffer) && !string.IsNullOrEmpty(_periodFilterNumericBuffer))
+                {
+                    var yearTok = ExtractNumericToken(s);
+                    return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodFilterNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                }
+
+                if (!string.IsNullOrEmpty(_periodFilterBuffer))
+                {
+                    var monthPart = s.Split(' ')[0];
+                    var normalizedMonth = Normalize(monthPart);
+                    var normalizedBuffer = Normalize(_periodFilterBuffer);
+                    bool monthMatches = normalizedMonth.StartsWith(normalizedBuffer);
+                    if (!monthMatches) return false;
+                    if (!string.IsNullOrEmpty(_periodFilterNumericBuffer))
+                    {
+                        var yearTok = ExtractNumericToken(s);
+                        return !string.IsNullOrEmpty(yearTok) && yearTok.StartsWith(_periodFilterNumericBuffer, StringComparison.CurrentCultureIgnoreCase);
+                    }
+                    return true;
+                }
+
+                return true;
+            }
+            catch { return true; }
+        }
+
+        private void ResetRegistrationFilterBuffer()
+        {
+            try
+            {
+                _periodFilterBuffer = string.Empty;
+                _periodFilterNumericBuffer = string.Empty;
+                _registrationFilterView?.Refresh();
             }
             catch { }
         }
