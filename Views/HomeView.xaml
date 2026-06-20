@@ -3,24 +3,87 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       Background="#1E293B">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-        <StackPanel Margin="30">
-
-            <!-- BAŞLIK -->
+        <!-- ÜST BAŞLIK + SAAT -->
+        <Grid Grid.Row="0" Margin="30,20,30,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
             <TextBlock Text="ANASAYFA DASHBOARD"
                        FontSize="34"
                        FontWeight="Bold"
                        Foreground="White"
-                       Margin="0,0,0,30"/>
+                       VerticalAlignment="Center" />
 
-            <!-- KARTLAR - şu an boş -->
+            <!-- Dijital saat ve tarih (sağ üst)
+                 Modern görünüm: beyaz metin + hafif neon mor glow -->
+            <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <!-- Analog saat -->
+                <Grid Width="110" Height="110" HorizontalAlignment="Right" Margin="0,0,0,6">
+                    <Ellipse Stroke="#94A3B8" StrokeThickness="1.5" Fill="Transparent">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="#FF8B5CF6" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
+                        </Ellipse.Effect>
+                    </Ellipse>
 
-            <StackPanel Height="0" />
+                    <!-- Saat işaretleri: kod-behind tarafından oluşturulacak 60 işaret -->
+                    <Canvas x:Name="MarkersCanvas" Width="110" Height="110" />
 
-        </StackPanel>
+                    <!-- Saat kolları: RenderTransformOrigin merkezde -->
+                    <Line x:Name="HourHand" X1="55" Y1="55" X2="55" Y2="36" Stroke="White" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
+                        <Line.RenderTransform>
+                            <RotateTransform x:Name="HourRotate" Angle="0" />
+                        </Line.RenderTransform>
+                        <Line.Effect>
+                            <!-- Hafif parlak glow efekti -->
+                            <DropShadowEffect Color="#FF8B5CF6" BlurRadius="10" ShadowDepth="0" Opacity="0.85" />
+                        </Line.Effect>
+                    </Line>
 
-    </ScrollViewer>
+                    <Line x:Name="MinuteHand" X1="55" Y1="55" X2="55" Y2="18" Stroke="White" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
+                        <Line.RenderTransform>
+                            <RotateTransform x:Name="MinuteRotate" Angle="0" />
+                        </Line.RenderTransform>
+                        <Line.Effect>
+                            <DropShadowEffect Color="#FFFFFFFF" BlurRadius="8" ShadowDepth="0" Opacity="0.65" />
+                        </Line.Effect>
+                    </Line>
+
+                    <Line x:Name="SecondHand" X1="55" Y1="60" X2="55" Y2="12" Stroke="#FF8B5CF6" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
+                        <Line.RenderTransform>
+                            <RotateTransform x:Name="SecondRotate" Angle="0" />
+                        </Line.RenderTransform>
+                    </Line>
+
+                    <!-- Merkez düğme -->
+                    <Ellipse Width="6" Height="6" Fill="#FF8B5CF6" Canvas.Left="52" Canvas.Top="52" />
+                </Grid>
+
+                <TextBlock x:Name="DateText"
+                           Text="Gün, dd MMMM yyyy"
+                           FontSize="13"
+                           Foreground="#CBD5E1"
+                           HorizontalAlignment="Right" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ASIL İÇERİK -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="30">
+
+                <!-- BAŞLIK (mobil/alt) - zaten üstte yer alıyor, içerik boşken küçük boşluk bırak -->
+                <StackPanel Height="0" />
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
 
 </Page>
