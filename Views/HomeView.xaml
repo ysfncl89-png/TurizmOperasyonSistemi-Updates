@@ -17,11 +17,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Text="ANASAYFA DASHBOARD"
-                       FontSize="34"
-                       FontWeight="Bold"
-                       Foreground="White"
-                       VerticalAlignment="Center" />
+            
 
             <!-- Dijital saat ve tarih (sağ üst)
                  Modern görünüm: beyaz metin + hafif neon mor glow -->
