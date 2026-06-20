@@ -16,6 +16,47 @@ namespace TurizmOperasyonSistemi.Views
             Incomplete,
             Overpaid
         }
+
+        /// <summary>
+        /// Apply filter using a precomputed set of registrationIds. This ensures only the
+        /// registrations that matched the caller's UI filters are considered when grouping.
+        /// </summary>
+        public void ApplyFilterByRegistrationIds(LedgerFilter filter, IEnumerable<int> registrationIds)
+        {
+            if (registrationIds == null) registrationIds = Enumerable.Empty<int>();
+
+            using var db = new AppDbContext();
+            var query = db.Registrations.Include(r => r.Person).AsQueryable().Where(r => r.IsActive && registrationIds.Contains(r.Id));
+
+            var list = query.AsEnumerable()
+                .GroupBy(r => r.PersonId)
+                .Select(g => new LedgerRow
+                {
+                    PersonId = g.Key,
+                    FirstName = g.FirstOrDefault()?.Person?.FirstName ?? "",
+                    LastName = g.FirstOrDefault()?.Person?.LastName ?? "",
+                    TcOrPassport = string.IsNullOrWhiteSpace(g.FirstOrDefault()?.Person?.TcKimlikNo) ? g.FirstOrDefault()?.Person?.PassportNumber ?? "" : g.FirstOrDefault()?.Person?.TcKimlikNo ?? "",
+                    TotalPrice = g.Sum(x => x.TotalPrice),
+                    PaidAmount = g.Sum(x => x.PaidAmount),
+                    RemainingDebt = g.Sum(x => x.RemainingDebt),
+                    Currency = g.FirstOrDefault()?.Currency ?? ""
+                })
+                .ToList();
+
+            IEnumerable<LedgerRow> source = list;
+            if (filter == LedgerFilter.Incomplete)
+            {
+                source = list.Where(r => r.RemainingDebt > 0m).ToList();
+            }
+            else if (filter == LedgerFilter.Overpaid)
+            {
+                source = list.Where(r => r.RemainingDebt < 0m).ToList();
+            }
+
+            _rows = new ObservableCollection<LedgerRow>(list);
+            LedgerDataGrid.ItemsSource = source;
+            UpdateInfoBox(source);
+        }
         // kept long-lived context to avoid Edit-and-Continue removal issues; load uses short-lived contexts
         private readonly AppDbContext _db = new AppDbContext();
         private ObservableCollection<LedgerRow> _rows = new ObservableCollection<LedgerRow>();
@@ -181,6 +222,116 @@ namespace TurizmOperasyonSistemi.Views
                 source = _rows.Where(r => r.RemainingDebt < 0m).ToList();
             }
 
+            LedgerDataGrid.ItemsSource = source;
+            UpdateInfoBox(source);
+        }
+
+        /// <summary>
+        /// Apply filter using a precomputed set of personIds. This ensures the caller's UI filters
+        /// are applied exactly and avoids string-matching mismatches.
+        /// </summary>
+        public void ApplyFilterByPersonIds(LedgerFilter filter, IEnumerable<int> personIds)
+        {
+            if (personIds == null) personIds = Enumerable.Empty<int>();
+
+            using var db = new AppDbContext();
+            var query = db.Registrations.Include(r => r.Person).AsQueryable().Where(r => r.IsActive && personIds.Contains(r.PersonId));
+
+            var list = query.AsEnumerable()
+                .GroupBy(r => r.PersonId)
+                .Select(g => new LedgerRow
+                {
+                    PersonId = g.Key,
+                    FirstName = g.FirstOrDefault()?.Person?.FirstName ?? "",
+                    LastName = g.FirstOrDefault()?.Person?.LastName ?? "",
+                    TcOrPassport = string.IsNullOrWhiteSpace(g.FirstOrDefault()?.Person?.TcKimlikNo) ? g.FirstOrDefault()?.Person?.PassportNumber ?? "" : g.FirstOrDefault()?.Person?.TcKimlikNo ?? "",
+                    TotalPrice = g.Sum(x => x.TotalPrice),
+                    PaidAmount = g.Sum(x => x.PaidAmount),
+                    RemainingDebt = g.Sum(x => x.RemainingDebt),
+                    Currency = g.FirstOrDefault()?.Currency ?? ""
+                })
+                .ToList();
+
+            IEnumerable<LedgerRow> source = list;
+            if (filter == LedgerFilter.Incomplete)
+            {
+                source = list.Where(r => r.RemainingDebt > 0m).ToList();
+            }
+            else if (filter == LedgerFilter.Overpaid)
+            {
+                source = list.Where(r => r.RemainingDebt < 0m).ToList();
+            }
+
+            _rows = new ObservableCollection<LedgerRow>(list);
+            LedgerDataGrid.ItemsSource = source;
+            UpdateInfoBox(source);
+        }
+
+        /// <summary>
+        /// Load ledger rows from database applying UI filters and remaining/overpaid filter.
+        /// Use this when the caller has filter choices (tour, period, group, days).
+        /// </summary>
+        public void ApplyFilter(LedgerFilter filter, string tourType = null, string period = null, string groupType = null, string daysCount = null)
+        {
+            // Build DB query with requested filters
+            using var db = new AppDbContext();
+            var query = db.Registrations.Include(r => r.Person).AsQueryable().Where(r => r.IsActive);
+
+            try
+            {
+                if (!string.IsNullOrEmpty(tourType) && tourType != "(Tümü)")
+                {
+                    if (tourType == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.TourType));
+                    else query = query.Where(r => (r.TourType ?? "") == tourType);
+                }
+
+                if (!string.IsNullOrEmpty(period) && period != "(Tümü)")
+                {
+                    if (period == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.Period));
+                    else query = query.Where(r => (r.Period ?? "") == period);
+                }
+
+                if (!string.IsNullOrEmpty(groupType) && groupType != "(Tümü)")
+                {
+                    if (groupType == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.GroupType));
+                    else query = query.Where(r => (r.GroupType ?? "") == groupType);
+                }
+
+                if (!string.IsNullOrEmpty(daysCount) && daysCount != "(Tümü)")
+                {
+                    if (daysCount == "-") query = query.Where(r => string.IsNullOrWhiteSpace(r.DaysCount));
+                    else query = query.Where(r => (r.DaysCount ?? "") == daysCount);
+                }
+            }
+            catch { }
+
+            var list = query.AsEnumerable()
+                .GroupBy(r => r.PersonId)
+                .Select(g => new LedgerRow
+                {
+                    PersonId = g.Key,
+                    FirstName = g.FirstOrDefault()?.Person?.FirstName ?? "",
+                    LastName = g.FirstOrDefault()?.Person?.LastName ?? "",
+                    TcOrPassport = string.IsNullOrWhiteSpace(g.FirstOrDefault()?.Person?.TcKimlikNo) ? g.FirstOrDefault()?.Person?.PassportNumber ?? "" : g.FirstOrDefault()?.Person?.TcKimlikNo ?? "",
+                    TotalPrice = g.Sum(x => x.TotalPrice),
+                    PaidAmount = g.Sum(x => x.PaidAmount),
+                    RemainingDebt = g.Sum(x => x.RemainingDebt),
+                    Currency = g.FirstOrDefault()?.Currency ?? ""
+                })
+                .ToList();
+
+            IEnumerable<LedgerRow> source = list;
+            if (filter == LedgerFilter.Incomplete)
+            {
+                source = list.Where(r => r.RemainingDebt > 0m).ToList();
+            }
+            else if (filter == LedgerFilter.Overpaid)
+            {
+                source = list.Where(r => r.RemainingDebt < 0m).ToList();
+            }
+
+            // Update UI
+            _rows = new ObservableCollection<LedgerRow>(list);
             LedgerDataGrid.ItemsSource = source;
             UpdateInfoBox(source);
         }

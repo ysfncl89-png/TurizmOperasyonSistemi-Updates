@@ -202,8 +202,42 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // Compute personIds for current filters to ensure exact match
+                using var db = new TurizmOperasyonSistemi.Data.AppDbContext();
+                var query = db.Registrations.AsQueryable().Where(r => r.IsActive);
+                var tour = CbTourType.SelectedItem == null ? null : CbTourType.SelectedItem.ToString();
+                var period = CbPeriod.SelectedItem == null ? null : CbPeriod.SelectedItem.ToString();
+                var group = CbGroupType.SelectedItem == null ? null : CbGroupType.SelectedItem.ToString();
+                var days = CbDayCount.SelectedItem == null ? null : CbDayCount.SelectedItem.ToString();
+                try
+                {
+                    if (!string.IsNullOrEmpty(tour) && tour != "(Tümü)")
+                    {
+                        if (tour == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.TourType));
+                        else query = query.Where(r => (r.TourType ?? "") == tour);
+                    }
+                    if (!string.IsNullOrEmpty(period) && period != "(Tümü)")
+                    {
+                        if (period == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.Period));
+                        else query = query.Where(r => (r.Period ?? "") == period);
+                    }
+                    if (!string.IsNullOrEmpty(group) && group != "(Tümü)")
+                    {
+                        if (group == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.GroupType));
+                        else query = query.Where(r => (r.GroupType ?? "") == group);
+                    }
+                    if (!string.IsNullOrEmpty(days) && days != "(Tümü)")
+                    {
+                        if (days == "-") query = query.Where(r => string.IsNullOrWhiteSpace(r.DaysCount));
+                        else query = query.Where(r => (r.DaysCount ?? "") == days);
+                    }
+                }
+                catch { }
+
+                var registrationIds = query.Select(r => r.Id).Distinct().ToList();
+
                 var ledgerView = new LedgerView();
-                ledgerView.ApplyFilter(LedgerView.LedgerFilter.Incomplete);
+                ledgerView.ApplyFilterByRegistrationIds(LedgerView.LedgerFilter.Incomplete, registrationIds);
                 var mw = System.Windows.Application.Current.MainWindow as MainWindow;
                 if (mw != null) mw.NavigateTo(ledgerView);
             }
@@ -214,8 +248,42 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // Compute registrationIds for current filters so ledger groups only include filtered registrations
+                using var db = new TurizmOperasyonSistemi.Data.AppDbContext();
+                var query = db.Registrations.AsQueryable().Where(r => r.IsActive);
+                var tour = CbTourType.SelectedItem == null ? null : CbTourType.SelectedItem.ToString();
+                var period = CbPeriod.SelectedItem == null ? null : CbPeriod.SelectedItem.ToString();
+                var group = CbGroupType.SelectedItem == null ? null : CbGroupType.SelectedItem.ToString();
+                var days = CbDayCount.SelectedItem == null ? null : CbDayCount.SelectedItem.ToString();
+                try
+                {
+                    if (!string.IsNullOrEmpty(tour) && tour != "(Tümü)")
+                    {
+                        if (tour == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.TourType));
+                        else query = query.Where(r => (r.TourType ?? "") == tour);
+                    }
+                    if (!string.IsNullOrEmpty(period) && period != "(Tümü)")
+                    {
+                        if (period == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.Period));
+                        else query = query.Where(r => (r.Period ?? "") == period);
+                    }
+                    if (!string.IsNullOrEmpty(group) && group != "(Tümü)")
+                    {
+                        if (group == "(Belirtilmemiş)") query = query.Where(r => string.IsNullOrWhiteSpace(r.GroupType));
+                        else query = query.Where(r => (r.GroupType ?? "") == group);
+                    }
+                    if (!string.IsNullOrEmpty(days) && days != "(Tümü)")
+                    {
+                        if (days == "-") query = query.Where(r => string.IsNullOrWhiteSpace(r.DaysCount));
+                        else query = query.Where(r => (r.DaysCount ?? "") == days);
+                    }
+                }
+                catch { }
+
+                var registrationIds = query.Select(r => r.Id).Distinct().ToList();
+
                 var ledgerView = new LedgerView();
-                ledgerView.ApplyFilter(LedgerView.LedgerFilter.Overpaid);
+                ledgerView.ApplyFilterByRegistrationIds(LedgerView.LedgerFilter.Overpaid, registrationIds);
                 var mw = System.Windows.Application.Current.MainWindow as MainWindow;
                 if (mw != null) mw.NavigateTo(ledgerView);
             }
