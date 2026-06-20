@@ -10,6 +10,12 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class LedgerView : UserControl
     {
+        public enum LedgerFilter
+        {
+            All,
+            Incomplete,
+            Overpaid
+        }
         // kept long-lived context to avoid Edit-and-Continue removal issues; load uses short-lived contexts
         private readonly AppDbContext _db = new AppDbContext();
         private ObservableCollection<LedgerRow> _rows = new ObservableCollection<LedgerRow>();
@@ -153,6 +159,30 @@ namespace TurizmOperasyonSistemi.Views
                 }
             }
             UpdateInfoBox();
+        }
+
+        /// <summary>
+        /// Apply a pre-defined filter to the ledger rows (in-memory).
+        /// Call this before navigating to the view to show a filtered list.
+        /// </summary>
+        /// <param name="filter">Filter to apply</param>
+        public void ApplyFilter(LedgerFilter filter)
+        {
+            // Ensure data is loaded
+            if (_rows == null || !_rows.Any()) LoadData();
+
+            IEnumerable<LedgerRow> source = _rows;
+            if (filter == LedgerFilter.Incomplete)
+            {
+                source = _rows.Where(r => r.RemainingDebt > 0m).ToList();
+            }
+            else if (filter == LedgerFilter.Overpaid)
+            {
+                source = _rows.Where(r => r.RemainingDebt < 0m).ToList();
+            }
+
+            LedgerDataGrid.ItemsSource = source;
+            UpdateInfoBox(source);
         }
 
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)

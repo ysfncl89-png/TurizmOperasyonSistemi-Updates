@@ -198,6 +198,30 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        private void IncompleteCount_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                var ledgerView = new LedgerView();
+                ledgerView.ApplyFilter(LedgerView.LedgerFilter.Incomplete);
+                var mw = System.Windows.Application.Current.MainWindow as MainWindow;
+                if (mw != null) mw.NavigateTo(ledgerView);
+            }
+            catch { }
+        }
+
+        private void OverpaidCount_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                var ledgerView = new LedgerView();
+                ledgerView.ApplyFilter(LedgerView.LedgerFilter.Overpaid);
+                var mw = System.Windows.Application.Current.MainWindow as MainWindow;
+                if (mw != null) mw.NavigateTo(ledgerView);
+            }
+            catch { }
+        }
+
         private async void PaymentsView_Loaded(object sender, RoutedEventArgs e)
         {
             try
