@@ -82,103 +82,60 @@
                 <!-- ÜST: Başlık, KPI'lar ve küçük kur widget -->
                 <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="320"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="6.2"/>
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Orientation="Vertical">
                         <TextBlock Text="Ödemeler ve Finans" FontSize="26" FontWeight="Bold" Foreground="#8B5CF6"/>
-
-                        <!-- KPI Kartları: Üst satırda 3 kutu, alt satırda 2 kutu olacak şekilde Grid ile düzenlendi -->
+                        <!-- KPI Kartları: tek satırda yan yana (Grid ile, sütunlar yıldız genişlikli) -->
                         <Grid Margin="0,12,0,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                            <!-- Üst satır: Cari Hesap, Eksik, Fazla -->
-                            <Grid Grid.Row="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="#0B1220" CornerRadius="8" Padding="12,10" Margin="0,0,12,0" MinHeight="72" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Cari Hesap" Foreground="#94A3B8" FontSize="11"/>
+                                    <TextBlock x:Name="TotalAccountsTextBlock" Text="-" Foreground="#E2E8F0" FontSize="16" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
 
-                                <Border Grid.Column="0" Background="#0B1220" CornerRadius="8" Padding="10,6" Margin="0,0,12,0" MinWidth="200" MinHeight="56" BorderBrush="#21303F" BorderThickness="1">
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Cari Hesap" Foreground="#94A3B8" FontSize="11"/>
-                                        <TextBlock x:Name="TotalAccountsTextBlock" Text="-" Foreground="#E2E8F0" FontSize="16" FontWeight="Bold"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Grid.Column="1" Background="#0B1220" CornerRadius="8" Padding="10,6" Margin="0,0,12,0" MinWidth="160" MinHeight="56" BorderBrush="#21303F" BorderThickness="1">
-                                    <StackPanel VerticalAlignment="Center">
+                            <Border Grid.Column="1" Background="#0B1220" CornerRadius="8" Padding="12,10" Margin="0,0,12,0" MinHeight="72" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="Eksik Ödeme Yapan Kişi Sayısı" Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" />
                                     <TextBlock x:Name="IncompleteCountTextBlock" Text="-" Foreground="#F87171" FontSize="16" FontWeight="Bold" Cursor="Hand" MouseLeftButtonUp="IncompleteCount_Click"/>
-                                    </StackPanel>
-                                </Border>
+                                </StackPanel>
+                            </Border>
 
-                                <Border Grid.Column="2" Background="#0B1220" CornerRadius="8" Padding="10,6" MinWidth="160" MinHeight="56" BorderBrush="#21303F" BorderThickness="1">
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Fazla Ödeme Yapan Kişi Sayısı" Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" />
-                                        <TextBlock x:Name="OverpaidCountTextBlock" Text="-" Foreground="#F59E0B" FontSize="16" FontWeight="Bold" Cursor="Hand" MouseLeftButtonUp="OverpaidCount_Click"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
+                            <Border Grid.Column="2" Background="#0B1220" CornerRadius="8" Padding="12,10" Margin="0,0,12,0" MinHeight="72" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Fazla Ödeme Yapan Kişi Sayısı" Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="OverpaidCountTextBlock" Text="-" Foreground="#F59E0B" FontSize="16" FontWeight="Bold" Cursor="Hand" MouseLeftButtonUp="OverpaidCount_Click"/>
+                                </StackPanel>
+                            </Border>
 
-                            <!-- Alt satır: Toplam Tahsilat ve Toplam Kalan Tahsilat -->
-                            <Grid Grid.Row="1" Margin="0,10,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                            <Border Grid.Column="3" Background="#0B1220" CornerRadius="8" Padding="12,10" Margin="0,0,12,0" MinHeight="72" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Toplam Tahsilat" Foreground="#94A3B8" FontSize="11"/>
+                                    <TextBlock x:Name="TotalCollectedTextBlock" Text="-" Foreground="#14B8A6" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Border>
 
-                                <Border Grid.Column="0" Background="#0B1220" CornerRadius="8" Padding="12,10" Margin="0,0,12,0" BorderBrush="#21303F" BorderThickness="1">
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Toplam Tahsilat" Foreground="#94A3B8" FontSize="11"/>
-                                        <TextBlock x:Name="TotalCollectedTextBlock" Text="-" Foreground="#14B8A6" FontSize="16" FontWeight="Bold"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Grid.Column="1" Background="#0B1220" CornerRadius="8" Padding="12,10" BorderBrush="#21303F" BorderThickness="1">
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Toplam Kalan Tahsilat" Foreground="#94A3B8" FontSize="11"/>
-                                        <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Foreground="#FCA311" FontSize="16" FontWeight="Bold"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
+                            <Border Grid.Column="4" Background="#0B1220" CornerRadius="8" Padding="12,10" MinHeight="60" BorderBrush="#21303F" BorderThickness="1">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Toplam Kalan Tahsilat" Foreground="#94A3B8" FontSize="11"/>
+                                    <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Foreground="#FCA311" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Border>
                         </Grid>
                     </StackPanel>
 
-                    <!-- Sağ üst: küçük, düşük kontrastlı TCMB widget -->
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
-                        <Border Background="#071022" CornerRadius="8" Padding="8" BorderBrush="#13202A" BorderThickness="1" Width="300">
-                            <StackPanel>
-                               
-                                <TextBlock Text="Dikkat! TCMB her gün saat 15:30'da  " Foreground="#6B737A" FontSize="12" HorizontalAlignment="Right"/>
-                                <TextBlock Text="sadece 1 defa kur açıklar . " Foreground="#6B737A" FontSize="12" HorizontalAlignment="Right"/>
-                                <TextBlock Text="Güncel kur için güncel verileri kontrol edin ." Foreground="#6B737A" FontSize="12" HorizontalAlignment="Right"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
-                                   
-                                    <TextBlock Text="USD:" Foreground="#81909A" Width="48"/>
-                                    <TextBlock x:Name="UsdText" Text="-" Foreground="#AEB8BF"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <TextBlock Text="EUR:" Foreground="#81909A" Width="48"/>
-                                    <TextBlock x:Name="EurText" Text="-" Foreground="#AEB8BF"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <TextBlock Text="GBP:" Foreground="#81909A" Width="48"/>
-                                    <TextBlock x:Name="GbpText" Text="-" Foreground="#AEB8BF"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <TextBlock Text="SAR:" Foreground="#81909A" Width="48"/>
-                                    <TextBlock x:Name="SarText" Text="-" Foreground="#AEB8BF"/>
-                                </StackPanel>
-                                <TextBlock x:Name="LastRateUpdateText" Text="-" Foreground="#6B737A" FontSize="11" HorizontalAlignment="Right" Margin="0,6,0,0"/>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
+                    <!-- TCMB kur widget kaldırıldı -->
                 </Grid>
 
                 <!-- Filtreler: Collapsible panel (varsayılan collapsed) -->

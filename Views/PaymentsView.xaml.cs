@@ -4,13 +4,13 @@ using System.Linq;
 using System.Collections.Generic;
 using TurizmOperasyonSistemi.Views;
 using System.Threading.Tasks;
-using TurizmOperasyonSistemi.Services;
+// TCMB exchange rate service removed
 
 namespace TurizmOperasyonSistemi.Views
 {
     public partial class PaymentsView : UserControl
     {
-        private readonly ExchangeRateService _exchangeRateService = new ExchangeRateService();
+        // TCMB exchange rate feature removed
         public PaymentsView()
         {
             InitializeComponent();
@@ -228,7 +228,6 @@ namespace TurizmOperasyonSistemi.Views
             {
                 await Task.Run(() => PopulateFilters());
                 await Task.Run(() => RefreshFinanceSummary());
-                await LoadExchangeRatesAsync();
             }
             catch { }
         }
@@ -356,33 +355,7 @@ namespace TurizmOperasyonSistemi.Views
             catch { }
         }
 
-        private async Task LoadExchangeRatesAsync()
-        {
-            try
-            {
-                var rates = await _exchangeRateService.GetLatestRatesAsync();
-                if (rates != null)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        try
-                        {
-                            UsdText.Text = $"Alış: {rates.UsdBuy}  Satış: {rates.UsdSell}";
-                            EurText.Text = $"Alış: {rates.EurBuy}  Satış: {rates.EurSell}";
-                            GbpText.Text = $"Alış: {rates.GbpBuy}  Satış: {rates.GbpSell}";
-                            SarText.Text = $"Alış: {rates.SarBuy}  Satış: {rates.SarSell}";
-                            LastRateUpdateText.Text = $"Son kur güncelleme: {rates.LastUpdated:dd.MM.yyyy HH:mm}";
-                        }
-                        catch { }
-                    });
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() => LastRateUpdateText.Text = "Son kur güncelleme: -");
-                }
-            }
-            catch { }
-        }
+        // LoadExchangeRatesAsync removed along with TCMB widget
 
         private void PaymentList_Click(object sender, RoutedEventArgs e)
         {
