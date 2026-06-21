@@ -17,7 +17,14 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            
+            <!-- Sol üst: Aktif Turlar combobox -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,6,0,0">
+                <TextBlock Text="Aktif Turlar:" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <ComboBox x:Name="ActiveToursCombo" Width="335" Height="34" SelectionChanged="ActiveToursCombo_SelectionChanged"/>
+                <Border Background="#111827" CornerRadius="6" Padding="8,4" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="ActiveToursCountText" Foreground="#CBD5E1" FontWeight="Bold" Text="Aktif: 0" />
+                </Border>
+            </StackPanel>
 
             <!-- Dijital saat ve tarih (sağ üst)
                  Modern görünüm: beyaz metin + hafif neon mor glow -->
@@ -74,12 +81,14 @@
         <!-- ASIL İÇERİK -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="30">
-
-                <!-- BAŞLIK (mobil/alt) - zaten üstte yer alıyor, içerik boşken küçük boşluk bırak -->
+                <!-- İçerik alanı: aktif turlar combobox üst alana taşındı -->
                 <StackPanel Height="0" />
 
             </StackPanel>
         </ScrollViewer>
+
+        <!-- Rezerv alan: Analog ve tarih hizasına denk gelecek şekilde sağa yaslı, aşağıya kadar uzanan görünmez bölge -->
+        <Border x:Name="ReservedAreaPanel" Grid.Row="0" Grid.RowSpan="3" HorizontalAlignment="Right" Width="260" Background="Transparent" IsHitTestVisible="False"/>
 
         <!-- ALT FOOTER -->
         <TextBlock Grid.Row="2"

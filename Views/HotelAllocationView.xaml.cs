@@ -1392,6 +1392,19 @@ namespace TurizmOperasyonSistemi.Views
                 return false;
             }
 
+            // Giriş ve çıkış tarihleri kaydetme için zorunlu olmalı.
+            if (!CheckInDatePicker.SelectedDate.HasValue || !CheckOutDatePicker.SelectedDate.HasValue)
+            {
+                MessageBox.Show(
+                    "Lütfen giriş ve çıkış tarihlerini girin. Eğer çıkış tarihi henüz belli değilse, lütfen şimdilik temsili bir tarih seçin.",
+                    "Tarih Eksik",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                // Kaydetme işlemi iptal edilir; hiçbir veritabanı değişikliği yapılmaz.
+                return false;
+            }
+
             string selectedHotelName = HotelSelectComboBox.SelectedItem.ToString();
             string selectedTourType = TourTypeComboBox.SelectedItem?.ToString() ?? string.Empty;
             string selectedPeriod = PeriodComboBox.SelectedItem?.ToString() ?? string.Empty;
@@ -1431,7 +1444,7 @@ namespace TurizmOperasyonSistemi.Views
                         db.SaveChanges();
                     }
 
-                    // Read the selected dates from the UI
+                    // Read the selected dates from the UI (doğrulama yukarıda yapıldı)
                     string draftCheckIn = CheckInDatePicker.SelectedDate?.ToString("yyyy-MM-dd") ?? string.Empty;
                     string draftCheckOut = CheckOutDatePicker.SelectedDate?.ToString("yyyy-MM-dd") ?? string.Empty;
 

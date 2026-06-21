@@ -14,6 +14,10 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Globalization;
+using TurizmOperasyonSistemi.Data;
+using TurizmOperasyonSistemi.Models;
+using System.Collections.ObjectModel;
+using Microsoft.EntityFrameworkCore;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -38,6 +42,76 @@ namespace TurizmOperasyonSistemi.Views
             _clockTimer.Tick += (s, e) => UpdateClock();
             _clockTimer.Start();
             UpdateClock();
+            // Aktif turlar combobox'unu doldur
+            LoadActiveTours();
+        }
+
+        private void LoadActiveTours()
+        {
+            try
+            {
+                var list = new List<string>();
+                using (var db = new AppDbContext())
+                {
+                    var allocations = db.RoomAllocations.AsNoTracking().ToList();
+
+                    var grouped = allocations
+                        .GroupBy(a => new { a.TourType, a.Period, a.GroupType, a.DaysCount })
+                        .ToList();
+
+                    var culture = new CultureInfo("tr-TR");
+
+                    foreach (var g in grouped)
+                    {
+                        bool anyActive = g.Any(a =>
+                        {
+                            if (string.IsNullOrWhiteSpace(a.CheckOutDate)) return true;
+                            if (DateTime.TryParse(a.CheckOutDate, culture, DateTimeStyles.None, out var dt)) return dt.Date >= DateTime.Today;
+                            if (DateTime.TryParse(a.CheckOutDate, out var dt2)) return dt2.Date >= DateTime.Today;
+                            return true;
+                        });
+
+                        if (!anyActive) continue; // tüm kayıtların çıkış tarihi geçmişse atla
+
+                        string tour = string.IsNullOrWhiteSpace(g.Key.TourType) ? "(Belirtilmemiş)" : g.Key.TourType;
+                        string period = string.IsNullOrWhiteSpace(g.Key.Period) ? "(Belirtilmemiş)" : g.Key.Period;
+                        string groupType = string.IsNullOrWhiteSpace(g.Key.GroupType) ? "(Belirtilmemiş)" : g.Key.GroupType;
+                        string days = string.IsNullOrWhiteSpace(g.Key.DaysCount) ? "?" : g.Key.DaysCount;
+
+                        list.Add($"{tour} + {period} + {groupType} + {days} gün");
+                    }
+                }
+
+                var distinctList = list.Distinct().OrderBy(x => x).ToList();
+                var items = new List<string> { "Tümü" };
+                items.AddRange(distinctList);
+                ActiveToursCombo.ItemsSource = items;
+                ActiveToursCombo.SelectedIndex = 0;
+
+                // Aktif tur sayısını göster
+                try
+                {
+                    int count = distinctList.Count;
+                    var tb = this.FindName("ActiveToursCountText") as TextBlock;
+                    if (tb != null)
+                    {
+                        tb.Text = $"Aktif: {count}";
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+            catch
+            {
+                // Sessizce yoksay
+            }
+        }
+
+        private void ActiveToursCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Şimdilik sadece seçim yapılmasını sağlıyoruz. İleride seçime göre filtreleme veya yönlendirme eklenebilir.
         }
 
         private void CreateMarkers()
