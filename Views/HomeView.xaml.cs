@@ -31,6 +31,11 @@ namespace TurizmOperasyonSistemi.Views
         private readonly DispatcherTimer _clockTimer;
         private readonly DispatcherTimer _ratesTimer;
         private static readonly HttpClient _httpClient = new HttpClient();
+        // Döviz kurları: TRY per unit foreign currency (ForexBuying)
+        private decimal _usdRate = 0m;
+        private decimal _eurRate = 0m;
+        private decimal _gbpRate = 0m;
+        private decimal _sarRate = 0m;
         private Dictionary<string, (string Tour, string Period, string GroupType, string Days)> _tourKeyMap = new Dictionary<string, (string, string, string, string)>(StringComparer.OrdinalIgnoreCase);
         private Dictionary<string, (int Active, int Inactive, int Total)> _tourCountsMap = new Dictionary<string, (int, int, int)>(StringComparer.OrdinalIgnoreCase);
 
@@ -60,6 +65,171 @@ namespace TurizmOperasyonSistemi.Views
             _ = FetchExchangeRatesAsync();
             // Aktif turlar combobox'unu doldur
             LoadActiveTours();
+
+            // Abone ol: ödeme güncellemeleri geldiğinde toplamları yeniden hesapla
+            TurizmOperasyonSistemi.Services.NotificationCenter.Subscribe(OnNotification);
+
+            this.Unloaded += (s, e) => TurizmOperasyonSistemi.Services.NotificationCenter.Unsubscribe(OnNotification);
+        }
+
+        private void OnNotification(string key, object payload)
+        {
+            try
+            {
+                if (string.Equals(key, "payment.updated", StringComparison.OrdinalIgnoreCase))
+                {
+                    var sel = Application.Current.Dispatcher.Invoke(() => ActiveToursCombo.SelectedItem as string);
+                    try { UpdateTotalsForSelectedTour(sel); } catch { }
+                }
+            }
+            catch { }
+        }
+
+        private decimal TryParseRate(string txt)
+        {
+            if (string.IsNullOrWhiteSpace(txt)) return 0m;
+            // Try invariant (dot) then Turkish (comma)
+            if (decimal.TryParse(txt, NumberStyles.Any, CultureInfo.InvariantCulture, out var v)) return v;
+            if (decimal.TryParse(txt, NumberStyles.Any, new CultureInfo("tr-TR"), out v)) return v;
+            // remove non-digit chars
+            var cleaned = new string(txt.Where(c => char.IsDigit(c) || c == '.' || c == ',').ToArray());
+            if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out v)) return v;
+            if (decimal.TryParse(cleaned, NumberStyles.Any, new CultureInfo("tr-TR"), out v)) return v;
+            return 0m;
+        }
+
+        private decimal ConvertToUsd(decimal amount, string currency)
+        {
+            if (amount == 0m) return 0m;
+            var cur = (currency ?? "").Trim().ToUpperInvariant();
+            try
+            {
+                if (string.IsNullOrEmpty(cur) || cur == "TRY" || cur == "TL")
+                {
+                    // TRY to USD: amount / usdRate
+                    if (_usdRate > 0) return amount / _usdRate;
+                    return 0m;
+                }
+                if (cur == "USD" || cur == "US") return amount;
+                if (cur == "EUR")
+                {
+                    if (_eurRate > 0 && _usdRate > 0) return amount * (_eurRate / _usdRate);
+                }
+                if (cur == "GBP")
+                {
+                    if (_gbpRate > 0 && _usdRate > 0) return amount * (_gbpRate / _usdRate);
+                }
+                if (cur == "SAR")
+                {
+                    if (_sarRate > 0 && _usdRate > 0) return amount * (_sarRate / _usdRate);
+                }
+                // Fallback: if we have usdRate assume amount is TRY
+                if (_usdRate > 0) return amount / _usdRate;
+            }
+            catch { }
+            return 0m;
+        }
+
+        private void UpdateTotalsForSelectedTour(string selected)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var query = db.Registrations.AsQueryable().Where(r => r.IsActive);
+
+                    if (!string.IsNullOrWhiteSpace(selected) && selected != "Tümü")
+                    {
+                        var parts = selected.Split(new[] { " + " }, StringSplitOptions.None);
+                        if (parts.Length >= 4)
+                        {
+                            var tour = parts[0]?.Trim();
+                            var period = parts[1]?.Trim();
+                            var groupType = parts[2]?.Trim();
+                            var days = parts[3]?.Replace(" gün", "").Trim();
+
+                            try
+                            {
+                                if (!string.IsNullOrEmpty(tour)) query = query.Where(r => (r.TourType ?? "") == tour);
+                                if (!string.IsNullOrEmpty(period)) query = query.Where(r => (r.Period ?? "") == period);
+                                if (!string.IsNullOrEmpty(groupType)) query = query.Where(r => (r.GroupType ?? "") == groupType);
+                                if (!string.IsNullOrEmpty(days)) query = query.Where(r => (r.DaysCount ?? "") == days);
+                            }
+                            catch { }
+                        }
+                        else
+                        {
+                            if (_tourKeyMap != null && _tourKeyMap.TryGetValue(selected, out var key))
+                            {
+                                try
+                                {
+                                    if (!string.IsNullOrEmpty(key.Tour)) query = query.Where(r => (r.TourType ?? "") == key.Tour);
+                                    if (!string.IsNullOrEmpty(key.Period)) query = query.Where(r => (r.Period ?? "") == key.Period);
+                                    if (!string.IsNullOrEmpty(key.GroupType)) query = query.Where(r => (r.GroupType ?? "") == key.GroupType);
+                                    if (!string.IsNullOrEmpty(key.Days)) query = query.Where(r => (r.DaysCount ?? "") == key.Days);
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+
+                    var regs = query.ToList();
+
+                    var ledgerPerPerson = regs.GroupBy(r => r.PersonId)
+                                              .Select(g => new
+                                              {
+                                                  PersonId = g.Key,
+                                                  Total = g.Sum(x => (decimal?)x.TotalPrice) ?? 0m,
+                                                  Paid = g.Sum(x => (decimal?)x.PaidAmount) ?? 0m,
+                                                  Remaining = g.Sum(x => (decimal?)x.RemainingDebt) ?? 0m,
+                                                  Currency = g.FirstOrDefault()?.Currency ?? string.Empty
+                                              }).ToList();
+
+                    var totalsByCurrency = ledgerPerPerson.GroupBy(p => string.IsNullOrWhiteSpace(p.Currency) ? "" : p.Currency)
+                                                          .Select(g => new
+                                                          {
+                                                              Currency = g.Key,
+                                                              Collected = g.Sum(x => x.Paid),
+                                                              Remaining = g.Sum(x => x.Remaining)
+                                                          }).ToList();
+
+                    string FormatAmount(decimal amount, string currency)
+                    {
+                        if (string.IsNullOrWhiteSpace(currency))
+                            return amount.ToString("N0");
+                        var c = currency.Trim().ToUpperInvariant();
+                        if (c == "TRY" || c == "TL" || c == "₺")
+                            return $"₺{amount:N0}";
+                        if (c == "USD" || c == "$")
+                            return $"${amount:N0}";
+                        if (c == "EUR" || c == "€")
+                            return $"€{amount:N0}";
+                        return $"{amount:N0} {currency}";
+                    }
+
+                    var collectedParts = totalsByCurrency.Select(t => FormatAmount(t.Collected, t.Currency)).ToList();
+                    var remainingParts = totalsByCurrency.Select(t => FormatAmount(t.Remaining, t.Currency)).ToList();
+
+                    var collectedDisplay = collectedParts.Any() ? string.Join(" — ", collectedParts) : FormatAmount(0, string.Empty);
+                    var remainingDisplay = remainingParts.Any() ? string.Join(" — ", remainingParts) : FormatAmount(0, string.Empty);
+
+                    var collectedTb = this.FindName("TotalCollectedText") as TextBlock;
+                    var remainingTb = this.FindName("TotalRemainingText") as TextBlock;
+                    if (collectedTb != null) collectedTb.Text = collectedDisplay;
+                    if (remainingTb != null) remainingTb.Text = remainingDisplay;
+                }
+            }
+            catch
+            {
+                try
+                {
+                    var collectedTb = this.FindName("TotalCollectedText") as TextBlock;
+                    var remainingTb = this.FindName("TotalRemainingText") as TextBlock;
+                    if (collectedTb != null) collectedTb.Text = "-";
+                    if (remainingTb != null) remainingTb.Text = "-";
+                }
+                catch { }
+            }
         }
 
         private async Task FetchExchangeRatesAsync()
@@ -99,6 +269,12 @@ namespace TurizmOperasyonSistemi.Views
                 var sarBuy = GetRate("SAR", "ForexBuying");
                 var sarSell = GetRate("SAR", "ForexSelling");
 
+                // Parse and store numeric rates (TRY per unit foreign currency)
+                _usdRate = TryParseRate(usdBuy);
+                _eurRate = TryParseRate(eurBuy);
+                _gbpRate = TryParseRate(gbpBuy);
+                _sarRate = TryParseRate(sarBuy);
+
                 // UI'yi güncelle (UI thread)
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -121,6 +297,9 @@ namespace TurizmOperasyonSistemi.Views
                         if (gbpSellTb != null) gbpSellTb.Text = gbpSell;
                         if (sarBuyTb != null) sarBuyTb.Text = sarBuy;
                         if (sarSellTb != null) sarSellTb.Text = sarSell;
+                        // Güncellenen kurlar geldiyse seçili tura göre toplamları da yenile
+                        var sel = ActiveToursCombo.SelectedItem as string;
+                        try { UpdateTotalsForSelectedTour(sel); } catch { }
                     }
                     catch
                     {
@@ -274,6 +453,7 @@ namespace TurizmOperasyonSistemi.Views
             {
                 var selected = ActiveToursCombo.SelectedItem as string;
                 UpdateCountsForSelectedTour(selected);
+                try { UpdateTotalsForSelectedTour(selected); } catch { }
             }
             catch
             {
