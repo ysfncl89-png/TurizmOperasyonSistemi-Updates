@@ -27,6 +27,8 @@ namespace TurizmOperasyonSistemi.Views
     public partial class HomeView : Page
     {
         private readonly DispatcherTimer _clockTimer;
+        private Dictionary<string, (string Tour, string Period, string GroupType, string Days)> _tourKeyMap = new Dictionary<string, (string, string, string, string)>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, (int Active, int Inactive, int Total)> _tourCountsMap = new Dictionary<string, (int, int, int)>(StringComparer.OrdinalIgnoreCase);
 
         public HomeView()
         {
@@ -51,6 +53,8 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 var list = new List<string>();
+                _tourKeyMap.Clear();
+
                 using (var db = new AppDbContext())
                 {
                     // Registrations tablosuna göre grupları al; aktivite sonu ise RoomAllocations'daki en ileri CheckOutDate'e göre belirlenecek
@@ -94,9 +98,10 @@ namespace TurizmOperasyonSistemi.Views
                                 DateTime? maxCheckout = null;
                                 foreach (var a in allocsForGroup)
                                 {
-                                    if (DateTime.TryParse(a.CheckOutDate, culture, DateTimeStyles.None, out var dt) || DateTime.TryParse(a.CheckOutDate, out var dt2))
+                                    DateTime parsed;
+                                    if (DateTime.TryParse(a.CheckOutDate, culture, DateTimeStyles.None, out parsed) || DateTime.TryParse(a.CheckOutDate, out parsed))
                                     {
-                                        if (!maxCheckout.HasValue || dt.Date > maxCheckout.Value.Date) maxCheckout = dt.Date;
+                                        if (!maxCheckout.HasValue || parsed.Date > maxCheckout.Value.Date) maxCheckout = parsed.Date;
                                     }
                                 }
 
@@ -122,7 +127,19 @@ namespace TurizmOperasyonSistemi.Views
                         string groupType = string.IsNullOrWhiteSpace(g.Key.GroupType) ? "(Belirtilmemiş)" : g.Key.GroupType;
                         string days = string.IsNullOrWhiteSpace(g.Key.DaysCount) ? "?" : g.Key.DaysCount;
 
-                        list.Add($"{tour} + {period} + {groupType} + {days} gün");
+                        var display = $"{tour} + {period} + {groupType} + {days} gün";
+                        if (!_tourKeyMap.ContainsKey(display))
+                        {
+                            _tourKeyMap[display] = (tour, period, groupType, g.Key.DaysCount ?? "");
+                        }
+
+                        // hesapla aktiv/pasif kişi sayıları doğrudan registrations grubu üzerinden
+                        var totalPeople = g.Count();
+                        var activePeople = g.Count(r => r.IsActive || string.Equals(r.Status, "Aktif", StringComparison.OrdinalIgnoreCase));
+                        var inactivePeople = Math.Max(0, totalPeople - activePeople);
+                        _tourCountsMap[display] = (activePeople, inactivePeople, totalPeople);
+
+                        list.Add(display);
                     }
                 }
 
@@ -155,7 +172,94 @@ namespace TurizmOperasyonSistemi.Views
 
         private void ActiveToursCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Şimdilik sadece seçim yapılmasını sağlıyoruz. İleride seçime göre filtreleme veya yönlendirme eklenebilir.
+            try
+            {
+                var selected = ActiveToursCombo.SelectedItem as string;
+                UpdateCountsForSelectedTour(selected);
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        private void UpdateCountsForSelectedTour(string selected)
+        {
+            try
+            {
+                var activeTb = this.FindName("ActivePeopleText") as TextBlock;
+                var inactiveTb = this.FindName("InactivePeopleText") as TextBlock;
+
+                if (activeTb == null || inactiveTb == null)
+                    return;
+
+                using (var db = new AppDbContext())
+                {
+                    if (string.IsNullOrWhiteSpace(selected) || selected == "Tümü")
+                    {
+                        // Eğer map'te toplamlar saklandıysa kullan, yoksa DB'den al
+                        if (_tourCountsMap != null && _tourCountsMap.Count > 0)
+                        {
+                            var total = _tourCountsMap.Values.Sum(v => v.Total);
+                            var active = _tourCountsMap.Values.Sum(v => v.Active);
+                            var inactive = Math.Max(0, total - active);
+
+                            activeTb.Text = $"Aktif Kişi: {active}";
+                            inactiveTb.Text = $"Pasif Kişi: {inactive}";
+                            return;
+                        }
+
+                        var totalDb = db.Registrations.AsNoTracking().Count();
+                        var activeDb = db.Registrations.AsNoTracking().Count(r => r.IsActive || string.Equals(r.Status, "Aktif", StringComparison.OrdinalIgnoreCase));
+                        var inactiveDb = Math.Max(0, totalDb - activeDb);
+
+                        activeTb.Text = $"Aktif Kişi: {activeDb}";
+                        inactiveTb.Text = $"Pasif Kişi: {inactiveDb}";
+                        return;
+                    }
+
+                    // Öncelikle mapping'e bakarak güvenli değerleri al
+                    if (_tourCountsMap != null && _tourCountsMap.TryGetValue(selected, out var counts))
+                    {
+                        activeTb.Text = $"Aktif Kişi: {counts.Active}";
+                        inactiveTb.Text = $"Pasif Kişi: {counts.Inactive}";
+                        return;
+                    }
+
+                    // Parse edilen format: "{tour} + {period} + {groupType} + {days} gün" - fallback
+                    var parts = selected.Split(new[] { " + " }, StringSplitOptions.None);
+                    if (parts.Length >= 4)
+                    {
+                        var tour = parts[0]?.Trim();
+                        var period = parts[1]?.Trim();
+                        var groupType = parts[2]?.Trim();
+                        var days = parts[3]?.Replace(" gün", "").Trim();
+
+                        var query = db.Registrations.AsNoTracking().Where(r =>
+                            string.Equals((r.TourType ?? ""), (tour ?? ""), StringComparison.OrdinalIgnoreCase)
+                            && string.Equals((r.Period ?? ""), (period ?? ""), StringComparison.OrdinalIgnoreCase)
+                            && string.Equals((r.GroupType ?? ""), (groupType ?? ""), StringComparison.OrdinalIgnoreCase)
+                            && string.Equals((r.DaysCount ?? ""), (days ?? ""), StringComparison.OrdinalIgnoreCase)
+                        );
+
+                        var total = query.Count();
+                        var active = query.Count(r => r.IsActive || string.Equals(r.Status, "Aktif", StringComparison.OrdinalIgnoreCase));
+                        var inactive = Math.Max(0, total - active);
+
+                        activeTb.Text = $"Aktif Kişi: {active}";
+                        inactiveTb.Text = $"Pasif Kişi: {inactive}";
+                        return;
+                    }
+
+                    // Eğer parsing başarısızsa sıfırla
+                    activeTb.Text = "Aktif Kişi: 0";
+                    inactiveTb.Text = "Pasif Kişi: 0";
+                }
+            }
+            catch
+            {
+                // ignore errors
+            }
         }
 
         private void CreateMarkers()
