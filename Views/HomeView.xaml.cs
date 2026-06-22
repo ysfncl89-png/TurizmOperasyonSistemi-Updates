@@ -53,25 +53,69 @@ namespace TurizmOperasyonSistemi.Views
                 var list = new List<string>();
                 using (var db = new AppDbContext())
                 {
+                    // Registrations tablosuna göre grupları al; aktivite sonu ise RoomAllocations'daki en ileri CheckOutDate'e göre belirlenecek
+                    var regs = db.Registrations.AsNoTracking().ToList();
                     var allocations = db.RoomAllocations.AsNoTracking().ToList();
 
-                    var grouped = allocations
-                        .GroupBy(a => new { a.TourType, a.Period, a.GroupType, a.DaysCount })
+                    var grouped = regs
+                        .GroupBy(r => new { r.TourType, r.Period, r.GroupType, r.DaysCount })
                         .ToList();
 
                     var culture = new CultureInfo("tr-TR");
 
                     foreach (var g in grouped)
                     {
-                        bool anyActive = g.Any(a =>
-                        {
-                            if (string.IsNullOrWhiteSpace(a.CheckOutDate)) return true;
-                            if (DateTime.TryParse(a.CheckOutDate, culture, DateTimeStyles.None, out var dt)) return dt.Date >= DateTime.Today;
-                            if (DateTime.TryParse(a.CheckOutDate, out var dt2)) return dt2.Date >= DateTime.Today;
-                            return true;
-                        });
+                        // Ön şart: grupta en az bir aktif kayıt (Status == "Aktif" veya IsActive == true) olmalı
+                        bool registrationActive = g.Any(r => string.Equals(r.Status, "Aktif", StringComparison.OrdinalIgnoreCase) || r.IsActive);
+                        if (!registrationActive) continue;
 
-                        if (!anyActive) continue; // tüm kayıtların çıkış tarihi geçmişse atla
+                        // Aynı grup için odalama kayıtlarını bul
+                        var allocsForGroup = allocations.Where(a =>
+                            string.Equals(a.TourType ?? "", g.Key.TourType ?? "", StringComparison.OrdinalIgnoreCase)
+                            && string.Equals(a.Period ?? "", g.Key.Period ?? "", StringComparison.OrdinalIgnoreCase)
+                            && string.Equals(a.GroupType ?? "", g.Key.GroupType ?? "", StringComparison.OrdinalIgnoreCase)
+                            && string.Equals(a.DaysCount ?? "", g.Key.DaysCount ?? "", StringComparison.OrdinalIgnoreCase)
+                        ).ToList();
+
+                        bool allocationDeterminesActive = false; // true means allocations exist and determine active status
+                        bool allocationActive = true; // default if no allocations
+
+                        if (allocsForGroup.Any())
+                        {
+                            allocationDeterminesActive = true;
+
+                            // Eğer herhangi bir CheckOutDate boşsa bunu aktif kabul et (henüz çıkış belirlenmemiş)
+                            if (allocsForGroup.Any(a => string.IsNullOrWhiteSpace(a.CheckOutDate)))
+                            {
+                                allocationActive = true;
+                            }
+                            else
+                            {
+                                DateTime? maxCheckout = null;
+                                foreach (var a in allocsForGroup)
+                                {
+                                    if (DateTime.TryParse(a.CheckOutDate, culture, DateTimeStyles.None, out var dt) || DateTime.TryParse(a.CheckOutDate, out var dt2))
+                                    {
+                                        if (!maxCheckout.HasValue || dt.Date > maxCheckout.Value.Date) maxCheckout = dt.Date;
+                                    }
+                                }
+
+                                if (maxCheckout.HasValue)
+                                {
+                                    // Grup, en ileri çıkış tarihi bugünden önce ise pasif sayılacak
+                                    allocationActive = maxCheckout.Value.Date >= DateTime.Today;
+                                }
+                                else
+                                {
+                                    // Eğer hiçbir tarih parse edilemediyse temkinli davran: aktif say
+                                    allocationActive = true;
+                                }
+                            }
+                        }
+
+                        // Nihai karar: kayıtlar aktifse ve (eğer odalama kayıtları varsa) odalama da aktif gösteriyorsa grubu ekle
+                        if (!registrationActive) continue;
+                        if (allocationDeterminesActive && !allocationActive) continue;
 
                         string tour = string.IsNullOrWhiteSpace(g.Key.TourType) ? "(Belirtilmemiş)" : g.Key.TourType;
                         string period = string.IsNullOrWhiteSpace(g.Key.Period) ? "(Belirtilmemiş)" : g.Key.Period;
