@@ -14,6 +14,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Globalization;
+using System.Net.Http;
+using System.Xml.Linq;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 using System.Collections.ObjectModel;
@@ -27,6 +29,8 @@ namespace TurizmOperasyonSistemi.Views
     public partial class HomeView : Page
     {
         private readonly DispatcherTimer _clockTimer;
+        private readonly DispatcherTimer _ratesTimer;
+        private static readonly HttpClient _httpClient = new HttpClient();
         private Dictionary<string, (string Tour, string Period, string GroupType, string Days)> _tourKeyMap = new Dictionary<string, (string, string, string, string)>(StringComparer.OrdinalIgnoreCase);
         private Dictionary<string, (int Active, int Inactive, int Total)> _tourCountsMap = new Dictionary<string, (int, int, int)>(StringComparer.OrdinalIgnoreCase);
 
@@ -44,8 +48,102 @@ namespace TurizmOperasyonSistemi.Views
             _clockTimer.Tick += (s, e) => UpdateClock();
             _clockTimer.Start();
             UpdateClock();
+            // Başlangıçta ve sonra düzenli aralıklarla TCMB kurlarını çek
+            _ratesTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMinutes(30)
+            };
+            _ratesTimer.Tick += async (s, e) => await FetchExchangeRatesAsync();
+            _ratesTimer.Start();
+
+            // İlk yüklemede asenkron olarak kurları al
+            _ = FetchExchangeRatesAsync();
             // Aktif turlar combobox'unu doldur
             LoadActiveTours();
+        }
+
+        private async Task FetchExchangeRatesAsync()
+        {
+            try
+            {
+                const string url = "https://www.tcmb.gov.tr/kurlar/today.xml";
+                string xml = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
+
+                // Parse XML
+                var doc = XDocument.Parse(xml);
+
+                string GetRate(string code, string elementName)
+                {
+                    try
+                    {
+                        var node = doc.Descendants("Currency").FirstOrDefault(x => (string)x.Attribute("CurrencyCode") == code);
+                        if (node == null) return "-";
+                        var el = node.Element(elementName);
+                        if (el == null) return "-";
+                        var val = el.Value?.Trim();
+                        if (string.IsNullOrWhiteSpace(val)) return "-";
+                        return val;
+                    }
+                    catch
+                    {
+                        return "-";
+                    }
+                }
+
+                var usdBuy = GetRate("USD", "ForexBuying");
+                var usdSell = GetRate("USD", "ForexSelling");
+                var eurBuy = GetRate("EUR", "ForexBuying");
+                var eurSell = GetRate("EUR", "ForexSelling");
+                var gbpBuy = GetRate("GBP", "ForexBuying");
+                var gbpSell = GetRate("GBP", "ForexSelling");
+                var sarBuy = GetRate("SAR", "ForexBuying");
+                var sarSell = GetRate("SAR", "ForexSelling");
+
+                // UI'yi güncelle (UI thread)
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        var usdBuyTb = this.FindName("UsdBuyText") as TextBlock;
+                        var usdSellTb = this.FindName("UsdSellText") as TextBlock;
+                        var eurBuyTb = this.FindName("EurBuyText") as TextBlock;
+                        var eurSellTb = this.FindName("EurSellText") as TextBlock;
+                        var gbpBuyTb = this.FindName("GbpBuyText") as TextBlock;
+                        var gbpSellTb = this.FindName("GbpSellText") as TextBlock;
+                        var sarBuyTb = this.FindName("SarBuyText") as TextBlock;
+                        var sarSellTb = this.FindName("SarSellText") as TextBlock;
+
+                        if (usdBuyTb != null) usdBuyTb.Text = usdBuy;
+                        if (usdSellTb != null) usdSellTb.Text = usdSell;
+                        if (eurBuyTb != null) eurBuyTb.Text = eurBuy;
+                        if (eurSellTb != null) eurSellTb.Text = eurSell;
+                        if (gbpBuyTb != null) gbpBuyTb.Text = gbpBuy;
+                        if (gbpSellTb != null) gbpSellTb.Text = gbpSell;
+                        if (sarBuyTb != null) sarBuyTb.Text = sarBuy;
+                        if (sarSellTb != null) sarSellTb.Text = sarSell;
+                    }
+                    catch
+                    {
+                        // ignore UI update errors
+                    }
+                });
+            }
+            catch
+            {
+                // Eğer hata olursa rate TextBlock'ları '-' olarak bırak
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        foreach (var name in new[] { "UsdBuyText", "UsdSellText", "EurBuyText", "EurSellText", "GbpBuyText", "GbpSellText", "SarBuyText", "SarSellText" })
+                        {
+                            var tb = this.FindName(name) as TextBlock;
+                            if (tb != null) tb.Text = "-";
+                        }
+                    }
+                    catch { }
+                });
+            }
         }
 
         private void LoadActiveTours()

@@ -18,15 +18,15 @@
             </Grid.ColumnDefinitions>
 
             <!-- Sol üst: Aktif Turlar combobox -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,6,0,0">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0">
                 <TextBlock Text="Aktif Turlar:" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,12,0"/>
 
                 <!-- Combo ve altındaki kişi sayısı kutucuğu dikey olarak gruplanır -->
-                <StackPanel Orientation="Vertical">
-                    <ComboBox x:Name="ActiveToursCombo" Width="335" Height="34" SelectionChanged="ActiveToursCombo_SelectionChanged"/>
+                <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                    <ComboBox x:Name="ActiveToursCombo" Width="320" Height="34" SelectionChanged="ActiveToursCombo_SelectionChanged"/>
 
                     <!-- Kayıtlı kişi sayısı kutucuk -->
-                    <Border x:Name="ActiveTourPeopleCountBox" Background="#0B1220" CornerRadius="6" Padding="8" Margin="0,8,0,0" Width="335">
+                    <Border x:Name="ActiveTourPeopleCountBox" Background="#0B1220" CornerRadius="6" Padding="8" Margin="0,8,0,0" Width="320">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <TextBlock x:Name="ActivePeopleText" Foreground="#7EE787" FontWeight="Bold" Text="Aktif Kişi: 0" Margin="0,0,12,0" />
                             <TextBlock x:Name="InactivePeopleText" Foreground="#FCA5A5" FontWeight="Bold" Text="Pasif Kişi: 0" />
@@ -39,56 +39,123 @@
                 </Border>
             </StackPanel>
 
-            <!-- Dijital saat ve tarih (sağ üst)
-                 Modern görünüm: beyaz metin + hafif neon mor glow -->
-            <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <!-- Analog saat -->
-                <Grid Width="110" Height="110" HorizontalAlignment="Right" Margin="0,0,0,6">
-                    <Ellipse Stroke="#94A3B8" StrokeThickness="1.5" Fill="Transparent">
-                        <Ellipse.Effect>
-                            <DropShadowEffect Color="#FF8B5CF6" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
-                        </Ellipse.Effect>
-                    </Ellipse>
+            <!-- Sağ üst: Saat ile aynı hizada kurlar olacak şekilde iki sütunlu düzen -->
+                <Grid Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Saat işaretleri: kod-behind tarafından oluşturulacak 60 işaret -->
-                    <Canvas x:Name="MarkersCanvas" Width="110" Height="110" />
+                <!-- Kurlar paneli (orta sütun) -->
+                <Border x:Name="ExchangeRatesPanel" Grid.Column="1" Background="#0B1220" CornerRadius="8" Padding="8" Margin="8,0,12,0" Width="320" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="Merkez Bankası Kurları" Foreground="#CBD5E1" FontWeight="Bold" FontSize="13" HorizontalAlignment="Left" Margin="0,0,0,6" />
 
-                    <!-- Saat kolları: RenderTransformOrigin merkezde -->
-                    <Line x:Name="HourHand" X1="55" Y1="55" X2="55" Y2="36" Stroke="White" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
-                        <Line.RenderTransform>
-                            <RotateTransform x:Name="HourRotate" Angle="0" />
-                        </Line.RenderTransform>
-                        <Line.Effect>
-                            <!-- Hafif parlak glow efekti -->
-                            <DropShadowEffect Color="#FF8B5CF6" BlurRadius="10" ShadowDepth="0" Opacity="0.85" />
-                        </Line.Effect>
-                    </Line>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                    <Line x:Name="MinuteHand" X1="55" Y1="55" X2="55" Y2="18" Stroke="White" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
-                        <Line.RenderTransform>
-                            <RotateTransform x:Name="MinuteRotate" Angle="0" />
-                        </Line.RenderTransform>
-                        <Line.Effect>
-                            <DropShadowEffect Color="#FFFFFFFF" BlurRadius="8" ShadowDepth="0" Opacity="0.65" />
-                        </Line.Effect>
-                    </Line>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Dolar (USD)" Foreground="#CBD5E1" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,0,4,0" />
+                            <TextBlock Grid.Row="0" Grid.Column="2" x:Name="UsdBuyText" Text="-" Foreground="#7EE787" />
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,0,4,0" />
+                            <TextBlock Grid.Row="0" Grid.Column="4" x:Name="UsdSellText" Text="-" Foreground="#FCA5A5" />
 
-                    <Line x:Name="SecondHand" X1="55" Y1="60" X2="55" Y2="12" Stroke="#FF8B5CF6" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
-                        <Line.RenderTransform>
-                            <RotateTransform x:Name="SecondRotate" Angle="0" />
-                        </Line.RenderTransform>
-                    </Line>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Euro (EUR)" Foreground="#CBD5E1" Margin="0,6,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" x:Name="EurBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="4" x:Name="EurSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
 
-                    <!-- Merkez düğme -->
-                    <Ellipse Width="6" Height="6" Fill="#FF8B5CF6" Canvas.Left="52" Canvas.Top="52" />
-                </Grid>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="İng. Sterlini (GBP)" Foreground="#CBD5E1" Margin="0,6,0,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" x:Name="GbpBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="4" x:Name="GbpSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
 
-                <TextBlock x:Name="DateText"
-                           Text="Gün, dd MMMM yyyy"
-                           FontSize="13"
-                           Foreground="#CBD5E1"
-                           HorizontalAlignment="Right" />
-            </StackPanel>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Suudi Riyali (SAR)" Foreground="#CBD5E1" Margin="0,6,0,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" x:Name="SarBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="4" x:Name="SarSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Bildirim ikonu (şimdilik sadece görüntü) -->
+                <Button x:Name="NotificationsButton" Grid.Column="0" Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="6" ToolTip="Bildirimler">
+                    <Viewbox Stretch="Uniform">
+                        <Canvas Width="19" Height="19">
+                            <Path Data="M12 22c1.1 0 2-.9 2-2h-4c0 1.1 .9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.99 2H20l-1.99-2z" Fill="#F6C85F" Stretch="Uniform">
+                                <Path.Effect>
+                                    <DropShadowEffect Color="#F6C85F" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
+                                </Path.Effect>
+                            </Path>
+                        </Canvas>
+                    </Viewbox>
+                </Button>
+
+                <!-- Analog saat ve tarih (sağ sütun) -->
+                    <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Grid Width="110" Height="110" HorizontalAlignment="Right" Margin="0,0,0,6">
+                        <Ellipse Stroke="#94A3B8" StrokeThickness="1.5" Fill="Transparent">
+                            <Ellipse.Effect>
+                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
+                            </Ellipse.Effect>
+                        </Ellipse>
+
+                        <!-- Saat işaretleri: kod-behind tarafından oluşturulacak 60 işaret -->
+                        <Canvas x:Name="MarkersCanvas" Width="110" Height="110" />
+
+                        <!-- Saat kolları: RenderTransformOrigin merkezde -->
+                        <Line x:Name="HourHand" X1="55" Y1="55" X2="55" Y2="36" Stroke="White" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
+                            <Line.RenderTransform>
+                                <RotateTransform x:Name="HourRotate" Angle="0" />
+                            </Line.RenderTransform>
+                            <Line.Effect>
+                                <!-- Hafif parlak glow efekti -->
+                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="10" ShadowDepth="0" Opacity="0.85" />
+                            </Line.Effect>
+                        </Line>
+
+                        <Line x:Name="MinuteHand" X1="55" Y1="55" X2="55" Y2="18" Stroke="White" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
+                            <Line.RenderTransform>
+                                <RotateTransform x:Name="MinuteRotate" Angle="0" />
+                            </Line.RenderTransform>
+                            <Line.Effect>
+                                <DropShadowEffect Color="#FFFFFFFF" BlurRadius="8" ShadowDepth="0" Opacity="0.65" />
+                            </Line.Effect>
+                        </Line>
+
+                        <Line x:Name="SecondHand" X1="55" Y1="60" X2="55" Y2="12" Stroke="#FF8B5CF6" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
+                            <Line.RenderTransform>
+                                <RotateTransform x:Name="SecondRotate" Angle="0" />
+                            </Line.RenderTransform>
+                        </Line>
+
+                        <!-- Merkez düğme -->
+                        <Ellipse Width="6" Height="6" Fill="#FF8B5CF6" Canvas.Left="52" Canvas.Top="52" />
+                    </Grid>
+
+                    <TextBlock x:Name="DateText"
+                               Text="Gün, dd MMMM yyyy"
+                               FontSize="13"
+                               Foreground="#CBD5E1"
+                               HorizontalAlignment="Right" />
+                </StackPanel>
+            </Grid>
         </Grid>
 
         <!-- ASIL İÇERİK -->
