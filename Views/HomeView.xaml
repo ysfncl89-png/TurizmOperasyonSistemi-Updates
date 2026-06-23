@@ -39,8 +39,8 @@
                 </Border>
 
                 <!-- Toplam Tahsilat / Toplam Kalan (USD) kutucuğu -->
-                <Border x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="8" Margin="12,0,0,0" VerticalAlignment="Center" Width="281" Height="73">
-                    <StackPanel Orientation="Vertical">
+                <Border x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="8" Margin="12,0,0,0" VerticalAlignment="Center" Width="356" Height="74">
+                    <StackPanel Orientation="Vertical" Margin="0,0,-8,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <TextBlock Text="Toplam Tahsilat:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock x:Name="TotalCollectedText" Text="USD -" Foreground="#7EE787" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
@@ -182,7 +182,6 @@
         </ScrollViewer>
 
         <!-- Rezerv alan: Analog ve tarih hizasına denk gelecek şekilde sağa yaslı, aşağıya kadar uzanan görünmez bölge -->
-        <Border x:Name="ReservedAreaPanel" Grid.Row="0" Grid.RowSpan="3" HorizontalAlignment="Right" Width="260" Background="Transparent" IsHitTestVisible="False"/>
 
         <!-- ALT FOOTER -->
         <TextBlock Grid.Row="2"
