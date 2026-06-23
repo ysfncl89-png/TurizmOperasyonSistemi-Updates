@@ -248,6 +248,17 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         db.Persons.Remove(dbPerson);
                         db.SaveChanges();
+
+                        // Yayınla: kişiler modülünde bir kullanıcı veritabanından silindiğini bildir
+                        try
+                        {
+                            var name = (person.FirstName + " " + person.LastName).Trim();
+                            var msg = string.IsNullOrWhiteSpace(name)
+                                ? "Bir kişi veritabanından silindi. İlgili tüm kayıtlar da silindi."
+                                : $"{name} adlı kişi veritabanından silindi. İlgili tüm kayıtlar da silindi.";
+                            TurizmOperasyonSistemi.Services.NotificationCenter.Publish("person.deleted", new { Id = person.Id, Name = name, Message = msg, Timestamp = DateTime.UtcNow });
+                        }
+                        catch { }
                     }
                 }
 

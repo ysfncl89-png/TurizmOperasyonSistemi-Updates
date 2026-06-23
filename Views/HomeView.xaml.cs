@@ -48,7 +48,16 @@ namespace TurizmOperasyonSistemi.Views
 
             try
             {
-                _notificationsShakeStoryboard = (Storyboard)FindResource("NotificationsShakeStoryboard");
+                // Try to get storyboard from button resources first (namescope)
+                var btn = this.FindName("NotificationsButton") as FrameworkElement;
+                if (btn != null)
+                {
+                    try { _notificationsShakeStoryboard = btn.Resources["NotificationsShakeStoryboard"] as Storyboard; } catch { _notificationsShakeStoryboard = null; }
+                }
+                if (_notificationsShakeStoryboard == null)
+                {
+                    try { _notificationsShakeStoryboard = (Storyboard)FindResource("NotificationsShakeStoryboard"); } catch { _notificationsShakeStoryboard = null; }
+                }
             }
             catch { _notificationsShakeStoryboard = null; }
 
@@ -204,6 +213,54 @@ namespace TurizmOperasyonSistemi.Views
                     }
                     catch { }
                 });
+            }
+            catch { }
+        }
+
+        private void NotificationsItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is Button btn)) return;
+                var tag = btn.Tag;
+                int id = 0;
+                if (tag is int ti) id = ti;
+                else if (tag is string ts && int.TryParse(ts, out var parsed)) id = parsed;
+
+                if (id > 0)
+                {
+                    try
+                    {
+                        TurizmOperasyonSistemi.Services.NotificationCenter.MarkAsRead(id);
+                    }
+                    catch { }
+                }
+
+                // remove UI element
+                var stack = this.FindName("NotificationsPopupStack") as StackPanel;
+                if (stack != null)
+                {
+                    try { stack.Children.Remove(btn); } catch { }
+                }
+
+                // decrement badge
+                try
+                {
+                    if (_notificationCount > 0) _notificationCount = Math.Max(0, _notificationCount - 1);
+                    var badge = this.FindName("NotificationBadge") as Border;
+                    var badgeText = this.FindName("NotificationBadgeText") as TextBlock;
+                    if (_notificationCount <= 0)
+                    {
+                        if (badge != null) badge.Visibility = Visibility.Collapsed;
+                        if (badgeText != null) badgeText.Text = "0";
+                    }
+                    else
+                    {
+                        if (badge != null) badge.Visibility = Visibility.Visible;
+                        if (badgeText != null) badgeText.Text = _notificationCount.ToString();
+                    }
+                }
+                catch { }
             }
             catch { }
         }
@@ -370,7 +427,15 @@ namespace TurizmOperasyonSistemi.Views
             {
                 if (_notificationsShakeStoryboard != null)
                 {
-                    _notificationsShakeStoryboard.Begin(this, true);
+                    var btn = this.FindName("NotificationsButton") as FrameworkElement;
+                    if (btn != null)
+                    {
+                        _notificationsShakeStoryboard.Begin(btn, true);
+                    }
+                    else
+                    {
+                        _notificationsShakeStoryboard.Begin(this, true);
+                    }
                 }
             }
             catch { }
@@ -382,7 +447,15 @@ namespace TurizmOperasyonSistemi.Views
             {
                 if (_notificationsShakeStoryboard != null)
                 {
-                    _notificationsShakeStoryboard.Stop(this);
+                    var btn = this.FindName("NotificationsButton") as FrameworkElement;
+                    if (btn != null)
+                    {
+                        _notificationsShakeStoryboard.Stop(btn);
+                    }
+                    else
+                    {
+                        _notificationsShakeStoryboard.Stop(this);
+                    }
                 }
             }
             catch { }
@@ -392,18 +465,257 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                // Kullanıcı zili inceledi: sayaç sıfırlansın ve animasyon dursun
+                // Aç: popup'ı doldur ve göster
+                var popup = this.FindName("NotificationsPopup") as System.Windows.Controls.Primitives.Popup;
+                var stack = this.FindName("NotificationsPopupStack") as StackPanel;
+                if (popup != null && stack != null)
+                {
+                    stack.Children.Clear();
+                    try
+                    {
+                        var recs = TurizmOperasyonSistemi.Services.NotificationCenter.GetRecentNotifications();
+                        if (recs != null && recs.Count > 0)
+                        {
+                            foreach (var r in recs.OrderByDescending(x => x.Timestamp))
+                            {
+                                string text = r.Key ?? "";
+                                int notifId = 0;
+                                try
+                                {
+                                    var payload = r.Payload;
+                                    if (payload == null) { text = r.Key ?? ""; }
+                                    else if (payload is TurizmOperasyonSistemi.Models.Notification dbn)
+                                    {
+                                        notifId = dbn.Id;
+                                        text = !string.IsNullOrWhiteSpace(dbn.Message) ? dbn.Message : dbn.PayloadJson ?? r.Key ?? "";
+                                    }
+                                    else if (payload is string s) text = s;
+                                    else
+                                    {
+                                        var pt = payload.GetType();
+                                        var msgProp = pt.GetProperty("Message");
+                                        if (msgProp != null)
+                                        {
+                                            var v = msgProp.GetValue(payload);
+                                            if (v != null) text = v.ToString();
+                                        }
+                                        else
+                                        {
+                                            var nameProp = pt.GetProperty("Name");
+                                            if (nameProp != null)
+                                            {
+                                                var v = nameProp.GetValue(payload);
+                                                if (v != null) text = v.ToString();
+                                            }
+                                            else
+                                            {
+                                                text = payload.ToString();
+                                            }
+                                        }
+                                    }
+                                }
+                                catch { }
+
+                                // determine read state (default: unread when unknown)
+                                bool isRead = false;
+                                try
+                                {
+                                    if (r.Payload is TurizmOperasyonSistemi.Models.Notification dbnForRead)
+                                    {
+                                        isRead = dbnForRead.IsRead;
+                                    }
+                                }
+                                catch { }
+
+                                // create clickable item with clearer layout: icon, title (bold for unread), subtitle (timestamp)
+                                var outerBorder = new Border
+                                {
+                                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRead ? "#07101A" : "#0F1B2A")),
+                                    CornerRadius = new CornerRadius(6),
+                                    Padding = new Thickness(6),
+                                    Margin = new Thickness(0, 4, 0, 4),
+                                    BorderThickness = new Thickness(isRead ? 0 : 1),
+                                    BorderBrush = isRead ? null : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#172433"))
+                                };
+
+                                var grid = new Grid();
+                                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
+                                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                                // icon circle
+                                var icon = new System.Windows.Shapes.Ellipse { Width = 32, Height = 32, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+                                var iconFill = (SolidColorBrush)new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
+                                try
+                                {
+                                    if (r.Key != null && r.Key.Equals("person.deleted", StringComparison.OrdinalIgnoreCase))
+                                        iconFill = (SolidColorBrush)new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+                                    // if read, make icon muted
+                                    if (isRead)
+                                    {
+                                        iconFill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#475569"));
+                                    }
+                                }
+                                catch { }
+                                icon.Fill = iconFill;
+                                Grid.SetColumn(icon, 0);
+                                grid.Children.Add(icon);
+
+                                // text stack
+                                var textStack = new StackPanel { Orientation = Orientation.Vertical };
+                                var titleTb = new TextBlock { Text = text, FontWeight = isRead ? FontWeights.Normal : FontWeights.SemiBold, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRead ? "#94A3B8" : "#E6EEF8")), TextWrapping = TextWrapping.Wrap };
+                                titleTb.Margin = new Thickness(2, 0, 0, 2);
+                                textStack.Children.Add(titleTb);
+
+                                // subtitle: try to show person name (if available) and timestamp
+                                string subtitle = string.Empty;
+                                try
+                                {
+                                    if (r.Payload is TurizmOperasyonSistemi.Models.Notification dbn2)
+                                    {
+                                        // try parse PayloadJson for Name or Timestamp
+                                        if (!string.IsNullOrWhiteSpace(dbn2.PayloadJson))
+                                        {
+                                            try
+                                            {
+                                                using var doc = System.Text.Json.JsonDocument.Parse(dbn2.PayloadJson);
+                                                if (doc.RootElement.TryGetProperty("Name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                                {
+                                                    var nm = nameEl.GetString();
+                                                    if (!string.IsNullOrWhiteSpace(nm)) subtitle = nm;
+                                                }
+                                                if (string.IsNullOrWhiteSpace(subtitle) && doc.RootElement.TryGetProperty("Message", out var msgEl) && msgEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                                {
+                                                    subtitle = msgEl.GetString();
+                                                }
+                                                if (doc.RootElement.TryGetProperty("Timestamp", out var tsEl))
+                                                {
+                                                    try
+                                                    {
+                                                        var tss = tsEl.GetString();
+                                                        if (!string.IsNullOrWhiteSpace(tss) && DateTime.TryParse(tss, out var dt))
+                                                        {
+                                                            subtitle += (string.IsNullOrWhiteSpace(subtitle) ? "" : " — ") + dt.ToLocalTime().ToString("g");
+                                                        }
+                                                    }
+                                                    catch { }
+                                                }
+                                            }
+                                            catch { }
+                                        }
+
+                                        if (string.IsNullOrWhiteSpace(subtitle) && dbn2.CreatedAt != default) subtitle = dbn2.CreatedAt.ToLocalTime().ToString("g");
+                                    }
+                                }
+                                catch { }
+
+                                var subTb = new TextBlock { Text = subtitle, FontSize = 12, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRead ? "#6B7280" : "#94A3B8")), TextWrapping = TextWrapping.Wrap };
+                                subTb.Margin = new Thickness(2, 0, 0, 0);
+                                textStack.Children.Add(subTb);
+
+                                Grid.SetColumn(textStack, 1);
+                                grid.Children.Add(textStack);
+
+                                // time/right area: show short timestamp if not in subtitle
+                                Grid.SetColumn(outerBorder, 0);
+
+                                outerBorder.Child = grid;
+
+                                var btn = new Button
+                                {
+                                    Content = outerBorder,
+                                    Tag = notifId,
+                                    Background = Brushes.Transparent,
+                                    BorderThickness = new Thickness(0),
+                                    Padding = new Thickness(0),
+                                    HorizontalContentAlignment = HorizontalAlignment.Stretch
+                                };
+                                btn.Click += NotificationsItem_Click;
+                                // tooltip with raw payload
+                                try
+                                {
+                                    if (r.Payload is TurizmOperasyonSistemi.Models.Notification dbn3)
+                                    {
+                                        btn.ToolTip = dbn3.Message ?? dbn3.PayloadJson;
+                                    }
+                                    else if (r.Payload != null)
+                                    {
+                                        btn.ToolTip = r.Payload.ToString();
+                                    }
+                                }
+                                catch { }
+
+                                stack.Children.Add(btn);
+                            }
+                        }
+                        else
+                        {
+                            var tb = new TextBlock { Text = "Yeni bildirim yok.", Foreground = (Brush)FindResource("{x:Static SystemColors.ControlLightBrushKey}") };
+                            tb.Margin = new Thickness(6);
+                            stack.Children.Add(tb);
+                        }
+                    }
+                    catch
+                    {
+                        stack.Children.Add(new TextBlock { Text = "Bildirimler yüklenemedi.", Margin = new Thickness(6) });
+                    }
+
+                    // show popup
+                    try { popup.IsOpen = true; } catch { }
+                    // stop shake when opened
+                    StopNotificationsShake();
+                    // Do not clear badge until user marks read; but if there were none, keep badge hidden
+                }
+                else
+                {
+                    // Fallback: eski davranışı sürdür
+                    _notificationCount = 0;
+                    var badge = this.FindName("NotificationBadge") as Border;
+                    var badgeText = this.FindName("NotificationBadgeText") as TextBlock;
+                    if (badge != null) badge.Visibility = Visibility.Collapsed;
+                    if (badgeText != null) badgeText.Text = "0";
+                    StopNotificationsShake();
+                }
+            }
+            catch { }
+        }
+
+        private void NotificationsMarkAllReadButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Clear stored recent notifications and reset badge
+                TurizmOperasyonSistemi.Services.NotificationCenter.ClearRecent();
                 _notificationCount = 0;
                 var badge = this.FindName("NotificationBadge") as Border;
                 var badgeText = this.FindName("NotificationBadgeText") as TextBlock;
                 if (badge != null) badge.Visibility = Visibility.Collapsed;
                 if (badgeText != null) badgeText.Text = "0";
-                StopNotificationsShake();
-
-                // İsteğe bağlı: burada bildirimler penceresini açabilirsiniz
+                // Mark DB notifications as read if table exists
+                try
+                {
+                    using (var db = new TurizmOperasyonSistemi.Data.AppDbContext())
+                    {
+                        try { db.EnsureNotificationsTableExists(); } catch { }
+                        var unread = db.Notifications.Where(n => n.IsRead == false).ToList();
+                        foreach (var u in unread)
+                        {
+                            u.IsRead = true;
+                        }
+                        db.SaveChanges();
+                    }
+                }
+                catch { }
+                // close popup
+                var popup = this.FindName("NotificationsPopup") as System.Windows.Controls.Primitives.Popup;
+                if (popup != null) popup.IsOpen = false;
             }
             catch { }
         }
+
+        // Helper to extract display text from NotificationRecord payload
+        // Implemented as an extension-like local method by using a private static helper
+
 
         private decimal TryParseRate(string txt)
         {
@@ -951,7 +1263,7 @@ namespace TurizmOperasyonSistemi.Views
                                 // Only include if there is any allocated or pool count
                                 if (allocatedForHotel > 0 || poolForHotel > 0)
                                 {
-                                    perHotelLines.Add($"{h.Name}: odalanmış {allocatedForHotel}, havuzda {poolForHotel}");
+                                    perHotelLines.Add($"{h.Name}: odalanmış {allocatedForHotel}, Odalanmamış {poolForHotel}");
                                 }
                             }
                             catch { }

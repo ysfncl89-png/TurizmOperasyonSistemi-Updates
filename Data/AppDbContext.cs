@@ -9,6 +9,7 @@ namespace TurizmOperasyonSistemi.Data
 {
     public class AppDbContext : DbContext
     {
+        public DbSet<Models.Notification> Notifications { get; set; }
         public DbSet<Person> Persons { get; set; }
         public DbSet<AppSetting> AppSettings { get; set; }
         public DbSet<Registration> Registrations { get; set; }
@@ -45,6 +46,7 @@ namespace TurizmOperasyonSistemi.Data
                         PaymentMethod TEXT
                     );";
                     cmd.ExecuteNonQuery();
+                }
 
                 // Ensure new columns exist for older databases (migrations not always run)
                 EnsureColumnExists(conn, "Payments", "PaymentMethod", "TEXT");
@@ -86,11 +88,43 @@ namespace TurizmOperasyonSistemi.Data
                     up7.CommandText = "UPDATE Payments SET OriginalCurrency = '' WHERE OriginalCurrency IS NULL;";
                     up7.ExecuteNonQuery();
                 }
-                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"EnsurePaymentsTableExists hata: {ex.Message}");
+            }
+        }
+
+        public void EnsureNotificationsTableExists()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"CREATE TABLE IF NOT EXISTS Notifications (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Key TEXT,
+                        PayloadJson TEXT,
+                        Message TEXT,
+                        IsRead INTEGER DEFAULT 0,
+                        CreatedAt TEXT
+                    );";
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Ensure columns exist for older DBs
+                EnsureColumnExists(conn, "Notifications", "PayloadJson", "TEXT");
+                EnsureColumnExists(conn, "Notifications", "Message", "TEXT");
+                EnsureColumnExists(conn, "Notifications", "IsRead", "INTEGER");
+                EnsureColumnExists(conn, "Notifications", "CreatedAt", "TEXT");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsureNotificationsTableExists hata: {ex.Message}");
             }
         }
 
