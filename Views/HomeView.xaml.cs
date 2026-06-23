@@ -900,19 +900,51 @@ namespace TurizmOperasyonSistemi.Views
                         {
                             var reservedTb = this.FindName("RoomAllocReservedText") as TextBlock;
                             var availTb = this.FindName("RoomAllocAvailableText") as TextBlock;
+                            var perHotelPanel = this.FindName("RoomAllocPerHotelPanel") as StackPanel;
                             var hintTb = this.FindName("RoomAllocHintText") as TextBlock;
                             if (reservedTb != null) reservedTb.Text = allocatedCount.ToString();
                             if (availTb != null) availTb.Text = availableCount.ToString();
-                            if (hintTb != null)
+
+                            // Colors pool for hotels (deterministic selection)
+                            var colors = new[] { "#8B5CF6", "#7EE787", "#F59E0B", "#FCA5A5", "#14B8A6", "#60A5FA", "#F97316", "#06B6D4" };
+
+                            if (perHotelPanel != null)
                             {
+                                perHotelPanel.Children.Clear();
                                 if (perHotelLines.Count == 0)
                                 {
-                                    hintTb.Text = "Tüm kayıtlar odalandı.";
+                                    var tb = new TextBlock { Text = "Tüm kayıtlar odalandı.", Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#7EE787")), FontSize = 12 };
+                                    perHotelPanel.Children.Add(tb);
                                 }
                                 else
                                 {
-                                    hintTb.Text = string.Join("\n", perHotelLines);
+                                    foreach (var line in perHotelLines)
+                                    {
+                                        try
+                                        {
+                                            var idx = line.IndexOf(':');
+                                            string hotel = idx >= 0 ? line.Substring(0, idx) : line;
+                                            string rest = idx >= 0 ? line.Substring(idx + 1).Trim() : string.Empty;
+
+                                            // choose color based on hashcode
+                                            int hash = Math.Abs((hotel ?? string.Empty).GetHashCode());
+                                            var colorHex = colors[hash % colors.Length];
+                                            var colorBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex));
+
+                                            var tb = new TextBlock { TextWrapping = TextWrapping.Wrap };
+                                            tb.Inlines.Add(new Run(hotel + ": ") { Foreground = colorBrush, FontWeight = FontWeights.SemiBold });
+                                            tb.Inlines.Add(new Run(rest) { Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CBD5E1")) });
+
+                                            perHotelPanel.Children.Add(tb);
+                                        }
+                                        catch { }
+                                    }
                                 }
+                            }
+
+                            if (hintTb != null)
+                            {
+                                hintTb.Text = "Son güncelleme: " + DateTime.Now.ToString("g");
                             }
                         }
                         catch { }
