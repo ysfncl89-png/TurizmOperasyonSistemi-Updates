@@ -96,18 +96,42 @@
 
                 <!-- Kurlar paneli (orta sütun) -->
 
-                <!-- Bildirim ikonu (şimdilik sadece görüntü) -->
-                <Button x:Name="NotificationsButton" Grid.Column="0" Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="6" ToolTip="Bildirimler">
-                    <Viewbox Stretch="Uniform">
-                        <Canvas Width="19" Height="19">
-                            <Path Data="M12 22c1.1 0 2-.9 2-2h-4c0 1.1 .9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.99 2H20l-1.99-2z" Fill="#F6C85F" Stretch="Uniform">
-                                <Path.Effect>
-                                    <DropShadowEffect Color="#F6C85F" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
-                                </Path.Effect>
-                            </Path>
-                        </Canvas>
-                    </Viewbox>
-                </Button>
+                <!-- Bildirim ikonu: badge + sallanma animasyonu -->
+                <Grid Grid.Column="0" Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <Grid.Resources>
+                        <!-- Zil sallanma storyboard -->
+                        <Storyboard x:Key="NotificationsShakeStoryboard" RepeatBehavior="Forever" AutoReverse="True">
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="NotificationsRotateTransform" Storyboard.TargetProperty="Angle">
+                                <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.08" Value="-18" />
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.16" Value="12" />
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.24" Value="-8" />
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.32" Value="4" />
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="0" />
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </Grid.Resources>
+
+                    <Button x:Name="NotificationsButton" Width="40" Height="40" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="6" ToolTip="Bildirimler" Click="NotificationsButton_Click" RenderTransformOrigin="0.5,0.2">
+                        <Button.RenderTransform>
+                            <RotateTransform x:Name="NotificationsRotateTransform" Angle="0" />
+                        </Button.RenderTransform>
+                        <Viewbox Stretch="Uniform">
+                            <Canvas Width="19" Height="19">
+                                <Path Data="M12 22c1.1 0 2-.9 2-2h-4c0 1.1 .9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.99 2H20l-1.99-2z" Fill="#F6C85F" Stretch="Uniform">
+                                    <Path.Effect>
+                                        <DropShadowEffect Color="#F6C85F" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
+                                    </Path.Effect>
+                                </Path>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- Küçük kırmızı badge: görünürlük kod tarafından kontrol edilecek -->
+                    <Border x:Name="NotificationBadge" Width="18" Height="18" Background="#EF4444" CornerRadius="9" BorderBrush="#FFFFFF" BorderThickness="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Visibility="Collapsed">
+                        <TextBlock x:Name="NotificationBadgeText" Text="0" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </Grid>
 
                 <!-- Dijital saat ve tarih (sağ sütun) -->
                 <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">

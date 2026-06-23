@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Globalization;
 using System.Net.Http;
@@ -28,6 +29,8 @@ namespace TurizmOperasyonSistemi.Views
     /// </summary>
     public partial class HomeView : Page
     {
+        private int _notificationCount = 0;
+        private Storyboard _notificationsShakeStoryboard;
         private readonly DispatcherTimer _clockTimer;
         private readonly DispatcherTimer _ratesTimer;
         private static readonly HttpClient _httpClient = new HttpClient();
@@ -42,6 +45,12 @@ namespace TurizmOperasyonSistemi.Views
         public HomeView()
         {
             InitializeComponent();
+
+            try
+            {
+                _notificationsShakeStoryboard = (Storyboard)FindResource("NotificationsShakeStoryboard");
+            }
+            catch { _notificationsShakeStoryboard = null; }
 
             // Start clock timer to update digital time
             _clockTimer = new DispatcherTimer
@@ -328,14 +337,70 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                if (string.Equals(key, "payment.updated", StringComparison.OrdinalIgnoreCase))
+                // If any notification arrives, increase badge and start shake until user inspects
+                _notificationCount++;
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    var sel = Application.Current.Dispatcher.Invoke(() => ActiveToursCombo.SelectedItem as string);
-                    try { UpdateTotalsForSelectedTour(sel); } catch { }
-                    try { UpdateVisaSummaryForSelectedTour(sel); } catch { }
-                    try { UpdateTicketSummaryForSelectedTour(sel); } catch { }
-                    try { UpdateCargoSummaryForSelectedTour(sel); } catch { }
+                    try
+                    {
+                        var badge = this.FindName("NotificationBadge") as Border;
+                        var badgeText = this.FindName("NotificationBadgeText") as TextBlock;
+                        if (badge != null && badgeText != null)
+                        {
+                            badgeText.Text = _notificationCount.ToString();
+                            badge.Visibility = Visibility.Visible;
+                        }
+                        // Başka güncellemeler tetiklenebilir
+                        var sel = ActiveToursCombo.SelectedItem as string;
+                        try { UpdateTotalsForSelectedTour(sel); } catch { }
+                        try { UpdateVisaSummaryForSelectedTour(sel); } catch { }
+                        try { UpdateTicketSummaryForSelectedTour(sel); } catch { }
+                        try { UpdateCargoSummaryForSelectedTour(sel); } catch { }
+                        StartNotificationsShake();
+                    }
+                    catch { }
+                });
+            }
+            catch { }
+        }
+
+        private void StartNotificationsShake()
+        {
+            try
+            {
+                if (_notificationsShakeStoryboard != null)
+                {
+                    _notificationsShakeStoryboard.Begin(this, true);
                 }
+            }
+            catch { }
+        }
+
+        private void StopNotificationsShake()
+        {
+            try
+            {
+                if (_notificationsShakeStoryboard != null)
+                {
+                    _notificationsShakeStoryboard.Stop(this);
+                }
+            }
+            catch { }
+        }
+
+        private void NotificationsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Kullanıcı zili inceledi: sayaç sıfırlansın ve animasyon dursun
+                _notificationCount = 0;
+                var badge = this.FindName("NotificationBadge") as Border;
+                var badgeText = this.FindName("NotificationBadgeText") as TextBlock;
+                if (badge != null) badge.Visibility = Visibility.Collapsed;
+                if (badgeText != null) badgeText.Text = "0";
+                StopNotificationsShake();
+
+                // İsteğe bağlı: burada bildirimler penceresini açabilirsiniz
             }
             catch { }
         }
