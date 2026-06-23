@@ -714,11 +714,164 @@ namespace TurizmOperasyonSistemi.Views
                 try { UpdateVisaSummaryForSelectedTour(selected); } catch { }
                 try { UpdateTicketSummaryForSelectedTour(selected); } catch { }
                 try { UpdateCargoSummaryForSelectedTour(selected); } catch { }
+                try { UpdateRoomAllocationSummaryForSelectedTour(selected); } catch { }
             }
             catch
             {
                 // ignore
             }
+        }
+
+        private void UpdateRoomAllocationSummaryForSelectedTour(string selected)
+        {
+            try
+            {
+                using var db = new AppDbContext();
+
+                    var regsQuery = db.Registrations.AsNoTracking().Where(r => r.IsActive).AsQueryable();
+
+                    if (!string.IsNullOrWhiteSpace(selected) && selected != "Tümü")
+                    {
+                        var parts = selected.Split(new[] { " + " }, StringSplitOptions.None);
+                        if (parts.Length >= 4)
+                        {
+                            var tour = parts[0]?.Trim();
+                            var period = parts[1]?.Trim();
+                            var groupType = parts[2]?.Trim();
+                            var days = parts[3]?.Replace(" gün", "").Trim();
+
+                            try
+                            {
+                                if (!string.IsNullOrEmpty(tour)) regsQuery = regsQuery.Where(r => (r.TourType ?? "") == tour);
+                                if (!string.IsNullOrEmpty(period)) regsQuery = regsQuery.Where(r => (r.Period ?? "") == period);
+                                if (!string.IsNullOrEmpty(groupType)) regsQuery = regsQuery.Where(r => (r.GroupType ?? "") == groupType);
+                                if (!string.IsNullOrEmpty(days)) regsQuery = regsQuery.Where(r => (r.DaysCount ?? "") == days);
+                            }
+                            catch { }
+                        }
+                        else
+                        {
+                            if (_tourKeyMap != null && _tourKeyMap.TryGetValue(selected, out var key))
+                            {
+                                try
+                                {
+                                    if (!string.IsNullOrEmpty(key.Tour)) regsQuery = regsQuery.Where(r => (r.TourType ?? "") == key.Tour);
+                                    if (!string.IsNullOrEmpty(key.Period)) regsQuery = regsQuery.Where(r => (r.Period ?? "") == key.Period);
+                                    if (!string.IsNullOrEmpty(key.GroupType)) regsQuery = regsQuery.Where(r => (r.GroupType ?? "") == key.GroupType);
+                                    if (!string.IsNullOrEmpty(key.Days)) regsQuery = regsQuery.Where(r => (r.DaysCount ?? "") == key.Days);
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+
+                    var regs = regsQuery.ToList();
+                    var totalRegs = regs.Count;
+
+                    // All allocations matching the same criteria (any hotel)
+                    var allocQuery = db.RoomAllocations.AsNoTracking().Include(a => a.Occupants).AsQueryable();
+                    if (!string.IsNullOrWhiteSpace(selected) && selected != "Tümü")
+                    {
+                        var parts = selected.Split(new[] { " + " }, StringSplitOptions.None);
+                        if (parts.Length >= 4)
+                        {
+                            var tour = parts[0]?.Trim();
+                            var period = parts[1]?.Trim();
+                            var groupType = parts[2]?.Trim();
+                            var days = parts[3]?.Replace(" gün", "").Trim();
+                            try
+                            {
+                                if (!string.IsNullOrEmpty(tour)) allocQuery = allocQuery.Where(a => (a.TourType ?? "") == tour);
+                                if (!string.IsNullOrEmpty(period)) allocQuery = allocQuery.Where(a => (a.Period ?? "") == period);
+                                if (!string.IsNullOrEmpty(groupType)) allocQuery = allocQuery.Where(a => (a.GroupType ?? "") == groupType);
+                                if (!string.IsNullOrEmpty(days)) allocQuery = allocQuery.Where(a => (a.DaysCount ?? "") == days);
+                            }
+                            catch { }
+                        }
+                        else
+                        {
+                            if (_tourKeyMap != null && _tourKeyMap.TryGetValue(selected, out var key))
+                            {
+                                try
+                                {
+                                    if (!string.IsNullOrEmpty(key.Tour)) allocQuery = allocQuery.Where(a => (a.TourType ?? "") == key.Tour);
+                                    if (!string.IsNullOrEmpty(key.Period)) allocQuery = allocQuery.Where(a => (a.Period ?? "") == key.Period);
+                                    if (!string.IsNullOrEmpty(key.GroupType)) allocQuery = allocQuery.Where(a => (a.GroupType ?? "") == key.GroupType);
+                                    if (!string.IsNullOrEmpty(key.Days)) allocQuery = allocQuery.Where(a => (a.DaysCount ?? "") == key.Days);
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+
+                    var allocs = allocQuery.ToList();
+                    var allocatedPassengerIds = allocs.SelectMany(a => a.Occupants).Select(o => o.PassengerId).Distinct().ToList();
+
+                    int allocatedCount = allocatedPassengerIds.Count;
+                    int availableCount = Math.Max(0, totalRegs - allocatedCount);
+
+                    // Per-hotel breakdown: allocated vs pool (unallocated relative to that hotel)
+                    var hotels = db.Hotels.AsNoTracking().OrderBy(h => h.Name).ToList();
+                    var perHotelLines = new List<string>();
+
+                    if (allocs.Count == 0)
+                    {
+                        // No allocation records at all for these criteria: all registrations are "Odalama kaydı açılmamış"
+                        if (totalRegs > 0)
+                        {
+                            perHotelLines.Add($"Odalama kaydı açılmamış: {totalRegs} kişi");
+                        }
+                    }
+                    else
+                    {
+                        foreach (var h in hotels)
+                        {
+                            try
+                            {
+                                var allocsForHotel = allocQuery.Where(a => a.Hotel != null && a.Hotel.Name == h.Name).ToList();
+                                if (!allocsForHotel.Any()) continue; // skip hotels without saved allocation rows for this criteria
+
+                                var idsForHotel = allocsForHotel.SelectMany(a => a.Occupants).Select(o => o.PassengerId).Distinct().ToList();
+                                var allocatedForHotel = idsForHotel.Count;
+                                // poolForHotel: registrations matching criteria that are not placed into this hotel's allocations
+                                var poolForHotel = regs.Count(r => !idsForHotel.Contains(r.PersonId));
+
+                                // Only include if there is any allocated or pool count
+                                if (allocatedForHotel > 0 || poolForHotel > 0)
+                                {
+                                    perHotelLines.Add($"{h.Name}: odalanmış {allocatedForHotel}, havuzda {poolForHotel}");
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+
+                    // Update UI
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        try
+                        {
+                            var reservedTb = this.FindName("RoomAllocReservedText") as TextBlock;
+                            var availTb = this.FindName("RoomAllocAvailableText") as TextBlock;
+                            var hintTb = this.FindName("RoomAllocHintText") as TextBlock;
+                            if (reservedTb != null) reservedTb.Text = allocatedCount.ToString();
+                            if (availTb != null) availTb.Text = availableCount.ToString();
+                            if (hintTb != null)
+                            {
+                                if (perHotelLines.Count == 0)
+                                {
+                                    hintTb.Text = "Tüm kayıtlar odalandı.";
+                                }
+                                else
+                                {
+                                    hintTb.Text = string.Join("\n", perHotelLines);
+                                }
+                            }
+                        }
+                        catch { }
+                    });
+            }
+            catch { }
         }
 
         private string NormalizeForComparison(string input)

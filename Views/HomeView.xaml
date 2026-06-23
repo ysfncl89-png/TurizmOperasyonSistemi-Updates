@@ -303,7 +303,7 @@
                     </Border>
 
                     <!-- Oda Kartı -->
-                    <Border Grid.Column="3" Background="#0B1220" CornerRadius="8" Padding="12" Margin="6" Height="120">
+                    <Border Grid.Column="3" Background="#0B1220" CornerRadius="8" Padding="12" Margin="6,0,6,10">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Odalama" Foreground="#E6EEF8" FontWeight="Bold" FontSize="14" />
