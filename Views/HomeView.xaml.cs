@@ -66,6 +66,9 @@ namespace TurizmOperasyonSistemi.Views
             // Aktif turlar combobox'unu doldur
             LoadActiveTours();
 
+            // Update visa summary for initial selection
+            try { UpdateVisaSummaryForSelectedTour(ActiveToursCombo.SelectedItem as string); } catch { }
+
             // Abone ol: ödeme güncellemeleri geldiğinde toplamları yeniden hesapla
             TurizmOperasyonSistemi.Services.NotificationCenter.Subscribe(OnNotification);
 
@@ -80,6 +83,7 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     var sel = Application.Current.Dispatcher.Invoke(() => ActiveToursCombo.SelectedItem as string);
                     try { UpdateTotalsForSelectedTour(sel); } catch { }
+                    try { UpdateVisaSummaryForSelectedTour(sel); } catch { }
                 }
             }
             catch { }
@@ -454,11 +458,203 @@ namespace TurizmOperasyonSistemi.Views
                 var selected = ActiveToursCombo.SelectedItem as string;
                 UpdateCountsForSelectedTour(selected);
                 try { UpdateTotalsForSelectedTour(selected); } catch { }
+                try { UpdateVisaSummaryForSelectedTour(selected); } catch { }
             }
             catch
             {
                 // ignore
             }
+        }
+
+        private string NormalizeForComparison(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            return input.Trim().ToLowerInvariant()
+                .Replace('ı','i').Replace('ğ','g').Replace('ü','u').Replace('ş','s').Replace('ö','o').Replace('ç','c');
+        }
+
+        private void UpdateVisaSummaryForSelectedTour(string selected)
+        {
+            try
+            {
+                using var db = new AppDbContext();
+                // Load active registrations into memory and apply the same string-normalized filtering
+                var regs = db.Registrations.AsNoTracking().Where(r => r.IsActive).ToList();
+
+                if (!string.IsNullOrWhiteSpace(selected) && selected != "Tümü")
+                {
+                    var parts = selected.Split(new[] { " + " }, StringSplitOptions.None);
+                    string tour = null, period = null, groupType = null, days = null;
+                    if (parts.Length >= 4)
+                    {
+                        tour = parts[0]?.Trim();
+                        period = parts[1]?.Trim();
+                        groupType = parts[2]?.Trim();
+                        days = parts[3]?.Replace(" gün", "").Trim();
+                    }
+                    else if (_tourKeyMap != null && _tourKeyMap.TryGetValue(selected, out var key))
+                    {
+                        tour = key.Tour; period = key.Period; groupType = key.GroupType; days = key.Days;
+                    }
+
+                    // Normalize selection for comparison
+                    var ntour = NormalizeForComparison(tour ?? string.Empty);
+                    var nperiod = NormalizeForComparison(period ?? string.Empty);
+                    var ngroup = NormalizeForComparison(groupType ?? string.Empty);
+                    var ndays = NormalizeForComparison(days ?? string.Empty);
+
+                    regs = regs.Where(r =>
+                    {
+                        try
+                        {
+                            bool ok = true;
+                            if (!string.IsNullOrWhiteSpace(ntour))
+                            {
+                                if (ntour == "(belirtilmemiş)" || ntour == "(belirtilmemis)")
+                                {
+                                    ok &= string.IsNullOrWhiteSpace(r.TourType);
+                                }
+                                else ok &= NormalizeForComparison(r.TourType ?? string.Empty) == ntour;
+                            }
+                            if (!string.IsNullOrWhiteSpace(nperiod))
+                            {
+                                if (nperiod == "(belirtilmemiş)" || nperiod == "(belirtilmemis)") ok &= string.IsNullOrWhiteSpace(r.Period);
+                                else ok &= NormalizeForComparison(r.Period ?? string.Empty) == nperiod;
+                            }
+                            if (!string.IsNullOrWhiteSpace(ngroup))
+                            {
+                                if (ngroup == "(belirtilmemiş)" || ngroup == "(belirtilmemis)") ok &= string.IsNullOrWhiteSpace(r.GroupType);
+                                else ok &= NormalizeForComparison(r.GroupType ?? string.Empty) == ngroup;
+                            }
+                            if (!string.IsNullOrWhiteSpace(ndays))
+                            {
+                                if (ndays == "-" || ndays == "(belirtilmemiş)" || ndays == "(belirtilmemis)") ok &= string.IsNullOrWhiteSpace(r.DaysCount);
+                                else ok &= NormalizeForComparison(r.DaysCount ?? string.Empty) == ndays;
+                            }
+                            return ok;
+                        }
+                        catch { return false; }
+                    }).ToList();
+                }
+
+                var list = regs.Select(r => new { r.VisaRequest, r.VisaStatusChoice }).ToList();
+
+                int willGet = 0, selfGet = 0, issued = 0, notIssued = 0, inProgress = 0, passportPending = 0;
+
+                int passportYes = 0, passportNo = 0;
+
+                foreach (var item in list)
+                {
+                    var vr = NormalizeForComparison(item.VisaRequest ?? string.Empty);
+                    var vs = NormalizeForComparison(item.VisaStatusChoice ?? string.Empty);
+
+                    // Vize Talebi based
+                    if (!string.IsNullOrWhiteSpace(vr))
+                    {
+                        if (vr.Contains("kendisi") || vr.Contains("kendi")) selfGet++;
+                        else if (vr.Contains("alac") && vr.Contains("vize")) willGet++;
+                    }
+
+                    // Vize durumu based
+                    if (!string.IsNullOrWhiteSpace(vs))
+                    {
+                        // Check negative forms ("çıkmadı") before positive ones to avoid substring collisions
+                        if (vs.Contains("cikmad") || vs.Contains("cikmadi") || vs.Contains("cikm"))
+                        {
+                            notIssued++;
+                        }
+                        else if (vs.Contains("cikti") || vs.Contains("cikt") || vs.Contains("vizecikti") )
+                        {
+                            issued++;
+                        }
+                        else if (vs.Contains("alin") || vs.Contains("aliniyor") || vs.Contains("aliniyor"))
+                        {
+                            inProgress++;
+                        }
+                        else if (vs.Contains("pasaport") || vs.Contains("pasaportbeklen") || vs.Contains("beklen"))
+                        {
+                            passportPending++;
+                        }
+                    }
+
+                // Additionally count PassportArrived yes/no from filtered registrations
+                try
+                {
+                    // Load AppSettings for PassportArrived type to map Id -> Value similar to PersonsGeneralView
+                    var appSettings = db.AppSettings.Where(a => a.Type == "Pasaportu Geldi mi ?" || a.Type == "Pasaport Geldi mi" || a.Type == "PassportArrived").AsNoTracking().ToList();
+                    var settingsById = appSettings.ToDictionary(a => a.Id, a => (a.Value ?? string.Empty));
+
+                    passportYes = 0; passportNo = 0;
+                    foreach (var r in regs)
+                    {
+                        try
+                        {
+                            if (!r.PassportArrived.HasValue)
+                                continue;
+
+                            var val = r.PassportArrived.Value;
+                            if (val < 0)
+                                continue; // unspecified
+
+                            string sl = string.Empty;
+                            if (settingsById.TryGetValue(val, out var sv)) sl = sv ?? string.Empty;
+                            else
+                            {
+                                // fallback: interpret numeric
+                                sl = val != 0 ? "1" : "0";
+                            }
+
+                            var slNorm = NormalizeForComparison(sl ?? string.Empty);
+                            // Treat explicit 'pasaport vermeyecek' or unspecified as neither Yes nor No
+                            if (slNorm.Contains("verme") || slNorm.Contains("vermeyecek") || slNorm.Contains("belirtilme") || slNorm.Contains("belirtilmedi"))
+                            {
+                                // skip counting
+                            }
+                            else if (slNorm == "evet" || slNorm == "var" || slNorm == "yes" || slNorm == "1")
+                            {
+                                passportYes++;
+                            }
+                            else if (slNorm == "hayir" || slNorm == "hay" || slNorm == "0")
+                            {
+                                passportNo++;
+                            }
+                            else
+                            {
+                                // fallback: if value contains 'hay' treat as no, otherwise skip
+                                if (slNorm.Contains("hay")) passportNo++;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+                }
+
+                // Update UI
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        var a = this.FindName("VisaWillGetText") as TextBlock;
+                        var b = this.FindName("VisaSelfGetText") as TextBlock;
+                        var c = this.FindName("VisaIssuedText") as TextBlock;
+                        var d = this.FindName("VisaNotIssuedText") as TextBlock;
+                        var e = this.FindName("VisaInProgressText") as TextBlock;
+                        var f = this.FindName("PassportPendingText") as TextBlock;
+                        if (a != null) a.Text = willGet.ToString();
+                        if (b != null) b.Text = selfGet.ToString();
+                        if (c != null) c.Text = issued.ToString();
+                        if (d != null) d.Text = notIssued.ToString();
+                        if (e != null) e.Text = inProgress.ToString();
+                        if (f != null) f.Text = passportPending.ToString();
+                        try { var py = this.FindName("PassportArrivedYesText") as TextBlock; if (py != null) py.Text = passportYes.ToString(); } catch { }
+                        try { var pn = this.FindName("PassportArrivedNoText") as TextBlock; if (pn != null) pn.Text = passportNo.ToString(); } catch { }
+                        try { var hint = this.FindName("VisaHintText") as TextBlock; if (hint != null) hint.Text = "Son güncelleme: " + DateTime.Now.ToString("g"); } catch { }
+                    }
+                    catch { }
+                });
+            }
+            catch { }
         }
 
         private void UpdateCountsForSelectedTour(string selected)
