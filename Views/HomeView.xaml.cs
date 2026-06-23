@@ -68,11 +68,147 @@ namespace TurizmOperasyonSistemi.Views
 
             // Update visa summary for initial selection
             try { UpdateVisaSummaryForSelectedTour(ActiveToursCombo.SelectedItem as string); } catch { }
+            // Update ticket summary for initial selection
+            try { UpdateTicketSummaryForSelectedTour(ActiveToursCombo.SelectedItem as string); } catch { }
 
             // Abone ol: ödeme güncellemeleri geldiğinde toplamları yeniden hesapla
             TurizmOperasyonSistemi.Services.NotificationCenter.Subscribe(OnNotification);
 
             this.Unloaded += (s, e) => TurizmOperasyonSistemi.Services.NotificationCenter.Unsubscribe(OnNotification);
+        }
+
+        private void UpdateTicketSummaryForSelectedTour(string selected)
+        {
+            try
+            {
+                using var db = new AppDbContext();
+                var regs = db.Registrations.AsNoTracking().Where(r => r.IsActive).ToList();
+
+                if (!string.IsNullOrWhiteSpace(selected) && selected != "Tümü")
+                {
+                    var parts = selected.Split(new[] { " + " }, StringSplitOptions.None);
+                    string tour = null, period = null, groupType = null, days = null;
+                    if (parts.Length >= 4)
+                    {
+                        tour = parts[0]?.Trim();
+                        period = parts[1]?.Trim();
+                        groupType = parts[2]?.Trim();
+                        days = parts[3]?.Replace(" gün", "").Trim();
+                    }
+                    else if (_tourKeyMap != null && _tourKeyMap.TryGetValue(selected, out var key))
+                    {
+                        tour = key.Tour; period = key.Period; groupType = key.GroupType; days = key.Days;
+                    }
+
+                    var ntour = NormalizeForComparison(tour ?? string.Empty);
+                    var nperiod = NormalizeForComparison(period ?? string.Empty);
+                    var ngroup = NormalizeForComparison(groupType ?? string.Empty);
+                    var ndays = NormalizeForComparison(days ?? string.Empty);
+
+                    regs = regs.Where(r =>
+                    {
+                        try
+                        {
+                            bool ok = true;
+                            if (!string.IsNullOrWhiteSpace(ntour))
+                            {
+                                if (ntour == "(belirtilmemiş)" || ntour == "(belirtilmemis)") ok &= string.IsNullOrWhiteSpace(r.TourType);
+                                else ok &= NormalizeForComparison(r.TourType ?? string.Empty) == ntour;
+                            }
+                            if (!string.IsNullOrWhiteSpace(nperiod))
+                            {
+                                if (nperiod == "(belirtilmemiş)" || nperiod == "(belirtilmemis)") ok &= string.IsNullOrWhiteSpace(r.Period);
+                                else ok &= NormalizeForComparison(r.Period ?? string.Empty) == nperiod;
+                            }
+                            if (!string.IsNullOrWhiteSpace(ngroup))
+                            {
+                                if (ngroup == "(belirtilmemiş)" || ngroup == "(belirtilmemis)") ok &= string.IsNullOrWhiteSpace(r.GroupType);
+                                else ok &= NormalizeForComparison(r.GroupType ?? string.Empty) == ngroup;
+                            }
+                            if (!string.IsNullOrWhiteSpace(ndays))
+                            {
+                                if (ndays == "-" || ndays == "(belirtilmemiş)" || ndays == "(belirtilmemis)") ok &= string.IsNullOrWhiteSpace(r.DaysCount);
+                                else ok &= NormalizeForComparison(r.DaysCount ?? string.Empty) == ndays;
+                            }
+                            return ok;
+                        }
+                        catch { return false; }
+                    }).ToList();
+                }
+
+                var list = regs.Select(r => new { r.TicketRequest, r.TicketStatusChoice }).ToList();
+
+                int willGet = 0, selfGet = 0, arrived = 0, notArrived = 0, inProgress = 0;
+                int transferCount = 0;
+
+                foreach (var item in list)
+                {
+                    var tr = NormalizeForComparison(item.TicketRequest ?? string.Empty);
+                    var ts = NormalizeForComparison(item.TicketStatusChoice ?? string.Empty);
+
+                    // TicketRequest based
+                    if (!string.IsNullOrWhiteSpace(tr))
+                    {
+                        if (tr.Contains("kendisi") || tr.Contains("kendi")) selfGet++;
+                        else if (tr.Contains("alac") && tr.Contains("bilet")) willGet++;
+                    }
+
+                    // TicketStatusChoice based
+                    if (!string.IsNullOrWhiteSpace(ts))
+                    {
+                        // check negative first
+                        if (ts.Contains("gelmedi") || ts.Contains("gelmedi") )
+                        {
+                            notArrived++;
+                        }
+                        else if (ts.Contains("geldi") || ts.Contains("geldi") || ts.Contains("bileti geldi"))
+                        {
+                            arrived++;
+                        }
+                        else if (ts.Contains("alin") || ts.Contains("aliniyor") || ts.Contains("aliniyor"))
+                        {
+                            inProgress++;
+                        }
+                    }
+
+                try
+                {
+                    transferCount = regs.Count(r =>
+                        {
+                            try
+                            {
+                                var ht = NormalizeForComparison(r.HasTransfer ?? string.Empty);
+                                if (string.IsNullOrWhiteSpace(ht)) return false;
+                                return ht.Contains("var") || ht.Contains("evet") || ht.Contains("yes") || ht == "1";
+                            }
+                            catch { return false; }
+                        });
+                }
+                catch { }
+                }
+
+                // Update UI
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        var a = this.FindName("TicketWillGetText") as TextBlock;
+                        var b = this.FindName("TicketSelfGetText") as TextBlock;
+                        var c = this.FindName("TicketArrivedText") as TextBlock;
+                        var d = this.FindName("TicketNotArrivedText") as TextBlock;
+                        var e = this.FindName("TicketInProgressText") as TextBlock;
+                        if (a != null) a.Text = willGet.ToString();
+                        if (b != null) b.Text = selfGet.ToString();
+                        if (c != null) c.Text = arrived.ToString();
+                        if (d != null) d.Text = notArrived.ToString();
+                        if (e != null) e.Text = inProgress.ToString();
+                        try { var ttc = this.FindName("TicketTransferCountText") as TextBlock; if (ttc != null) ttc.Text = transferCount.ToString(); } catch { }
+                        try { var hint = this.FindName("TicketHintText") as TextBlock; if (hint != null) hint.Text = "Son güncelleme: " + DateTime.Now.ToString("g"); } catch { }
+                    }
+                    catch { }
+                });
+            }
+            catch { }
         }
 
         private void OnNotification(string key, object payload)
@@ -84,6 +220,7 @@ namespace TurizmOperasyonSistemi.Views
                     var sel = Application.Current.Dispatcher.Invoke(() => ActiveToursCombo.SelectedItem as string);
                     try { UpdateTotalsForSelectedTour(sel); } catch { }
                     try { UpdateVisaSummaryForSelectedTour(sel); } catch { }
+                    try { UpdateTicketSummaryForSelectedTour(sel); } catch { }
                 }
             }
             catch { }
@@ -459,6 +596,7 @@ namespace TurizmOperasyonSistemi.Views
                 UpdateCountsForSelectedTour(selected);
                 try { UpdateTotalsForSelectedTour(selected); } catch { }
                 try { UpdateVisaSummaryForSelectedTour(selected); } catch { }
+                try { UpdateTicketSummaryForSelectedTour(selected); } catch { }
             }
             catch
             {
