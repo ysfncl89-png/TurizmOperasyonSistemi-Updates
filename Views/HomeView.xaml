@@ -145,6 +145,7 @@
                     <Border Grid.Column="0" Style="{StaticResource DashboardCardStyle}" Margin="6,0,6,-143">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                                <TextBlock Text="🛂" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
                                 <TextBlock Text="Vize" Style="{StaticResource DashboardCardTitle}" />
                                 <TextBlock Text="  " />
                                 <TextBlock x:Name="VisaStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" />
@@ -248,6 +249,7 @@
                     <Border Grid.Column="1" Style="{StaticResource DashboardCardStyle}" Margin="6,0,6,-143">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="✈️" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
                                 <TextBlock Text="Bilet" Style="{StaticResource DashboardCardTitle}" />
                                 <TextBlock x:Name="TicketStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
@@ -327,6 +329,7 @@
                     <Border Grid.Column="2" Style="{StaticResource DashboardCardStyle}" Margin="6,0,6,-143">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📦" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
                                 <TextBlock Text="Kargo" Style="{StaticResource DashboardCardTitle}" />
                                 <TextBlock x:Name="CargoStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
@@ -394,11 +397,36 @@
                     <Border Grid.Column="3" Style="{StaticResource DashboardCardStyle}" Margin="6,0,6,-143">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🏨" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
                                 <TextBlock Text="Odalama" Style="{StaticResource DashboardCardTitle}" />
                                 <TextBlock x:Name="RoomAllocStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
-                            <!-- Rezerv ve Boş bölümleri kaldırıldı: bu özet alan yalnızca gerekli bilgiler gösterir -->
-                            <TextBlock x:Name="RoomAllocHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="11" Margin="0,10,0,0" />
+
+                            <StackPanel Margin="0,8,0,0">
+                                <Border Background="#071225" CornerRadius="6" Padding="8" Margin="0,6,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Odalama yapıldı" Foreground="#CBD5E1" />
+                                        <TextBlock x:Name="RoomAllocReservedText" Text="0" Foreground="#7EE787" FontWeight="Bold" Grid.Column="1" />
+                                    </Grid>
+                                </Border>
+
+                                <Border Background="#071225" CornerRadius="6" Padding="8" Margin="0,6,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Havuz (odalanmamış)" Foreground="#CBD5E1" />
+                                        <TextBlock x:Name="RoomAllocAvailableText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                    </Grid>
+                                </Border>
+
+                                <TextBlock x:Name="RoomAllocHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="11" Margin="0,10,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </Grid>
