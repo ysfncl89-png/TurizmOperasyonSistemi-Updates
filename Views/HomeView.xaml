@@ -19,14 +19,18 @@
 
             <!-- Sol üst: Aktif Turlar combobox -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Height="114">
-                <TextBlock Text="Aktif Turlar:" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <!-- Aktif turlar sayısı kutucuğu (combobox'un solunda, aynı hizada) -->
+                <Border Background="#1E293B" CornerRadius="6" Padding="8,4" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="ActiveToursCountText" Foreground="#CBD5E1" FontWeight="Bold" Text="Aktif turlar: 0" />
+                </Border>
 
                 <!-- Combo ve altındaki kişi sayısı kutucuğu dikey olarak gruplanır -->
                 <StackPanel Orientation="Vertical" VerticalAlignment="Center">
                     <ComboBox x:Name="ActiveToursCombo" Width="320" Height="34" SelectionChanged="ActiveToursCombo_SelectionChanged"/>
 
-                    <!-- Kayıtlı kişi sayısı kutucuk -->
-                    <Border x:Name="ActiveTourPeopleCountBox" Background="#0B1220" CornerRadius="6" Padding="8" Margin="0,8,0,0" Width="320">
+                    <!-- Kayıtlı kişi sayısı kutucuğu -->
+                    <Border x:Name="ActiveTourPeopleCountBox" Background="#1E293B" CornerRadius="6" Padding="8" Margin="0,8,0,0" Width="320">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <TextBlock x:Name="ActivePeopleText" Foreground="#7EE787" FontWeight="Bold" Text="Aktif Kişi: 0" Margin="0,0,12,0" />
                             <TextBlock x:Name="InactivePeopleText" Foreground="#FCA5A5" FontWeight="Bold" Text="Pasif Kişi: 0" />
@@ -34,12 +38,8 @@
                     </Border>
                 </StackPanel>
 
-                <Border Background="#111827" CornerRadius="6" Padding="8,4" Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="ActiveToursCountText" Foreground="#CBD5E1" FontWeight="Bold" Text="Aktif: 0" />
-                </Border>
-
                 <!-- Toplam Tahsilat / Toplam Kalan (USD) kutucuğu -->
-                <Border x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="8" Margin="12,0,0,0" VerticalAlignment="Center" Width="356" Height="74">
+                <Border x:Name="TotalsPanel" Background="#1E293B" CornerRadius="6" Padding="8" Margin="12,0,0,0" VerticalAlignment="Center" Width="356">
                     <StackPanel Orientation="Vertical" Margin="0,0,-8,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <TextBlock Text="Toplam Tahsilat:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
@@ -49,6 +49,8 @@
                             <TextBlock Text="Toplam Kalan:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock x:Name="TotalRemainingText" Text="USD -" Foreground="#FCA5A5" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
+
+
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -62,7 +64,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Kurlar paneli (orta sütun) -->
-                <Border x:Name="ExchangeRatesPanel" Grid.Column="1" Background="#0B1220" CornerRadius="8" Padding="8" Margin="8,0,12,0" Width="320" VerticalAlignment="Center">
+                <Border x:Name="ExchangeRatesPanel" Grid.Column="1" Background="#1E293B" CornerRadius="8" Padding="8" Margin="8,0,12,0" Width="320" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="Merkez Bankası Kurları" Foreground="#CBD5E1" FontWeight="Bold" FontSize="13" HorizontalAlignment="Left" Margin="0,0,0,6" />
 
