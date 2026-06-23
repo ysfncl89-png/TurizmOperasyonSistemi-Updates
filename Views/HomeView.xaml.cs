@@ -587,6 +587,8 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 var list = new List<string>();
+                // map to hold latest CreatedDate for each display group (used to pick most-recently-saved tour)
+                var latestMap = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
                 _tourKeyMap.Clear();
 
                 using (var db = new AppDbContext())
@@ -662,9 +664,21 @@ namespace TurizmOperasyonSistemi.Views
                         string days = string.IsNullOrWhiteSpace(g.Key.DaysCount) ? "?" : g.Key.DaysCount;
 
                         var display = $"{tour} + {period} + {groupType} + {days} gün";
+
                         if (!_tourKeyMap.ContainsKey(display))
                         {
                             _tourKeyMap[display] = (tour, period, groupType, g.Key.DaysCount ?? "");
+                        }
+
+                        // store latest CreatedDate for this group (to later choose most recently saved tour)
+                        try
+                        {
+                            var maxCreated = g.Max(r => r.CreatedDate);
+                            latestMap[display] = maxCreated;
+                        }
+                        catch
+                        {
+                            latestMap[display] = DateTime.MinValue;
                         }
 
                         // hesapla aktiv/pasif kişi sayıları doğrudan registrations grubu üzerinden
@@ -681,7 +695,42 @@ namespace TurizmOperasyonSistemi.Views
                 var items = new List<string> { "Tümü" };
                 items.AddRange(distinctList);
                 ActiveToursCombo.ItemsSource = items;
-                ActiveToursCombo.SelectedIndex = 0;
+
+                // Varsayılan seçimi bu aya ait olan seçenek yap
+                try
+                {
+                    var culture = new CultureInfo("tr-TR");
+                    var monthName = DateTime.Now.ToString("MMMM", culture); // e.g. "haziran"
+                    var normMonth = NormalizeForComparison(monthName ?? string.Empty);
+
+                    // latestMap is populated earlier while enumerating groups
+
+                    var monthCandidates = distinctList.Where(d => NormalizeForComparison(d ?? string.Empty).Contains(normMonth)).ToList();
+                    if (monthCandidates.Any())
+                    {
+                        // if multiple, pick the one with latest created date
+                        var chosen = monthCandidates
+                            .OrderByDescending(d => latestMap.ContainsKey(d) ? latestMap[d] : DateTime.MinValue)
+                            .FirstOrDefault();
+
+                        if (!string.IsNullOrWhiteSpace(chosen))
+                        {
+                            ActiveToursCombo.SelectedItem = chosen;
+                        }
+                        else
+                        {
+                            ActiveToursCombo.SelectedIndex = 0;
+                        }
+                    }
+                    else
+                    {
+                        ActiveToursCombo.SelectedIndex = 0;
+                    }
+                }
+                catch
+                {
+                    ActiveToursCombo.SelectedIndex = 0;
+                }
 
                 // Aktif tur sayısını göster
                 try
