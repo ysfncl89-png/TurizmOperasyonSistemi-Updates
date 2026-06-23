@@ -135,7 +135,52 @@
                         </Grid>
                     </StackPanel>
 
-                    <!-- TCMB kur widget kaldırıldı -->
+                    <!-- TCMB kur widget -->
+                    <Border x:Name="ExchangeRatesPanel" Grid.Column="1" Background="#1E293B" CornerRadius="8" Padding="8" Margin="8,0,12,0" Width="320" VerticalAlignment="Center">
+                        <StackPanel>
+                            <TextBlock Text="Merkez Bankası Kurları" Foreground="#CBD5E1" FontWeight="Bold" FontSize="13" HorizontalAlignment="Left" Margin="0,0,0,6" />
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Dolar (USD)" Foreground="#CBD5E1" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,0,4,0" />
+                                <TextBlock Grid.Row="0" Grid.Column="2" x:Name="UsdBuyText" Text="-" Foreground="#7EE787" />
+                                <TextBlock Grid.Row="0" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,0,4,0" />
+                                <TextBlock Grid.Row="0" Grid.Column="4" x:Name="UsdSellText" Text="-" Foreground="#FCA5A5" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Euro (EUR)" Foreground="#CBD5E1" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" x:Name="EurBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="4" x:Name="EurSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="İng. Sterlini (GBP)" Foreground="#CBD5E1" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="2" x:Name="GbpBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="4" x:Name="GbpSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Suudi Riyali (SAR)" Foreground="#CBD5E1" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="2" x:Name="SarBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="4" x:Name="SarSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
                 <!-- Filtreler: Collapsible panel (varsayılan collapsed) -->

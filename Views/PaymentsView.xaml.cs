@@ -1,20 +1,130 @@
+using System;
 using System.Windows.Controls;
 using System.Windows;
 using System.Linq;
 using System.Collections.Generic;
 using TurizmOperasyonSistemi.Views;
 using System.Threading.Tasks;
-// TCMB exchange rate service removed
+using System.Windows.Threading;
+using System.Net.Http;
+using System.Xml.Linq;
+using System.Globalization;
+// TCMB exchange rate widget moved here
 
 namespace TurizmOperasyonSistemi.Views
 {
     public partial class PaymentsView : UserControl
     {
-        // TCMB exchange rate feature removed
+        // Exchange rate timer and client
+        private readonly DispatcherTimer _ratesTimer;
+        private static readonly HttpClient _httpClient = new HttpClient();
+        private decimal _usdRate = 0m;
+        private decimal _eurRate = 0m;
+        private decimal _gbpRate = 0m;
+        private decimal _sarRate = 0m;
+
         public PaymentsView()
         {
             InitializeComponent();
             Loaded += PaymentsView_Loaded;
+
+            // Start periodic rate fetch
+            _ratesTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMinutes(30)
+            };
+            _ratesTimer.Tick += async (s, e) => await FetchExchangeRatesAsync();
+            _ratesTimer.Start();
+
+            // Initial fetch (fire-and-forget)
+            _ = FetchExchangeRatesAsync();
+        }
+
+        private decimal TryParseRate(string txt)
+        {
+            if (string.IsNullOrWhiteSpace(txt)) return 0m;
+            if (decimal.TryParse(txt, NumberStyles.Any, CultureInfo.InvariantCulture, out var v)) return v;
+            if (decimal.TryParse(txt, NumberStyles.Any, new CultureInfo("tr-TR"), out v)) return v;
+            var cleaned = new string(txt.Where(c => char.IsDigit(c) || c == '.' || c == ',').ToArray());
+            if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out v)) return v;
+            if (decimal.TryParse(cleaned, NumberStyles.Any, new CultureInfo("tr-TR"), out v)) return v;
+            return 0m;
+        }
+
+        private async Task FetchExchangeRatesAsync()
+        {
+            try
+            {
+                const string url = "https://www.tcmb.gov.tr/kurlar/today.xml";
+                string xml = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
+
+                var doc = XDocument.Parse(xml);
+
+                string GetRate(string code, string elementName)
+                {
+                    try
+                    {
+                        var node = doc.Descendants("Currency").FirstOrDefault(x => (string)x.Attribute("CurrencyCode") == code);
+                        if (node == null) return "-";
+                        var el = node.Element(elementName);
+                        if (el == null) return "-";
+                        var val = el.Value?.Trim();
+                        if (string.IsNullOrWhiteSpace(val)) return "-";
+                        return val;
+                    }
+                    catch { return "-"; }
+                }
+
+                var usdBuy = GetRate("USD", "ForexBuying");
+                var eurBuy = GetRate("EUR", "ForexBuying");
+                var gbpBuy = GetRate("GBP", "ForexBuying");
+                var sarBuy = GetRate("SAR", "ForexBuying");
+
+                _usdRate = TryParseRate(usdBuy);
+                _eurRate = TryParseRate(eurBuy);
+                _gbpRate = TryParseRate(gbpBuy);
+                _sarRate = TryParseRate(sarBuy);
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        var usdBuyTb = this.FindName("UsdBuyText") as TextBlock;
+                        var usdSellTb = this.FindName("UsdSellText") as TextBlock;
+                        var eurBuyTb = this.FindName("EurBuyText") as TextBlock;
+                        var eurSellTb = this.FindName("EurSellText") as TextBlock;
+                        var gbpBuyTb = this.FindName("GbpBuyText") as TextBlock;
+                        var gbpSellTb = this.FindName("GbpSellText") as TextBlock;
+                        var sarBuyTb = this.FindName("SarBuyText") as TextBlock;
+                        var sarSellTb = this.FindName("SarSellText") as TextBlock;
+
+                        if (usdBuyTb != null) usdBuyTb.Text = usdBuy;
+                        if (usdSellTb != null) usdSellTb.Text = "-";
+                        if (eurBuyTb != null) eurBuyTb.Text = eurBuy;
+                        if (eurSellTb != null) eurSellTb.Text = "-";
+                        if (gbpBuyTb != null) gbpBuyTb.Text = gbpBuy;
+                        if (gbpSellTb != null) gbpSellTb.Text = "-";
+                        if (sarBuyTb != null) sarBuyTb.Text = sarBuy;
+                        if (sarSellTb != null) sarSellTb.Text = "-";
+                    }
+                    catch { }
+                });
+            }
+            catch
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        foreach (var name in new[] { "UsdBuyText", "UsdSellText", "EurBuyText", "EurSellText", "GbpBuyText", "GbpSellText", "SarBuyText", "SarSellText" })
+                        {
+                            var tb = this.FindName(name) as TextBlock;
+                            if (tb != null) tb.Text = "-";
+                        }
+                    }
+                    catch { }
+                });
+            }
         }
 
         private void PopulateFilters()

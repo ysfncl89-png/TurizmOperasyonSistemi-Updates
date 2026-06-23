@@ -17,43 +17,46 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Sol üst: Aktif Turlar combobox -->
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Height="114">
+            <!-- Sol üst: Aktif Turlar combobox (daha düzenli Grid ile hizalandı) -->
+            <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Height="114">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                <!-- Aktif turlar sayısı kutucuğu (combobox'un solunda, aynı hizada) -->
-                <Border Background="#1E293B" CornerRadius="6" Padding="8,4" Margin="0,0,12,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="ActiveToursCountText" Foreground="#CBD5E1" FontWeight="Bold" Text="Aktif turlar: 0" />
+                <!-- Sol: etiket -->
+                <Border Grid.Column="0" Background="Transparent" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBlock x:Name="ActiveToursLabel" Text="Aktif Turlar:" Foreground="#CBD5E1" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0" />
                 </Border>
 
-                <!-- Combo ve altındaki kişi sayısı kutucuğu dikey olarak gruplanır -->
-                <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                    <ComboBox x:Name="ActiveToursCombo" Width="320" Height="34" SelectionChanged="ActiveToursCombo_SelectionChanged"/>
+                <!-- Orta: Combo ve kişi sayısı (vertical) -->
+                <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
+                    <ComboBox x:Name="ActiveToursCombo" Width="420" Height="36" SelectionChanged="ActiveToursCombo_SelectionChanged"/>
 
                     <!-- Kayıtlı kişi sayısı kutucuğu -->
-                    <Border x:Name="ActiveTourPeopleCountBox" Background="#1E293B" CornerRadius="6" Padding="8" Margin="0,8,0,0" Width="320">
+                    <Border x:Name="ActiveTourPeopleCountBox" Background="#0B1220" CornerRadius="6" Padding="8" Margin="0,8,0,0" Width="420">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock x:Name="ActivePeopleText" Foreground="#7EE787" FontWeight="Bold" Text="Aktif Kişi: 0" Margin="0,0,12,0" />
+                            <TextBlock x:Name="ActivePeopleText" Foreground="#7EE787" FontWeight="Bold" Text="Aktif Kişi: 0" Margin="0,0,16,0" />
                             <TextBlock x:Name="InactivePeopleText" Foreground="#FCA5A5" FontWeight="Bold" Text="Pasif Kişi: 0" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <!-- Toplam Tahsilat / Toplam Kalan (USD) kutucuğu -->
-                <Border x:Name="TotalsPanel" Background="#1E293B" CornerRadius="6" Padding="8" Margin="12,0,0,0" VerticalAlignment="Center" Width="356">
-                    <StackPanel Orientation="Vertical" Margin="0,0,-8,0">
+                <!-- Sağ: Toplam tahsilat / kalan -->
+                <Border Grid.Column="2" x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="12" Margin="18,0,0,0" VerticalAlignment="Center" Width="320">
+                    <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <TextBlock Text="Toplam Tahsilat:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock x:Name="TotalCollectedText" Text="USD -" Foreground="#7EE787" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,6,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
                             <TextBlock Text="Toplam Kalan:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock x:Name="TotalRemainingText" Text="USD -" Foreground="#FCA5A5" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
-
-
                     </StackPanel>
                 </Border>
-            </StackPanel>
+            </Grid>
 
             <!-- Sağ üst: Saat ile aynı hizada kurlar olacak şekilde iki sütunlu düzen -->
             <Grid Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,0,0">
@@ -64,51 +67,6 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Kurlar paneli (orta sütun) -->
-                <Border x:Name="ExchangeRatesPanel" Grid.Column="1" Background="#1E293B" CornerRadius="8" Padding="8" Margin="8,0,12,0" Width="320" VerticalAlignment="Center">
-                    <StackPanel>
-                        <TextBlock Text="Merkez Bankası Kurları" Foreground="#CBD5E1" FontWeight="Bold" FontSize="13" HorizontalAlignment="Left" Margin="0,0,0,6" />
-
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Dolar (USD)" Foreground="#CBD5E1" />
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,0,4,0" />
-                            <TextBlock Grid.Row="0" Grid.Column="2" x:Name="UsdBuyText" Text="-" Foreground="#7EE787" />
-                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,0,4,0" />
-                            <TextBlock Grid.Row="0" Grid.Column="4" x:Name="UsdSellText" Text="-" Foreground="#FCA5A5" />
-
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Euro (EUR)" Foreground="#CBD5E1" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" x:Name="EurBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="4" x:Name="EurSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
-
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="İng. Sterlini (GBP)" Foreground="#CBD5E1" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="2" x:Name="GbpBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="4" x:Name="GbpSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
-
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Suudi Riyali (SAR)" Foreground="#CBD5E1" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="Alış:" Foreground="#94A3B8" Margin="12,6,4,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="2" x:Name="SarBuyText" Text="-" Foreground="#7EE787" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="3" Text="Satış:" Foreground="#94A3B8" Margin="12,6,4,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="4" x:Name="SarSellText" Text="-" Foreground="#FCA5A5" Margin="0,6,0,0" />
-                        </Grid>
-                    </StackPanel>
-                </Border>
 
                 <!-- Bildirim ikonu (şimdilik sadece görüntü) -->
                 <Button x:Name="NotificationsButton" Grid.Column="0" Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="6" ToolTip="Bildirimler">
@@ -123,53 +81,22 @@
                     </Viewbox>
                 </Button>
 
-                <!-- Analog saat ve tarih (sağ sütun) -->
+                <!-- Dijital saat ve tarih (sağ sütun) -->
                 <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Grid Width="110" Height="110" HorizontalAlignment="Right" Margin="0,0,0,6">
-                        <Ellipse Stroke="#94A3B8" StrokeThickness="1.5" Fill="Transparent">
-                            <Ellipse.Effect>
-                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
-                            </Ellipse.Effect>
-                        </Ellipse>
-
-                        <!-- Saat işaretleri: kod-behind tarafından oluşturulacak 60 işaret -->
-                        <Canvas x:Name="MarkersCanvas" Width="110" Height="110" />
-
-                        <!-- Saat kolları: RenderTransformOrigin merkezde -->
-                        <Line x:Name="HourHand" X1="55" Y1="55" X2="55" Y2="36" Stroke="White" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
-                            <Line.RenderTransform>
-                                <RotateTransform x:Name="HourRotate" Angle="0" />
-                            </Line.RenderTransform>
-                            <Line.Effect>
-                                <!-- Hafif parlak glow efekti -->
-                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="10" ShadowDepth="0" Opacity="0.85" />
-                            </Line.Effect>
-                        </Line>
-
-                        <Line x:Name="MinuteHand" X1="55" Y1="55" X2="55" Y2="18" Stroke="White" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
-                            <Line.RenderTransform>
-                                <RotateTransform x:Name="MinuteRotate" Angle="0" />
-                            </Line.RenderTransform>
-                            <Line.Effect>
-                                <DropShadowEffect Color="#FFFFFFFF" BlurRadius="8" ShadowDepth="0" Opacity="0.65" />
-                            </Line.Effect>
-                        </Line>
-
-                        <Line x:Name="SecondHand" X1="55" Y1="60" X2="55" Y2="12" Stroke="#FF8B5CF6" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
-                            <Line.RenderTransform>
-                                <RotateTransform x:Name="SecondRotate" Angle="0" />
-                            </Line.RenderTransform>
-                        </Line>
-
-                        <!-- Merkez düğme -->
-                        <Ellipse Width="6" Height="6" Fill="#FF8B5CF6" Canvas.Left="52" Canvas.Top="52" />
-                    </Grid>
-
-                    <TextBlock x:Name="DateText"
-                               Text="Gün, dd MMMM yyyy"
-                               FontSize="13"
-                               Foreground="#CBD5E1"
-                               HorizontalAlignment="Right" />
+                    <Border Background="#1E293B" CornerRadius="8" Padding="8" Width="160" HorizontalAlignment="Right">
+                        <StackPanel>
+                            <TextBlock x:Name="DigitalTimeText" Text="00:00:00" FontSize="22" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Right">
+                                <TextBlock.Effect>
+                                    <DropShadowEffect Color="#8B5CF6" BlurRadius="6" ShadowDepth="0" Opacity="0.25" />
+                                </TextBlock.Effect>
+                            </TextBlock>
+                            <TextBlock x:Name="DateText"
+                                       Text="Gün, dd MMMM yyyy"
+                                       FontSize="12"
+                                       Foreground="#94A3B8"
+                                       HorizontalAlignment="Right" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Grid>
         </Grid>
