@@ -309,16 +309,7 @@
                                 <TextBlock Text="Odalama" Foreground="#E6EEF8" FontWeight="Bold" FontSize="14" />
                                 <TextBlock x:Name="RoomAllocStatusText" Text="(Özet)" Foreground="#94A3B8" Margin="8,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                <StackPanel Width="80">
-                                    <TextBlock Text="Rezerv" Foreground="#CBD5E1" FontSize="12" />
-                                    <TextBlock x:Name="RoomAllocReservedText" Text="0" Foreground="#7EE787" FontWeight="Bold" FontSize="16" />
-                                </StackPanel>
-                                <StackPanel Width="80" Margin="12,0,0,0">
-                                    <TextBlock Text="Boş" Foreground="#CBD5E1" FontSize="12" />
-                                    <TextBlock x:Name="RoomAllocAvailableText" Text="0" Foreground="#F59E0B" FontWeight="Bold" FontSize="16" />
-                                </StackPanel>
-                            </StackPanel>
+                            <!-- Rezerv ve Boş bölümleri kaldırıldı: bu özet alan yalnızca gerekli bilgiler gösterir -->
                             <TextBlock x:Name="RoomAllocHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="11" Margin="0,10,0,0" />
                         </StackPanel>
                     </Border>
