@@ -478,18 +478,74 @@ namespace TurizmOperasyonSistemi.Views
                         {
                             foreach (var r in recs.OrderByDescending(x => x.Timestamp))
                             {
-                                string text = r.Key ?? "";
                                 int notifId = 0;
+                                string messageText = r.Key ?? string.Empty; // primary message shown as title
+                                string poolDescFromPayloadLocal = string.Empty; // readable pool description
+                                string timestampText = string.Empty;
                                 try
                                 {
                                     var payload = r.Payload;
-                                    if (payload == null) { text = r.Key ?? ""; }
+                                    if (payload == null)
+                                    {
+                                        messageText = r.Key ?? string.Empty;
+                                    }
                                     else if (payload is TurizmOperasyonSistemi.Models.Notification dbn)
                                     {
                                         notifId = dbn.Id;
-                                        text = !string.IsNullOrWhiteSpace(dbn.Message) ? dbn.Message : dbn.PayloadJson ?? r.Key ?? "";
+                                        // prefer Message field from DB row
+                                        if (!string.IsNullOrWhiteSpace(dbn.Message)) messageText = dbn.Message;
+
+                                        // try to parse PayloadJson for richer fields
+                                        if (!string.IsNullOrWhiteSpace(dbn.PayloadJson))
+                                        {
+                                            try
+                                            {
+                                                using var doc = System.Text.Json.JsonDocument.Parse(dbn.PayloadJson);
+                                                if (string.IsNullOrWhiteSpace(messageText) && doc.RootElement.TryGetProperty("Message", out var msgEl) && msgEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                                {
+                                                    messageText = msgEl.GetString() ?? messageText;
+                                                }
+
+                                                // build pool description if possible
+                                                string hotel = null, tour = null, period = null, group = null, days = null, pool = null;
+                                                if (doc.RootElement.TryGetProperty("Pool", out var poolEl) && poolEl.ValueKind == System.Text.Json.JsonValueKind.String) pool = poolEl.GetString();
+                                                if (doc.RootElement.TryGetProperty("Hotel", out var hotelEl) && hotelEl.ValueKind == System.Text.Json.JsonValueKind.String) hotel = hotelEl.GetString();
+                                                if (doc.RootElement.TryGetProperty("Tour", out var tourEl) && tourEl.ValueKind == System.Text.Json.JsonValueKind.String) tour = tourEl.GetString();
+                                                if (doc.RootElement.TryGetProperty("Period", out var periodEl) && periodEl.ValueKind == System.Text.Json.JsonValueKind.String) period = periodEl.GetString();
+                                                if (doc.RootElement.TryGetProperty("Group", out var groupEl) && groupEl.ValueKind == System.Text.Json.JsonValueKind.String) group = groupEl.GetString();
+                                                if (doc.RootElement.TryGetProperty("Days", out var daysEl) && daysEl.ValueKind == System.Text.Json.JsonValueKind.String) days = daysEl.GetString();
+
+                                                if (!string.IsNullOrWhiteSpace(pool)) poolDescFromPayloadLocal = pool;
+                                                else
+                                                {
+                                                    var parts = new List<string>();
+                                                    if (!string.IsNullOrWhiteSpace(tour)) parts.Add(tour);
+                                                    if (!string.IsNullOrWhiteSpace(period)) parts.Add(period);
+                                                    if (!string.IsNullOrWhiteSpace(group)) parts.Add(group);
+                                                    if (!string.IsNullOrWhiteSpace(days)) parts.Add(days.EndsWith(" gün", StringComparison.OrdinalIgnoreCase) ? days : days + " gün");
+                                                    if (!string.IsNullOrWhiteSpace(hotel)) parts.Add("Otel: " + hotel);
+                                                    if (parts.Count > 0) poolDescFromPayloadLocal = string.Join(" + ", parts);
+                                                }
+
+                                                if (doc.RootElement.TryGetProperty("Timestamp", out var tsEl))
+                                                {
+                                                    try
+                                                    {
+                                                        var tss = tsEl.GetString();
+                                                        if (!string.IsNullOrWhiteSpace(tss) && DateTime.TryParse(tss, out var dt)) timestampText = dt.ToLocalTime().ToString("g");
+                                                    }
+                                                    catch { }
+                                                }
+                                            }
+                                            catch { }
+                                        }
+                                        // fallback timestamp from CreatedAt
+                                        if (string.IsNullOrWhiteSpace(timestampText) && dbn.CreatedAt != default) timestampText = dbn.CreatedAt.ToLocalTime().ToString("g");
                                     }
-                                    else if (payload is string s) text = s;
+                                    else if (payload is string s)
+                                    {
+                                        messageText = s;
+                                    }
                                     else
                                     {
                                         var pt = payload.GetType();
@@ -497,7 +553,7 @@ namespace TurizmOperasyonSistemi.Views
                                         if (msgProp != null)
                                         {
                                             var v = msgProp.GetValue(payload);
-                                            if (v != null) text = v.ToString();
+                                            if (v != null) messageText = v.ToString();
                                         }
                                         else
                                         {
@@ -505,11 +561,11 @@ namespace TurizmOperasyonSistemi.Views
                                             if (nameProp != null)
                                             {
                                                 var v = nameProp.GetValue(payload);
-                                                if (v != null) text = v.ToString();
+                                                if (v != null) messageText = v.ToString();
                                             }
                                             else
                                             {
-                                                text = payload.ToString();
+                                                messageText = payload.ToString();
                                             }
                                         }
                                     }
@@ -563,11 +619,15 @@ namespace TurizmOperasyonSistemi.Views
 
                                 // text stack
                                 var textStack = new StackPanel { Orientation = Orientation.Vertical };
-                                var titleTb = new TextBlock { Text = text, FontWeight = isRead ? FontWeights.Normal : FontWeights.SemiBold, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRead ? "#94A3B8" : "#E6EEF8")), TextWrapping = TextWrapping.Wrap };
+                                // Prepare vars for pool description and titles
+                                string poolDescFromPayload = string.Empty;
+                                // messageText and timestampText will be filled when parsing payload above
+                                // Use messageText (parsed above) as the primary title
+                                var titleTb = new TextBlock { Text = messageText, FontWeight = isRead ? FontWeights.Normal : FontWeights.SemiBold, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRead ? "#94A3B8" : "#E6EEF8")), TextWrapping = TextWrapping.Wrap };
                                 titleTb.Margin = new Thickness(2, 0, 0, 2);
                                 textStack.Children.Add(titleTb);
 
-                                // subtitle: try to show person name (if available) and timestamp
+                                // subtitle: try to show person name (if available), pool details and timestamp
                                 string subtitle = string.Empty;
                                 try
                                 {
@@ -588,6 +648,30 @@ namespace TurizmOperasyonSistemi.Views
                                                 {
                                                     subtitle = msgEl.GetString();
                                                 }
+                                                // try to build pool description from payload fields
+                                                try
+                                                {
+                                                    string hotel = null, tour = null, period = null, group = null, days = null, pool = null;
+                                                    if (doc.RootElement.TryGetProperty("Pool", out var poolEl) && poolEl.ValueKind == System.Text.Json.JsonValueKind.String) pool = poolEl.GetString();
+                                                    if (doc.RootElement.TryGetProperty("Hotel", out var hotelEl) && hotelEl.ValueKind == System.Text.Json.JsonValueKind.String) hotel = hotelEl.GetString();
+                                                    if (doc.RootElement.TryGetProperty("Tour", out var tourEl) && tourEl.ValueKind == System.Text.Json.JsonValueKind.String) tour = tourEl.GetString();
+                                                    if (doc.RootElement.TryGetProperty("Period", out var periodEl) && periodEl.ValueKind == System.Text.Json.JsonValueKind.String) period = periodEl.GetString();
+                                                    if (doc.RootElement.TryGetProperty("Group", out var groupEl) && groupEl.ValueKind == System.Text.Json.JsonValueKind.String) group = groupEl.GetString();
+                                                    if (doc.RootElement.TryGetProperty("Days", out var daysEl) && daysEl.ValueKind == System.Text.Json.JsonValueKind.String) days = daysEl.GetString();
+
+                                                    if (!string.IsNullOrWhiteSpace(pool)) poolDescFromPayload = pool;
+                                                    else
+                                                    {
+                                                        var parts = new List<string>();
+                                                        if (!string.IsNullOrWhiteSpace(tour)) parts.Add(tour);
+                                                        if (!string.IsNullOrWhiteSpace(period)) parts.Add(period);
+                                                        if (!string.IsNullOrWhiteSpace(group)) parts.Add(group);
+                                                        if (!string.IsNullOrWhiteSpace(days)) parts.Add((days.EndsWith(" gün", StringComparison.OrdinalIgnoreCase) ? days : days + " gün"));
+                                                        if (!string.IsNullOrWhiteSpace(hotel)) parts.Add("Otel: " + hotel);
+                                                        if (parts.Count > 0) poolDescFromPayload = string.Join(" + ", parts);
+                                                    }
+                                                }
+                                                catch { }
                                                 if (doc.RootElement.TryGetProperty("Timestamp", out var tsEl))
                                                 {
                                                     try
@@ -609,7 +693,19 @@ namespace TurizmOperasyonSistemi.Views
                                 }
                                 catch { }
 
-                                var subTb = new TextBlock { Text = subtitle, FontSize = 12, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRead ? "#6B7280" : "#94A3B8")), TextWrapping = TextWrapping.Wrap };
+                                // Build subtitle: if we have a pool description show it first (so user sees Tur/Dönem/Grup/Gün/Otel), then timestamp; otherwise fall back to parsed subtitle
+                                string finalSubtitle;
+                                if (!string.IsNullOrWhiteSpace(poolDescFromPayload))
+                                {
+                                    finalSubtitle = poolDescFromPayload;
+                                    if (!string.IsNullOrWhiteSpace(timestampText)) finalSubtitle += " — " + timestampText;
+                                }
+                                else
+                                {
+                                    finalSubtitle = subtitle;
+                                }
+
+                                var subTb = new TextBlock { Text = finalSubtitle, FontSize = 12, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRead ? "#6B7280" : "#94A3B8")), TextWrapping = TextWrapping.Wrap };
                                 subTb.Margin = new Thickness(2, 0, 0, 0);
                                 textStack.Children.Add(subTb);
 

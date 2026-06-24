@@ -146,9 +146,14 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                if (key != "RegistrationSaved") return;
+                // Handle registration changes (save / activation)
+                if (!string.Equals(key, "RegistrationSaved", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(key, "registration.activated", StringComparison.OrdinalIgnoreCase))
+                    return;
                 int? personId = null;
                 bool addToPool = true;
+                string regTour = null, regPeriod = null, regGroup = null, regDays = null;
+                int? regId = null;
 
                 // payload can be int or an object { PersonId = int, AddToPool = bool }
                 if (payload is int pid)
@@ -175,6 +180,27 @@ namespace TurizmOperasyonSistemi.Views
                             var av = addProp.GetValue(payload);
                             if (av is bool b) addToPool = b;
                         }
+
+                        // Try to read registration metadata if present
+                        try
+                        {
+                            var regIdProp = t.GetProperty("RegistrationId");
+                            if (regIdProp != null)
+                            {
+                                var rv = regIdProp.GetValue(payload);
+                                if (rv is int ri) regId = ri;
+                                else if (rv is long rl) regId = (int)rl;
+                            }
+                            var tourProp = t.GetProperty("Tour");
+                            if (tourProp != null) regTour = tourProp.GetValue(payload)?.ToString();
+                            var periodProp = t.GetProperty("Period");
+                            if (periodProp != null) regPeriod = periodProp.GetValue(payload)?.ToString();
+                            var groupProp = t.GetProperty("Group");
+                            if (groupProp != null) regGroup = groupProp.GetValue(payload)?.ToString();
+                            var daysProp = t.GetProperty("Days");
+                            if (daysProp != null) regDays = daysProp.GetValue(payload)?.ToString();
+                        }
+                        catch { }
                     }
                     catch
                     {
@@ -211,6 +237,90 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         PassengerPool.Remove(poolItem);
                         changed = true;
+                    }
+                }
+                // If activation requested that this person be added to the pool and they are not currently
+                // in any room (i.e. changed==false), ensure they are added to the passenger pool,
+                // inform the odalama staff, and publish a persistent notification so HomeView's bell
+                // will show the event in the recent list.
+                if (addToPool)
+                {
+                    try
+                    {
+                        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            try
+                            {
+                                // If the person is already in the pool we skip DB lookup.
+                                if (PassengerPool.Any(p => p.PersonId == personId.Value))
+                                {
+                                    return;
+                                }
+
+                                // Attempt to resolve full name from database; fall back to a placeholder
+                                string fullName = $"Yolcu #{personId.Value}";
+                                try
+                                {
+                                    using (var db = new AppDbContext())
+                                    {
+                                        var person = db.Persons.AsNoTracking().FirstOrDefault(x => x.Id == personId.Value);
+                                        if (person != null)
+                                        {
+                                            fullName = $"{person.FirstName} {person.LastName}";
+                                        }
+                                    }
+                                }
+                                catch
+                                {
+                                    // ignore DB lookup failures and use placeholder name
+                                }
+
+                                var passenger = new PassengerUiModel
+                                {
+                                    PersonId = personId.Value,
+                                    FullName = fullName,
+                                    RoomType = "Belirtilmemiş"
+                                };
+
+                                        AddPassengerToPoolIfMissing(passenger);
+                                        RefreshPassengerCountLabel();
+                                        try { System.Diagnostics.Debug.WriteLine($"HotelAllocation: added PersonId={personId.Value} to pool due to activation"); } catch { }
+
+                                        // Build pool description: prefer currently selected hotel in UI; otherwise use registration metadata if present
+                                        string selectedHotel = null;
+                                        try { selectedHotel = HotelSelectComboBox?.SelectedItem?.ToString(); } catch { selectedHotel = null; }
+
+                                        string poolDesc = string.Empty;
+                                        if (!string.IsNullOrWhiteSpace(selectedHotel))
+                                        {
+                                            poolDesc = $"Otel: {selectedHotel}";
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(regTour) || !string.IsNullOrWhiteSpace(regPeriod) || !string.IsNullOrWhiteSpace(regGroup) || !string.IsNullOrWhiteSpace(regDays))
+                                        {
+                                            poolDesc = $"Tur: {regTour ?? "-"} | Dönem: {regPeriod ?? "-"} | Grup: {regGroup ?? "-"} | Gün: {regDays ?? "-"}";
+                                        }
+                                        else
+                                        {
+                                            poolDesc = "Genel odalama havuzu";
+                                        }
+
+                                        // Show a user-visible notification for odalama staff including pool description
+                                        try { MessageBox.Show($"{fullName} kişisi {poolDesc} için odalama havuzuna eklendi. (Odalama bekleniyor.)", "Odalama Havuzu", MessageBoxButton.OK, MessageBoxImage.Information); } catch { }
+
+                                        // Also publish a system-wide notification so the main notification bell (HomeView)
+                                        // will receive it and increment the badge. Persist so it appears in recent list.
+                                        try
+                                        {
+                                            NotificationCenter.Publish("allocation.waiting", new { PersonId = personId.Value, PersonName = fullName, Hotel = selectedHotel, Tour = regTour, Period = regPeriod, Group = regGroup, Days = regDays, Message = fullName + " kişisi odalama havuzuna eklendi. (Odalama bekleniyor.)", Pool = poolDesc, Timestamp = DateTime.UtcNow }, persistToDb: true);
+                                        }
+                                        catch { }
+                            }
+                            catch { }
+                        }));
+                    }
+                    catch
+                    {
+                        // ignore dispatcher failures
                     }
                 }
 
