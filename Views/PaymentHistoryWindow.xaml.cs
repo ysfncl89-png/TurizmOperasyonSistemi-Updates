@@ -360,8 +360,27 @@ namespace TurizmOperasyonSistemi.Views
                         db.SaveChanges();
                     }
 
-                    // publish notification so ledger views refresh
-                    TurizmOperasyonSistemi.Services.NotificationCenter.Publish("payment.updated", regId);
+                    // publish notification so ledger views refresh and user-visible payment deletion notice
+                    try
+                    {
+                        var person = db.Registrations.Include(r => r.Person).FirstOrDefault(r => r.Id == regId)?.Person;
+                        var personName = person != null ? (person.FirstName + " " + person.LastName).Trim() : "(bilinmiyor)";
+                        var tc = person?.TcKimlikNo ?? string.Empty;
+                        var notice = new
+                        {
+                            RegistrationId = regId,
+                            PersonId = person?.Id ?? 0,
+                            PersonName = personName,
+                            Tc = tc,
+                            Message = $"{personName} (TC: {tc}) için bir ödeme kaydı silindi.",
+                            Timestamp = DateTime.UtcNow
+                        };
+                        TurizmOperasyonSistemi.Services.NotificationCenter.Publish("payment.updated", notice, persistToDb: true);
+                    }
+                    catch
+                    {
+                        TurizmOperasyonSistemi.Services.NotificationCenter.Publish("payment.updated", regId);
+                    }
                 }
 
                 // reload list

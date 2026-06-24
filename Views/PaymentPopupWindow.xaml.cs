@@ -4,6 +4,7 @@ using System.Windows;
 using Microsoft.Win32;
 using System.Windows.Controls;
 using TurizmOperasyonSistemi.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -201,10 +202,37 @@ namespace TurizmOperasyonSistemi.Views
                     // Allow RemainingDebt to go negative if overpayment occurs
                     reg.RemainingDebt = reg.TotalPrice - reg.PaidAmount;
                     db.SaveChanges();
-                }
 
-                // Bildirim gönder: ödeme güncellendi
-                TurizmOperasyonSistemi.Services.NotificationCenter.Publish("payment.updated", _registrationId);
+                    // Prepare notification payload with payment details
+                    try
+                    {
+                        // reload related person for details
+                        var regWithPerson = db.Registrations.Include(r => r.Person).FirstOrDefault(r => r.Id == _registrationId);
+                        var personName = regWithPerson?.Person != null ? (regWithPerson.Person.FirstName + " " + regWithPerson.Person.LastName).Trim() : "(bilinmiyor)";
+                        var tc = regWithPerson?.Person?.TcKimlikNo ?? string.Empty;
+                        var isRefundNotice = (payment.AmountInRegistrationCurrency < 0);
+                        var paymentNotice = new
+                        {
+                            RegistrationId = _registrationId,
+                            PersonId = regWithPerson?.Person?.Id ?? 0,
+                            PersonName = personName,
+                            Tc = tc,
+                            Amount = payment.OriginalAmount,
+                            Currency = payment.OriginalCurrency,
+                            AmountInRegistrationCurrency = payment.AmountInRegistrationCurrency,
+                            IsRefund = isRefundNotice,
+                            UploadedDocument = !string.IsNullOrWhiteSpace(payment.UploadedDocumentPath),
+                            PaymentMethod = payment.PaymentMethod,
+                            Message = isRefundNotice
+                                ? $"{personName} (TC: {tc}) için {Math.Abs(payment.AmountInRegistrationCurrency):N2} {regWithPerson?.Currency ?? ""} iade (ödeme çıkışı) kaydedildi. Dekont yüklendi: {(!string.IsNullOrWhiteSpace(payment.UploadedDocumentPath) ? "Evet" : "Hayır")}" 
+                                : $"{personName} (TC: {tc}) için +{Math.Abs(payment.AmountInRegistrationCurrency):N2} {regWithPerson?.Currency ?? ""} ödeme kaydı yapıldı. Dekont yüklendi: {(!string.IsNullOrWhiteSpace(payment.UploadedDocumentPath) ? "Evet" : "Hayır")}",
+                            Timestamp = DateTime.UtcNow
+                        };
+
+                        TurizmOperasyonSistemi.Services.NotificationCenter.Publish("payment.updated", paymentNotice, persistToDb: true);
+                    }
+                    catch { }
+                }
 
                 this.DialogResult = true;
                 this.Close();
