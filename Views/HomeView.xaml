@@ -133,10 +133,10 @@
 
                     <!-- Bildirim listesi popup'ı -->
                     <Popup x:Name="NotificationsPopup" PlacementTarget="{Binding ElementName=NotificationsButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-                        <!-- Use bell icon color for popup background so it matches the notifications button -->
-                        <Border Background="#F6C85F" CornerRadius="8" BorderBrush="#172433" BorderThickness="1" Width="360" MaxHeight="320" Padding="8">
+                        <!-- Use requested color for popup background -->
+                        <Border Background="#FF4A7B8B" CornerRadius="8" BorderBrush="#172433" BorderThickness="1" Width="360" MaxHeight="320" Padding="8">
                             <StackPanel>
-                                <TextBlock Text="Bildirimler" FontWeight="Bold" Foreground="#0B1220" Margin="6" />
+                                <TextBlock Text="Bildirimler" FontWeight="Bold" Foreground="#E6EEF8" Margin="6" />
                                 <ScrollViewer Height="220" VerticalScrollBarVisibility="Auto">
                                     <StackPanel x:Name="NotificationsPopupStack" />
                                 </ScrollViewer>
