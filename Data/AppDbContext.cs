@@ -18,10 +18,20 @@ namespace TurizmOperasyonSistemi.Data
         public DbSet<RoomAllocation> RoomAllocations { get; set; }
         public DbSet<RoomOccupant> RoomOccupants { get; set; }
         public DbSet<Models.RoomAllocationHistory> RoomAllocationHistories { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite(@"Data Source=C:\TurizmDB\turizm.db");
+            // Eski database path'ini kullan (veri kaybetmemek için)
+            // C:\TurizmDB\turizm.db dizini yoksa oluştur
+            string dbDirectory = @"C:\TurizmDB";
+            if (!System.IO.Directory.Exists(dbDirectory))
+            {
+                System.IO.Directory.CreateDirectory(dbDirectory);
+            }
+
+            string dbPath = System.IO.Path.Combine(dbDirectory, "turizm.db");
+            optionsBuilder.UseSqlite($@"Data Source={dbPath}");
         }
 
         public void EnsureRoomAllocationHistoryTableExists()
@@ -162,6 +172,38 @@ namespace TurizmOperasyonSistemi.Data
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"EnsureNotificationsTableExists hata: {ex.Message}");
+            }
+        }
+
+        public void EnsureUsersTableExists()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"CREATE TABLE IF NOT EXISTS Users (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Username TEXT NOT NULL UNIQUE,
+                        PasswordHash TEXT NOT NULL,
+                        CreatedAt TEXT NOT NULL
+                    );";
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Create unique index for Username if not exists
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_Username ON Users(Username);";
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsureUsersTableExists hata: {ex.Message}");
             }
         }
 

@@ -1,0 +1,160 @@
+<Window x:Class="TurizmOperasyonSistemi.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Turizm Operasyon Sistemi - Giriş" 
+        Height="450" Width="500"
+        WindowStartupLocation="CenterScreen"
+        Background="#1F1F1F"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="350">
+            <!-- Logo/Title -->
+            <TextBlock Text="Turizm Operasyon Sistemi" 
+                       FontSize="28" 
+                       FontWeight="Bold" 
+                       Foreground="#FF8B5CF6"
+                       TextAlignment="Center"
+                       Margin="0,0,0,10"/>
+
+            <TextBlock Text="Giriş Yap" 
+                       FontSize="16" 
+                       Foreground="#CCCCCC"
+                       TextAlignment="Center"
+                       Margin="0,0,0,30"/>
+
+            <!-- Login Mode Content -->
+            <StackPanel x:Name="LoginPanel">
+                <!-- Username -->
+                <TextBlock Text="Kullanıcı Adı" 
+                           Foreground="#CCCCCC" 
+                           FontSize="12"
+                           Margin="0,0,0,5"/>
+                <TextBox x:Name="UsernameTextBox" 
+                         Padding="10"
+                         Height="40"
+                         FontSize="14"
+                         Background="#2D2D2D"
+                         Foreground="#FFFFFF"
+                         BorderThickness="1"
+                         BorderBrush="#444444"
+                         Margin="0,0,0,15"/>
+
+                <!-- Password -->
+                <TextBlock Text="Şifre" 
+                           Foreground="#CCCCCC" 
+                           FontSize="12"
+                           Margin="0,0,0,5"/>
+                <PasswordBox x:Name="PasswordBox" 
+                             Padding="10"
+                             Height="40"
+                             FontSize="14"
+                             Background="#2D2D2D"
+                             Foreground="#FFFFFF"
+                             BorderThickness="1"
+                             BorderBrush="#444444"
+                             Margin="0,0,0,20"/>
+
+                <!-- Error Message -->
+                <TextBlock x:Name="ErrorMessage" 
+                           Foreground="#FF4444" 
+                           TextWrapping="Wrap"
+                           FontSize="11"
+                           Margin="0,0,0,15"
+                           Visibility="Collapsed"/>
+
+                <!-- Login Button -->
+                <Button Content="Giriş Yap"
+                        Click="LoginButton_Click"
+                        Padding="10"
+                        Height="40"
+                        FontSize="14"
+                        Background="#FF8B5CF6"
+                        Foreground="#FFFFFF"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Margin="0,0,0,10"/>
+
+                <!-- Register Link -->
+                <TextBlock TextAlignment="Center" Margin="0,0,0,0">
+                    <Run Text="Hesabınız yok mu? " Foreground="#CCCCCC"/>
+                    <Hyperlink Click="RegisterLink_Click" Foreground="#FF8B5CF6">Kaydol</Hyperlink>
+                </TextBlock>
+            </StackPanel>
+
+            <!-- Register Mode Content -->
+            <StackPanel x:Name="RegisterPanel" Visibility="Collapsed">
+                <!-- New Username -->
+                <TextBlock Text="Kullanıcı Adı" 
+                           Foreground="#CCCCCC" 
+                           FontSize="12"
+                           Margin="0,0,0,5"/>
+                <TextBox x:Name="NewUsernameTextBox" 
+                         Padding="10"
+                         Height="40"
+                         FontSize="14"
+                         Background="#2D2D2D"
+                         Foreground="#FFFFFF"
+                         BorderThickness="1"
+                         BorderBrush="#444444"
+                         Margin="0,0,0,15"/>
+
+                <!-- New Password -->
+                <TextBlock Text="Şifre" 
+                           Foreground="#CCCCCC" 
+                           FontSize="12"
+                           Margin="0,0,0,5"/>
+                <PasswordBox x:Name="NewPasswordBox" 
+                             Padding="10"
+                             Height="40"
+                             FontSize="14"
+                             Background="#2D2D2D"
+                             Foreground="#FFFFFF"
+                             BorderThickness="1"
+                             BorderBrush="#444444"
+                             Margin="0,0,0,15"/>
+
+                <!-- Confirm Password -->
+                <TextBlock Text="Şifre Tekrar" 
+                           Foreground="#CCCCCC" 
+                           FontSize="12"
+                           Margin="0,0,0,5"/>
+                <PasswordBox x:Name="ConfirmPasswordBox" 
+                             Padding="10"
+                             Height="40"
+                             FontSize="14"
+                             Background="#2D2D2D"
+                             Foreground="#FFFFFF"
+                             BorderThickness="1"
+                             BorderBrush="#444444"
+                             Margin="0,0,0,20"/>
+
+                <!-- Error Message -->
+                <TextBlock x:Name="RegisterErrorMessage" 
+                           Foreground="#FF4444" 
+                           TextWrapping="Wrap"
+                           FontSize="11"
+                           Margin="0,0,0,15"
+                           Visibility="Collapsed"/>
+
+                <!-- Register Button -->
+                <Button Content="Kaydol"
+                        Click="RegisterButton_Click"
+                        Padding="10"
+                        Height="40"
+                        FontSize="14"
+                        Background="#FF8B5CF6"
+                        Foreground="#FFFFFF"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Margin="0,0,0,10"/>
+
+                <!-- Back to Login Link -->
+                <TextBlock TextAlignment="Center" Margin="0,0,0,0">
+                    <Run Text="Zaten hesabınız var mı? " Foreground="#CCCCCC"/>
+                    <Hyperlink Click="BackToLoginLink_Click" Foreground="#FF8B5CF6">Giriş Yap</Hyperlink>
+                </TextBlock>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

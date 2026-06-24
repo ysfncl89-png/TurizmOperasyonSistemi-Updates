@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 
@@ -25,25 +26,31 @@ namespace TurizmOperasyonSistemi.Views
         public SettingsView()
         {
             InitializeComponent();
-
-            // Kartları alfabetik sıraya göre düzenle
             SortSettingCardsAlphabetically();
-
-            // SAYFA AÇILDIĞINDA: SQLite'taki verileri okuyup kartlardaki listelere basıyoruz!
             LoadExistingSettingsIntoUi();
         }
 
-        // SettingsWrapPanel içindeki butonları Türkçe kültürüne göre alfabetik sıraya göre dizer
         private void SortSettingCardsAlphabetically()
         {
             try
             {
+                // EnableUserLoginButton'u kaydet
+                var enableLoginBtn = SettingsWrapPanel.Children.OfType<Button>()
+                    .FirstOrDefault(b => b.Name == "EnableUserLoginButton");
+
                 var comparer = StringComparer.Create(new CultureInfo("tr-TR"), false);
-                var buttons = SettingsWrapPanel.Children.OfType<Button>().ToList();
+                var buttons = SettingsWrapPanel.Children.OfType<Button>()
+                    .Where(b => b.Name != "EnableUserLoginButton") // Kullanıcı Girişi butonunu hariç tut
+                    .ToList();
                 var sorted = buttons.OrderBy(b => (b.Content ?? string.Empty).ToString(), comparer).ToList();
+
                 SettingsWrapPanel.Children.Clear();
                 foreach (var b in sorted)
                     SettingsWrapPanel.Children.Add(b);
+
+                // Sonda EnableUserLoginButton'u ekle (sağ alt köşede kalması için)
+                if (enableLoginBtn != null)
+                    SettingsWrapPanel.Children.Add(enableLoginBtn);
             }
             catch (Exception ex)
             {
@@ -51,31 +58,13 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            string q = (SearchTextBox.Text ?? string.Empty).Trim().ToLower();
-
-            foreach (var child in SettingsWrapPanel.Children)
-            {
-                if (child is Button b)
-                {
-                    string text = (b.Content ?? string.Empty).ToString().ToLower();
-                    b.Visibility = string.IsNullOrEmpty(q) || text.Contains(q) ? Visibility.Visible : Visibility.Collapsed;
-                }
-            }
-        }
-
-        // VERİTABANINDAN VERİLERİ ÇEKİP XAML'DEKİ LİSTELERE DOLDURAN SİHİRLİ METOT
         private void LoadExistingSettingsIntoUi()
         {
             try
             {
                 using (var db = new AppDbContext())
                 {
-                    // Ensure Uyruk settings contain only the two new options (TC, Yabancı).
-                    // If legacy country list exists, replace it with the minimal two-choice set.
                     var uyrukValues = db.AppSettings.Where(x => x.Type == "Uyruk").Select(x => x.Value).ToList();
-                    // Only seed default Uyruk values when none exist. Do not replace user-added nationalities.
                     if (uyrukValues.Count == 0)
                     {
                         var desired = new[] { "TC", "Yabancı" };
@@ -93,9 +82,22 @@ namespace TurizmOperasyonSistemi.Views
                         db.SaveChanges();
                     }
 
+                    // Ensure EnableUserLogin setting exists
+                    var enableLoginSetting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                    if (enableLoginSetting == null)
+                    {
+                        db.AppSettings.Add(new AppSetting
+                        {
+                            Type = "EnableUserLogin",
+                            Value = "false",
+                            IsActive = true,
+                            SortOrder = 1
+                        });
+                        db.SaveChanges();
+                    }
+
                     var allSettings = db.AppSettings.ToList();
 
-                    // 1. Zaten Gelenler (Tur, Grup, Oda, Dönem, Gün, Otel)
                     if (FindName("TourTypeListControl") is ItemsControl tourList)
                         tourList.ItemsSource = allSettings.Where(x => x.Type == "TourType").Select(x => x.Value).ToList();
 
@@ -114,11 +116,6 @@ namespace TurizmOperasyonSistemi.Views
                     if (FindName("HotelListControl") is ItemsControl hotelList)
                         hotelList.ItemsSource = allSettings.Where(x => x.Type == "Otel Ekle").Select(x => x.Value).ToList();
 
-
-                    // 2. YENİ EKLENENLER: Vize, Kargo, Bilet, Para Birimi ve Şehir Kartları
-                    // Not: Eğer XAML tarafında bu kartların içindeki ListBox/ItemsControl isimleri farklıysa derleyici hata verir.
-                    // Tahmini standart isimlendirmeleri yazdım, hata alırsan XAML'deki x:Name değerleriyle değiştirebilirsin.
-
                     if (FindName("VisaListControl") is ItemsControl visaList)
                         visaList.ItemsSource = allSettings.Where(x => x.Type == "Vize Talebi").Select(x => x.Value).ToList();
 
@@ -128,29 +125,8 @@ namespace TurizmOperasyonSistemi.Views
                     if (FindName("CargoListControl") is ItemsControl cargoList)
                         cargoList.ItemsSource = allSettings.Where(x => x.Type == "Kargo Talebi").Select(x => x.Value).ToList();
 
-                    if (FindName("CurrencyListControl") is ItemsControl currencyList)
-                        currencyList.ItemsSource = allSettings.Where(x => x.Type == "Para Birimi").Select(x => x.Value).ToList();
-
-                    if (FindName("CityListControl") is ItemsControl cityList)
-                        cityList.ItemsSource = allSettings.Where(x => x.Type == "Katılım Yapılacak Şehir").Select(x => x.Value).ToList();
-
-                    if (FindName("TransferListControl") is ItemsControl transferList)
-                        transferList.ItemsSource = allSettings.Where(x => x.Type == "Aktarma Var mı ?").Select(x => x.Value).ToList();
-
-                    if (FindName("TransferCityListControl") is ItemsControl transferCityList)
-                        transferCityList.ItemsSource = allSettings.Where(x => x.Type == "Aktarma Şehri").Select(x => x.Value).ToList();
-
-                    if (FindName("NationalityListControl") is ItemsControl nationalityList)
-                        nationalityList.ItemsSource = allSettings.Where(x => x.Type == "Uyruk").Select(x => x.Value).ToList();
-
-                    if (FindName("VisaStatusListControl") is ItemsControl visaStatusList)
-                        visaStatusList.ItemsSource = allSettings.Where(x => x.Type == "Vize Durumu").Select(x => x.Value).ToList();
-
-                    if (FindName("PassportArrivedListControl") is ItemsControl passportList)
-                        passportList.ItemsSource = allSettings.Where(x => x.Type == "Pasaportu Geldi mi ?").Select(x => x.Value).ToList();
-
-                    if (FindName("TicketStatusListControl") is ItemsControl ticketStatusList)
-                        ticketStatusList.ItemsSource = allSettings.Where(x => x.Type == "Bilet Durumu").Select(x => x.Value).ToList();
+                    // Update button appearance
+                    UpdateLoginButtonAppearance(db);
                 }
             }
             catch (Exception ex)
@@ -161,90 +137,62 @@ namespace TurizmOperasyonSistemi.Views
 
         private void SettingButton_Click(object sender, RoutedEventArgs e)
         {
-            Button button = sender as Button;
-            if (button == null) return;
-
-            string settingName = button.Content.ToString();
-            string settingType = "";
-
-            // NOKTA ATIŞI DÜZELTME: ComboBox'lar ve veritabanı şemasıyla tam eşleşen kelimeleri atıyoruz
-            switch (settingName)
+            if (sender is Button btn)
             {
-                case "Tur Türü":
-                case "TourType":
-                    settingType = "TourType";
-                    break;
-
-                case "Grup Türü":
-                case "GroupType":
-                    settingType = "GroupType";
-                    break;
-
-                case "Oda Türü":
-                case "RoomType":
-                    settingType = "RoomType";
-                    break;
-
-                case "Vize Talebi":
-                    settingType = "Vize Talebi";
-                    break;
-
-                case "Bilet Talebi":
-                    settingType = "Bilet Talebi";
-                    break;
-
-                case "Kargo Talebi":
-                    settingType = "Kargo Talebi";
-                    break;
-
-                case "Para Birimi":
-                    settingType = "Para Birimi";
-                    break;
-
-                case "Katılım Yapılacak Şehir":
-                    settingType = "Katılım Yapılacak Şehir";
-                    break;
-
-                case "Aktarma Var mı ?":
-                    settingType = "Aktarma Var mı ?";
-                    break;
-
-                case "Aktarma Şehri":
-                    settingType = "Aktarma Şehri";
-                    break;
-
-                case "Dönem":
-                    settingType = "Dönem";
-                    break;
-
-                case "Kaç Günlük Grup":
-                    settingType = "Kaç Günlük Grup";
-                    break;
-
-                default:
-                    // Eğer butonda direkt "Otel Ekle" yazıyorsa onu da yakala
-                    if (settingName.Contains("Otel")) settingType = "Otel Ekle";
-                    else settingType = settingName;
-                    break;
-            }
-
-            // Uyruk için özel isim eşlemesi
-            if (settingType == "Uyruk")
-            {
-                settingType = "Uyruk";
-            }
-
-            if (settingType == "Dönem")
-            {
-                PeriodDialog dialog = new PeriodDialog();
-                dialog.ShowDialog();
-                LoadExistingSettingsIntoUi(); // Dialog kapandığında listeyi hemen yenile!
-            }
-            else
-            {
+                string settingType = btn.Content.ToString();
                 SettingDialog dialog = new SettingDialog(settingType);
                 dialog.ShowDialog();
-                LoadExistingSettingsIntoUi(); // Dialog kapandığında listeyi hemen yenile!
+                LoadExistingSettingsIntoUi();
+            }
+        }
+
+        private void EnableUserLoginButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                    if (setting != null)
+                    {
+                        bool currentValue = setting.Value.ToString().ToLower() == "true";
+                        setting.Value = (!currentValue).ToString().ToLower();
+                        db.SaveChanges();
+
+                        string status = currentValue ? "devre dışı bırakıldı" : "etkinleştirildi";
+                        MessageBox.Show($"Kullanıcı girişi {status}.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                        UpdateLoginButtonAppearance(db);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void UpdateLoginButtonAppearance(AppDbContext db)
+        {
+            var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+            if (setting != null && FindName("EnableUserLoginButton") is Button btn)
+            {
+                bool isEnabled = setting.Value.ToString().ToLower() == "true";
+                btn.Content = isEnabled ? "✓ Kullanıcı Girişi (Aktif)" : "Kullanıcı Girişi";
+                btn.Foreground = isEnabled ? new SolidColorBrush(Color.FromRgb(0, 255, 136)) : new SolidColorBrush(Color.FromRgb(255, 255, 255));
+            }
+        }
+
+        private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox searchBox)
+            {
+                string searchText = searchBox.Text.ToLower();
+                var buttons = SettingsWrapPanel.Children.OfType<Button>().ToList();
+                foreach (var btn in buttons)
+                {
+                    btn.Visibility = btn.Content.ToString().ToLower().Contains(searchText) ? Visibility.Visible : Visibility.Collapsed;
+                }
             }
         }
     }
