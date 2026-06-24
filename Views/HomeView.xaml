@@ -22,14 +22,35 @@
             </Style>
 
             <Style x:Key="DashboardCardTitle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontSize" Value="16" />
                 <Setter Property="FontWeight" Value="Bold" />
                 <Setter Property="Foreground" Value="#E6EEF8" />
             </Style>
 
             <Style x:Key="DashboardCardSub" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="Foreground" Value="#94A3B8" />
+            </Style>
+
+            <Style x:Key="DashboardCardRowText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Foreground" Value="#CBD5E1" />
+            </Style>
+
+            <Style x:Key="DashboardCardRowNumber" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="HorizontalAlignment" Value="Right" />
+            </Style>
+
+            <!-- Card header style: subtle top band to separate header from content -->
+            <Style x:Key="CardHeaderStyle" TargetType="Border">
+                <Setter Property="Background" Value="#071426" />
+                <Setter Property="CornerRadius" Value="8,8,0,0" />
+                <Setter Property="Padding" Value="8" />
+                <Setter Property="Margin" Value="-14,-14,-14,8" />
+                <Setter Property="BorderBrush" Value="#172433" />
+                <Setter Property="BorderThickness" Value="0,0,0,1" />
             </Style>
         </Grid.Resources>
         <Grid.RowDefinitions>
@@ -60,7 +81,15 @@
 
                 <!-- Orta: Combo ve kişi sayısı (vertical) -->
                 <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
-                    <ComboBox x:Name="ActiveToursCombo" Width="420" Height="36" SelectionChanged="ActiveToursCombo_SelectionChanged"/>
+                    <Border CornerRadius="8" Background="#0F172A" Padding="4" Margin="0" BorderBrush="#8B5CF6" BorderThickness="1">
+                        <Grid>
+                            <ComboBox x:Name="ActiveToursCombo" Width="420" Height="36" SelectionChanged="ActiveToursCombo_SelectionChanged" Background="Transparent" Foreground="#E2F8FF" BorderThickness="0" />
+                        </Grid>
+                        <Border.Effect>
+                            <DropShadowEffect Color="#8B5CF6" BlurRadius="12" ShadowDepth="0" Opacity="0.12" />
+                        </Border.Effect>
+                    </Border>
+                    <TextBlock x:Name="ActiveToursInfoText" Text="Şu an seçili olan turun özet bilgilerine bakıyorsunuz." Foreground="#94A3B8" FontSize="12" Margin="6,6,0,0" Opacity="0.95" />
 
                     <!-- Kayıtlı kişi sayısı kutucuğu -->
                     <Border x:Name="ActiveTourPeopleCountBox" Background="#0B1220" CornerRadius="6" Padding="8" Margin="0,8,0,0" Width="420">
@@ -192,12 +221,18 @@
                             </Style>
                         </Border.Resources>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
-                                <TextBlock Text="🛂" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
-                                <TextBlock Text="Vize" Style="{StaticResource DashboardCardTitle}" />
-                                <TextBlock Text="  " />
-                                <TextBlock x:Name="VisaStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" />
-                            </StackPanel>
+                            <Border Style="{StaticResource CardHeaderStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="🛂" FontSize="18" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" Grid.Column="0" />
+                                    <TextBlock Text="Vize" Style="{StaticResource DashboardCardTitle}" Grid.Column="1" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="VisaStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" Grid.Column="2" />
+                                </Grid>
+                            </Border>
 
                             <StackPanel Margin="0,8,0,0" Height="267">
                                 <Border Background="#071225" CornerRadius="6" Padding="8" Margin="0,6,0,0">
@@ -206,8 +241,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Vize Alacağız" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="VisaWillGetText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Vize Alacağız" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="VisaWillGetText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -217,8 +252,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Vizeyi Kendisi Alacak" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="VisaSelfGetText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Vizeyi Kendisi Alacak" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="VisaSelfGetText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -228,8 +263,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Vize Çıktı" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="VisaIssuedText" Text="0" Foreground="#7EE787" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Vize Çıktı" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="VisaIssuedText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -239,8 +274,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Vize Çıkmadı" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="VisaNotIssuedText" Text="0" Foreground="#FCA5A5" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Vize Çıkmadı" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="VisaNotIssuedText" Text="0" Foreground="#FCA5A5" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -250,8 +285,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Vizesi Alınıyor" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="VisaInProgressText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Vizesi Alınıyor" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="VisaInProgressText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -261,8 +296,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Pasaport Bekleniyor" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="PassportPendingText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Pasaport Bekleniyor" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="PassportPendingText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -272,8 +307,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Pasaport Geldi (Evet)" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="PassportArrivedYesText" Text="0" Foreground="#7EE787" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Pasaport Geldi (Evet)" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="PassportArrivedYesText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -283,13 +318,13 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Pasaport Geldi (Hayır)" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="PassportArrivedNoText" Text="0" Foreground="#FCA5A5" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Pasaport Geldi (Hayır)" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="PassportArrivedNoText" Text="0" Foreground="#FCA5A5" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
                             </StackPanel>
 
-                            <TextBlock x:Name="VisaHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="11" Margin="0,10,0,0" />
+                            <TextBlock x:Name="VisaHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="12" Margin="0,10,0,0" />
                         </StackPanel>
                     </Border>
 
@@ -305,11 +340,18 @@
                             </Style>
                         </Border.Resources>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="✈️" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
-                                <TextBlock Text="Bilet" Style="{StaticResource DashboardCardTitle}" />
-                                <TextBlock x:Name="TicketStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" />
-                            </StackPanel>
+                            <Border Style="{StaticResource CardHeaderStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="✈️" FontSize="18" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" Grid.Column="0" />
+                                    <TextBlock Text="Bilet" Style="{StaticResource DashboardCardTitle}" Grid.Column="1" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="TicketStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" Grid.Column="2" />
+                                </Grid>
+                            </Border>
                             <StackPanel Margin="0,8,0,0">
                                 <Border Background="#071225" CornerRadius="6" Padding="8" Margin="0,6,0,0">
                                     <Grid>
@@ -317,8 +359,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Biletini Alacağız" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="TicketWillGetText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Biletini Alacağız" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="TicketWillGetText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -328,8 +370,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Bileti Kendisi Alacak" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="TicketSelfGetText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Bileti Kendisi Alacak" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="TicketSelfGetText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -339,8 +381,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Bileti Geldi" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="TicketArrivedText" Text="0" Foreground="#7EE787" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Bileti Geldi" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="TicketArrivedText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -350,8 +392,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Bileti Gelmedi" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="TicketNotArrivedText" Text="0" Foreground="#FCA5A5" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Bileti Gelmedi" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="TicketNotArrivedText" Text="0" Foreground="#FCA5A5" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -361,8 +403,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Bileti Alınıyor" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="TicketInProgressText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Bileti Alınıyor" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="TicketInProgressText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -372,12 +414,12 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Bağlantı uçuşu olan kişi" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="TicketTransferCountText" Text="0" Foreground="#7EE787" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Bağlantı uçuşu olan kişi" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="TicketTransferCountText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
-                                <TextBlock x:Name="TicketHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="11" Margin="0,10,0,0" />
+                                <TextBlock x:Name="TicketHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="12" Margin="0,10,0,0" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -394,11 +436,18 @@
                             </Style>
                         </Border.Resources>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📦" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
-                                <TextBlock Text="Kargo" Style="{StaticResource DashboardCardTitle}" />
-                                <TextBlock x:Name="CargoStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" />
-                            </StackPanel>
+                            <Border Style="{StaticResource CardHeaderStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="📦" FontSize="18" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" Grid.Column="0" />
+                                    <TextBlock Text="Kargo" Style="{StaticResource DashboardCardTitle}" Grid.Column="1" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="CargoStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" Grid.Column="2" />
+                                </Grid>
+                            </Border>
                             <StackPanel Margin="0,8,0,0">
                                 <Border Background="#071225" CornerRadius="6" Padding="8" Margin="0,6,0,0">
                                     <Grid>
@@ -406,8 +455,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Kargo Gönderilecek" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="CargoWillSendText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Kargo Gönderilecek" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="CargoWillSendText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -417,8 +466,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Kargo Gönderildi" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="CargoSentText" Text="0" Foreground="#7EE787" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Kargo Gönderildi" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="CargoSentText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -428,8 +477,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Kargo Almayacak" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="CargoNoSendText" Text="0" Foreground="#FCA5A5" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Kargo Almayacak" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="CargoNoSendText" Text="0" Foreground="#FCA5A5" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -439,8 +488,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Elden Teslim Alacak" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="CargoPickupWillText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Elden Teslim Alacak" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="CargoPickupWillText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -450,12 +499,12 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Elden Teslim Aldı" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="CargoPickedText" Text="0" Foreground="#7EE787" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Elden Teslim Aldı" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="CargoPickedText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
                             </StackPanel>
-                            <TextBlock x:Name="CargoHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="11" Margin="0,10,0,0" />
+                            <TextBlock x:Name="CargoHintText" Text="Son güncelleme: -" Foreground="#94A3B8" FontSize="12" Margin="0,10,0,0" />
                         </StackPanel>
                     </Border>
 
@@ -471,11 +520,18 @@
                             </Style>
                         </Border.Resources>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🏨" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
-                                <TextBlock Text="Odalama" Style="{StaticResource DashboardCardTitle}" />
-                                <TextBlock x:Name="RoomAllocStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" />
-                            </StackPanel>
+                            <Border Style="{StaticResource CardHeaderStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="🏨" FontSize="18" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" Grid.Column="0" />
+                                    <TextBlock Text="Odalama" Style="{StaticResource DashboardCardTitle}" Grid.Column="1" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="RoomAllocStatusText" Text="(Özet)" Style="{StaticResource DashboardCardSub}" Margin="8,0,0,0" VerticalAlignment="Center" Grid.Column="2" />
+                                </Grid>
+                            </Border>
 
                             <StackPanel Margin="0,8,0,0">
                                 <Border Background="#071225" CornerRadius="6" Padding="8" Margin="0,6,0,0">
@@ -484,8 +540,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Odalama yapıldı" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="RoomAllocReservedText" Text="0" Foreground="#7EE787" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="Odalama yapıldı" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="RoomAllocReservedText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
@@ -495,8 +551,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="odalanmamış" Foreground="#CBD5E1" />
-                                        <TextBlock x:Name="RoomAllocAvailableText" Text="0" Foreground="#F59E0B" FontWeight="Bold" Grid.Column="1" />
+                                        <TextBlock Text="odalanmamış" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
+                                        <TextBlock x:Name="RoomAllocAvailableText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
                                     </Grid>
                                 </Border>
 
