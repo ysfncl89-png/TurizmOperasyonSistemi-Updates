@@ -1180,6 +1180,8 @@ namespace TurizmOperasyonSistemi.Views
                                 .Where(o => o.PassengerId == personId)
                                 .ToList();
 
+                            var removedAllocDescriptions = new List<string>();
+
                             if (occupants.Any())
                             {
                                 var allocIds = occupants.Select(o => o.RoomAllocationId).Distinct().ToList();
@@ -1187,11 +1189,47 @@ namespace TurizmOperasyonSistemi.Views
 
                                 foreach (var aid in allocIds)
                                 {
-                                    bool hasOther = db.RoomOccupants.Any(o => o.RoomAllocationId == aid && o.PassengerId != personId);
-                                    if (!hasOther)
+                                    // Load allocation with hotel info if available
+                                    var alloc = db.RoomAllocations.Include(a => a.Hotel).FirstOrDefault(a => a.Id == aid);
+                                    if (alloc != null)
                                     {
-                                        var alloc = db.RoomAllocations.FirstOrDefault(a => a.Id == aid);
-                                        if (alloc != null)
+                                        // ensure history table exists
+                                        try { db.EnsureRoomAllocationHistoryTableExists(); } catch { }
+                                        // record history entry for this person's removal from the allocation
+                                        try
+                                        {
+                                            var hist = new TurizmOperasyonSistemi.Models.RoomAllocationHistory
+                                            {
+                                                RoomAllocationId = alloc.Id,
+                                                HotelId = alloc.HotelId,
+                                                HotelName = alloc.Hotel != null ? alloc.Hotel.Name : string.Empty,
+                                                RoomNumber = alloc.RoomNumber,
+                                                RoomType = alloc.RoomType,
+                                                TourType = alloc.TourType,
+                                                Period = alloc.Period,
+                                                GroupType = alloc.GroupType,
+                                                DaysCount = alloc.DaysCount,
+                                                PersonId = personId,
+                                                RegistrationId = registration.Id,
+                                                RemovedAt = DateTime.UtcNow,
+                                                Restored = false
+                                            };
+                                            try { db.RoomAllocationHistories.Add(hist); } catch { }
+                                        }
+                                        catch { }
+
+                                        // record description for notification
+                                        try
+                                        {
+                                            var hotelName = alloc.Hotel != null ? alloc.Hotel.Name : (alloc.HotelId > 0 ? alloc.HotelId.ToString() : "(bilinmiyor otel)");
+                                            var roomNum = string.IsNullOrWhiteSpace(alloc.RoomNumber) ? "(oda bilinmiyor)" : alloc.RoomNumber;
+                                            removedAllocDescriptions.Add($"{hotelName} - Oda {roomNum}");
+                                        }
+                                        catch { }
+
+                                        // If no other occupants remain, remove the allocation itself
+                                        bool hasOther = db.RoomOccupants.Any(o => o.RoomAllocationId == aid && o.PassengerId != personId);
+                                        if (!hasOther)
                                         {
                                             db.RoomAllocations.Remove(alloc);
                                         }
@@ -1199,6 +1237,29 @@ namespace TurizmOperasyonSistemi.Views
                                 }
 
                                 db.SaveChanges();
+
+                                // If any allocations were removed because of this deactivation, publish a user-visible notification
+                                if (removedAllocDescriptions.Any())
+                                {
+                                    try
+                                    {
+                                        var person = db.Persons.FirstOrDefault(p => p.Id == personId);
+                                        var personName = person != null ? (person.FirstName + " " + person.LastName).Trim() : "(bilinmiyor)";
+                                        var details = string.Join("; ", removedAllocDescriptions);
+                                        var msg = $"{personName} kişisinin odalama kayıtları ({details}) silindi; kayıt tekrar aktif yapılana kadar geri yüklenmeyecektir.";
+                                        try { System.Diagnostics.Debug.WriteLine($"Publishing allocation.removed for PersonId={personId} Details={details}"); } catch { }
+                                        NotificationCenter.Publish("allocation.removed", new { PersonId = personId, PersonName = personName, Details = details, Message = msg, Timestamp = DateTime.UtcNow }, persistToDb: true);
+                                        // Also publish a second deactivation notification including allocation details so UI definitely shows it
+                                        try
+                                        {
+                                            var extMsg = $"{personName} kişisinin tur kaydı pasif yapıldı. Silinen odalamalar: {details}";
+                                            try { System.Diagnostics.Debug.WriteLine($"Publishing registration.deactivated (extended) for PersonId={personId} details={details}"); } catch { }
+                                            NotificationCenter.Publish("registration.deactivated", new { RegistrationId = registration.Id, PersonId = registration.PersonId, PersonName = personName, Tour = registration.TourType, Period = registration.Period, Group = registration.GroupType, Days = registration.DaysCount, Message = extMsg, Timestamp = DateTime.UtcNow }, persistToDb: false);
+                                        }
+                                        catch { }
+                                    }
+                                    catch { }
+                                }
                             }
                         }
                         catch
@@ -1214,6 +1275,54 @@ namespace TurizmOperasyonSistemi.Views
                         {
                             // ignore
                         }
+                        // If registration was activated (IsActive==true) then check for history to restore/notify
+                        if (registration.IsActive)
+                        {
+                            try
+                            {
+                                // Ensure history table exists
+                                try { db.EnsureRoomAllocationHistoryTableExists(); } catch { }
+
+                                var pending = db.RoomAllocationHistories.Where(h => h.PersonId == registration.PersonId && h.Restored == false).ToList();
+                                if (pending != null && pending.Count > 0)
+                                {
+                                    try
+                                    {
+                                        var person = db.Persons.FirstOrDefault(p => p.Id == registration.PersonId);
+                                        var personName = person != null ? (person.FirstName + " " + person.LastName).Trim() : "(bilinmiyor)";
+                                        var details = string.Join("; ", pending.Select(p => (string.IsNullOrWhiteSpace(p.HotelName) ? p.HotelId.ToString() : p.HotelName) + (string.IsNullOrWhiteSpace(p.RoomNumber) ? "" : " - Oda " + p.RoomNumber)));
+                                        var msg = $"{personName} kişisinin tur kaydı tekrar aktifleştirildi. Önceden silinen odalamalar ({details}) odalama havuzuna yeniden eklendi.";
+                                        NotificationCenter.Publish("allocation.restored", new { PersonId = registration.PersonId, PersonName = personName, Details = details, Message = msg, Timestamp = DateTime.UtcNow }, persistToDb: false);
+
+                                        // mark history as restored
+                                        foreach (var h in pending)
+                                        {
+                                            try { h.Restored = true; h.RestoredAt = DateTime.UtcNow; } catch { }
+                                        }
+                                        try { db.SaveChanges(); } catch { }
+                                    }
+                                    catch { }
+                                }
+                            }
+                            catch { }
+                        }
+                        try
+                        {
+                            // publish a user-visible notification about the registration being set to passive
+                            try
+                            {
+                                var person = db.Persons.FirstOrDefault(p => p.Id == registration.PersonId);
+                                var personName = person != null ? (person.FirstName + " " + person.LastName).Trim() : "(bilinmiyor)";
+                                var tour = registration.TourType ?? "-";
+                                var period = registration.Period ?? "-";
+                                var group = registration.GroupType ?? "-";
+                                var days = registration.DaysCount ?? "-";
+                                var msg = $"{personName} kişisinin {tour} + {period} + {group} + {days} gün olan tur kaydı pasif yapıldı.";
+                                NotificationCenter.Publish("registration.deactivated", new { RegistrationId = registration.Id, PersonId = registration.PersonId, PersonName = personName, Tour = tour, Period = period, Group = group, Days = days, Message = msg, Timestamp = DateTime.UtcNow });
+                            }
+                            catch { }
+                        }
+                        catch { }
                     }
                 }
                 catch

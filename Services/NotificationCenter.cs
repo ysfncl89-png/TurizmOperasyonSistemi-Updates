@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -41,19 +43,46 @@ namespace TurizmOperasyonSistemi.Services
                         using (var db = new AppDbContext())
                         {
                             try { db.EnsureNotificationsTableExists(); } catch { }
+                            string payloadJson = null;
+                            if (payload != null)
+                            {
+                                try
+                                {
+                                    var opts = new JsonSerializerOptions
+                                    {
+                                        ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                                    };
+                                    payloadJson = JsonSerializer.Serialize(payload, opts);
+                                }
+                                catch (Exception ex)
+                                {
+                                    try { Debug.WriteLine($"NotificationCenter: payload serialization failed for key={key} - {ex.Message}"); } catch { }
+                                    payloadJson = null;
+                                }
+                            }
+
                             var n = new Notification
                             {
                                 Key = key,
                                 Message = ExtractMessageFromPayload(payload),
-                                PayloadJson = payload == null ? null : JsonSerializer.Serialize(payload),
+                                PayloadJson = payloadJson,
                                 IsRead = false,
                                 CreatedAt = DateTime.UtcNow
                             };
                             db.Notifications.Add(n);
                             db.SaveChanges();
+                            try
+                            {
+                                Debug.WriteLine($"NotificationCenter: saved notification Key={n.Key} Id={n.Id} Message={n.Message} Persist={persistToDb}");
+                            }
+                            catch { }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        try { Debug.WriteLine($"NotificationCenter: failed to save notification Key={key} - {ex.Message}"); } catch { }
+                    }
                 }
 
                 NotificationSent?.Invoke(key, payload);

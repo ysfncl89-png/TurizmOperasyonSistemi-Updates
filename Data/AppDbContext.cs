@@ -17,10 +17,47 @@ namespace TurizmOperasyonSistemi.Data
         public DbSet<Hotel> Hotels { get; set; }
         public DbSet<RoomAllocation> RoomAllocations { get; set; }
         public DbSet<RoomOccupant> RoomOccupants { get; set; }
+        public DbSet<Models.RoomAllocationHistory> RoomAllocationHistories { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite(@"Data Source=C:\TurizmDB\turizm.db");
+        }
+
+        public void EnsureRoomAllocationHistoryTableExists()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"CREATE TABLE IF NOT EXISTS RoomAllocationHistories (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        RoomAllocationId INTEGER,
+                        HotelId INTEGER,
+                        HotelName TEXT,
+                        RoomNumber TEXT,
+                        RoomType TEXT,
+                        TourType TEXT,
+                        Period TEXT,
+                        GroupType TEXT,
+                        DaysCount TEXT,
+                        PersonId INTEGER,
+                        RegistrationId INTEGER,
+                        RemovedAt TEXT,
+                        Restored INTEGER DEFAULT 0,
+                        RestoredAt TEXT
+                    );";
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsureRoomAllocationHistoryTableExists hata: {ex.Message}");
+            }
         }
 
         public void EnsurePaymentsTableExists()
