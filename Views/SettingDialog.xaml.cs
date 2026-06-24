@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
+using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -87,6 +88,7 @@ namespace TurizmOperasyonSistemi.Views
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             bool isNew = selectedSettingId == 0;
+            string addedValue = null;
             using (AppDbContext db = new AppDbContext())
             {
                 AppSetting setting;
@@ -102,6 +104,7 @@ namespace TurizmOperasyonSistemi.Views
                 }
 
                 string newValue = ValueTextBox.Text.Trim();
+                addedValue = newValue;
 
                 bool exists = db.AppSettings.Any(x => x.Type == SettingType && x.Value.ToLower() == newValue.ToLower() && x.Id != selectedSettingId);
 
@@ -139,6 +142,61 @@ namespace TurizmOperasyonSistemi.Views
 
             // Notify subscribers that settings changed
             OnSettingsChanged?.Invoke();
+
+            // Publish a user-visible notification when a NEW option was added to a setting card
+            try
+            {
+                if (isNew)
+                {
+                    // map setting types to modules / combobox names where they will appear
+                    var appearsIn = new List<string>();
+                    switch (SettingType)
+                    {
+                        case "TourType":
+                            appearsIn.AddRange(new[] { "Kişiler sayfası -> Tur Türü", "Kayıt Sihirbazı -> Tur Türü", "Ödemeler -> Tur seçimi" });
+                            break;
+                        case "Dönem":
+                            appearsIn.AddRange(new[] { "Kayıt Sihirbazı -> Dönem", "Kişiler sayfası -> Dönem", "Ödemeler -> Dönem" });
+                            break;
+                        case "GroupType":
+                            appearsIn.AddRange(new[] { "Kayıt Sihirbazı -> Grup Türü", "Kişiler sayfası -> Grup Türü", "Ödemeler -> Grup Türü" });
+                            break;
+                        case "Kaç Günlük Grup":
+                            appearsIn.AddRange(new[] { "Kayıt Sihirbazı -> Gün Sayısı", "Kişiler sayfası -> Grup Gün Sayısı", "Ödemeler -> Gün Sayısı" });
+                            break;
+                        case "Otel Ekle":
+                            appearsIn.AddRange(new[] { "Odalama modülü -> Otel seçimi", "Kayıt Sihirbazı -> Otel seçim kutusu" });
+                            break;
+                        case "Para Birimi":
+                            appearsIn.AddRange(new[] { "Ödeme penceresi -> Para Birimi", "Ödemeler sayfası -> Para Birimi listesi" });
+                            break;
+                        case "Kargo Talebi":
+                            appearsIn.AddRange(new[] { "Kişiler sayfası -> Kargo Talebi" });
+                            break;
+                        case "Vize Talebi":
+                            appearsIn.AddRange(new[] { "Kişiler sayfası -> Vize Talebi" });
+                            break;
+                        case "Bilet Talebi":
+                            appearsIn.AddRange(new[] { "Kişiler sayfası -> Bilet Talebi" });
+                            break;
+                        default:
+                            appearsIn.Add("Programdaki ilgili açılır listelerde görünecektir");
+                            break;
+                    }
+
+                    var payload = new
+                    {
+                        Type = SettingType,
+                        Value = addedValue,
+                        AppearsIn = appearsIn,
+                        Message = $"Ayarlar -> '{SettingType}' kartına '{addedValue}' seçeneği eklendi. Görüneceği yerler: " + string.Join("; ", appearsIn),
+                        Timestamp = DateTime.UtcNow
+                    };
+
+                    NotificationCenter.Publish("setting.added", payload, persistToDb: true);
+                }
+            }
+            catch { }
 
             MessageBox.Show(isNew ? "Kayıt eklendi" : "Kayıt güncellendi");
         }
