@@ -660,8 +660,25 @@ namespace TurizmOperasyonSistemi.Views
                         stack.Children.Add(new TextBlock { Text = "Bildirimler yüklenemedi.", Margin = new Thickness(6) });
                     }
 
-                    // show popup
-                    try { popup.IsOpen = true; } catch { }
+                    // show popup - open on dispatcher so placement/layout have settled (prevents initial off-screen placement)
+                    try
+                    {
+                        // ensure placement target and reset offsets so placement recalculates
+                        try
+                        {
+                            var btn = this.FindName("NotificationsButton") as UIElement;
+                            if (btn != null) popup.PlacementTarget = btn;
+                            popup.HorizontalOffset = 0;
+                            popup.VerticalOffset = 0;
+                        }
+                        catch { }
+
+                        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            try { popup.IsOpen = true; } catch { }
+                        }), System.Windows.Threading.DispatcherPriority.Input);
+                    }
+                    catch { }
                     // stop shake when opened
                     StopNotificationsShake();
                     // Do not clear badge until user marks read; but if there were none, keep badge hidden
