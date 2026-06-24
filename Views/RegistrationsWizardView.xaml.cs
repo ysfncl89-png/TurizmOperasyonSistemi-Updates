@@ -1164,9 +1164,36 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
+                var wasActive = registration.IsActive;
                 registration.Status = status;
                 registration.IsActive = status == "Aktif";
                 db.SaveChanges();
+
+                // If the registration was inactive and now activated, publish an activation notification
+                try
+                {
+                    if (!wasActive && registration.IsActive)
+                    {
+                        try
+                        {
+                            var person = db.Persons.FirstOrDefault(p => p.Id == registration.PersonId);
+                            var personName = person != null ? (person.FirstName + " " + person.LastName).Trim() : "(bilinmiyor)";
+                            var tour = registration.TourType ?? "-";
+                            var period = registration.Period ?? "-";
+                            var group = registration.GroupType ?? "-";
+                            var days = registration.DaysCount ?? "-";
+                            var msg = $"{personName} kişisinin {tour} + {period} + {group} + {days} gün olan tur kaydı aktifleştirildi.";
+                            // Persist activation notification so users who are not currently viewing Home/Notifications
+                            // will still see it when they open the notifications panel.
+                            NotificationCenter.Publish("registration.activated", new { RegistrationId = registration.Id, PersonId = registration.PersonId, PersonName = personName, Tour = tour, Period = period, Group = group, Days = days, Message = msg, Timestamp = DateTime.UtcNow }, persistToDb: true);
+                        }
+                        catch { }
+
+                        // Also notify other modules that the registration was saved/activated so they can add the person to pools
+                        try { NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive }, persistToDb: false); } catch { }
+                    }
+                }
+                catch { }
                 try
                 {
                     // Eğer kayıt pasif hale geldiyse, odalama verilerini senkronize et:
