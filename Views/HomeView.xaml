@@ -182,6 +182,15 @@
 
                     <!-- Vize Kartı -->
                     <Border Grid.Column="0" Style="{StaticResource DashboardCardStyle}" Margin="6,0,6,-143">
+                        <Border.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF8B5CF6" BlurRadius="10" ShadowDepth="0" Opacity="0.12" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Border.Resources>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
                                 <TextBlock Text="🛂" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
@@ -286,6 +295,15 @@
 
                     <!-- Bilet Kartı -->
                     <Border Grid.Column="1" Style="{StaticResource DashboardCardStyle}" Margin="6,0,6,-143">
+                        <Border.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF8B5CF6" BlurRadius="10" ShadowDepth="0" Opacity="0.12" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Border.Resources>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="✈️" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
@@ -366,6 +384,15 @@
 
                     <!-- Kargo Kartı -->
                     <Border Grid.Column="2" Style="{StaticResource DashboardCardStyle}" Margin="6,0,6,-143">
+                        <Border.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF8B5CF6" BlurRadius="10" ShadowDepth="0" Opacity="0.12" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Border.Resources>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📦" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
@@ -434,6 +461,15 @@
 
                     <!-- Oda Kartı -->
                     <Border Grid.Column="3" Style="{StaticResource DashboardCardStyle}" Margin="6,0,6,-143">
+                        <Border.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF8B5CF6" BlurRadius="10" ShadowDepth="0" Opacity="0.12" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Border.Resources>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="🏨" FontSize="16" Margin="0,0,8,0" Foreground="#8B5CF6" VerticalAlignment="Center" />
