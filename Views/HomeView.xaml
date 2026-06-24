@@ -148,8 +148,8 @@
                 <!-- Kurlar paneli (orta sütun) -->
 
                 <!-- Bildirim ikonu: badge + sallanma animasyonu -->
-                <Grid Grid.Column="0" Width="48" Height="48" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <Button x:Name="NotificationsButton" Width="48" Height="48" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="8" ToolTip="Bildirimler" Click="NotificationsButton_Click" RenderTransformOrigin="0.5,0.2">
+                <Grid Grid.Column="0" Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <Button x:Name="NotificationsButton" Width="40" Height="40" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="6" ToolTip="Bildirimler" Click="NotificationsButton_Click" RenderTransformOrigin="0.5,0.2">
                         <Button.Resources>
                             <!-- Zil sallanma storyboard (button namescope içinde) -->
                             <Storyboard x:Key="NotificationsShakeStoryboard" RepeatBehavior="Forever" AutoReverse="True">
@@ -167,8 +167,8 @@
                             <RotateTransform x:Name="NotificationsRotateTransform" Angle="0" />
                         </Button.RenderTransform>
                         <Viewbox Stretch="Uniform">
-                            <Canvas Width="23" Height="23">
-                                <Path Data="M12 22c1.1 0 2-.9 2-2h-4c0 1.1 .9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.99 2H20l-1.99-2z" Fill="#F6C85F" Stretch="Uniform" Height="35" Width="38">
+                            <Canvas Width="19" Height="19">
+                                <Path Data="M12 22c1.1 0 2-.9 2-2h-4c0 1.1 .9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.99 2H20l-1.99-2z" Fill="#F6C85F" Stretch="Uniform">
                                     <Path.Effect>
                                         <DropShadowEffect Color="#F6C85F" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
                                     </Path.Effect>
@@ -178,17 +178,17 @@
                     </Button>
 
                     <!-- Küçük kırmızı badge: görünürlük kod tarafından kontrol edilecek -->
-                    <Border x:Name="NotificationBadge" Width="22" Height="22" Background="#EF4444" CornerRadius="11" BorderBrush="#FFFFFF" BorderThickness="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Visibility="Collapsed">
+                    <Border x:Name="NotificationBadge" Width="18" Height="18" Background="#EF4444" CornerRadius="9" BorderBrush="#FFFFFF" BorderThickness="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Visibility="Collapsed">
                         <TextBlock x:Name="NotificationBadgeText" Text="0" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
 
                     <!-- Bildirim listesi popup'ı -->
                     <Popup x:Name="NotificationsPopup" PlacementTarget="{Binding ElementName=NotificationsButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
                         <!-- Use requested color for popup background -->
-                        <Border Background="#FF4A7B8B" CornerRadius="8" BorderBrush="#172433" BorderThickness="1" Width="360" MaxHeight="320" Padding="8">
+                        <Border Background="#FF4A7B8B" CornerRadius="8" BorderBrush="#172433" BorderThickness="1" Width="360" MaxHeight="500" Padding="8">
                             <StackPanel>
                                 <TextBlock Text="Bildirimler" FontWeight="Bold" Foreground="#E6EEF8" Margin="6" />
-                                <ScrollViewer Height="220" VerticalScrollBarVisibility="Auto">
+                                <ScrollViewer Height="500" VerticalScrollBarVisibility="Auto">
                                     <StackPanel x:Name="NotificationsPopupStack" />
                                 </ScrollViewer>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
