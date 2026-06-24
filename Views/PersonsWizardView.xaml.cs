@@ -125,6 +125,7 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                bool wasNew = selectedPersonId <= 0;
                 using (var db = new AppDbContext())
                 {
                     var options = db.AppSettings.Where(x => x.Type == "Uyruk" && x.IsActive).OrderBy(x => x.SortOrder).Select(x => x.Value).ToList();
@@ -1318,8 +1319,23 @@ namespace TurizmOperasyonSistemi.Views
                     person.PassportStartDate = PassportStartPicker.SelectedDate;
                     person.PassportEndDate = PassportEndPicker.SelectedDate;
 
+                    bool isNew = person.Id == 0;
                     db.SaveChanges();
                     savedPersonId = person.Id;
+
+                    // Eğer yeni kişi oluşturulduysa bildirim yayınla
+                    try
+                    {
+                        if (isNew)
+                        {
+                            var name = (person.FirstName + " " + person.LastName).Trim();
+                            var msg = string.IsNullOrWhiteSpace(name)
+                                ? "Yeni bir kişi veritabanına eklendi."
+                                : $"{name} adlı kişi veritabanına eklendi.";
+                            TurizmOperasyonSistemi.Services.NotificationCenter.Publish("person.created", new { Id = person.Id, Name = name, Message = msg, Timestamp = DateTime.UtcNow });
+                        }
+                    }
+                    catch { }
                 }
 
                 ClearRequiredHighlights();

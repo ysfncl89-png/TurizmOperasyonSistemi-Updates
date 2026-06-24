@@ -16,40 +16,45 @@ namespace TurizmOperasyonSistemi.Services
         private static readonly object _recentLock = new object();
         private const int RecentMax = 200;
 
-        public static void Publish(string key, object payload = null)
+        // persistToDb: when false, do not save the notification to DB or recent in-memory list;
+        // still invokes subscribers. Use for internal-only signals that should not be shown to users.
+        public static void Publish(string key, object payload = null, bool persistToDb = true)
         {
             try
             {
-                // record recent
-                try
+                if (persistToDb)
                 {
-                    lock (_recentLock)
+                    // record recent
+                    try
                     {
-                        _recent.Add((key, payload, DateTime.UtcNow));
-                        if (_recent.Count > RecentMax) _recent.RemoveAt(0);
-                    }
-                }
-                catch { }
-
-                // Persist to DB when possible
-                try
-                {
-                    using (var db = new AppDbContext())
-                    {
-                        try { db.EnsureNotificationsTableExists(); } catch { }
-                        var n = new Notification
+                        lock (_recentLock)
                         {
-                            Key = key,
-                            Message = ExtractMessageFromPayload(payload),
-                            PayloadJson = payload == null ? null : JsonSerializer.Serialize(payload),
-                            IsRead = false,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        db.Notifications.Add(n);
-                        db.SaveChanges();
+                            _recent.Add((key, payload, DateTime.UtcNow));
+                            if (_recent.Count > RecentMax) _recent.RemoveAt(0);
+                        }
                     }
+                    catch { }
+
+                    // Persist to DB when possible
+                    try
+                    {
+                        using (var db = new AppDbContext())
+                        {
+                            try { db.EnsureNotificationsTableExists(); } catch { }
+                            var n = new Notification
+                            {
+                                Key = key,
+                                Message = ExtractMessageFromPayload(payload),
+                                PayloadJson = payload == null ? null : JsonSerializer.Serialize(payload),
+                                IsRead = false,
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            db.Notifications.Add(n);
+                            db.SaveChanges();
+                        }
+                    }
+                    catch { }
                 }
-                catch { }
 
                 NotificationSent?.Invoke(key, payload);
             }

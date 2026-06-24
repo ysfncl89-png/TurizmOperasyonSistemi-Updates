@@ -1208,7 +1208,7 @@ namespace TurizmOperasyonSistemi.Views
 
                         try
                         {
-                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive });
+                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive }, persistToDb: false);
                         }
                         catch
                         {
@@ -1292,12 +1292,29 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     // Notify other modules (ör. odalama) that this person's registration changed/removed
                     // Pass AddToPool=false so odalama motorü bu kişiyi havuza eklemesin
-                    NotificationCenter.Publish("RegistrationSaved", new { PersonId = personId, AddToPool = false });
+                    NotificationCenter.Publish("RegistrationSaved", new { PersonId = personId, AddToPool = false }, persistToDb: false);
                 }
                 catch
                 {
                     // ignore notification failures
                 }
+                try
+                {
+                    // Also publish a user-visible deletion notification so users see which registration was removed
+                    try
+                    {
+                        var person = db.Persons.FirstOrDefault(p => p.Id == personId);
+                        var personName = person != null ? (person.FirstName + " " + person.LastName).Trim() : "(bilinmiyor)";
+                        var tour = registration?.TourType ?? "-";
+                        var period = registration?.Period ?? "-";
+                        var group = registration?.GroupType ?? "-";
+                        var days = registration?.DaysCount ?? "-";
+                        var msg = $"{personName} kişisinin {tour} + {period} + {group} + {days} gün kaydı silindi.";
+                        NotificationCenter.Publish("registration.deleted", new { RegistrationId = registration.Id, PersonId = personId, PersonName = personName, Tour = tour, Period = period, Group = group, Days = days, Message = msg, Timestamp = DateTime.UtcNow });
+                    }
+                    catch { }
+                }
+                catch { }
             }
 
             LoadRegistrations();
@@ -2233,6 +2250,27 @@ namespace TurizmOperasyonSistemi.Views
 
                         db.SaveChanges();
 
+                        // Eğer yeni kayıt oluşturulduysa ilgili bilgiyi bildirim olarak yayınla
+                        try
+                        {
+                            if (!isEditMode)
+                            {
+                                try
+                                {
+                                    var person = db.Persons.FirstOrDefault(p => p.Id == registration.PersonId);
+                                    var personName = person != null ? (person.FirstName + " " + person.LastName).Trim() : "(bilinmiyor)";
+                                    var tour = registration.TourType ?? "-";
+                                    var period = registration.Period ?? "-";
+                                    var group = registration.GroupType ?? "-";
+                                    var days = registration.DaysCount ?? "-";
+                                    var msg = $"{personName} kişisi {tour} + {period} + {group} + {days} gün kaydı oluşturuldu.";
+                                    TurizmOperasyonSistemi.Services.NotificationCenter.Publish("registration.created", new { RegistrationId = registration.Id, PersonId = registration.PersonId, PersonName = personName, Tour = tour, Period = period, Group = group, Days = days, Message = msg, Timestamp = DateTime.UtcNow });
+                                }
+                                catch { }
+                            }
+                        }
+                        catch { }
+
                         // If paid amount changed (either new registration with initial payment or edited), create a Payment record
                         try
                         {
@@ -2391,7 +2429,7 @@ namespace TurizmOperasyonSistemi.Views
                         // Bildirim gönder: Bir kaydın odalama kriterleri güncellendi
                         try
                         {
-                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive });
+                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive }, persistToDb: false);
                         }
                         catch
                         {
