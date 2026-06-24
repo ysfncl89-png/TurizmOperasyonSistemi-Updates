@@ -94,8 +94,15 @@
                     <!-- Kayıtlı kişi sayısı kutucuğu -->
                     <Border x:Name="ActiveTourPeopleCountBox" Background="#0B1220" CornerRadius="6" Padding="8" Margin="0,8,0,0" Width="420">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock x:Name="ActivePeopleText" Foreground="#7EE787" FontWeight="Bold" Text="Aktif Kişi: 0" Margin="0,0,16,0" />
-                            <TextBlock x:Name="InactivePeopleText" Foreground="#FCA5A5" FontWeight="Bold" Text="Pasif Kişi: 0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <TextBlock Text="👤" FontSize="14" Margin="0,0,6,0" Foreground="#7EE787" VerticalAlignment="Center" />
+                                <TextBlock x:Name="ActivePeopleText" Foreground="#7EE787" FontWeight="Bold" Text="Aktif: 0" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="🚫" FontSize="14" Margin="0,0,6,0" Foreground="#FCA5A5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="InactivePeopleText" Foreground="#FCA5A5" FontWeight="Bold" Text="Pasif: 0" VerticalAlignment="Center" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -104,10 +111,25 @@
                 <Border Grid.Column="2" x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="12" Margin="18,0,0,0" VerticalAlignment="Center" Width="320">
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Grid Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Ellipse Stroke="#F59E0B" StrokeThickness="0">
+                                                                    <Ellipse.Fill>
+                                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                                            <GradientStop Color="#F6C85F" Offset="0" />
+                                                                            <GradientStop Color="#F59E0B" Offset="1" />
+                                                                        </LinearGradientBrush>
+                                                                    </Ellipse.Fill>
+                                                                </Ellipse>
+                                <TextBlock Text="$" Foreground="#0B6623" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                            </Grid>
                             <TextBlock Text="Toplam Tahsilat:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock x:Name="TotalCollectedText" Text="USD -" Foreground="#7EE787" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                            <Grid Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Ellipse Fill="#FCA5A5" Stroke="#F97316" StrokeThickness="0" />
+                                <TextBlock Text="$" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                            </Grid>
                             <TextBlock Text="Toplam Kalan:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock x:Name="TotalRemainingText" Text="USD -" Foreground="#FCA5A5" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
@@ -126,8 +148,8 @@
                 <!-- Kurlar paneli (orta sütun) -->
 
                 <!-- Bildirim ikonu: badge + sallanma animasyonu -->
-                <Grid Grid.Column="0" Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <Button x:Name="NotificationsButton" Width="40" Height="40" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="6" ToolTip="Bildirimler" Click="NotificationsButton_Click" RenderTransformOrigin="0.5,0.2">
+                <Grid Grid.Column="0" Width="48" Height="48" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <Button x:Name="NotificationsButton" Width="48" Height="48" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="8" ToolTip="Bildirimler" Click="NotificationsButton_Click" RenderTransformOrigin="0.5,0.2">
                         <Button.Resources>
                             <!-- Zil sallanma storyboard (button namescope içinde) -->
                             <Storyboard x:Key="NotificationsShakeStoryboard" RepeatBehavior="Forever" AutoReverse="True">
@@ -145,8 +167,8 @@
                             <RotateTransform x:Name="NotificationsRotateTransform" Angle="0" />
                         </Button.RenderTransform>
                         <Viewbox Stretch="Uniform">
-                            <Canvas Width="19" Height="19">
-                                <Path Data="M12 22c1.1 0 2-.9 2-2h-4c0 1.1 .9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.99 2H20l-1.99-2z" Fill="#F6C85F" Stretch="Uniform">
+                            <Canvas Width="23" Height="23">
+                                <Path Data="M12 22c1.1 0 2-.9 2-2h-4c0 1.1 .9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.99 2H20l-1.99-2z" Fill="#F6C85F" Stretch="Uniform" Height="35" Width="38">
                                     <Path.Effect>
                                         <DropShadowEffect Color="#F6C85F" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
                                     </Path.Effect>
@@ -156,7 +178,7 @@
                     </Button>
 
                     <!-- Küçük kırmızı badge: görünürlük kod tarafından kontrol edilecek -->
-                    <Border x:Name="NotificationBadge" Width="18" Height="18" Background="#EF4444" CornerRadius="9" BorderBrush="#FFFFFF" BorderThickness="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Visibility="Collapsed">
+                    <Border x:Name="NotificationBadge" Width="22" Height="22" Background="#EF4444" CornerRadius="11" BorderBrush="#FFFFFF" BorderThickness="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Visibility="Collapsed">
                         <TextBlock x:Name="NotificationBadgeText" Text="0" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
 
