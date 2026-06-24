@@ -345,6 +345,14 @@ namespace TurizmOperasyonSistemi.Views
                     }
 
                     var regId = payment.RegistrationId;
+                    // capture payment details for notification before removal
+                    var paymentIdCaptured = payment.Id;
+                    var origAmount = payment.OriginalAmount;
+                    var origCurrency = payment.OriginalCurrency ?? string.Empty;
+                    var amtInRegCur = payment.AmountInRegistrationCurrency;
+                    var createdAt = payment.CreatedAt;
+                    var hadDocument = !string.IsNullOrWhiteSpace(payment.UploadedDocumentPath);
+
                     db.Payments.Remove(payment);
                     db.SaveChanges();
 
@@ -369,10 +377,16 @@ namespace TurizmOperasyonSistemi.Views
                         var notice = new
                         {
                             RegistrationId = regId,
+                            PaymentId = paymentIdCaptured,
                             PersonId = person?.Id ?? 0,
                             PersonName = personName,
                             Tc = tc,
-                            Message = $"{personName} (TC: {tc}) için bir ödeme kaydı silindi.",
+                            Amount = origAmount,
+                            Currency = origCurrency,
+                            AmountInRegistrationCurrency = amtInRegCur,
+                            CreatedAt = createdAt,
+                            UploadedDocument = hadDocument,
+                            Message = $"{personName} (TC: {tc}) için {origAmount:N2} {origCurrency} tutarındaki ödeme kaydı silindi (PaymentId={paymentIdCaptured}).",
                             Timestamp = DateTime.UtcNow
                         };
                         TurizmOperasyonSistemi.Services.NotificationCenter.Publish("payment.updated", notice, persistToDb: true);
