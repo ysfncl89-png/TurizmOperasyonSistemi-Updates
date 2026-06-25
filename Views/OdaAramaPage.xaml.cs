@@ -8,6 +8,7 @@ using System.Windows.Navigation;
 using Microsoft.EntityFrameworkCore;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
+using TurizmOperasyonSistemi.Services;
 using System.Windows.Threading;
 using System.Windows.Input;
 using System.Globalization;
@@ -71,6 +72,16 @@ namespace TurizmOperasyonSistemi.Views
                         var res = MessageBox.Show(msg, "Eksik Oda Atamaları", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                         if (res == MessageBoxResult.Yes)
                         {
+                            // Check access: only admin or moderator may navigate to HotelAllocation
+                            var role = Services.CurrentUser.Instance.User?.Role ?? string.Empty;
+                            if (!Services.CurrentUser.Instance.IsAdmin &&
+                                !string.Equals(role, "moderatör", StringComparison.OrdinalIgnoreCase) &&
+                                !string.Equals(role, "moderator", StringComparison.OrdinalIgnoreCase))
+                            {
+                                MessageBox.Show("Rolünüz 'Kullanıcı' olduğu için odalama modülüne erişim izniniz yok.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                return;
+                            }
+
                             // navigate to HotelAllocationView and preselect filters
                             var hv = new HotelAllocationView();
                             hv.Loaded += (s2, e2) =>

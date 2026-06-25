@@ -14,6 +14,7 @@ using System.Windows.Data;
 using System.ComponentModel;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
+using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -497,6 +498,30 @@ namespace TurizmOperasyonSistemi.Views
 
             // ensure initial filter UI state reflects current selections
             try { Filter_Changed(null, null); } catch { }
+
+            // Enforce read-only for users with role 'kullanıcı' (they should only view and export)
+            try
+            {
+                var role = CurrentUser.Instance.User?.Role ?? string.Empty;
+                bool isSimpleUser = string.Equals(role, "kullanıcı", System.StringComparison.OrdinalIgnoreCase)
+                                    || string.Equals(role, "kullanici", System.StringComparison.OrdinalIgnoreCase)
+                                    || string.Equals(role, "user", System.StringComparison.OrdinalIgnoreCase);
+
+                if (ResultsDataGrid != null)
+                {
+                    if (isSimpleUser)
+                    {
+                        ResultsDataGrid.IsReadOnly = true;
+                    }
+                    else
+                    {
+                        // keep previous behavior for non-simple users: allow edit only when they have ListsEdit or are admin
+                        bool canEdit = CurrentUser.Instance.IsAdmin || CurrentUser.Instance.HasPermission(PermissionKeys.ListsEdit);
+                        ResultsDataGrid.IsReadOnly = !canEdit;
+                    }
+                }
+            }
+            catch { }
         }
 
         private void LoadFilterOptions()
@@ -830,6 +855,18 @@ namespace TurizmOperasyonSistemi.Views
                 var column = cell.Column;
                 if (column != null && column.Header != null && column.Header.ToString() == "Kan Grubu")
                 {
+                    // check if current user is allowed to edit lists
+                    var role = CurrentUser.Instance.User?.Role ?? string.Empty;
+                    bool isSimpleUser = string.Equals(role, "kullanıcı", System.StringComparison.OrdinalIgnoreCase)
+                                        || string.Equals(role, "kullanici", System.StringComparison.OrdinalIgnoreCase)
+                                        || string.Equals(role, "user", System.StringComparison.OrdinalIgnoreCase);
+                    bool canEdit = CurrentUser.Instance.IsAdmin || CurrentUser.Instance.HasPermission(PermissionKeys.ListsEdit);
+                    if (isSimpleUser || !canEdit)
+                    {
+                        // simple users or users without edit permission should not begin edit
+                        return;
+                    }
+
                     // begin edit for the row
                     var row = DataGridRow.GetRowContainingElement(cell);
                     if (row != null)
