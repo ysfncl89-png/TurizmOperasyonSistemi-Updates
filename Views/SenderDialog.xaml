@@ -17,7 +17,10 @@
                     <TextBlock Text="Kayıtlı Şablonlar"/>
                     <ComboBox x:Name="CbSenderTemplates" />
                 </StackPanel>
-                <Button x:Name="BtnSaveTemplate" Content="Şablonu Kaydet" Margin="8,22,0,0" Width="120" />
+                <StackPanel Orientation="Vertical" Margin="8,0,0,0">
+                    <Button x:Name="BtnSaveTemplate" Content="Şablonu Kaydet" Margin="0,22,0,0" Width="120" />
+                    <Button x:Name="BtnDeleteTemplate" Content="Şablonu Sil" Margin="0,8,0,0" Width="120" />
+                </StackPanel>
             </StackPanel>
 
             <TextBlock Text="Gönderici Adı"/>

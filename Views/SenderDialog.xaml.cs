@@ -22,6 +22,7 @@ namespace TurizmOperasyonSistemi.Views
             InitializeComponent();
             _store = new Services.SenderTemplateStore();
             try { BtnSaveTemplate.Click += BtnSaveTemplate_Click; } catch { }
+            try { BtnDeleteTemplate.Click += BtnDeleteTemplate_Click; } catch { }
             try { CbSenderTemplates.SelectionChanged += CbSenderTemplates_SelectionChanged; } catch { }
             LoadTemplates();
         }
@@ -51,7 +52,9 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 var list = _store.GetAll();
-                CbSenderTemplates.ItemsSource = list.Select(x => x.Name).ToList();
+                CbSenderTemplates.DisplayMemberPath = "Name";
+                CbSenderTemplates.SelectedValuePath = "Id";
+                CbSenderTemplates.ItemsSource = list;
             }
             catch { }
         }
@@ -60,15 +63,11 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var sel = CbSenderTemplates.SelectedItem as string;
-                if (string.IsNullOrWhiteSpace(sel)) return;
-                var t = _store.GetAll().FirstOrDefault(x => string.Equals(x.Name, sel, StringComparison.OrdinalIgnoreCase));
-                if (t != null)
-                {
-                    TbSenderName.Text = t.Name ?? string.Empty;
-                    TbSenderPhone.Text = t.Phone ?? string.Empty;
-                    TbSenderAddress.Text = t.Address ?? string.Empty;
-                }
+                var t = CbSenderTemplates.SelectedItem as Services.SenderTemplate;
+                if (t == null) return;
+                TbSenderName.Text = t.Name ?? string.Empty;
+                TbSenderPhone.Text = t.Phone ?? string.Empty;
+                TbSenderAddress.Text = t.Address ?? string.Empty;
             }
             catch { }
         }
@@ -80,9 +79,48 @@ namespace TurizmOperasyonSistemi.Views
                 var name = TbSenderName.Text?.Trim();
                 if (string.IsNullOrWhiteSpace(name)) { MessageBox.Show("Şablon için bir ad girin."); return; }
                 var tpl = new Services.SenderTemplate { Name = name, Phone = TbSenderPhone.Text?.Trim(), Address = TbSenderAddress.Text?.Trim() };
-                _store.Add(tpl);
+
+                var sel = CbSenderTemplates.SelectedItem as Services.SenderTemplate;
+                if (sel != null)
+                {
+                    // preserve id when updating existing template: remove old and add new with same id
+                    tpl.Id = sel.Id;
+                    _store.Remove(sel.Id);
+                    _store.Add(tpl);
+                    MessageBox.Show("Şablon güncellendi.");
+                }
+                else
+                {
+                    _store.Add(tpl);
+                    MessageBox.Show("Şablon kaydedildi.");
+                }
+
                 LoadTemplates();
-                MessageBox.Show("Şablon kaydedildi.");
+            }
+            catch { }
+        }
+
+        private void BtnDeleteTemplate_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var sel = CbSenderTemplates.SelectedItem as Services.SenderTemplate;
+                if (sel == null)
+                {
+                    MessageBox.Show("Lütfen silmek için bir şablon seçin.");
+                    return;
+                }
+
+                var res = MessageBox.Show($"\"{sel.Name}\" şablonunu silmek istediğinize emin misiniz?", "Şablonu Sil", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (res != MessageBoxResult.Yes) return;
+
+                _store.Remove(sel.Id);
+                LoadTemplates();
+                // temizle
+                TbSenderName.Text = string.Empty;
+                TbSenderPhone.Text = string.Empty;
+                TbSenderAddress.Text = string.Empty;
+                MessageBox.Show("Şablon silindi.");
             }
             catch { }
         }
