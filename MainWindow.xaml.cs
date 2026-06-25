@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using TurizmOperasyonSistemi.Views;
@@ -73,8 +73,11 @@ namespace TurizmOperasyonSistemi
             PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             CargoButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
 
-            // 🔹 Yeni eklediğimiz kayıt butonunun rengini de burada sıfırlıyoruz
+            // Yeni eklediğimiz kayıt butonunun rengini de burada sıfırlıyoruz
             RegistrationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
+
+            // Kullanıcı Yönetimi butonunun rengini de sıfırlıyoruz
+            UserManagementButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
         }
 
         private void HomeButton_Click(object sender, RoutedEventArgs e)
@@ -131,7 +134,7 @@ namespace TurizmOperasyonSistemi
             MainFrame.Navigate(new SettingsView());
         }
 
-        // 🔥 YENİ: KAYIT MODÜLÜ BUTON TIKLAMA OLAYI
+        // YENİ: KAYIT MODÜLÜ BUTON TIKLAMA OLAYI
         private void RegistrationButton_Click(object sender, RoutedEventArgs e)
         {
             // Kontrol: tur kayıt modülüne erişim izni var mı?
@@ -152,6 +155,7 @@ namespace TurizmOperasyonSistemi
             // Yeni oluşturduğumuz sihirbaz sayfasına yönlendiriyoruz
             MainFrame.Navigate(new RegistrationsWizardView());
         }
+
         private void HotelAllocationButton_Click(object sender, RoutedEventArgs e)
         {
             // Kontrol: odalama modülüne erişim izni var mı?
