@@ -124,9 +124,6 @@ namespace TurizmOperasyonSistemi.Views
 
                     if (FindName("CargoListControl") is ItemsControl cargoList)
                         cargoList.ItemsSource = allSettings.Where(x => x.Type == "Kargo Talebi").Select(x => x.Value).ToList();
-
-                    // Update button appearance
-                    UpdateLoginButtonAppearance(db);
                 }
             }
             catch (Exception ex)
@@ -143,43 +140,6 @@ namespace TurizmOperasyonSistemi.Views
                 SettingDialog dialog = new SettingDialog(settingType);
                 dialog.ShowDialog();
                 LoadExistingSettingsIntoUi();
-            }
-        }
-
-        private void EnableUserLoginButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                using (var db = new AppDbContext())
-                {
-                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
-                    if (setting != null)
-                    {
-                        bool currentValue = setting.Value.ToString().ToLower() == "true";
-                        setting.Value = (!currentValue).ToString().ToLower();
-                        db.SaveChanges();
-
-                        string status = currentValue ? "devre dışı bırakıldı" : "etkinleştirildi";
-                        MessageBox.Show($"Kullanıcı girişi {status}.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                        UpdateLoginButtonAppearance(db);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void UpdateLoginButtonAppearance(AppDbContext db)
-        {
-            var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
-            if (setting != null && FindName("EnableUserLoginButton") is Button btn)
-            {
-                bool isEnabled = setting.Value.ToString().ToLower() == "true";
-                btn.Content = isEnabled ? "✓ Kullanıcı Girişi (Aktif)" : "Kullanıcı Girişi";
-                btn.Foreground = isEnabled ? new SolidColorBrush(Color.FromRgb(0, 255, 136)) : new SolidColorBrush(Color.FromRgb(255, 255, 255));
             }
         }
 

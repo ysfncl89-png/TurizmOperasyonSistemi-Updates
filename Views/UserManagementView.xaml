@@ -4,46 +4,292 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="800"
-             Background="#0F172A">
-    <Grid Margin="10">
+             d:DesignHeight="900"
+             Background="#0F172A" Width="1229">
+
+    <Grid Margin="20">
         <StackPanel>
-            <TextBlock Text="Kullanıcı Yönetimi" FontSize="20" Foreground="White"/>
+            <!-- Header -->
+            <TextBlock Text="Kullanıcı Yönetimi" 
+                       FontSize="28" 
+                       FontWeight="Bold" 
+                       Foreground="White" 
+                       Margin="0,0,0,25"/>
 
-            <DataGrid x:Name="UsersDataGrid" AutoGenerateColumns="False" Height="250" Margin="0,10,0,10">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="60"/>
-                    <DataGridTextColumn Header="Kullanıcı Adı" Binding="{Binding Username}" Width="*"/>
-                    <DataGridTextColumn Header="Rol" Binding="{Binding Role}" Width="150"/>
-                    <DataGridTextColumn Header="Oluşturulma" Binding="{Binding CreatedAt}" Width="180"/>
-                </DataGrid.Columns>
-            </DataGrid>
+            <!-- DataGrid Section -->
+            <Border Background="#152234"
+                    CornerRadius="12"
+                    Padding="15"
+                    Margin="0,0,0,25">
+                <StackPanel>
+                    <TextBlock Text="Sistem Kullanıcıları"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Margin="0,0,0,15"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Top">
-                <StackPanel Margin="0,0,10,0">
-                    <TextBlock Text="Kullanıcı Adı" Foreground="White"/>
-                    <TextBox x:Name="NewUsernameTextBox" Width="200"/>
+                    <DataGrid x:Name="UsersDataGrid" 
+                              AutoGenerateColumns="False" 
+                              Height="280"
+                              RowHeight="40"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              Background="#1F2937"
+                              Foreground="White"
+                              BorderThickness="0"
+                              AlternatingRowBackground="#111827">
+
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Background" Value="#1F2937"/>
+                                <Style.Triggers>
+                                    <Trigger Property="AlternationIndex" Value="1">
+                                        <Setter Property="Background" Value="#111827"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#0B4A6F"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Padding" Value="10,8"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
+
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#0F2847"/>
+                                <Setter Property="Foreground" Value="#06B6D4"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Padding" Value="10,8"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="FontSize" Value="14"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Id" 
+                                              Binding="{Binding Id}" 
+                                              Width="50"
+                                              IsReadOnly="True"/>
+
+                            <DataGridTextColumn Header="Kullanıcı Adı" 
+                                              Binding="{Binding Username}" 
+                                              Width="150"
+                                              IsReadOnly="True"/>
+
+                            <DataGridTextColumn Header="Rol" 
+                                              Binding="{Binding Role}" 
+                                              Width="120"
+                                              IsReadOnly="True"/>
+
+                            <DataGridTextColumn Header="Kayıt Tarihi" 
+                                              Binding="{Binding CreatedAt}" 
+                                              Width="180"
+                                              IsReadOnly="True"/>
+
+                            <DataGridTemplateColumn Header="İşlemler" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" 
+                                                   Margin="5"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center">
+                                            <Button Content="Şifre" 
+                                                   Width="65" 
+                                                   Height="28"
+                                                   Margin="0,0,5,0"
+                                                   Background="#F59E0B" 
+                                                   Foreground="White"
+                                                   Cursor="Hand"
+                                                   Click="ChangePasswordButton_Click" 
+                                                   Tag="{Binding Id}"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   BorderThickness="0"
+                                                   Style="{StaticResource RoundButtonStyle}"/>
+
+                                            <Button Content="Rol" 
+                                                   Width="65" 
+                                                   Height="28"
+                                                   Margin="0,0,5,0"
+                                                   Background="#3B82F6" 
+                                                   Foreground="White"
+                                                   Cursor="Hand"
+                                                   Click="ChangeRoleButton_Click" 
+                                                   Tag="{Binding Id}"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   BorderThickness="0"
+                                                   Style="{StaticResource RoundButtonStyle}"/>
+
+                                            <Button Content="Sil" 
+                                                   Width="65" 
+                                                   Height="28"
+                                                   Background="#EF4444" 
+                                                   Foreground="White"
+                                                   Cursor="Hand"
+                                                   Click="DeleteButton_Click" 
+                                                   Tag="{Binding Id}"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   BorderThickness="0"
+                                                   Style="{StaticResource RoundButtonStyle}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </StackPanel>
+            </Border>
 
-                <StackPanel Margin="0,0,10,0">
-                    <TextBlock Text="Şifre" Foreground="White"/>
-                    <PasswordBox x:Name="NewPasswordBox" Width="200"/>
+            <!-- Create User Section -->
+            <Border Background="#152234"
+                    CornerRadius="12"
+                    Padding="20"
+                    Margin="0,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="Yeni Kullanıcı Ekle"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Margin="0,0,0,20"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Kullanıcı Adı -->
+                        <TextBlock Grid.Column="0" Grid.Row="0"
+                                  Text="Kullanıcı Adı:" 
+                                  Foreground="#9CA3AF" 
+                                  FontSize="12"
+                                  VerticalAlignment="Bottom"
+                                  Margin="0,0,10,5"/>
+                        <TextBox Grid.Column="1" Grid.Row="0"
+                                x:Name="NewUsernameTextBox" 
+                                Height="36" 
+                                Padding="12,8"
+                                Background="#1F2937"
+                                Foreground="White"
+                                BorderBrush="#374151"
+                                VerticalContentAlignment="Center"
+                                Margin="0,0,15,0"/>
+
+                        <!-- Şifre -->
+                        <TextBlock Grid.Column="2" Grid.Row="0"
+                                  Text="Şifre:" 
+                                  Foreground="#9CA3AF" 
+                                  FontSize="12"
+                                  VerticalAlignment="Bottom"
+                                  Margin="0,0,10,5"/>
+                        <PasswordBox Grid.Column="3" Grid.Row="0"
+                                    x:Name="NewPasswordBox" 
+                                    Height="36" 
+                                    Padding="12,8"
+                                    Background="#1F2937"
+                                    Foreground="White"
+                                    VerticalContentAlignment="Center"
+                                    Margin="0,0,15,0"/>
+
+                        <!-- Rol -->
+                        <TextBlock Grid.Column="4" Grid.Row="0"
+                                  Text="Rol:" 
+                                  Foreground="#9CA3AF" 
+                                  FontSize="12"
+                                  VerticalAlignment="Bottom"
+                                  Margin="0,0,10,5"/>
+                        <ComboBox Grid.Column="5" Grid.Row="0"
+                                 x:Name="RoleComboBox" 
+                                 Height="36" 
+                                 Background="#1F2937"
+                                 Foreground="White"
+                                 BorderBrush="#374151"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,15,0">
+                            <ComboBoxItem Content="admin"/>
+                            <ComboBoxItem Content="moderatör"/>
+                            <ComboBoxItem Content="muhasebe"/>
+                            <ComboBoxItem Content="kargo"/>
+                            <ComboBoxItem Content="kullanıcı"/>
+                        </ComboBox>
+
+                        <!-- Oluştur Button -->
+                        <Button Grid.Column="6" Grid.Row="0"
+                               Content="Ekle" 
+                               Width="100" 
+                               Height="36"
+                               Margin="15,0,0,0"
+                               Background="#06B6D4" 
+                               Foreground="White"
+                               Click="CreateUserButton_Click"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Cursor="Hand"
+                               VerticalAlignment="Bottom"
+                               BorderThickness="0"
+                               Style="{StaticResource RoundButtonStyle}"/>
+                    </Grid>
                 </StackPanel>
+            </Border>
 
-                <StackPanel Margin="0,0,10,0">
-                    <TextBlock Text="Rol" Foreground="White"/>
-                    <ComboBox x:Name="RoleComboBox" Width="160">
-                        <ComboBoxItem Content="admin"/>
-                        <ComboBoxItem Content="moderatör"/>
-                        <ComboBoxItem Content="muhasebe"/>
-                        <ComboBoxItem Content="kargo"/>
-                        <ComboBoxItem Content="kullanıcı"/>
-                    </ComboBox>
+            <!-- User Login Enable Section -->
+            <Border Background="#152234"
+                    CornerRadius="12"
+                    Padding="20"
+                    Margin="20,0,0,0" Width="1145">
+                <StackPanel>
+                    <TextBlock Text="Kullanıcı Girişi Durumu"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Sistem kullanıcılarının girişi yapmasını etkinleştir veya devre dışı bırak."
+                               FontSize="13"
+                               Foreground="#D1D5DB"
+                               Margin="0,0,0,15"/>
+
+                    <Button x:Name="EnableUserLoginButton"
+                           Content="Kullanıcı Girişi"
+                           Width="250" 
+                           Height="45"
+                           Background="#1F2937"
+                           Foreground="White"
+                           Click="EnableUserLoginButton_Click"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Cursor="Hand"
+                           BorderThickness="1"
+                           BorderBrush="#374151"
+                           Style="{StaticResource RoundButtonStyle}"/>
                 </StackPanel>
-
-                <Button Content="Oluştur" Width="100" Height="30" Margin="10,22,0,0" Click="CreateUserButton_Click"/>
-            </StackPanel>
-
+            </Border>
         </StackPanel>
     </Grid>
 </UserControl>

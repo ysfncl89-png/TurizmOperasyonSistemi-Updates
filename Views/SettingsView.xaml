@@ -229,16 +229,7 @@
 
                 <Button Content="Otel Ekle"
                         Style="{StaticResource SettingCardStyle}"
-
-
                         Click="SettingButton_Click"/>
-
-                <Button x:Name="EnableUserLoginButton"
-                        Content="Kullanıcı Girişi"
-                        Style="{StaticResource SettingCardStyle}"
-                        Click="EnableUserLoginButton_Click"/>
-
-
 
             </WrapPanel>
 

@@ -89,5 +89,77 @@ namespace TurizmOperasyonSistemi.Services
         {
             return await _context.Users.CountAsync();
         }
+
+        public async Task<(bool Success, string Message)> UpdateUserRoleAsync(int userId, string newRole)
+        {
+            if (string.IsNullOrWhiteSpace(newRole))
+            {
+                return (false, "Rol boş olamaz.");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return (false, "Kullanıcı bulunamadı.");
+            }
+
+            try
+            {
+                user.Role = newRole.Trim();
+                var perms = RolePermissions.GetDefaultPermissions(newRole);
+                user.PermissionsJson = System.Text.Json.JsonSerializer.Serialize(perms);
+                await _context.SaveChangesAsync();
+                return (true, "Rol başarıyla güncellendi.");
+            }
+            catch (System.Exception ex)
+            {
+                return (false, $"Rol güncellenirken hata: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, string Message)> UpdateUserPasswordAsync(int userId, string newPassword)
+        {
+            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+            {
+                return (false, "Şifre en az 6 karakter olmalıdır.");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return (false, "Kullanıcı bulunamadı.");
+            }
+
+            try
+            {
+                user.PasswordHash = PasswordHasher.HashPassword(newPassword);
+                await _context.SaveChangesAsync();
+                return (true, "Şifre başarıyla güncellendi.");
+            }
+            catch (System.Exception ex)
+            {
+                return (false, $"Şifre güncellenirken hata: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, string Message)> DeleteUserAsync(int userId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return (false, "Kullanıcı bulunamadı.");
+            }
+
+            try
+            {
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+                return (true, "Kullanıcı başarıyla silindi.");
+            }
+            catch (System.Exception ex)
+            {
+                return (false, $"Kullanıcı silinirken hata: {ex.Message}");
+            }
+        }
     }
 }
