@@ -1689,6 +1689,22 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
         {
             try
             {
+                // Permission check: only allow editing if user has lists.edit or (in cargo mode) lists.karo.edit
+                try
+                {
+                    var cu = TurizmOperasyonSistemi.Services.CurrentUser.Instance;
+                    bool canEdit = cu.HasPermission(Services.PermissionKeys.ListsEdit);
+                    // allow karo-specific edit if in cargo mode and user has karo edit
+                    if (!canEdit && this.CargoOnlyMode && cu.HasPermission(Services.PermissionKeys.ListsKaroEdit)) canEdit = true;
+
+                    if (!canEdit)
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
+                }
+                catch { }
+
                 // In Havayolu mode, prevent editing of Gender column unless it was enabled by double-click
                 if (_currentMode == ViewMode.Havayolu)
                 {
@@ -2849,6 +2865,23 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
         {
             try
             {
+                // Check permissions before any edit behavior
+                try
+                {
+                    var cu = TurizmOperasyonSistemi.Services.CurrentUser.Instance;
+                    // if user has global edit permission let it through
+                    if (!cu.HasPermission(Services.PermissionKeys.ListsEdit))
+                    {
+                        // allow special cargo edit only for cargo role when in CargoOnlyMode and has karo edit permission
+                        if (!(this.CargoOnlyMode && cu.HasPermission(Services.PermissionKeys.ListsKaroEdit)))
+                        {
+                            // no edit permission -> ignore double-click
+                            return;
+                        }
+                    }
+                }
+                catch { }
+
                 // debug: indicate double-click handler fired
                 try { ShowSaveToast("Çift tıklama algılandı"); } catch { }
                 var dep = (DependencyObject)e.OriginalSource;

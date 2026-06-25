@@ -301,10 +301,67 @@ namespace TurizmOperasyonSistemi.Views
 
         private void Ledger_Click(object sender, RoutedEventArgs e)
         {
-            var mw = System.Windows.Application.Current.MainWindow as MainWindow;
-            if (mw != null)
+            try
             {
-                mw.NavigateTo(new LedgerView());
+                var cu = TurizmOperasyonSistemi.Services.CurrentUser.Instance;
+                // Allow if admin or has payments permission
+                if (!(cu.IsAdmin || cu.HasPermission(TurizmOperasyonSistemi.Services.PermissionKeys.Payments)))
+                {
+                    MessageBox.Show("Bu modüle erişim izniniz yok.");
+                    return;
+                }
+
+                // Try NavigationService first
+                try
+                {
+                    var nav = System.Windows.Navigation.NavigationService.GetNavigationService(this);
+                    if (nav != null)
+                    {
+                        nav.Navigate(new LedgerView());
+                        return;
+                    }
+                }
+                catch { }
+
+                // Try window hosting this control
+                try
+                {
+                    var host = Window.GetWindow(this);
+                    if (host is MainWindow mwHost)
+                    {
+                        mwHost.NavigateTo(new LedgerView());
+                        return;
+                    }
+                }
+                catch { }
+
+                // Fallback to Application.Current.MainWindow if it's MainWindow
+                try
+                {
+                    var appMain = System.Windows.Application.Current?.MainWindow as MainWindow;
+                    if (appMain != null)
+                    {
+                        appMain.NavigateTo(new LedgerView());
+                        return;
+                    }
+                }
+                catch { }
+
+                // Last resort: open a new window with the LedgerView inside a Frame
+                var win = new System.Windows.Window
+                {
+                    Title = "Cari Hesap - Filtreler",
+                    Content = new System.Windows.Controls.Frame { Content = new LedgerView(), NavigationUIVisibility = System.Windows.Navigation.NavigationUIVisibility.Hidden },
+                    Width = 1100,
+                    Height = 700,
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+                    Owner = System.Windows.Application.Current?.MainWindow
+                };
+                win.Show();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Cari işlemlere geçiş sırasında hata: {ex.Message}");
             }
         }
 

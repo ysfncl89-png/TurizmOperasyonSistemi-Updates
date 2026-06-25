@@ -35,7 +35,7 @@ namespace TurizmOperasyonSistemi.Services
             return (false, "Kullanıcı adı veya şifre hatalı.", null);
         }
 
-        public async Task<(bool Success, string Message, User? User)> RegisterAsync(string username, string password, string confirmPassword)
+        public async Task<(bool Success, string Message, User? User)> RegisterAsync(string username, string password, string confirmPassword, string role = "user")
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
@@ -64,11 +64,14 @@ namespace TurizmOperasyonSistemi.Services
                 return (false, "Bu kullanıcı adı zaten kullanılıyor.", null);
             }
 
+            var perms = RolePermissions.GetDefaultPermissions(role ?? "user");
             var newUser = new User
             {
                 Username = username,
                 PasswordHash = PasswordHasher.HashPassword(password),
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                Role = role,
+                PermissionsJson = System.Text.Json.JsonSerializer.Serialize(perms)
             };
 
             _context.Users.Add(newUser);

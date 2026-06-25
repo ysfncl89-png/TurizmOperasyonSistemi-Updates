@@ -75,11 +75,8 @@
                         Cursor="Hand"
                         Margin="0,0,0,10"/>
 
-                <!-- Register Link -->
-                <TextBlock TextAlignment="Center" Margin="0,0,0,0">
-                    <Run Text="Hesabınız yok mu? " Foreground="#CCCCCC"/>
-                    <Hyperlink Click="RegisterLink_Click" Foreground="#FF8B5CF6">Kaydol</Hyperlink>
-                </TextBlock>
+                <!-- Kayıt (Kaydol) linki kaldırıldı: yalnızca ilk çalıştırmada admin oluşturma izni verilir -->
+
             </StackPanel>
 
             <!-- Register Mode Content -->

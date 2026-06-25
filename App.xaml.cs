@@ -34,6 +34,13 @@ namespace TurizmOperasyonSistemi
                     context.EnsureNotificationsTableExists();
                     context.EnsureUsersTableExists();
                 }
+
+                // Seed missing PermissionsJson values based on role defaults for existing users
+                try
+                {
+                    TurizmOperasyonSistemi.Services.UserPermissionSeeder.EnsureUserPermissionsSeeded();
+                }
+                catch { }
             }
             catch (Exception ex)
             {

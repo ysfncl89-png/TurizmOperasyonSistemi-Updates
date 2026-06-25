@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Media;
 using TurizmOperasyonSistemi.Views;
+using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi
 {
@@ -10,6 +11,52 @@ namespace TurizmOperasyonSistemi
         public MainWindow()
         {
             InitializeComponent(); 
+
+            // Kullanıcı yönetimi ve modül butonlarını kullanıcının izinlerine göre göster
+            // Show buttons if user has specific permission OR is admin (backward compatible)
+
+            // Anasayfa: herkes görebilir
+            HomeButton.Visibility = Visibility.Visible;
+
+            // Kişiler modülü: admin, moderatör ve genel modüllere erişebilenlere göster
+            PersonsButton.Visibility = (CurrentUser.Instance.IsAdmin || 
+                string.Equals(CurrentUser.Instance.User?.Role, "moderatör", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(CurrentUser.Instance.User?.Role, "moderator", StringComparison.OrdinalIgnoreCase)) 
+                ? Visibility.Visible : Visibility.Collapsed;
+
+            // Tur Kayıt: admin, moderatör ve genel modüllere erişebilenlere göster
+            RegistrationButton.Visibility = (CurrentUser.Instance.IsAdmin || 
+                string.Equals(CurrentUser.Instance.User?.Role, "moderatör", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(CurrentUser.Instance.User?.Role, "moderator", StringComparison.OrdinalIgnoreCase)) 
+                ? Visibility.Visible : Visibility.Collapsed;
+
+            // Odalama Motoru: admin, moderatör ve genel modüllere erişebilenlere göster
+            HotelAllocationButton.Visibility = (CurrentUser.Instance.IsAdmin || 
+                string.Equals(CurrentUser.Instance.User?.Role, "moderatör", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(CurrentUser.Instance.User?.Role, "moderator", StringComparison.OrdinalIgnoreCase)) 
+                ? Visibility.Visible : Visibility.Collapsed;
+
+            // Ayarlar: sadece admin görebilir
+            SettingsButton.Visibility = (CurrentUser.Instance.IsAdmin) 
+                ? Visibility.Visible : Visibility.Collapsed;
+
+            // Ödemeler ve Finans: admin, moderatör, muhasebe görebilir
+            PaymentsButton.Visibility = (CurrentUser.Instance.IsAdmin || 
+                CurrentUser.Instance.HasPermission(PermissionKeys.Payments)) 
+                ? Visibility.Visible : Visibility.Collapsed;
+
+            // Kargo: admin, moderatör, kargo görebilir
+            CargoButton.Visibility = (CurrentUser.Instance.IsAdmin || 
+                CurrentUser.Instance.HasPermission(PermissionKeys.Cargo)) 
+                ? Visibility.Visible : Visibility.Collapsed;
+
+            // Listeler: admin, moderatör, kargo, kullanıcı görebilir
+            ListsButton.Visibility = (CurrentUser.Instance.IsAdmin || 
+                CurrentUser.Instance.HasPermission(PermissionKeys.ListsView)) 
+                ? Visibility.Visible : Visibility.Collapsed;
+
+            // Kullanıcı yönetimi: sadece admin görebilir
+            UserManagementButton.Visibility = (CurrentUser.Instance.IsAdmin || CurrentUser.Instance.HasPermission(PermissionKeys.UserManagement)) ? Visibility.Visible : Visibility.Collapsed;
 
             MainFrame.Navigate(new HomeView());
             // Varsayılan olarak Anasayfa seçili görünmeli
@@ -39,6 +86,16 @@ namespace TurizmOperasyonSistemi
 
         private void PersonsButton_Click(object sender, RoutedEventArgs e)
         {
+            // Kontrol: kişiler modülüne erişim izni var mı?
+            if (!CurrentUser.Instance.IsAdmin && 
+                !string.Equals(CurrentUser.Instance.User?.Role, "moderatör", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(CurrentUser.Instance.User?.Role, "moderator", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             ResetMenuColors();
             PersonsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF06B6D4"));
             MainFrame.Navigate(new PersonsWizardView());
@@ -46,6 +103,14 @@ namespace TurizmOperasyonSistemi
 
         private void ListsButton_Click(object sender, RoutedEventArgs e)
         {
+            // Kontrol: listeler modülüne erişim izni var mı?
+            if (!CurrentUser.Instance.IsAdmin && !CurrentUser.Instance.HasPermission(PermissionKeys.ListsView))
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             ResetMenuColors();
             ListsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
             MainFrame.Navigate(new ListsView());
@@ -53,6 +118,14 @@ namespace TurizmOperasyonSistemi
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
+            // Kontrol: ayarlara erişim izni var mı? (sadece admin)
+            if (!CurrentUser.Instance.IsAdmin)
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             ResetMenuColors();
             SettingsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EC4899"));
             MainFrame.Navigate(new SettingsView());
@@ -61,6 +134,16 @@ namespace TurizmOperasyonSistemi
         // 🔥 YENİ: KAYIT MODÜLÜ BUTON TIKLAMA OLAYI
         private void RegistrationButton_Click(object sender, RoutedEventArgs e)
         {
+            // Kontrol: tur kayıt modülüne erişim izni var mı?
+            if (!CurrentUser.Instance.IsAdmin && 
+                !string.Equals(CurrentUser.Instance.User?.Role, "moderatör", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(CurrentUser.Instance.User?.Role, "moderator", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             ResetMenuColors();
 
             // Buton aktifleşince Amber/Turuncu renge bürünsün
@@ -71,6 +154,16 @@ namespace TurizmOperasyonSistemi
         }
         private void HotelAllocationButton_Click(object sender, RoutedEventArgs e)
         {
+            // Kontrol: odalama modülüne erişim izni var mı?
+            if (!CurrentUser.Instance.IsAdmin && 
+                !string.Equals(CurrentUser.Instance.User?.Role, "moderatör", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(CurrentUser.Instance.User?.Role, "moderator", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             ResetMenuColors();
             HotelAllocationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             MainFrame.Navigate(new HotelAllocationView());
@@ -79,6 +172,14 @@ namespace TurizmOperasyonSistemi
         // Yeni: Ödemeler ve Finans modülü buton tıklama olayı
         private void PaymentsButton_Click(object sender, RoutedEventArgs e)
         {
+            // Kontrol: ödemeler modülüne erişim izni var mı?
+            if (!CurrentUser.Instance.IsAdmin && !CurrentUser.Instance.HasPermission(PermissionKeys.Payments))
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             ResetMenuColors();
 
             // Ödemeler için özel renk (mor tonlu, başka butonlardan farklı)
@@ -90,6 +191,14 @@ namespace TurizmOperasyonSistemi
 
         private void CargoButton_Click(object sender, RoutedEventArgs e)
         {
+            // Kontrol: kargo modülüne erişim izni var mı?
+            if (!CurrentUser.Instance.IsAdmin && !CurrentUser.Instance.HasPermission(PermissionKeys.Cargo))
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             ResetMenuColors();
 
             // Kargo seçili iken özel bir mavi renge bürünsün
@@ -97,6 +206,21 @@ namespace TurizmOperasyonSistemi
 
             // Kargo sayfasına git
             MainFrame.Navigate(new Views.CargoView());
+        }
+
+        private void UserManagementButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Kontrol: kullanıcı yönetimine erişim izni var mı? (sadece admin)
+            if (!CurrentUser.Instance.IsAdmin)
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            ResetMenuColors();
+            UserManagementButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
+            MainFrame.Navigate(new Views.UserManagementView());
         }
 
         // Programatik olarak anasayfaya geçiş yapmak isteyen diğer bileşenler için

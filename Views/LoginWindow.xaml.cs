@@ -110,7 +110,7 @@ namespace TurizmOperasyonSistemi.Views
 
             try
             {
-                var (success, message, user) = await _authService.RegisterAsync(username, password, confirmPassword);
+                var (success, message, user) = await _authService.RegisterAsync(username, password, confirmPassword, _isFirstUser ? "admin" : "user");
 
                 if (success && user != null)
                 {

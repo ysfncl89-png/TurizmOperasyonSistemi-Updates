@@ -189,7 +189,9 @@ namespace TurizmOperasyonSistemi.Data
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
                         Username TEXT NOT NULL UNIQUE,
                         PasswordHash TEXT NOT NULL,
-                        CreatedAt TEXT NOT NULL
+                        CreatedAt TEXT NOT NULL,
+                        Role TEXT NOT NULL DEFAULT 'user',
+                        PermissionsJson TEXT NOT NULL DEFAULT '[]'
                     );";
                     cmd.ExecuteNonQuery();
                 }
@@ -199,6 +201,22 @@ namespace TurizmOperasyonSistemi.Data
                 {
                     cmd.CommandText = @"CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_Username ON Users(Username);";
                     cmd.ExecuteNonQuery();
+                }
+
+                // Ensure Role and PermissionsJson columns exist for older databases
+                EnsureColumnExists(conn, "Users", "Role", "TEXT");
+                EnsureColumnExists(conn, "Users", "PermissionsJson", "TEXT");
+
+                // Normalize Role NULLs to 'user' and PermissionsJson to '[]' to avoid runtime issues
+                using (var up = conn.CreateCommand())
+                {
+                    up.CommandText = "UPDATE Users SET Role = 'user' WHERE Role IS NULL OR Role = '';";
+                    up.ExecuteNonQuery();
+                }
+                using (var up2 = conn.CreateCommand())
+                {
+                    up2.CommandText = "UPDATE Users SET PermissionsJson = '[]' WHERE PermissionsJson IS NULL OR PermissionsJson = '';";
+                    up2.ExecuteNonQuery();
                 }
             }
             catch (Exception ex)
