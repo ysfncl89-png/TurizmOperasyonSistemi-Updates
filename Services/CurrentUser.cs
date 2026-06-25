@@ -68,6 +68,13 @@ namespace TurizmOperasyonSistemi.Services
         {
             if (!IsLoggedIn) return false;
             if (string.IsNullOrWhiteSpace(key)) return false;
+
+            // Kargo rolündeki kullanıcılar yalnızca kargo modülüne erişebilsin -- veritabanındaki PermissionsJson'da ekstra izinler olsa bile
+            if (string.Equals(_user?.Role ?? string.Empty, "kargo", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Equals(key, PermissionKeys.Cargo, StringComparison.OrdinalIgnoreCase);
+            }
+
             // If user has global wildcard, allow all except explicitly restricted cases
             if (_permissions.Contains(PermissionKeys.All))
             {

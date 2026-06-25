@@ -52,8 +52,8 @@ namespace TurizmOperasyonSistemi.Services
 
             if (role == "kargo")
             {
-                // cargo can access cargo module and lists view and only karo edit in lists
-                return new List<string> { PermissionKeys.Cargo, PermissionKeys.ListsView, PermissionKeys.ListsKaroEdit, PermissionKeys.Export };
+                // kargo rolü yalnızca kargo modülüne erişsin
+                return new List<string> { PermissionKeys.Cargo };
             }
 
             // default: kullanıcı
