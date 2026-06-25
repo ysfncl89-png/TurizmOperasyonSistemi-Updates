@@ -234,6 +234,14 @@ namespace TurizmOperasyonSistemi
         // Genel navigasyon yardımcı metodu: dışarıdan UserControl'a geçiş yapar
         public void NavigateTo(System.Windows.Controls.UserControl view)
         {
+            ResetMenuColors();
+
+            // PaymentsView'e geri dönüyorsak, buton rengini ayarla
+            if (view is PaymentsView)
+            {
+                PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
+            }
+
             MainFrame.Navigate(view);
         }
     }

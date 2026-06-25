@@ -15,6 +15,22 @@ namespace TurizmOperasyonSistemi.Views
         {
             InitializeComponent();
             LoadUsers();
+            UpdateButtonState();
+        }
+
+        private void UpdateButtonState()
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    UpdateLoginButtonAppearance(db);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Buton durumu güncellenirken hata: {ex.Message}");
+            }
         }
 
         private async void LoadUsers()

@@ -8,7 +8,7 @@
              Background="#0F172A" Width="1229">
 
     <Grid Margin="20">
-        <StackPanel>
+        <StackPanel Margin="-18,0,0,0">
             <!-- Header -->
             <TextBlock Text="Kullanıcı Yönetimi" 
                        FontSize="28" 

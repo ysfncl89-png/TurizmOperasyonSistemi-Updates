@@ -373,11 +373,35 @@ namespace TurizmOperasyonSistemi.Views
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
-            // Navigate back to PaymentsView
-            var mw = System.Windows.Application.Current.MainWindow as MainWindow;
-            if (mw != null)
+            try
             {
+                // Method 1: Başlık ile MainWindow bulma
+                MainWindow mw = null;
+
+                // Application.Current.Windows'da MainWindow bulma
+                foreach (var window in System.Windows.Application.Current.Windows)
+                {
+                    if (window is MainWindow)
+                    {
+                        mw = window as MainWindow;
+                        break;
+                    }
+                }
+
+                if (mw == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("BackButton: MainWindow bulunamadı!");
+                    System.Windows.MessageBox.Show("Ana pencere bulunamadı.");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine("BackButton: MainWindow bulundu, PaymentsView'e navigating");
                 mw.NavigateTo(new PaymentsView());
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"BackButton hatası: {ex.Message}\n{ex.StackTrace}");
+                System.Windows.MessageBox.Show($"Geri buton hatası: {ex.Message}");
             }
         }
 

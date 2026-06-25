@@ -311,53 +311,23 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
-                // Try NavigationService first
-                try
+                // Get the MainWindow and navigate to LedgerView
+                var mw = System.Windows.Application.Current?.MainWindow as MainWindow;
+                if (mw != null)
                 {
-                    var nav = System.Windows.Navigation.NavigationService.GetNavigationService(this);
-                    if (nav != null)
-                    {
-                        nav.Navigate(new LedgerView());
-                        return;
-                    }
+                    mw.NavigateTo(new LedgerView());
+                    return;
                 }
-                catch { }
 
-                // Try window hosting this control
-                try
+                // Fallback: Try to find the window hosting this control
+                var host = Window.GetWindow(this);
+                if (host is MainWindow mwHost)
                 {
-                    var host = Window.GetWindow(this);
-                    if (host is MainWindow mwHost)
-                    {
-                        mwHost.NavigateTo(new LedgerView());
-                        return;
-                    }
+                    mwHost.NavigateTo(new LedgerView());
+                    return;
                 }
-                catch { }
 
-                // Fallback to Application.Current.MainWindow if it's MainWindow
-                try
-                {
-                    var appMain = System.Windows.Application.Current?.MainWindow as MainWindow;
-                    if (appMain != null)
-                    {
-                        appMain.NavigateTo(new LedgerView());
-                        return;
-                    }
-                }
-                catch { }
-
-                // Last resort: open a new window with the LedgerView inside a Frame
-                var win = new System.Windows.Window
-                {
-                    Title = "Cari Hesap - Filtreler",
-                    Content = new System.Windows.Controls.Frame { Content = new LedgerView(), NavigationUIVisibility = System.Windows.Navigation.NavigationUIVisibility.Hidden },
-                    Width = 1100,
-                    Height = 700,
-                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
-                    Owner = System.Windows.Application.Current?.MainWindow
-                };
-                win.Show();
+                MessageBox.Show("Ana pencere bulunamadı. Lütfen uygulamayı yeniden başlatın.");
             }
             catch (System.Exception ex)
             {
