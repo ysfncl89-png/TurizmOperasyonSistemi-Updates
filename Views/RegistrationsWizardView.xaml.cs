@@ -1190,7 +1190,13 @@ namespace TurizmOperasyonSistemi.Views
                         catch { }
 
                         // Also notify other modules that the registration was saved/activated so they can add the person to pools
-                        try { NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive }, persistToDb: false); } catch { }
+                        try 
+                        { 
+                            // Eğer kişi zaten odalanmışsa (RoomOccupants'ta varsa), AddToPool=false olsun
+                            bool isAlreadyAllocated = db.RoomOccupants.Any(o => o.PassengerId == registration.PersonId);
+                            bool addToPool = registration.IsActive && !isAlreadyAllocated;
+                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = addToPool }, persistToDb: false); 
+                        } catch { }
                     }
                 }
                 catch { }
@@ -1296,7 +1302,10 @@ namespace TurizmOperasyonSistemi.Views
 
                         try
                         {
-                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive }, persistToDb: false);
+                            // Eğer kişi zaten odalanmışsa (RoomOccupants'ta varsa), AddToPool=false olsun
+                            bool isAlreadyAllocated = db.RoomOccupants.Any(o => o.PassengerId == registration.PersonId);
+                            bool addToPool = registration.IsActive && !isAlreadyAllocated;
+                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = addToPool }, persistToDb: false);
                         }
                         catch
                         {
@@ -2565,7 +2574,12 @@ namespace TurizmOperasyonSistemi.Views
                         // Bildirim gönder: Bir kaydın odalama kriterleri güncellendi
                         try
                         {
-                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = registration.IsActive }, persistToDb: false);
+                            // Eğer kişi zaten odalanmışsa (RoomOccupants'ta varsa), AddToPool=false olsun
+                            // Yöklemi havuza yeniden eklemesin. Sadece yeni/havuzda bekleyen kişiler eklenmeli.
+                            bool isAlreadyAllocated = db.RoomOccupants.Any(o => o.PassengerId == registration.PersonId);
+                            bool addToPool = registration.IsActive && !isAlreadyAllocated;
+
+                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = addToPool }, persistToDb: false);
                         }
                         catch
                         {
