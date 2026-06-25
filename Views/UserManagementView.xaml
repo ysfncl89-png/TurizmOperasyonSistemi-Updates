@@ -17,7 +17,7 @@
                        Margin="0,0,0,25"/>
 
             <!-- DataGrid Section -->
-            <Border Background="#152234"
+            <Border Background="#1a2942"
                     CornerRadius="12"
                     Padding="15"
                     Margin="0,0,0,25">
@@ -157,10 +157,10 @@
             </Border>
 
             <!-- Create User Section -->
-            <Border Background="#152234"
+            <Border Background="#1a2942"
                     CornerRadius="12"
                     Padding="20"
-                    Margin="0,0,0,0">
+                    Margin="0,0,0,25">
                 <StackPanel>
                     <TextBlock Text="Yeni Kullanıcı Ekle"
                                FontSize="16"
@@ -259,10 +259,10 @@
             </Border>
 
             <!-- User Login Enable Section -->
-            <Border Background="#152234"
+            <Border Background="#1a2942"
                     CornerRadius="12"
                     Padding="20"
-                    Margin="20,0,0,0" Width="1145">
+                    Margin="0,0,0,0">
                 <StackPanel>
                     <TextBlock Text="Kullanıcı Girişi Durumu"
                                FontSize="16"
