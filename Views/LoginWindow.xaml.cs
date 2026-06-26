@@ -30,7 +30,8 @@ namespace TurizmOperasyonSistemi.Views
                     // Eğer login disabled ise MainWindow'u aç
                     if (!enableLogin)
                     {
-                        CurrentUser.Instance.SetUser(new Models.User { Id = -1, Username = "System", PasswordHash = "", CreatedAt = DateTime.Now });
+                        // Otomatik sistem kullanıcıyı admin olarak ayarla ki menüler görünsün
+                        CurrentUser.Instance.SetUser(new Models.User { Id = -1, Username = "System", PasswordHash = "", Role = "admin", PermissionsJson = "[\"all\"]", CreatedAt = DateTime.Now });
                         MainWindow mainWindow = new MainWindow();
                         mainWindow.Show();
                         this.Close();
