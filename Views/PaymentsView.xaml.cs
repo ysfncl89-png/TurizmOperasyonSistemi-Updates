@@ -272,6 +272,33 @@ namespace TurizmOperasyonSistemi.Views
                         IncompleteCountTextBlock.Text = incompleteCount.ToString();
                         try { OverpaidCountTextBlock.Text = overpaidCount.ToString(); } catch { }
 
+                        // Güncelle: progress bar'ları ve yüzde metinlerini ayarla
+                        try
+                        {
+                            var collectedPb = this.FindName("CollectedProgressBar_Payments") as ProgressBar;
+                            var remainingPb = this.FindName("RemainingProgressBar_Payments") as ProgressBar;
+                            var collectedPctTb = this.FindName("CollectedPercentageText_Payments") as TextBlock;
+                            var remainingPctTb = this.FindName("RemainingPercentageText_Payments") as TextBlock;
+
+                            if (collectedPb != null && remainingPb != null)
+                            {
+                                double collectedPercentValue = 0, remainingPercentValue = 0;
+                                decimal grandTotal = totalCollected + totalRemaining;
+                                if (grandTotal > 0)
+                                {
+                                    collectedPercentValue = (double)((totalCollected / grandTotal) * 100m);
+                                    remainingPercentValue = (double)((totalRemaining / grandTotal) * 100m);
+                                }
+
+                                collectedPb.Value = collectedPercentValue;
+                                remainingPb.Value = remainingPercentValue;
+
+                                if (collectedPctTb != null) collectedPctTb.Text = $"{Math.Round(collectedPercentValue, 1)}%";
+                                if (remainingPctTb != null) remainingPctTb.Text = $"{Math.Round(remainingPercentValue, 1)}%";
+                            }
+                        }
+                        catch { }
+
                         try
                         {
                             using var db = new TurizmOperasyonSistemi.Data.AppDbContext();

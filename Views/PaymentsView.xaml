@@ -123,6 +123,15 @@
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="Toplam Tahsilat" Foreground="#94A3B8" FontSize="11"/>
                                     <TextBlock x:Name="TotalCollectedTextBlock" Text="-" Foreground="#14B8A6" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                                    <!-- Payments: Tahsilat Progress Bar -->
+                                    <StackPanel Orientation="Vertical" Margin="0,8,0,0">
+                                        <Border Height="14" Background="#1A1F3A" CornerRadius="6" Margin="0,6,0,0" Padding="0" ClipToBounds="True">
+                                            <Grid>
+                                                <ProgressBar x:Name="CollectedProgressBar_Payments" Value="0" Maximum="100" Height="14" Background="Transparent" Foreground="#14B8A6" BorderThickness="0" />
+                                                <TextBlock x:Name="CollectedPercentageText_Payments" Text="0%" Foreground="#E6EEF8" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
 
@@ -130,6 +139,15 @@
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="Toplam Kalan Tahsilat" Foreground="#94A3B8" FontSize="11"/>
                                     <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Foreground="#FCA311" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                                    <!-- Payments: Kalan Progress Bar -->
+                                    <StackPanel Orientation="Vertical" Margin="0,8,0,0">
+                                        <Border Height="14" Background="#1A1F3A" CornerRadius="6" Margin="0,6,0,0" Padding="0" ClipToBounds="True">
+                                            <Grid>
+                                                <ProgressBar x:Name="RemainingProgressBar_Payments" Value="0" Maximum="100" Height="14" Background="Transparent" Foreground="#FCA311" BorderThickness="0" />
+                                                <TextBlock x:Name="RemainingPercentageText_Payments" Text="0%" Foreground="#E6EEF8" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
                         </Grid>
