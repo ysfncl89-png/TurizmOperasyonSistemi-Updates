@@ -960,8 +960,43 @@ namespace TurizmOperasyonSistemi.Views
 
                     var collectedTb = this.FindName("TotalCollectedText") as TextBlock;
                     var remainingTb = this.FindName("TotalRemainingText") as TextBlock;
+                    var collectedPb = this.FindName("CollectedProgressBar") as ProgressBar;
+                    var remainingPb = this.FindName("RemainingProgressBar") as ProgressBar;
+                    var collectedPercent = this.FindName("CollectedPercentageText") as TextBlock;
+                    var remainingPercent = this.FindName("RemainingPercentageText") as TextBlock;
+
                     if (collectedTb != null) collectedTb.Text = collectedDisplay;
                     if (remainingTb != null) remainingTb.Text = remainingDisplay;
+
+                    // Progress Bar Güncelleme
+                    try
+                    {
+                        decimal totalCollected = ledgerPerPerson.Sum(p => p.Paid);
+                        decimal totalRemaining = ledgerPerPerson.Sum(p => p.Remaining);
+                        decimal grandTotal = totalCollected + totalRemaining;
+
+                        if (grandTotal > 0 && collectedPb != null && remainingPb != null)
+                        {
+                            double collectedPercent_Value = (double)((totalCollected / grandTotal) * 100);
+                            double remainingPercent_Value = (double)((totalRemaining / grandTotal) * 100);
+
+                            collectedPb.Value = collectedPercent_Value;
+                            remainingPb.Value = remainingPercent_Value;
+
+                            if (collectedPercent != null)
+                                collectedPercent.Text = $"{Math.Round(collectedPercent_Value, 1)}%";
+                            if (remainingPercent != null)
+                                remainingPercent.Text = $"{Math.Round(remainingPercent_Value, 1)}%";
+                        }
+                        else if (collectedPb != null && remainingPb != null)
+                        {
+                            collectedPb.Value = 0;
+                            remainingPb.Value = 0;
+                            if (collectedPercent != null) collectedPercent.Text = "0%";
+                            if (remainingPercent != null) remainingPercent.Text = "0%";
+                        }
+                    }
+                    catch { }
                 }
             }
             catch
@@ -970,8 +1005,17 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     var collectedTb = this.FindName("TotalCollectedText") as TextBlock;
                     var remainingTb = this.FindName("TotalRemainingText") as TextBlock;
+                    var collectedPb = this.FindName("CollectedProgressBar") as ProgressBar;
+                    var remainingPb = this.FindName("RemainingProgressBar") as ProgressBar;
+                    var collectedPercent = this.FindName("CollectedPercentageText") as TextBlock;
+                    var remainingPercent = this.FindName("RemainingPercentageText") as TextBlock;
+
                     if (collectedTb != null) collectedTb.Text = "-";
                     if (remainingTb != null) remainingTb.Text = "-";
+                    if (collectedPb != null) collectedPb.Value = 0;
+                    if (remainingPb != null) remainingPb.Value = 0;
+                    if (collectedPercent != null) collectedPercent.Text = "0%";
+                    if (remainingPercent != null) remainingPercent.Text = "0%";
                 }
                 catch { }
             }

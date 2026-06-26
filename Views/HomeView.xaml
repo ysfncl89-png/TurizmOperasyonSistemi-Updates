@@ -67,7 +67,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Sol üst: Aktif Turlar combobox (daha düzenli Grid ile hizalandı) -->
-            <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Height="114">
+            <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Height="148">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -108,7 +108,7 @@
                 </StackPanel>
 
                 <!-- Sağ: Toplam tahsilat / kalan -->
-                <Border Grid.Column="2" x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="12" Margin="18,0,0,0" VerticalAlignment="Center" Width="320">
+                <Border Grid.Column="2" x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="12" Margin="18,0,0,0" VerticalAlignment="Center" Width="320" Height="140">
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <Grid Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -125,13 +125,31 @@
                             <TextBlock Text="Toplam Tahsilat:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock x:Name="TotalCollectedText" Text="USD -" Foreground="#7EE787" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                        <!-- Tahsilat Progress Bar -->
+                        <StackPanel Orientation="Vertical" Margin="28,4,0,0">
+                            <Border Height="18" Background="#1A1F3A" CornerRadius="6" Margin="0,0,0,2" Padding="0" ClipToBounds="True">
+                                <Grid>
+                                    <ProgressBar x:Name="CollectedProgressBar" Value="0" Maximum="100" Height="18" Background="Transparent" Foreground="#7EE787" BorderThickness="0" />
+                                    <TextBlock x:Name="CollectedPercentageText" Text="0%" Foreground="#E6EEF8" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0">
                             <Grid Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center">
                                 <Ellipse Fill="#FCA5A5" Stroke="#F97316" StrokeThickness="0" />
                                 <TextBlock Text="$" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                             </Grid>
                             <TextBlock Text="Toplam Kalan:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock x:Name="TotalRemainingText" Text="USD -" Foreground="#FCA5A5" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <!-- Kalan Progress Bar -->
+                        <StackPanel Orientation="Vertical" Margin="28,4,0,0">
+                            <Border Height="18" Background="#1A1F3A" CornerRadius="6" Margin="0,0,0,2" Padding="0" ClipToBounds="True">
+                                <Grid>
+                                    <ProgressBar x:Name="RemainingProgressBar" Value="0" Maximum="100" Height="18" Background="Transparent" Foreground="#FCA5A5" BorderThickness="0" />
+                                    <TextBlock x:Name="RemainingPercentageText" Text="0%" Foreground="#E6EEF8" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -586,6 +604,7 @@
                         </StackPanel>
                     </Border>
                 </Grid>
+
 
                 <!-- Diğer içerik yerleşimi (gerektiğinde buraya ek kartlar veya listeler eklenebilir) -->
             </StackPanel>
