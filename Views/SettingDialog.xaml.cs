@@ -21,7 +21,8 @@ namespace TurizmOperasyonSistemi.Views
         {
             InitializeComponent();
 
-            SettingType = settingType;
+            // Turkish -> English mapping for database compatibility
+            SettingType = TranslateSettingType(settingType);
 
             TitleText.Text = settingType + " Ekle";
 
@@ -302,9 +303,11 @@ namespace TurizmOperasyonSistemi.Views
         {
             using (AppDbContext db = new AppDbContext())
             {
-                SettingsDataGrid.ItemsSource = db.AppSettings
+                var settings = db.AppSettings
                     .Where(x => x.Type == SettingType)
                     .ToList();
+
+                SettingsDataGrid.ItemsSource = settings;
             }
         }
 
@@ -332,6 +335,20 @@ namespace TurizmOperasyonSistemi.Views
                         setting.SortOrder.ToString();
                 }
             }
+        }
+
+        /// <summary>
+        /// Turkish setting labels to database type names mapping
+        /// </summary>
+        private string TranslateSettingType(string turkishLabel)
+        {
+            return turkishLabel switch
+            {
+                "Tur Türü" => "TourType",
+                "Grup Türü" => "GroupType",
+                "Oda Türü" => "RoomType",
+                _ => turkishLabel  // Return as-is if no mapping found
+            };
         }
     }
 }
