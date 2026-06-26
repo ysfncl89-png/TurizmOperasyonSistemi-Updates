@@ -402,10 +402,28 @@ namespace TurizmOperasyonSistemi.Views
 
                 var ledgerView = new LedgerView();
                 ledgerView.ApplyFilterByRegistrationIds(LedgerView.LedgerFilter.Incomplete, registrationIds);
-                var mw = System.Windows.Application.Current.MainWindow as MainWindow;
-                if (mw != null) mw.NavigateTo(ledgerView);
+
+                // Try to navigate via MainWindow, fallback to host window, and show error if not found
+                var mw = System.Windows.Application.Current?.MainWindow as MainWindow;
+                if (mw != null)
+                {
+                    mw.NavigateTo(ledgerView);
+                    return;
+                }
+
+                var host = Window.GetWindow(this);
+                if (host is MainWindow hostMw)
+                {
+                    hostMw.NavigateTo(ledgerView);
+                    return;
+                }
+
+                MessageBox.Show("Ana pencere bulunamadı. Lütfen uygulamayı yeniden başlatın.", "Bildirim", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void OverpaidCount_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -448,10 +466,28 @@ namespace TurizmOperasyonSistemi.Views
 
                 var ledgerView = new LedgerView();
                 ledgerView.ApplyFilterByRegistrationIds(LedgerView.LedgerFilter.Overpaid, registrationIds);
-                var mw = System.Windows.Application.Current.MainWindow as MainWindow;
-                if (mw != null) mw.NavigateTo(ledgerView);
+
+                // Try to navigate via MainWindow, fallback to host window, and show error if not found
+                var mw = System.Windows.Application.Current?.MainWindow as MainWindow;
+                if (mw != null)
+                {
+                    mw.NavigateTo(ledgerView);
+                    return;
+                }
+
+                var host = Window.GetWindow(this);
+                if (host is MainWindow hostMw)
+                {
+                    hostMw.NavigateTo(ledgerView);
+                    return;
+                }
+
+                MessageBox.Show("Ana pencere bulunamadı. Lütfen uygulamayı yeniden başlatın.", "Bildirim", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async void PaymentsView_Loaded(object sender, RoutedEventArgs e)
