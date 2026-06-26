@@ -393,7 +393,7 @@ namespace TurizmOperasyonSistemi.Views
                 var selected = OdaAramaPopup.ShowDialogAndReturn(ownerWindow);
                 if (selected != null)
                 {
-                    LoadSavedAllocationIntoRooming(selected);
+                    LoadSavedAllocationIntoRooming(selected, restoreDates: true);
                 }
             }
             catch
@@ -1827,6 +1827,11 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
+            // Clear date pickers when hotel selection changes to prevent auto-loaded dates
+            // from previous allocation from being used for a new hotel allocation
+            CheckInDatePicker.SelectedDate = null;
+            CheckOutDatePicker.SelectedDate = null;
+
             UpdateStep1ResultArea();
         }
 
@@ -1889,6 +1894,11 @@ namespace TurizmOperasyonSistemi.Views
                 HotelSelectComboBox.SelectedItem = null;
                 _suppressHotelSelectionChanged = false;
             }
+
+            // Clear date pickers when any allocation criteria changes (tour type, period, group, duration)
+            // This prevents previously saved dates from one allocation being used for a different allocation
+            CheckInDatePicker.SelectedDate = null;
+            CheckOutDatePicker.SelectedDate = null;
 
             _isPreviewMode = false;
             UpdateStep1ResultArea();
@@ -2110,7 +2120,7 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
-            LoadSavedAllocationIntoRooming(selectedAllocation);
+            LoadSavedAllocationIntoRooming(selectedAllocation, restoreDates: true);
         }
 
         private void EditSavedAllocationButton_Click(object sender, RoutedEventArgs e)
@@ -2123,10 +2133,10 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
-            LoadSavedAllocationIntoRooming(selectedAllocation);
+            LoadSavedAllocationIntoRooming(selectedAllocation, restoreDates: true);
         }
 
-        private void LoadSavedAllocationIntoRooming(SavedAllocationRow selectedAllocation)
+        private void LoadSavedAllocationIntoRooming(SavedAllocationRow selectedAllocation, bool restoreDates = false)
         {
             try
             {
@@ -2188,17 +2198,27 @@ namespace TurizmOperasyonSistemi.Views
                     _suppressStep1SelectionChanged = false;
 
                     // Restore saved dates if present on the allocations (use first allocation as representative)
-                    var firstAllocWithDates = allocations.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.CheckInDate) || !string.IsNullOrWhiteSpace(a.CheckOutDate));
-                    if (firstAllocWithDates != null)
+                    // Only restore dates if explicitly requested (i.e., when user clicks Edit/Inspect, not for automatic matching)
+                    if (restoreDates)
                     {
-                        if (DateTime.TryParse(firstAllocWithDates.CheckInDate, out DateTime parsedIn))
+                        var firstAllocWithDates = allocations.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.CheckInDate) || !string.IsNullOrWhiteSpace(a.CheckOutDate));
+                        if (firstAllocWithDates != null)
                         {
-                            CheckInDatePicker.SelectedDate = parsedIn;
+                            if (DateTime.TryParse(firstAllocWithDates.CheckInDate, out DateTime parsedIn))
+                            {
+                                CheckInDatePicker.SelectedDate = parsedIn;
+                            }
+                            if (DateTime.TryParse(firstAllocWithDates.CheckOutDate, out DateTime parsedOut))
+                            {
+                                CheckOutDatePicker.SelectedDate = parsedOut;
+                            }
                         }
-                        if (DateTime.TryParse(firstAllocWithDates.CheckOutDate, out DateTime parsedOut))
-                        {
-                            CheckOutDatePicker.SelectedDate = parsedOut;
-                        }
+                    }
+                    else
+                    {
+                        // Clear dates for automatic matching to prevent carrying over dates from previous allocation
+                        CheckInDatePicker.SelectedDate = null;
+                        CheckOutDatePicker.SelectedDate = null;
                     }
 
                     LoadSavedAllocations(selectedAllocation.HotelName);
