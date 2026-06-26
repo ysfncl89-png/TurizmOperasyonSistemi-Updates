@@ -1300,14 +1300,6 @@ namespace TurizmOperasyonSistemi.Views
                             // ignore cleanup errors
                         }
 
-                        try
-                        {
-                            // Eğer kişi zaten odalanmışsa (RoomOccupants'ta varsa), AddToPool=false olsun
-                            bool isAlreadyAllocated = db.RoomOccupants.Any(o => o.PassengerId == registration.PersonId);
-                            bool addToPool = registration.IsActive && !isAlreadyAllocated;
-                            NotificationCenter.Publish("RegistrationSaved", new { PersonId = registration.PersonId, AddToPool = addToPool }, persistToDb: false);
-                        }
-                        catch
                         {
                             // ignore
                         }
@@ -3380,3 +3372,4 @@ namespace TurizmOperasyonSistemi.Views
         }
     }
 }
+

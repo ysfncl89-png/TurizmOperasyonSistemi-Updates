@@ -48,6 +48,10 @@ namespace TurizmOperasyonSistemi.Views
 
         private int _connectionGroupCounter = 1; // Her gruba benzersiz numara vermek için
 
+        // Recently notified person IDs to prevent duplicate pool notifications
+        private readonly HashSet<int> _recentPoolNotifications = new HashSet<int>();
+        private readonly object _notificationLock = new object();
+
         // Muhteşem Neon Renk Havuzumuz (Koyu temaya cuk oturan cinsten)
         private readonly string[] NeonColors = new string[] {
             "#A855F7", // Neon Mor
@@ -257,6 +261,17 @@ namespace TurizmOperasyonSistemi.Views
                                     return;
                                 }
 
+                                // Prevent duplicate notifications for same person: if we already showed notification
+                                // for this PersonId recently (within the same notification batch), skip it
+                                lock (_notificationLock)
+                                {
+                                    if (_recentPoolNotifications.Contains(personId.Value))
+                                    {
+                                        return;
+                                    }
+                                    _recentPoolNotifications.Add(personId.Value);
+                                }
+
                                 // Attempt to resolve full name from database; fall back to a placeholder
                                 string fullName = $"Yolcu #{personId.Value}";
                                 try
@@ -305,7 +320,42 @@ namespace TurizmOperasyonSistemi.Views
                                         }
 
                                         // Show a user-visible notification for odalama staff including pool description
-                                        try { MessageBox.Show($"{fullName} kişisi {poolDesc} için odalama havuzuna eklendi. (Odalama bekleniyor.)", "Odalama Havuzu", MessageBoxButton.OK, MessageBoxImage.Information); } catch { }
+
+
+                                        try { MessageBox.Show($"{fullName} kisisi {poolDesc} icin odalama havuzuna eklendi. (Odalama bekleniyor.)", "Odalama Havuzu", MessageBoxButton.OK, MessageBoxImage.Information); } catch { }
+
+
+
+                                        // After showing notification, schedule cleanup of recent notifications after a delay
+
+
+                                        // This allows multiple rapid notifications for DIFFERENT persons to show, but prevents exact duplicates
+
+
+                                        int currentPersonId = personId.Value;
+
+
+                                        Task.Delay(2000).ContinueWith(_ =>
+
+
+                                        {
+
+
+                                            lock (_notificationLock)
+
+
+                                            {
+
+
+                                                _recentPoolNotifications.Remove(currentPersonId);
+
+
+                                            }
+
+
+                                        });
+
+
 
                                         // Also publish a system-wide notification so the main notification bell (HomeView)
                                         // will receive it and increment the badge. Persist so it appears in recent list.
@@ -2672,3 +2722,4 @@ public class RoomViewModel : System.ComponentModel.INotifyPropertyChanged
             new System.ComponentModel.PropertyChangedEventArgs(name));
     }
 }
+
