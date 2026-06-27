@@ -19,6 +19,8 @@ namespace TurizmOperasyonSistemi.Data
         public DbSet<RoomOccupant> RoomOccupants { get; set; }
         public DbSet<Models.RoomAllocationHistory> RoomAllocationHistories { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<Models.DatabaseVersion> DatabaseVersions { get; set; }
+        public DbSet<Models.MigrationLog> MigrationLogs { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -407,6 +409,30 @@ namespace TurizmOperasyonSistemi.Data
                     addCmd.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnType};";
                     addCmd.ExecuteNonQuery();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Belirtilen tablonun veritabanında var olup olmadığını kontrol eder
+        /// </summary>
+        public bool GetTableExists(string tableName)
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = $"SELECT name FROM sqlite_master WHERE type='table' AND name='{tableName}';";
+                    var result = cmd.ExecuteScalar();
+                    return result != null;
+                }
+            }
+            catch
+            {
+                return false;
             }
         }
 
