@@ -270,7 +270,7 @@
                                Foreground="White"
                                Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Sistem kullanıcılarının girişi yapmasını etkinleştir veya devre dışı bırak."
+                    <TextBlock Text="Sistem kullanıcılarının girişi yapmasını etkinleştir veya devre dışı bırak.Eğer etkinse rol verdiğiniz kişiler şifre ile giriş yapacaktır.  Devre dışı bırakırsanız herkes şifresiz giriş yapabilir "
                                FontSize="13"
                                Foreground="#D1D5DB"
                                Margin="0,0,0,15"/>
