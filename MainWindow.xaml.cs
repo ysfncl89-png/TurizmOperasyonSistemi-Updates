@@ -238,15 +238,46 @@ namespace TurizmOperasyonSistemi
         // Genel navigasyon yardımcı metodu: dışarıdan UserControl'a geçiş yapar
         public void NavigateTo(System.Windows.Controls.UserControl view)
         {
-            ResetMenuColors();
-
-            // PaymentsView'e geri dönüyorsak, buton rengini ayarla
-            if (view is PaymentsView)
+            System.Diagnostics.Debug.WriteLine("=== NavigateTo başladı ===");
+            try
             {
-                PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
-            }
+                System.Diagnostics.Debug.WriteLine($"View tipi: {view.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine("ResetMenuColors çağrılıyor...");
+                ResetMenuColors();
 
-            MainFrame.Navigate(view);
+                // PaymentsView'e geri dönüyorsak, buton rengini ayarla
+                if (view is PaymentsView)
+                {
+                    System.Diagnostics.Debug.WriteLine("PaymentsView tespit edildi.");
+                    PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
+                }
+
+                // CargoTrackingInfoView'e geri dönüyorsak, buton rengini ayarla
+                if (view is CargoTrackingInfoView)
+                {
+                    System.Diagnostics.Debug.WriteLine("CargoTrackingInfoView tespit edildi, buton rengi ayarlanıyor...");
+                    CargoButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E74C3C"));
+                }
+
+                System.Diagnostics.Debug.WriteLine($"MainFrame: {MainFrame}");
+                System.Diagnostics.Debug.WriteLine($"MainFrame.Name: {MainFrame?.Name}");
+                System.Diagnostics.Debug.WriteLine("MainFrame.Content ayarlanıyor...");
+
+                // MainFrame.Content kullanarak UserControl'u doğrudan göster
+                MainFrame.Content = view;
+
+                System.Diagnostics.Debug.WriteLine($"MainFrame.Content set edildi: {MainFrame.Content?.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine("NavigateTo başarılı!");
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EXCEPTION in NavigateTo: {ex.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine($"Message: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                System.Windows.MessageBox.Show($"NavigateTo Error:\n{ex.GetType().Name}\n\n{ex.Message}\n\n{ex.StackTrace}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            System.Diagnostics.Debug.WriteLine("=== NavigateTo bitti ===");
         }
     }
 }

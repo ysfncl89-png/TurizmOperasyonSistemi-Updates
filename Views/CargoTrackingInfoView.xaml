@@ -8,15 +8,40 @@
              Background="#1E293B">
 
     <Grid Margin="24">
-        <Border Background="#0F172A" CornerRadius="10" Padding="18" BorderBrush="#334155" BorderThickness="1">
-            <StackPanel>
-                <TextBlock Text="Kargo Takip Bilgilendirme" FontSize="20" FontWeight="Bold" Foreground="#06B6D4" Margin="0,0,0,8"/>
-                <TextBlock TextWrapping="Wrap" Foreground="#E2E8F0"> 
-                    Anlaşmalı kargo şirketlerinden API bilgileri talep edildiğinde bu özellik ek olarak yapılabilir. Şimdilik boş bırakılmıştır. Kargolardaki anlık güncellemeler API sayesinde bu ekrana internet aracılığı ile online olarak bilgi verir.
+        <Border Background="#0F172A" CornerRadius="10" Padding="24" BorderBrush="#334155" BorderThickness="1">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <!-- Ana Başlık -->
+                <TextBlock Text="📦 Kargo Takip Sistemi" FontSize="24" FontWeight="Bold" Foreground="#06B6D4" Margin="0,0,0,12" TextAlignment="Center"/>
+
+                <!-- Durum Mesajı -->
+                <TextBlock TextWrapping="Wrap" Foreground="#E2E8F0" FontSize="14" LineHeight="24" Margin="0,0,0,16" TextAlignment="Justify">
+                    <Run Text="Bu özellik şu anda geliştirilme aşamasındadır. Henüz API entegrasyonu tamamlanmadığından kargo takip işlemi yapılamamaktadır."/>
+                </TextBlock>
+
+                <!-- Planlanan Özellikler -->
+                <TextBlock Text="Yapılması Planlanıyor:" FontSize="13" FontWeight="SemiBold" Foreground="#94A3B8" Margin="0,0,0,10"/>
+                <StackPanel Margin="16,0,0,16">
+                    <TextBlock TextWrapping="Wrap" Foreground="#CBD5E1" Margin="0,0,0,8">
+                        <Run Text="✓ Anlaşmalı kargo şirketlerinin API bilgileri entegre edilecek"/>
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Foreground="#CBD5E1" Margin="0,0,0,8">
+                        <Run Text="✓ Gerçek zamanlı kargo takip bilgileri sağlanacak"/>
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Foreground="#CBD5E1" Margin="0,0,0,8">
+                        <Run Text="✓ Kargo durumunun anlık güncellenmesi internet üzerinden yapılacak"/>
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Foreground="#CBD5E1">
+                        <Run Text="✓ Kargo izleme tarihçesi tutulacak"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- İletişim Notu -->
+                <TextBlock TextWrapping="Wrap" Foreground="#64748B" FontSize="12" FontStyle="Italic" TextAlignment="Center">
+                    <Run Text="Sistem güncellemeleri hakkında bilgilendirilmek için lütfen yöneticinizle iletişime geçiniz."/>
                 </TextBlock>
             </StackPanel>
         </Border>
-        <!-- Sol altta geri butonu; implicit 'Geri' stili App.xaml'de tanımlı olduğu için sadece Content="Geri" yeterli -->
+        <!-- Sol altta geri butonu; implicit 'Geri' stili App.xaml'de tanımlandığı için sadece Content="Geri" yeterli -->
         <Button Content="Geri" Width="88" Height="36" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8,0,0,8" Click="BackButton_Click" />
     </Grid>
 
