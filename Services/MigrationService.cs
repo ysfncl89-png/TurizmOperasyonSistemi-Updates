@@ -18,20 +18,17 @@ namespace TurizmOperasyonSistemi.Services
         private readonly BackupManager _backupManager;
         private readonly MigrationLock _migrationLock;
         private readonly MigrationLogger _logger;
+        private readonly ConfigurationProvider _config;
         private static readonly string CurrentVersionString = GetApplicationVersion();
-
-        private const int MAX_RETRY_ATTEMPTS = 3;
-        private const int RETRY_DELAY_MS = 1000;
 
         public MigrationService(AppDbContext context, string dbPath = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _config = ConfigurationProvider.Instance;
 
-            // Eğer dbPath belirtilmemişse, default olarak C:\TurizmDB\turizm.db kullan
+            // ConfigurationProvider'dan dbPath al
             if (string.IsNullOrEmpty(dbPath))
-            {
-                dbPath = Path.Combine(@"C:\TurizmDB", "turizm.db");
-            }
+                dbPath = _config.GetDatabasePath();
 
             _validator = new DatabaseValidator(_context);
             _backupManager = new BackupManager(dbPath);
@@ -244,14 +241,16 @@ namespace TurizmOperasyonSistemi.Services
         private bool ApplyMigrationsWithRetry(List<string> pendingMigrations)
         {
             int attempt = 0;
+            int maxAttempts = _config.GetMaxRetryAttempts();
+            int retryDelayMs = _config.GetRetryDelayMs();
 
-            while (attempt < MAX_RETRY_ATTEMPTS)
+            while (attempt < maxAttempts)
             {
                 attempt++;
 
                 try
                 {
-                    System.Diagnostics.Debug.WriteLine($"  Attempting to apply migrations (Attempt {attempt}/{MAX_RETRY_ATTEMPTS})...");
+                    System.Diagnostics.Debug.WriteLine($"  Attempting to apply migrations (Attempt {attempt}/{maxAttempts})...");
                     _context.Database.Migrate();
 
                     // Log each migration
@@ -267,9 +266,9 @@ namespace TurizmOperasyonSistemi.Services
                 {
                     System.Diagnostics.Debug.WriteLine($"  ✗ Attempt {attempt} failed: {ex.Message}");
 
-                    if (attempt < MAX_RETRY_ATTEMPTS)
+                    if (attempt < maxAttempts)
                     {
-                        int delayMs = RETRY_DELAY_MS * attempt; // Exponential backoff
+                        int delayMs = retryDelayMs * attempt; // Exponential backoff
                         System.Diagnostics.Debug.WriteLine($"  Retrying in {delayMs}ms...");
                         System.Threading.Thread.Sleep(delayMs);
                     }

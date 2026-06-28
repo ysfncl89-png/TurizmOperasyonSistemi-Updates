@@ -14,11 +14,12 @@ namespace TurizmOperasyonSistemi.Services
     public class DatabaseValidator
     {
         private readonly AppDbContext _context;
-        private const long MINIMUM_DISK_SPACE_MB = 10; // Minimum 10 MB disk alanı gerekli
+        private readonly ConfigurationProvider _config;
 
         public DatabaseValidator(AppDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _config = ConfigurationProvider.Instance;
         }
 
         /// <summary>
@@ -143,11 +144,12 @@ namespace TurizmOperasyonSistemi.Services
                 var driveInfo = new DriveInfo(Path.GetPathRoot(directory));
 
                 long availableMB = driveInfo.AvailableFreeSpace / (1024 * 1024);
+                long minimumDiskSpaceMB = _config.GetMinimumDiskSpaceMB();
 
-                if (availableMB < MINIMUM_DISK_SPACE_MB)
+                if (availableMB < minimumDiskSpaceMB)
                 {
                     result.IsValid = false;
-                    result.Message = $"Disk alanı yetersiz. Gerekli: {MINIMUM_DISK_SPACE_MB} MB, Mevcut: {availableMB} MB";
+                    result.Message = $"Disk alanı yetersiz. Gerekli: {minimumDiskSpaceMB} MB, Mevcut: {availableMB} MB";
                     return;
                 }
 

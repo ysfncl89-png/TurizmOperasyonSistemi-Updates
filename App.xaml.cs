@@ -5,6 +5,7 @@ using System.IO;
 using Microsoft.EntityFrameworkCore;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Services;
+using TurizmOperasyonSistemi.Windows;
 
 namespace TurizmOperasyonSistemi
 {
@@ -13,7 +14,7 @@ namespace TurizmOperasyonSistemi
     /// </summary>
     public partial class App : Application
     {
-        private const string DB_PATH = @"C:\TurizmDB\turizm.db";
+        private AppDbContext _context;
 
         public App()
         {

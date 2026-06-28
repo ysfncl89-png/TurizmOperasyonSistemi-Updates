@@ -13,9 +13,8 @@ namespace TurizmOperasyonSistemi.Services
     public class MigrationLock
     {
         private readonly AppDbContext _context;
-        private const int LOCK_TIMEOUT_SECONDS = 300; // 5 dakika timeout
+        private readonly ConfigurationProvider _config;
         private const int LOCK_ACQUISITION_RETRY_MS = 500; // 500ms aralıklarla retry
-        private const int MAX_LOCK_ACQUISITION_ATTEMPTS = 12; // Maksimum 6 dakika retry
 
         private bool _lockAcquired = false;
         private string _lockId = null;
@@ -23,6 +22,7 @@ namespace TurizmOperasyonSistemi.Services
         public MigrationLock(AppDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _config = ConfigurationProvider.Instance;
         }
 
         /// <summary>
@@ -31,17 +31,19 @@ namespace TurizmOperasyonSistemi.Services
         public LockResult AcquireLock()
         {
             var result = new LockResult();
+            int lockTimeoutSeconds = _config.GetLockTimeoutSeconds();
 
             try
             {
-                System.Diagnostics.Debug.WriteLine($"Migration lock edinme başlıyor... (Timeout: {LOCK_TIMEOUT_SECONDS}s)");
+                System.Diagnostics.Debug.WriteLine($"Migration lock edinme başlıyor... (Timeout: {lockTimeoutSeconds}s)");
 
                 // Lock ID'si oluştur (makine adı + process ID + unique ID kombinasyonu)
                 _lockId = GenerateLockId();
 
                 int attempts = 0;
+                int maxLockAcquisitionAttempts = (lockTimeoutSeconds * 1000) / LOCK_ACQUISITION_RETRY_MS;
 
-                while (attempts < MAX_LOCK_ACQUISITION_ATTEMPTS)
+                while (attempts < maxLockAcquisitionAttempts)
                 {
                     attempts++;
 
@@ -177,7 +179,7 @@ namespace TurizmOperasyonSistemi.Services
 
                         var param2 = insertCmd.CreateParameter();
                         param2.ParameterName = "@timeout";
-                        param2.Value = LOCK_TIMEOUT_SECONDS;
+                        param2.Value = _config.GetLockTimeoutSeconds();
                         insertCmd.Parameters.Add(param2);
 
                         var param3 = insertCmd.CreateParameter();

@@ -13,14 +13,16 @@ namespace TurizmOperasyonSistemi.Services
     {
         private readonly string _dbPath;
         private readonly string _backupDirectory;
-        private const int MAX_BACKUPS = 10; // Maksimum 10 backup dosyası tutulacak
+        private readonly ConfigurationProvider _config;
         private const string BACKUP_PREFIX = "turizm_backup_";
         private const string BACKUP_EXTENSION = ".bak";
 
-        public BackupManager(string dbPath)
+        public BackupManager(string dbPath = null)
         {
-            _dbPath = dbPath ?? throw new ArgumentNullException(nameof(dbPath));
-            _backupDirectory = Path.Combine(Path.GetDirectoryName(_dbPath), "backups");
+            _config = ConfigurationProvider.Instance;
+
+            _dbPath = dbPath ?? _config.GetDatabasePath();
+            _backupDirectory = _config.GetBackupDirectory();
         }
 
         /// <summary>
@@ -269,11 +271,12 @@ namespace TurizmOperasyonSistemi.Services
             try
             {
                 var allBackups = GetAllBackups();
+                int maxBackups = _config.GetMaxBackups();
 
-                if (allBackups.Count > MAX_BACKUPS)
+                if (allBackups.Count > maxBackups)
                 {
                     // Eski olanları sil
-                    var backupsToDelete = allBackups.Skip(MAX_BACKUPS).ToList();
+                    var backupsToDelete = allBackups.Skip(maxBackups).ToList();
 
                     foreach (var backup in backupsToDelete)
                     {
