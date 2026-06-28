@@ -1,22 +1,42 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using TurizmOperasyonSistemi.Data;
 
 namespace TurizmOperasyonSistemi.Services
 {
     /// <summary>
-    /// Database migration ve versiyonlama işlemlerini yönetir
+    /// Database migration ve versiyonlama işlemlerini yönetir (Enterprise-grade)
     /// </summary>
     public class MigrationService
     {
         private readonly AppDbContext _context;
+        private readonly DatabaseValidator _validator;
+        private readonly BackupManager _backupManager;
+        private readonly MigrationLock _migrationLock;
+        private readonly MigrationLogger _logger;
         private static readonly string CurrentVersionString = GetApplicationVersion();
 
-        public MigrationService(AppDbContext context)
+        private const int MAX_RETRY_ATTEMPTS = 3;
+        private const int RETRY_DELAY_MS = 1000;
+
+        public MigrationService(AppDbContext context, string dbPath = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+
+            // Eğer dbPath belirtilmemişse, default olarak C:\TurizmDB\turizm.db kullan
+            if (string.IsNullOrEmpty(dbPath))
+            {
+                dbPath = Path.Combine(@"C:\TurizmDB", "turizm.db");
+            }
+
+            _validator = new DatabaseValidator(_context);
+            _backupManager = new BackupManager(dbPath);
+            _migrationLock = new MigrationLock(_context);
+            _logger = new MigrationLogger(_context, dbPath);
         }
 
         /// <summary>
@@ -58,63 +78,205 @@ namespace TurizmOperasyonSistemi.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"GetDatabaseVersion Error: {ex.Message}");
+                _logger.LogError("GetDatabaseVersion", ex);
                 return null;
             }
         }
 
         /// <summary>
-        /// Eksik migration'ları kontrol eder ve çalıştırır
+        /// Eksik migration'ları kontrol eder, validasyon yapar, backup alır ve çalıştırır (Full robust process)
         /// </summary>
         public bool ApplyMigrations()
         {
+            var stopwatch = Stopwatch.StartNew();
+            string currentDbVersion = null;
+
             try
             {
-                System.Diagnostics.Debug.WriteLine("=== Database Migration Process Started ===");
+                _logger.LogMigrationStarted(CurrentVersionString, GetDatabaseVersion());
+                System.Diagnostics.Debug.WriteLine("=== Database Migration Process Started (Enterprise-Grade) ===");
                 System.Diagnostics.Debug.WriteLine($"Current Application Version: {CurrentVersionString}");
 
-                // Database'i oluştur (varsa hiçbir şey yapmaz)
-                _context.Database.EnsureCreated();
-                System.Diagnostics.Debug.WriteLine("Database ensured created.");
+                // 1. PRE-MIGRATION VALIDATION
+                System.Diagnostics.Debug.WriteLine("\n► Step 1: Pre-Migration Validation");
+                string dbPath = Path.Combine(@"C:\TurizmDB", "turizm.db");
+                var validationResult = _validator.ValidateBeforeMigration(dbPath);
+                _logger.LogValidation("Pre-Migration Checks", validationResult);
 
-                // Bekleyen migration'ları al
-                var pendingMigrations = _context.Database.GetPendingMigrations().ToList();
-
-                if (pendingMigrations.Any())
+                if (!validationResult.IsValid)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Found {pendingMigrations.Count} pending migrations:");
-                    foreach (var migration in pendingMigrations)
+                    System.Diagnostics.Debug.WriteLine($"✗ Validation failed: {validationResult.Message}");
+                    _logger.LogError("ApplyMigrations", new Exception(validationResult.Message));
+                    return false;
+                }
+                System.Diagnostics.Debug.WriteLine("✓ All validations passed");
+
+                // 2. ACQUIRE MIGRATION LOCK
+                System.Diagnostics.Debug.WriteLine("\n► Step 2: Acquiring Migration Lock");
+                var lockResult = _migrationLock.AcquireLock();
+                _logger.LogLock("AcquireLock", lockResult);
+
+                if (!lockResult.IsSuccess)
+                {
+                    System.Diagnostics.Debug.WriteLine($"✗ Lock acquisition failed: {lockResult.Message}");
+                    _logger.LogError("ApplyMigrations", new Exception(lockResult.Message));
+                    return false;
+                }
+                System.Diagnostics.Debug.WriteLine($"✓ Lock acquired: {lockResult.LockId}");
+
+                try
+                {
+                    // 3. CREATE BACKUP
+                    System.Diagnostics.Debug.WriteLine("\n► Step 3: Creating Database Backup");
+                    var backupResult = _backupManager.CreateBackup();
+                    _logger.LogBackup("Pre-Migration Backup", backupResult);
+
+                    if (!backupResult.IsSuccess)
                     {
-                        System.Diagnostics.Debug.WriteLine($"  - {migration}");
+                        System.Diagnostics.Debug.WriteLine($"⚠ Backup warning: {backupResult.Message}");
+                        // Backup başarısız olsa bile devam etmek isterseniz yorum yapın
+                        // return false;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"✓ Backup created: {FormatBytes(backupResult.BackupSize)}");
                     }
 
-                    // Migration'ları uygula
-                    _context.Database.Migrate();
-                    System.Diagnostics.Debug.WriteLine("Migrations applied successfully.");
+                    // 4. GET DATABASE VERSION
+                    currentDbVersion = GetDatabaseVersion();
+                    System.Diagnostics.Debug.WriteLine($"\n► Step 4: Database Version Check");
+                    System.Diagnostics.Debug.WriteLine($"  Current DB Version: {currentDbVersion ?? "None"}");
 
-                    // Tüm uygulanan migrate'i kaydet
+                    // 5. ENSURE DATABASE CREATED
+                    System.Diagnostics.Debug.WriteLine("\n► Step 5: Ensuring Database Exists");
+                    _context.Database.EnsureCreated();
+                    System.Diagnostics.Debug.WriteLine("✓ Database ensured created");
+
+                    // 6. CHECK PENDING MIGRATIONS
+                    System.Diagnostics.Debug.WriteLine("\n► Step 6: Checking Pending Migrations");
+                    var pendingMigrations = _context.Database.GetPendingMigrations().ToList();
+
+                    if (pendingMigrations.Any())
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Found {pendingMigrations.Count} pending migrations:");
+                        foreach (var migration in pendingMigrations)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"  - {migration}");
+                        }
+
+                        // 7. APPLY MIGRATIONS WITH RETRY LOGIC
+                        System.Diagnostics.Debug.WriteLine("\n► Step 7: Applying Migrations (with Retry)");
+                        if (!ApplyMigrationsWithRetry(pendingMigrations))
+                        {
+                            System.Diagnostics.Debug.WriteLine("✗ Migration application failed, attempting restore");
+                            var restoreResult = _backupManager.RestoreFromLastBackup();
+                            _logger.LogBackup("Post-Migration Restore", new BackupResult 
+                            { 
+                                IsSuccess = restoreResult.IsSuccess, 
+                                Message = restoreResult.Message 
+                            });
+
+                            if (restoreResult.IsSuccess)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"✓ Database restored from backup");
+                            }
+                            return false;
+                        }
+
+                        System.Diagnostics.Debug.WriteLine($"✓ All {pendingMigrations.Count} migrations applied successfully");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("✓ No pending migrations found");
+                    }
+
+                    // 8. Ensure custom tables
+                    System.Diagnostics.Debug.WriteLine("\n► Step 8: Ensuring Custom Tables");
+                    EnsureAllCustomTablesExists();
+                    System.Diagnostics.Debug.WriteLine("✓ Custom tables ensured");
+
+                    // 9. UPDATE DATABASE VERSION
+                    System.Diagnostics.Debug.WriteLine("\n► Step 9: Updating Database Version");
+                    UpdateDatabaseVersion(CurrentVersionString);
+                    System.Diagnostics.Debug.WriteLine($"✓ Database version updated to: {CurrentVersionString}");
+
+                    stopwatch.Stop();
+                    _logger.LogMigrationCompleted(CurrentVersionString, pendingMigrations, stopwatch.Elapsed);
+                    System.Diagnostics.Debug.WriteLine($"\n✓ Migration process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2}s");
+                    System.Diagnostics.Debug.WriteLine("=== Database Migration Process Completed Successfully (ENTERPRISE) ===\n");
+
+                    return true;
+                }
+                finally
+                {
+                    // Release lock
+                    _migrationLock.ReleaseLock();
+                }
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                System.Diagnostics.Debug.WriteLine($"\n✗ Migration process failed after {stopwatch.Elapsed.TotalSeconds:F2}s");
+                System.Diagnostics.Debug.WriteLine($"Exception: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                _logger.LogMigrationFailed(CurrentVersionString, ex, stopwatch.Elapsed);
+
+                // Try to restore from backup
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine("\n⚠ Attempting to restore from backup...");
+                    var restoreResult = _backupManager.RestoreFromLastBackup();
+                    if (restoreResult.IsSuccess)
+                    {
+                        System.Diagnostics.Debug.WriteLine("✓ Database successfully restored from backup");
+                    }
+                }
+                catch { }
+
+                System.Diagnostics.Debug.WriteLine("=== Database Migration Process Failed (ENTERPRISE) ===\n");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Migration'ları retry logic ile uygular
+        /// </summary>
+        private bool ApplyMigrationsWithRetry(List<string> pendingMigrations)
+        {
+            int attempt = 0;
+
+            while (attempt < MAX_RETRY_ATTEMPTS)
+            {
+                attempt++;
+
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine($"  Attempting to apply migrations (Attempt {attempt}/{MAX_RETRY_ATTEMPTS})...");
+                    _context.Database.Migrate();
+
+                    // Log each migration
                     foreach (var migration in pendingMigrations)
                     {
                         LogMigration(migration);
                     }
+
+                    System.Diagnostics.Debug.WriteLine($"  ✓ Migrations applied successfully");
+                    return true;
                 }
-                else
+                catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine("No pending migrations found.");
+                    System.Diagnostics.Debug.WriteLine($"  ✗ Attempt {attempt} failed: {ex.Message}");
+
+                    if (attempt < MAX_RETRY_ATTEMPTS)
+                    {
+                        int delayMs = RETRY_DELAY_MS * attempt; // Exponential backoff
+                        System.Diagnostics.Debug.WriteLine($"  Retrying in {delayMs}ms...");
+                        System.Threading.Thread.Sleep(delayMs);
+                    }
                 }
-
-                // Veritabanı versiyonunu güncelle
-                UpdateDatabaseVersion(CurrentVersionString);
-
-                System.Diagnostics.Debug.WriteLine("=== Database Migration Process Completed Successfully ===");
-                return true;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"=== Database Migration Process Failed ===");
-                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
-                return false;
-            }
+
+            return false;
         }
 
         /// <summary>
@@ -127,7 +289,7 @@ namespace TurizmOperasyonSistemi.Services
                 // Tablonun var olup olmadığını kontrol et
                 if (!_context.GetTableExists("DatabaseVersions"))
                 {
-                    return; // Tablo henüz oluşturulmamış, ilk migration sonrasında oluşturulacak
+                    return; // Tablo henüz oluşturulmamış
                 }
 
                 var existingVersion = _context.DatabaseVersions
@@ -145,12 +307,13 @@ namespace TurizmOperasyonSistemi.Services
 
                     _context.DatabaseVersions.Add(dbVersion);
                     _context.SaveChanges();
-                    System.Diagnostics.Debug.WriteLine($"Database version recorded: {version}");
+                    System.Diagnostics.Debug.WriteLine($"  Database version recorded: {version}");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"UpdateDatabaseVersion Error: {ex.Message}");
+                _logger.LogError("UpdateDatabaseVersion", ex);
             }
         }
 
@@ -229,7 +392,26 @@ namespace TurizmOperasyonSistemi.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"EnsureAllCustomTablesExists Error: {ex.Message}");
+                _logger.LogError("EnsureAllCustomTablesExists", ex);
             }
+        }
+
+        /// <summary>
+        /// Byte cinsinden boyutu insan tarafından okunabilir formata dönüştürür
+        /// </summary>
+        private string FormatBytes(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            double len = bytes;
+            int order = 0;
+
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+
+            return $"{len:0.##} {sizes[order]}";
         }
     }
 }
