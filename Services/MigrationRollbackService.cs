@@ -131,20 +131,33 @@ namespace TurizmOperasyonSistemi.Services
         /// <summary>
         /// Belirtilen backup'tan version bilgisini alır
         /// </summary>
-        private string GetRestoredVersionFromBackup(string backupFileName)
-        {
-            try
+            private string GetRestoredVersionFromBackup(string backupFileName)
             {
-                // Backup'tan versiyonu tahmin et (backup'ın ne zaman alındığına bak)
-                // Pratikte, DatabaseVersions tablosu restore edildikten sonra sorgulanabilir
+                try
+                {
+                    // Attempt to infer version/time from backup filename which is created as:
+                    // turizm_backup_yyyyMMdd_HHmmss_fff.bak
+                    if (string.IsNullOrEmpty(backupFileName))
+                        return "Unknown";
 
-                return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        var name = System.IO.Path.GetFileNameWithoutExtension(backupFileName);
+                    const string prefix = "turizm_backup_";
+                    if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var timestampPart = name.Substring(prefix.Length);
+                        if (DateTime.TryParseExact(timestampPart, "yyyyMMdd_HHmmss_fff", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
+                        {
+                            return $"Backup taken at {dt:yyyy-MM-dd HH:mm:ss.fff}";
+                        }
+                    }
+
+                    return "Unknown";
+                }
+                catch
+                {
+                    return "Unknown";
+                }
             }
-            catch
-            {
-                return "Unknown";
-            }
-        }
 
         /// <summary>
         /// Tüm mevcut backup'ları döndürür
@@ -191,7 +204,8 @@ namespace TurizmOperasyonSistemi.Services
                 return false;
 
             var backups = GetAvailableBackups();
-            return backups.Count > 0;
+            // Need at least two backups (current + previous) to rollback to a previous state
+            return backups.Count > 1;
         }
 
         /// <summary>
@@ -205,8 +219,10 @@ namespace TurizmOperasyonSistemi.Services
             var backups = GetAvailableBackups();
             if (backups.Count == 0)
                 return "Hiç backup bulunmuyor";
+            if (backups.Count == 1)
+                return "Sadece tek bir backup mevcut; rollback için en az iki backup gerekir";
 
-            return "Rollback mümkün";
+return "Rollback mümkün";
         }
     }
 

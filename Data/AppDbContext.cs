@@ -24,16 +24,33 @@ namespace TurizmOperasyonSistemi.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            // Eski database path'ini kullan (veri kaybetmemek için)
-            // C:\TurizmDB\turizm.db dizini yoksa oluştur
-            string dbDirectory = @"C:\TurizmDB";
-            if (!System.IO.Directory.Exists(dbDirectory))
+            // Use configured database path from appsettings.json for portability
+            try
             {
-                System.IO.Directory.CreateDirectory(dbDirectory);
-            }
+                var config = TurizmOperasyonSistemi.Services.ConfigurationProvider.Instance;
+                string dbPath = config.GetDatabasePath();
 
-            string dbPath = System.IO.Path.Combine(dbDirectory, "turizm.db");
-            optionsBuilder.UseSqlite($@"Data Source={dbPath}");
+                var dir = System.IO.Path.GetDirectoryName(dbPath);
+                if (!string.IsNullOrEmpty(dir) && !System.IO.Directory.Exists(dir))
+                {
+                    System.IO.Directory.CreateDirectory(dir);
+                }
+
+                optionsBuilder.UseSqlite($@"Data Source={dbPath}");
+            }
+            catch (Exception ex)
+            {
+                // Fallback to legacy path if configuration reading fails
+                System.Diagnostics.Debug.WriteLine($"OnConfiguring error, falling back to default path: {ex.Message}");
+                string dbDirectory = @"C:\TurizmDB";
+                if (!System.IO.Directory.Exists(dbDirectory))
+                {
+                    System.IO.Directory.CreateDirectory(dbDirectory);
+                }
+
+                string dbPath = System.IO.Path.Combine(dbDirectory, "turizm.db");
+                optionsBuilder.UseSqlite($@"Data Source={dbPath}");
+            }
         }
 
         public void EnsureRoomAllocationHistoryTableExists()

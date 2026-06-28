@@ -96,7 +96,7 @@ namespace TurizmOperasyonSistemi.Services
 
                 // 1. PRE-MIGRATION VALIDATION
                 System.Diagnostics.Debug.WriteLine("\n► Step 1: Pre-Migration Validation");
-                string dbPath = Path.Combine(@"C:\TurizmDB", "turizm.db");
+                string dbPath = _config.GetDatabasePath();
                 var validationResult = _validator.ValidateBeforeMigration(dbPath);
                 _logger.LogValidation("Pre-Migration Checks", validationResult);
 

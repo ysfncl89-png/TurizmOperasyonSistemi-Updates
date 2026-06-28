@@ -18,39 +18,57 @@ namespace TurizmOperasyonSistemi
 
         public App()
         {
-            // Database versiyonlama ve migration'ları otomatik ve güvenli şekilde yönet (Enterprise-Grade)
+            // Enterprise startup: initialize configuration, run health checks, and apply migrations using configured paths
             try
             {
+                var config = Services.ConfigurationProvider.Instance;
+                config.LogConfiguration();
+
+                string dbPath = config.GetDatabasePath();
+
                 System.Diagnostics.Debug.WriteLine("\n╔══════════════════════════════════════════════════════╗");
                 System.Diagnostics.Debug.WriteLine("║         APPLICATION STARTUP (ENTERPRISE)              ║");
                 System.Diagnostics.Debug.WriteLine("╚══════════════════════════════════════════════════════╝");
                 System.Diagnostics.Debug.WriteLine($"Tarih/Saat: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 System.Diagnostics.Debug.WriteLine($"Uygulama Versiyonu: {MigrationService.GetApplicationVersion()}");
-                System.Diagnostics.Debug.WriteLine($"Veritabanı Yolu: {DB_PATH}");
+                System.Diagnostics.Debug.WriteLine($"Veritabanı Yolu: {dbPath}");
 
                 using (var context = new AppDbContext())
                 {
-                    // ENTERPRISE-GRADE MigrationService - Robust, validated, with backup & lock
-                    var migrationService = new MigrationService(context, DB_PATH);
+                    // ENTERPRISE-GRADE MigrationService - use configured db path
+                    var migrationService = new MigrationService(context, dbPath);
 
                     // 1. Veritabanı versiyonunu oku
                     string currentDbVersion = migrationService.GetDatabaseVersion();
                     System.Diagnostics.Debug.WriteLine($"\nMevcut Database Versiyonu: {currentDbVersion ?? "Hiç"}");
 
+                    // Optionally run health checks before applying migrations
+                    if (config.IsHealthCheckEnabled())
+                    {
+                        try
+                        {
+                            var healthService = new HealthCheckService(context);
+                            var report = healthService.RunCompleteHealthCheck();
+                            System.Diagnostics.Debug.WriteLine($"HealthCheck: {report}");
+                            if (!report.IsHealthy)
+                            {
+                                System.Diagnostics.Debug.WriteLine("⚠ Health checks reported issues. Proceeding with caution.");
+                            }
+                        }
+                        catch (Exception hcEx)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"⚠ HealthCheck failed: {hcEx.Message}");
+                        }
+                    }
+
                     // 2. Migration'ları uygula (eksik olanlar otomatikman çalışacak)
-                    // Bu proses aşağıdakileri otomatik yapıyor:
-                    // ✓ Pre-migration validation (disk alan, yazma izni, vs)
-                    // ✓ Database backup'ı oluşturma
-                    // ✓ Migration lock alıp eş zamanlı işlemı engelleme
-                    // ✓ Retry logic ile geçişi hatalardan korunma
-                    // ✓ Hata oluşursa backup'tan oto restore
                     bool migrationsSucceeded = migrationService.ApplyMigrations();
 
                     if (!migrationsSucceeded)
                     {
                         System.Diagnostics.Debug.WriteLine("\n⚠ UYARI: Migration işlemi sırasında hata oluştu.");
                         System.Diagnostics.Debug.WriteLine("⚠ Bazı özellikler doğru çalışmayabilir.");
-                        System.Diagnostics.Debug.WriteLine("⚠ Lütfen log dosyalarını inceleyiniz: C:\\TurizmDB\\logs\\");
+                        System.Diagnostics.Debug.WriteLine($"⚠ Lütfen log dosyalarını inceleyiniz: {config.GetLogDirectory()}");
                     }
 
                     // 3. Tüm custom tablolar için ensure metodlarını çalıştır
@@ -98,7 +116,7 @@ namespace TurizmOperasyonSistemi
                     System.Diagnostics.Debug.WriteLine($"İç Hata: {ex.InnerException.Message}");
                 }
 
-                System.Diagnostics.Debug.WriteLine("\nLog dosyaları burası: C:\\TurizmDB\\logs\\");
+                System.Diagnostics.Debug.WriteLine($"\nLog dosyaları burası: {Services.ConfigurationProvider.Instance.GetLogDirectory()}");
                 System.Diagnostics.Debug.WriteLine("===================================================\n");
 
                 // User'a detaylı hata mesajı göster
@@ -125,9 +143,13 @@ namespace TurizmOperasyonSistemi
             // Check for specific error types
             if (ex.Message.Contains("database") || ex.Message.Contains("Database"))
             {
+                // Use configured paths for user-friendly messages
+                string cfgDbPath = Services.ConfigurationProvider.Instance.GetDatabasePath();
+                string cfgDbDir = System.IO.Path.GetDirectoryName(cfgDbPath) ?? "C:\\TurizmDB";
+
                 message += "▸ Veritabanı Sorunu Tespit Edildi\n\n";
                 message += "Çözüm girisinde:\n";
-                message += "1. C:\\TurizmDB klasörünün yazılabilir olup olmadığını kontrol edin\n";
+                message += $"1. {cfgDbDir} klasörünün yazılabilir olup olmadığını kontrol edin\n";
                 message += "2. Disk alanını kontrol edin (en az 50 MB boş alan)\n";
                 message += "3. Veritabanı dosyasının kilitli olup olmadığını kontrol edin\n";
                 message += "4. Uygulamayı Administrator olarak çalıştırmayı deneyin\n";
@@ -137,7 +159,9 @@ namespace TurizmOperasyonSistemi
                 message += "▸ İzin/Erişim Sorunu Tespit Edildi\n\n";
                 message += "Çözüm önerileri:\n";
                 message += "1. Uygulamayı Administrator olarak çalıştırın\n";
-                message += "2. C:\\TurizmDB klasörüne yazma izni kontrol edin\n";
+                string cfgDbPath2 = Services.ConfigurationProvider.Instance.GetDatabasePath();
+                string cfgDbDir2 = System.IO.Path.GetDirectoryName(cfgDbPath2) ?? "C:\\TurizmDB";
+                message += $"2. {cfgDbDir2} klasörüne yazma izni kontrol edin\n";
                 message += "3. Virüs tarama yazılımını geçici olarak devre dışı bırakın\n";
             }
             else if (ex.Message.Contains("disk") || ex.Message.Contains("space"))
@@ -158,7 +182,8 @@ namespace TurizmOperasyonSistemi
             }
 
             message += "\n────────────────────────────\n";
-            message += "Log dosyası: C:\\TurizmDB\\logs\\migration_*.log\n";
+            string logDir2 = Services.ConfigurationProvider.Instance.GetLogDirectory();
+            message += $"Log dosyası: {logDir2}{System.IO.Path.DirectorySeparatorChar}migration_*.log\n";
             message += "Sorun devam ederse, lütfen log dosyasını teknik desteğe gönderin.";
 
             return message;

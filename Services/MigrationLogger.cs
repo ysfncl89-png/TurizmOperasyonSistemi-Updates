@@ -16,16 +16,22 @@ namespace TurizmOperasyonSistemi.Services
         private readonly string _logDirectory;
         private readonly string _currentLogFile;
         private readonly ConfigurationProvider _config;
+        private readonly int MAX_LOG_FILE_SIZE_MB;
+        private readonly int MAX_LOG_FILES;
 
         public MigrationLogger(AppDbContext context, string dbPath = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _config = ConfigurationProvider.Instance;
 
-            if (string.IsNullOrEmpty(dbPath))
+            // Initialize sizes from configuration
+            MAX_LOG_FILE_SIZE_MB = _config.GetMaxLogFileSizeMB();
+            MAX_LOG_FILES = _config.GetMaxLogFiles();
+
+if (string.IsNullOrEmpty(dbPath))
                 dbPath = _config.GetDatabasePath();
 
-            _logDirectory = _config.GetLogDirectory();
+_logDirectory = _config.GetLogDirectory();
             _currentLogFile = Path.Combine(_logDirectory, $"migration_{DateTime.Now:yyyy-MM-dd}.log");
 
             // Log dizini yoksa oluştur

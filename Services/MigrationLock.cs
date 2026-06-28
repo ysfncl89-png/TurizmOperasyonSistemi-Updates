@@ -67,7 +67,7 @@ namespace TurizmOperasyonSistemi.Services
                         // Lock alınamadı, diğer process açık tutuyor
                         if (attempts == 1)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Migration lock meşgul, bekleniyor... (Deneme {attempts}/{MAX_LOCK_ACQUISITION_ATTEMPTS})");
+                            System.Diagnostics.Debug.WriteLine($"Migration lock meşgul, bekleniyor... (Deneme {attempts}/{maxLockAcquisitionAttempts})");
                         }
 
                         // Biraz bekle ve yeniden dene
@@ -81,7 +81,7 @@ namespace TurizmOperasyonSistemi.Services
 
                 // Timeout doldu
                 result.IsSuccess = false;
-                result.Message = $"Migration lock {MAX_LOCK_ACQUISITION_ATTEMPTS * LOCK_ACQUISITION_RETRY_MS / 1000} saniye içinde alınamadı. " +
+                result.Message = $"Migration lock {(maxLockAcquisitionAttempts * LOCK_ACQUISITION_RETRY_MS / 1000)} saniye içinde alınamadı. " +
                     "Başka bir process migration yapıyor olabilir. Lütfen daha sonra tekrar deneyin.";
 
                 System.Diagnostics.Debug.WriteLine($"✗ Migration lock alınamadı: Timeout");

@@ -44,7 +44,7 @@ namespace TurizmOperasyonSistemi.ViewModels
         public ICommand RefreshCommand { get; }
         public ICommand RollbackCommand { get; }
         public ICommand ViewLogsCommand { get; }
-        public ICommand CloseCommand { get; }
+        public ICommand CloseCommand { get; set; }
 
         public MigrationDashboardViewModel(AppDbContext context, string dbPath = null)
         {

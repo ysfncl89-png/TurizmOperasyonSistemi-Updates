@@ -50,7 +50,7 @@ namespace TurizmOperasyonSistemi.Services
                 }
 
                 string json = File.ReadAllText(_configPath);
-                _configRoot = JsonSerializer.Parse(json).RootElement;
+                _configRoot = System.Text.Json.JsonDocument.Parse(json).RootElement;
                 System.Diagnostics.Debug.WriteLine($"Config yüklendi: {_configPath}");
             }
             catch (Exception ex)
@@ -127,6 +127,14 @@ namespace TurizmOperasyonSistemi.Services
         public bool IsHealthCheckEnabled()
         {
             return GetBool("HealthCheck:EnableOnStartup", true);
+        }
+
+        /// <summary>
+        /// Health check için gereken minimum disk alanını döndürür (MB)
+        /// </summary>
+        public int GetMinimumDiskSpaceMB()
+        {
+            return GetInt("HealthCheck:MinimumDiskSpaceRequired_MB", 10);
         }
 
         /// <summary>
@@ -266,7 +274,7 @@ namespace TurizmOperasyonSistemi.Services
     ""ShowMigrationDashboard"": true
   }
 }";
-            return JsonSerializer.Parse(json).RootElement;
+            return System.Text.Json.JsonDocument.Parse(json).RootElement;
         }
 
         /// <summary>
