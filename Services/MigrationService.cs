@@ -144,10 +144,40 @@ namespace TurizmOperasyonSistemi.Services
                     System.Diagnostics.Debug.WriteLine($"\n► Step 4: Database Version Check");
                     System.Diagnostics.Debug.WriteLine($"  Current DB Version: {currentDbVersion ?? "None"}");
 
-                    // 5. ENSURE DATABASE CREATED
-                    System.Diagnostics.Debug.WriteLine("\n► Step 5: Ensuring Database Exists");
-                    _context.Database.EnsureCreated();
-                    System.Diagnostics.Debug.WriteLine("✓ Database ensured created");
+                    // 5. ENSURE DATABASE EXISTS (migration-safe)
+                    System.Diagnostics.Debug.WriteLine("\n► Step 5: Ensuring Database Exists (migration-safe)");
+                    // Avoid Database.EnsureCreated() because it bypasses EF Migrations history and may cause schema drift
+                    // Use migrations to create the database when absent, and rely on pending migrations for upgrades.
+                    bool dbFileExists = true;
+                    try
+                    {
+                        var dbPathLocal = dbPath;
+                        dbFileExists = !string.IsNullOrEmpty(dbPathLocal) && System.IO.File.Exists(dbPathLocal);
+                    }
+                    catch
+                    {
+                        dbFileExists = true; // conservative fallback
+                    }
+
+                    if (!dbFileExists)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Database file not found; creating database using migrations.");
+                        try
+                        {
+                            _context.Database.Migrate();
+                            System.Diagnostics.Debug.WriteLine("✓ Database created via migrations");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"✗ Creating database via migrations failed: {ex.Message}");
+                            _logger.LogError("CreateDatabaseViaMigrate", ex);
+                            throw;
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("✓ Database exists; will apply pending migrations if any");
+                    }
 
                     // 6. CHECK PENDING MIGRATIONS
                     System.Diagnostics.Debug.WriteLine("\n► Step 6: Checking Pending Migrations");
