@@ -123,20 +123,29 @@ namespace TurizmOperasyonSistemi.Services
 
                 try
                 {
-                    // 3. CREATE BACKUP
-                    System.Diagnostics.Debug.WriteLine("\n► Step 3: Creating Database Backup");
-                    var backupResult = _backupManager.CreateBackup();
-                    _logger.LogBackup("Pre-Migration Backup", backupResult);
+                    // 3. CREATE BACKUP (only if enabled in config)
+                    System.Diagnostics.Debug.WriteLine("\n► Step 3: Creating Database Backup (if enabled)");
 
-                    if (!backupResult.IsSuccess)
+                    if (_config.IsBackupOnStartupEnabled())
                     {
-                        System.Diagnostics.Debug.WriteLine($"⚠ Backup warning: {backupResult.Message}");
-                        // Backup başarısız olsa bile devam etmek isterseniz yorum yapın
-                        // return false;
+                        var backupResult = _backupManager.CreateBackup();
+                        _logger.LogBackup("Pre-Migration Backup", backupResult);
+
+                        if (!backupResult.IsSuccess)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"⚠ Backup warning: {backupResult.Message}");
+                            // Backup başarısız olsa bile devam etmek isterseniz yorum yapın
+                            // return false;
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"✓ Backup created: {FormatBytes(backupResult.BackupSize)}");
+                        }
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine($"✓ Backup created: {FormatBytes(backupResult.BackupSize)}");
+                        System.Diagnostics.Debug.WriteLine("→ Backup on startup is disabled by configuration; skipping pre-migration backup.");
+                        _logger.LogBackup("Pre-Migration Backup (skipped)", new BackupResult { IsSuccess = true, Message = "Skipped due to configuration" });
                     }
 
                     // 4. GET DATABASE VERSION

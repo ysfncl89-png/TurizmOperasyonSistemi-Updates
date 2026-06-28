@@ -98,6 +98,30 @@ namespace TurizmOperasyonSistemi.Services
         }
 
         /// <summary>
+        /// Maksimum backup dizini toplam boyutunu döndürür (MB)
+        /// </summary>
+        public int GetMaxBackupSizeMB()
+        {
+            return GetInt("Backup:MaxBackupSizeMB", 500);
+        }
+
+        /// <summary>
+        /// Compression (gzip) etkin mi
+        /// </summary>
+        public bool IsCompressionEnabled()
+        {
+            return GetBool("Backup:CompressionEnabled", false);
+        }
+
+        /// <summary>
+        /// Yedek saklama süresi (gün). Bu değerden eski yedekler cleanup sırasında silinecek.
+        /// </summary>
+        public int GetBackupRetentionDays()
+        {
+            return GetInt("Backup:RetentionDays", 10);
+        }
+
+        /// <summary>
         /// Migration lock timeout süresini (saniye) döndürür
         /// </summary>
         public int GetLockTimeoutSeconds()

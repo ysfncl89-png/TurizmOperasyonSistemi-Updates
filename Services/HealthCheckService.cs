@@ -50,6 +50,9 @@ namespace TurizmOperasyonSistemi.Services
                 // 5. Backup Directory
                 report.Checks.Add(CheckBackupDirectory());
 
+                // Extra: Backup directory usage & last backup info
+                report.Checks.Add(CheckBackupUsage());
+
                 // 6. Log Directory
                 report.Checks.Add(CheckLogDirectory());
 
@@ -319,6 +322,52 @@ namespace TurizmOperasyonSistemi.Services
                 return new HealthCheckItem
                 {
                     CheckName = "Backup Directory",
+                    Status = "WARN",
+                    Message = ex.Message
+                };
+            }
+        }
+
+        /// <summary>
+        /// Backup dizininin toplam kullanım miktarını ve son yedek bilgisini raporlar
+        /// </summary>
+        private HealthCheckItem CheckBackupUsage()
+        {
+            try
+            {
+                string backupDir = _config.GetBackupDirectory();
+                if (!Directory.Exists(backupDir))
+                    return new HealthCheckItem { CheckName = "Backup Usage", Status = "WARN", Message = "Backup dizini yok" };
+
+                long sizeBytes = 0;
+                DateTime? lastBackup = null;
+
+                var patterns = new[] { "*" + BackupManager.BACKUP_EXTENSION, "*" + BackupManager.BACKUP_EXTENSION + ".gz" };
+                    var files = new List<FileInfo>();
+                    foreach (var pattern in patterns)
+                        files.AddRange(Directory.GetFiles(backupDir, pattern).Select(p => new FileInfo(p)));
+
+                foreach (var f in files)
+                {
+                    sizeBytes += f.Length;
+                    if (!lastBackup.HasValue || f.CreationTime > lastBackup.Value) lastBackup = f.CreationTime;
+                }
+
+                long sizeMB = sizeBytes / (1024 * 1024);
+
+                return new HealthCheckItem
+                {
+                    CheckName = "Backup Usage",
+                    Status = "OK",
+                    Message = $"Backup dir size: {sizeMB} MB, Files: {files.Count}",
+                    Details = lastBackup?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Never"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new HealthCheckItem
+                {
+                    CheckName = "Backup Usage",
                     Status = "WARN",
                     Message = ex.Message
                 };
