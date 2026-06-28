@@ -38,12 +38,20 @@ namespace TurizmOperasyonSistemi.ViewModels
         private string _statusMessage;
         private DateTime _lastCheckedAt;
         private bool _canRollback;
+        private string _migrationRawLogs;
+
+        public string MigrationRawLogs
+        {
+            get => _migrationRawLogs;
+            set { _migrationRawLogs = value; OnPropertyChanged(); }
+        }
         private string _rollbackReason;
 
         // Commands
         public ICommand RefreshCommand { get; }
         public ICommand RollbackCommand { get; }
         public ICommand ViewLogsCommand { get; }
+        public ICommand RunMigrationsCommand { get; }
         public ICommand CloseCommand { get; set; }
 
         public MigrationDashboardViewModel(AppDbContext context, string dbPath = null)
@@ -68,6 +76,7 @@ namespace TurizmOperasyonSistemi.ViewModels
             RollbackCommand = new RelayCommand<BackupItemViewModel>(async backup => 
                 await PerformRollbackAsync(backup));
             ViewLogsCommand = new RelayCommand(ViewLogs);
+            RunMigrationsCommand = new RelayCommand(async () => await RunMigrationsAsync());
             CloseCommand = new RelayCommand(() => { /* Parent window handles close */ });
 
             // Set properties
@@ -265,7 +274,7 @@ namespace TurizmOperasyonSistemi.ViewModels
                 var logs = await Task.Run(() =>
                 {
                     // MigrationLogger'dan son 10 log'u al
-                    return new List<MigrationLogItem>(); // Şimdilik boş, MigrationLogger'a method eklenecek
+                        return new List<MigrationLogItem>(); // Şimdilik boş, MigrationLogger'a method eklenecek
                 });
 
                 MigrationLogs.Clear();
@@ -281,10 +290,57 @@ namespace TurizmOperasyonSistemi.ViewModels
                         StatusColor = log.IsSuccess ? "#4CAF50" : "#F44336"
                     });
                 }
+
+                // Also load raw log text for display
+                await LoadMigrationRawLogsAsync();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to load logs: {ex.Message}");
+            }
+        }
+
+        private async Task LoadMigrationRawLogsAsync()
+        {
+            try
+            {
+                MigrationRawLogs = await Task.Run(() => _logger.GetLogs(1000));
+            }
+            catch (Exception ex)
+            {
+                MigrationRawLogs = $"Log okuma hatası: {ex.Message}";
+            }
+        }
+
+        public async Task RunMigrationsAsync()
+        {
+            if (IsLoading) return;
+            IsLoading = true;
+            StatusMessage = "Migrations çalıştırılıyor...";
+            try
+            {
+                var migrationService = new MigrationService(_context, _config.GetDatabasePath());
+                bool ok = await Task.Run(() => migrationService.ApplyMigrations());
+                if (ok)
+                {
+                    StatusMessage = "Migrations başarıyla uygulandı";
+                    _logger.LogOperation("ManualMigration", "Manual migration executed via dashboard", true);
+                }
+                else
+                {
+                    StatusMessage = "Migrations sırasında hata oluştu. Lütfen logları kontrol edin.";
+                    _logger.LogOperation("ManualMigration", "Manual migration failed", false);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Migrations hata: {ex.Message}";
+                _logger.LogError("RunMigrationsAsync", ex);
+            }
+            finally
+            {
+                IsLoading = false;
+                await RefreshHealthCheckAsync();
             }
         }
 
