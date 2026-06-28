@@ -76,9 +76,13 @@ namespace TurizmOperasyonSistemi.Views
                 }
 
                 var usdBuy = GetRate("USD", "ForexBuying");
+                var usdSell = GetRate("USD", "ForexSelling");
                 var eurBuy = GetRate("EUR", "ForexBuying");
+                var eurSell = GetRate("EUR", "ForexSelling");
                 var gbpBuy = GetRate("GBP", "ForexBuying");
+                var gbpSell = GetRate("GBP", "ForexSelling");
                 var sarBuy = GetRate("SAR", "ForexBuying");
+                var sarSell = GetRate("SAR", "ForexSelling");
 
                 _usdRate = TryParseRate(usdBuy);
                 _eurRate = TryParseRate(eurBuy);
@@ -99,13 +103,51 @@ namespace TurizmOperasyonSistemi.Views
                         var sarSellTb = this.FindName("SarSellText") as TextBlock;
 
                         if (usdBuyTb != null) usdBuyTb.Text = usdBuy;
-                        if (usdSellTb != null) usdSellTb.Text = "-";
+                        if (usdSellTb != null) usdSellTb.Text = usdSell;
                         if (eurBuyTb != null) eurBuyTb.Text = eurBuy;
-                        if (eurSellTb != null) eurSellTb.Text = "-";
+                        if (eurSellTb != null) eurSellTb.Text = eurSell;
                         if (gbpBuyTb != null) gbpBuyTb.Text = gbpBuy;
-                        if (gbpSellTb != null) gbpSellTb.Text = "-";
+                        if (gbpSellTb != null) gbpSellTb.Text = gbpSell;
                         if (sarBuyTb != null) sarBuyTb.Text = sarBuy;
-                        if (sarSellTb != null) sarSellTb.Text = "-";
+                        if (sarSellTb != null) sarSellTb.Text = sarSell;
+
+                        // footer widget set (if present)
+                        var usdBuyF = this.FindName("UsdBuyFooter") as TextBlock;
+                        var usdSellF = this.FindName("UsdSellFooter") as TextBlock;
+                        var eurBuyF = this.FindName("EurBuyFooter") as TextBlock;
+                        var eurSellF = this.FindName("EurSellFooter") as TextBlock;
+                        var gbpBuyF = this.FindName("GbpBuyFooter") as TextBlock;
+                        var gbpSellF = this.FindName("GbpSellFooter") as TextBlock;
+                        var sarBuyF = this.FindName("SarBuyFooter") as TextBlock;
+                        var sarSellF = this.FindName("SarSellFooter") as TextBlock;
+
+                        if (usdBuyF != null) usdBuyF.Text = usdBuy;
+                        if (usdSellF != null) usdSellF.Text = usdSell;
+                        if (eurBuyF != null) eurBuyF.Text = eurBuy;
+                        if (eurSellF != null) eurSellF.Text = eurSell;
+                        if (gbpBuyF != null) gbpBuyF.Text = gbpBuy;
+                        if (gbpSellF != null) gbpSellF.Text = gbpSell;
+                        if (sarBuyF != null) sarBuyF.Text = sarBuy;
+                        if (sarSellF != null) sarSellF.Text = sarSell;
+
+                        // footer widget set (if present)
+                        var usdBuyFooter = this.FindName("UsdBuyFooter") as TextBlock;
+                        var usdSellFooter = this.FindName("UsdSellFooter") as TextBlock;
+                        var eurBuyFooter = this.FindName("EurBuyFooter") as TextBlock;
+                        var eurSellFooter = this.FindName("EurSellFooter") as TextBlock;
+                        var gbpBuyFooter = this.FindName("GbpBuyFooter") as TextBlock;
+                        var gbpSellFooter = this.FindName("GbpSellFooter") as TextBlock;
+                        var sarBuyFooter = this.FindName("SarBuyFooter") as TextBlock;
+                        var sarSellFooter = this.FindName("SarSellFooter") as TextBlock;
+
+                        if (usdBuyFooter != null) usdBuyFooter.Text = usdBuy;
+                        if (usdSellFooter != null) usdSellFooter.Text = usdSell;
+                        if (eurBuyFooter != null) eurBuyFooter.Text = eurBuy;
+                        if (eurSellFooter != null) eurSellFooter.Text = eurSell;
+                        if (gbpBuyFooter != null) gbpBuyFooter.Text = gbpBuy;
+                        if (gbpSellFooter != null) gbpSellFooter.Text = gbpSell;
+                        if (sarBuyFooter != null) sarBuyFooter.Text = sarBuy;
+                        if (sarSellFooter != null) sarSellFooter.Text = sarSell;
                     }
                     catch { }
                 });

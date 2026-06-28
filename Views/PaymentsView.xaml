@@ -150,7 +150,7 @@
                                                                             </TextBlock>
                                         <TextBlock Text="Toplam Tahsilat" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" />
                                     </StackPanel>
-                                    <TextBlock x:Name="TotalCollectedTextBlock" Text="-" Foreground="#14B8A6" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock x:Name="TotalCollectedTextBlock" Text="-" Foreground="#14B8A6" FontSize="11" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
                                     <!-- Payments: Tahsilat Progress Bar -->
                                     <StackPanel Orientation="Vertical" Margin="0,8,0,0">
                                         <Border Height="14" Background="#1A1F3A" CornerRadius="6" Margin="0,6,0,0" Padding="0" ClipToBounds="True">
@@ -173,7 +173,7 @@
                                                                             </TextBlock>
                                         <TextBlock Text="Toplam Kalan Tahsilat" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" />
                                     </StackPanel>
-                                    <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Foreground="#FCA311" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Foreground="#FCA311" FontSize="11" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
                                     <!-- Payments: Kalan Progress Bar -->
                                     <StackPanel Orientation="Vertical" Margin="0,8,0,0">
                                         <Border Height="14" Background="#1A1F3A" CornerRadius="6" Margin="0,6,0,0" Padding="0" ClipToBounds="True">
@@ -256,7 +256,7 @@
                         <Button Style="{StaticResource CardButtonStyle}" Click="Ledger_Click" BorderBrush="#8B5CF6" Margin="16" MinWidth="320" MinHeight="220">
                             <StackPanel HorizontalAlignment="Left" Margin="12">
                                 <TextBlock Text="📒" FontSize="48"/>
-                                <TextBlock Text="Cari İşlemler" FontSize="20" FontWeight="Bold" Margin="0,10,0,0"/>
+                                <TextBlock Text="Cari İşlemler" FontSize="25" FontWeight="Bold" Margin="0,10,0,0"/>
                                 <TextBlock Text="Müşteri/Satıcı cari hesap yönetimi ve ödeme hareketleri." Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
                                 <TextBlock Text="Ödeme Kaydı Yap" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
                                 <TextBlock Text="Dekont/Belge Yükle." Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
@@ -269,7 +269,7 @@
                         <Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#14B8A6" Margin="16" MinWidth="320" MinHeight="220">
                             <StackPanel HorizontalAlignment="Left" Margin="12">
                                 <TextBlock Text="📋" FontSize="48"/>
-                                <TextBlock Text="Ödeme Listesi İndir" FontSize="20" FontWeight="Bold" Margin="0,10,0,0"/>
+                                <TextBlock Text="Ödeme Listesi İndir" FontSize="25" FontWeight="Bold" Margin="0,10,0,0"/>
                                 <TextBlock Text="Tur ve dönemlere göre ödeme listesi görüntüleme ve indirme." Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
                             </StackPanel>
                         </Button>
@@ -278,7 +278,71 @@
 
                 <!-- Alt: sistem bilgisi çubuğu -->
                 <Border Grid.Row="3" Background="#071023" CornerRadius="6" Padding="10" Margin="0,6,0,0" BorderBrush="#21303F" BorderThickness="1">
-                    <TextBlock x:Name="SystemInfoTextBlock" Text="Aktif para birimi: -    Toplam işlem: -" Foreground="#94A3B8" FontSize="12"/>
+                    <DockPanel LastChildFill="True">
+                        <!-- Sistem bilgisi sol tarafta -->
+                        <TextBlock x:Name="SystemInfoTextBlock" Text="Aktif para birimi: -    Toplam işlem: -" Foreground="#94A3B8" FontSize="12" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+
+                        <!-- Alt bölge: sağda hizalanmış, sığmazsa sararak alt satıra geçen WrapPanel -->
+                        <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" ItemHeight="Auto" Margin="8,0,0,0">
+                            <!-- Her bir döviz kutusu dar tutuldu, sığmazsa bir alt satıra geçecek -->
+                            <StackPanel Orientation="Vertical" Margin="10,0" MinWidth="90" HorizontalAlignment="Center">
+                                <TextBlock Text="$ Dolar" Foreground="#CBD5E1" FontSize="11" HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock x:Name="UsdBuyFooter" Text="-" Foreground="#7EE787" FontSize="12" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="  " FontSize="12" />
+                                    <TextBlock x:Name="UsdSellFooter" Text="-" Foreground="#FCA5A5" FontSize="12" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="Alış" Foreground="#94A3B8" FontSize="10"/>
+                                    <TextBlock Text="  " FontSize="10" />
+                                    <TextBlock Text="Satış" Foreground="#94A3B8" FontSize="10"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Margin="10,0" MinWidth="90" HorizontalAlignment="Center">
+                                <TextBlock Text="€ Euro" Foreground="#CBD5E1" FontSize="11" HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock x:Name="EurBuyFooter" Text="-" Foreground="#7EE787" FontSize="12" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="  " FontSize="12" />
+                                    <TextBlock x:Name="EurSellFooter" Text="-" Foreground="#FCA5A5" FontSize="12" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="Alış" Foreground="#94A3B8" FontSize="10"/>
+                                    <TextBlock Text="  " FontSize="10" />
+                                    <TextBlock Text="Satış" Foreground="#94A3B8" FontSize="10"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Margin="10,0" MinWidth="90" HorizontalAlignment="Center">
+                                <TextBlock Text="£ Sterlin" Foreground="#CBD5E1" FontSize="11" HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock x:Name="GbpBuyFooter" Text="-" Foreground="#7EE787" FontSize="12" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="  " FontSize="12" />
+                                    <TextBlock x:Name="GbpSellFooter" Text="-" Foreground="#FCA5A5" FontSize="12" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="Alış" Foreground="#94A3B8" FontSize="10"/>
+                                    <TextBlock Text="  " FontSize="10" />
+                                    <TextBlock Text="Satış" Foreground="#94A3B8" FontSize="10"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Margin="10,0" MinWidth="90" HorizontalAlignment="Center">
+                                <TextBlock Text="SAR" Foreground="#CBD5E1" FontSize="11" HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock x:Name="SarBuyFooter" Text="-" Foreground="#7EE787" FontSize="12" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="  " FontSize="12" />
+                                    <TextBlock x:Name="SarSellFooter" Text="-" Foreground="#FCA5A5" FontSize="12" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="Alış" Foreground="#94A3B8" FontSize="10"/>
+                                    <TextBlock Text="  " FontSize="10" />
+                                    <TextBlock Text="Satış" Foreground="#94A3B8" FontSize="10"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                        </WrapPanel>
+                    </DockPanel>
                 </Border>
             </Grid>
         </ScrollViewer>
