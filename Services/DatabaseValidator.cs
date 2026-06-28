@@ -94,6 +94,8 @@ namespace TurizmOperasyonSistemi.Services
                 {
                     System.Diagnostics.Debug.WriteLine($"Database dosyası yeni oluşturulacak: {dbPath}");
                 }
+
+                result.IsValid = true;
             }
             catch (Exception ex)
             {
@@ -206,7 +208,7 @@ namespace TurizmOperasyonSistemi.Services
                         cmd.CommandText = "PRAGMA integrity_check(1);";
                         var checkResult = cmd.ExecuteScalar()?.ToString() ?? "error";
 
-                        if (checkResult != "ok" && checkResult != "error")
+                        if (checkResult != "ok")
                         {
                             result.IsValid = false;
                             result.Message = $"Database bütünlüğü sorunu: {checkResult}";
@@ -219,8 +221,9 @@ namespace TurizmOperasyonSistemi.Services
             }
             catch (Exception ex)
             {
-                // Hata olsa bile devam et, bu kritik değil
-                System.Diagnostics.Debug.WriteLine($"Schema bütünlüğü kontrolü uyarısı: {ex.Message}");
+                // Hata olsa bile devam et, bu kritik değil - ancak debug log et
+                System.Diagnostics.Debug.WriteLine($"Schema bütünlüğü kontrolü uyarısı (devam ediliyor): {ex.Message}");
+                // validation başarısız olmasına neden olmayız, sadece uyar
             }
         }
 
