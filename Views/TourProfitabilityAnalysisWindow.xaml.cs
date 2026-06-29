@@ -27,12 +27,12 @@ namespace TurizmOperasyonSistemi.Views
             Loaded += TourProfitabilityAnalysisWindow_Loaded;
         }
 
-        private void TourProfitabilityAnalysisWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void TourProfitabilityAnalysisWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            LoadTourOptions();
+            await LoadTourOptionsAsync();
         }
 
-        private void LoadTourOptions()
+        private async System.Threading.Tasks.Task LoadTourOptionsAsync()
         {
             try
             {
@@ -70,7 +70,7 @@ namespace TurizmOperasyonSistemi.Views
                 else
                 {
                     HintTextBlock.Text = "Veritabanında aktif tur kaydı bulunamadı.";
-                    UpdateSummary(Enumerable.Empty<Models.Registration>());
+                    await UpdateSummaryAsync(Enumerable.Empty<Models.Registration>());
                 }
             }
             catch (Exception ex)
@@ -79,12 +79,12 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        private void TourComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void TourComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var selected = TourComboBox.SelectedItem as TourOption;
             if (selected == null)
             {
-                UpdateSummary(Enumerable.Empty<Models.Registration>());
+                await UpdateSummaryAsync(Enumerable.Empty<Models.Registration>());
                 return;
             }
 
@@ -100,7 +100,7 @@ namespace TurizmOperasyonSistemi.Views
                         && (r.DaysCount ?? "") == selected.DaysCount)
                     .ToList();
 
-                UpdateSummary(regs);
+                await UpdateSummaryAsync(regs);
                 HintTextBlock.Text = $"{selected.DisplayText} için {regs.Count} kayıt bulundu. Giderleri giriniz - hesaplama otomatik yapılacak.";
             }
             catch (Exception ex)
@@ -109,7 +109,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        private void UpdateSummary(IEnumerable<Models.Registration> regs)
+        private async System.Threading.Tasks.Task UpdateSummaryAsync(IEnumerable<Models.Registration> regs)
         {
             _currentRegistrations = regs.ToList();
 
@@ -152,9 +152,178 @@ namespace TurizmOperasyonSistemi.Views
             var primary = grouped.FirstOrDefault(x => string.Equals(x.Currency, _currentPrimaryCurrency, StringComparison.OrdinalIgnoreCase))
                           ?? grouped.First();
 
-            _currentTourTotal = primary.TotalPrice;
-            _currentPaidTotal = primary.Paid;
-            _currentRemainingTotal = primary.Remaining;
+            // Eğer birden fazla para birimi varsa, diğer para birimlerini de dönüşüm yaparak dikkate al
+            decimal convertedTourTotal = 0m;
+            decimal convertedPaidTotal = 0m;
+            decimal convertedRemainingTotal = 0m;
+
+            try
+            {
+                // Varsayılan olarak kurlar 0. Eğer servis erişilemezse eski davranışa düş
+                decimal usdRate = 0m, eurRate = 0m, gbpRate = 0m, sarRate = 0m;
+                try
+                {
+                    var svc = new ExchangeRateService();
+                    var rates = await svc.GetLatestRatesAsync();
+                    if (rates != null)
+                    {
+                        decimal.TryParse(rates.UsdBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out usdRate);
+                        decimal.TryParse(rates.EurBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out eurRate);
+                        decimal.TryParse(rates.GbpBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out gbpRate);
+                        decimal.TryParse(rates.SarBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out sarRate);
+                    }
+                }
+                catch { }
+
+                // Normalize fonksiyonu: para birimi metinlerini standardize et
+                string NormalizeCurrencyTop(string cur)
+                {
+                    if (string.IsNullOrWhiteSpace(cur)) return string.Empty;
+                    var up = cur.Trim().ToUpperInvariant();
+                    if (up == "USD" || up == "US" || up.Contains("DOLAR") || up.Contains("DOLLAR") || up.Contains("$")) return "USD";
+                    if (up == "EUR" || up.Contains("EURO") || up.Contains("€")) return "EUR";
+                    if (up == "GBP" || up.Contains("STERLIN") || up.Contains("POUND") || up.Contains("£")) return "GBP";
+                    if (up == "SAR" || up.Contains("RIYAL") || up.Contains("RİYAL") || up.Contains("﷼")) return "SAR";
+                    if (up == "TRY" || up == "TL" || up.Contains("TURK") || up.Contains("TÜRK")) return "TRY";
+                    return up;
+                }
+
+                bool hasUsd = grouped.Any(x => NormalizeCurrencyTop(x.Currency) == "USD");
+
+                decimal ConvertToUsdLocal(decimal amount, string currency, decimal usdRate, decimal eurRate, decimal gbpRate, decimal sarRate)
+                {
+                    if (amount == 0m) return 0m;
+                    var code = NormalizeCurrencyTop(currency);
+                    try
+                    {
+                        if (code == "USD") return amount;
+                        if (code == "EUR") return (eurRate > 0 && usdRate > 0) ? amount * (eurRate / usdRate) : 0m;
+                        if (code == "GBP") return (gbpRate > 0 && usdRate > 0) ? amount * (gbpRate / usdRate) : 0m;
+                        if (code == "SAR") return (sarRate > 0 && usdRate > 0) ? amount * (sarRate / usdRate) : 0m;
+                        if (code == "TRY") return (usdRate > 0) ? amount / usdRate : 0m; // TRY -> USD
+                    }
+                    catch { }
+                    return 0m; // tanınmayan para birimi
+                }
+
+
+                if (hasUsd)
+                {
+                    // Tüm para birimlerini USD'ye çevir ve topla
+                    foreach (var g in grouped)
+                    {
+                        convertedTourTotal += ConvertToUsdLocal(g.TotalPrice, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+                        convertedPaidTotal += ConvertToUsdLocal(g.Paid, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+                        convertedRemainingTotal += ConvertToUsdLocal(g.Remaining, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+                    }
+
+                    // Eğer kur bilgisi alınamadıysa (usdRate==0) fallback: primary kullan
+                    if (convertedTourTotal == 0m && convertedPaidTotal == 0m && convertedRemainingTotal == 0m)
+                    {
+                        convertedTourTotal = primary.TotalPrice;
+                        convertedPaidTotal = primary.Paid;
+                        convertedRemainingTotal = primary.Remaining;
+                    }
+
+// Hedef para birimi artık USD olacak
+                    _currentPrimaryCurrency = "USD";
+                }
+                else
+                {
+                    // Önceki davranış: seçili primary para birimine çevir (TRY veya diğerleri)
+                    static decimal ToTry(decimal amount, string currency, decimal usdRate, decimal eurRate, decimal gbpRate, decimal sarRate)
+                    {
+                        var cur = (currency ?? "").Trim().ToUpperInvariant();
+                        if (string.IsNullOrEmpty(cur) || cur == "TRY" || cur == "TL") return amount;
+                        if (cur == "USD")
+                        {
+                            if (usdRate > 0) return amount * usdRate;
+                            return 0m;
+                        }
+                        if (cur == "EUR")
+                        {
+                            if (eurRate > 0) return amount * eurRate;
+                            return 0m;
+                        }
+                        if (cur == "GBP")
+                        {
+                            if (gbpRate > 0) return amount * gbpRate;
+                            return 0m;
+                        }
+                        if (cur == "SAR")
+                        {
+                            if (sarRate > 0) return amount * sarRate;
+                            return 0m;
+                        }
+                        return 0m;
+                    }
+
+                    static decimal FromTryTo(decimal amountInTry, string targetCurrency, decimal usdRate, decimal eurRate, decimal gbpRate, decimal sarRate)
+                    {
+                        var tgt = (targetCurrency ?? "").Trim().ToUpperInvariant();
+                        if (string.IsNullOrEmpty(tgt) || tgt == "TRY" || tgt == "TL") return amountInTry;
+                        if (tgt == "USD")
+                        {
+                            if (usdRate > 0) return amountInTry / usdRate;
+                            return 0m;
+                        }
+                        if (tgt == "EUR")
+                        {
+                            if (eurRate > 0) return amountInTry / eurRate;
+                            return 0m;
+                        }
+                        if (tgt == "GBP")
+                        {
+                            if (gbpRate > 0) return amountInTry / gbpRate;
+                            return 0m;
+                        }
+                        if (tgt == "SAR")
+                        {
+                            if (sarRate > 0) return amountInTry / sarRate;
+                            return 0m;
+                        }
+                        return 0m;
+                    }
+
+                    foreach (var g in grouped)
+                    {
+                        var amtTry = ToTry(g.TotalPrice, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+                        var paidTry = ToTry(g.Paid, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+                        var remTry = ToTry(g.Remaining, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+
+                        if (string.IsNullOrWhiteSpace(_currentPrimaryCurrency) || _currentPrimaryCurrency.Trim().ToUpperInvariant() == "TRY" || _currentPrimaryCurrency.Trim().ToUpperInvariant() == "TL")
+                        {
+                            convertedTourTotal += amtTry;
+                            convertedPaidTotal += paidTry;
+                            convertedRemainingTotal += remTry;
+                        }
+                        else
+                        {
+                            convertedTourTotal += FromTryTo(amtTry, _currentPrimaryCurrency, usdRate, eurRate, gbpRate, sarRate);
+                            convertedPaidTotal += FromTryTo(paidTry, _currentPrimaryCurrency, usdRate, eurRate, gbpRate, sarRate);
+                            convertedRemainingTotal += FromTryTo(remTry, _currentPrimaryCurrency, usdRate, eurRate, gbpRate, sarRate);
+                        }
+                    }
+
+                    if (convertedTourTotal == 0m && convertedPaidTotal == 0m && convertedRemainingTotal == 0m)
+                    {
+                        convertedTourTotal = primary.TotalPrice;
+                        convertedPaidTotal = primary.Paid;
+                        convertedRemainingTotal = primary.Remaining;
+                    }
+                }
+            }
+            catch
+            {
+                // Hata durumunda önceki davranışa dön
+                convertedTourTotal = primary.TotalPrice;
+                convertedPaidTotal = primary.Paid;
+                convertedRemainingTotal = primary.Remaining;
+            }
+
+            _currentTourTotal = convertedTourTotal;
+            _currentPaidTotal = convertedPaidTotal;
+            _currentRemainingTotal = convertedRemainingTotal;
 
             TotalPriceTextBlock.Text = string.Join("\n", grouped.Select(x => FormatAmount(x.TotalPrice, x.Currency)));
             TotalPaidTextBlock.Text = string.Join("\n", grouped.Select(x => FormatAmount(x.Paid, x.Currency)));
