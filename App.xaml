@@ -40,7 +40,7 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="#475569"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Padding" Value="1"/>
             <Setter Property="Height" Value="36"/>
             <Setter Property="Template">
                 <Setter.Value>
