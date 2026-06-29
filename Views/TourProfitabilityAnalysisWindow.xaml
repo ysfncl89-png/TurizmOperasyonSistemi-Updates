@@ -16,7 +16,7 @@
                        FontSize="28"
                        FontWeight="Bold"
                        Foreground="#F59E0B"/>
-            <TextBlock Text="Kayıtlı tur seçeneklerinden birini seçin; toplam bedel, tahsilat ve kalan borç özetine göre gelir gider hesabı yapabilirsiniz"
+            <TextBlock Text="Kayıtlı tur seçeneklerinden birini seçin; toplam bedel, tahsilat ve kalan borç özetine göre gelir gider hesabı yapabilirsiniz."
                        Margin="0,6,0,0"
                        Foreground="#94A3B8"
                        TextWrapping="Wrap"/>
@@ -47,27 +47,27 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#8B5CF6" BorderThickness="1" CornerRadius="12" Padding="12">
+            <Border Grid.Column="0" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#8B5CF6" BorderThickness="1" CornerRadius="12" Padding="6">
                 <StackPanel>
-                    <TextBlock Text="📚" FontSize="24"/>
-                    <TextBlock Text="Toplam Tur Bedeli" FontSize="15" FontWeight="Bold" Margin="0,6,0,0"/>
-                    <TextBlock x:Name="TotalPriceTextBlock" Text="-" Margin="0,6,0,0" FontSize="18" FontWeight="Bold" Foreground="#8B5CF6" TextWrapping="Wrap"/>
+                    <TextBlock Text="📚" FontSize="14"/>
+                    <TextBlock Text="Toplam Tur Bedeli" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="TotalPriceTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#8B5CF6" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="1" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#14B8A6" BorderThickness="1" CornerRadius="12" Padding="12">
+            <Border Grid.Column="1" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#14B8A6" BorderThickness="1" CornerRadius="12" Padding="6">
                 <StackPanel>
-                    <TextBlock Text="💰" FontSize="24"/>
-                    <TextBlock Text="Toplam Tahsilat" FontSize="15" FontWeight="Bold" Margin="0,6,0,0"/>
-                    <TextBlock x:Name="TotalPaidTextBlock" Text="-" Margin="0,6,0,0" FontSize="18" FontWeight="Bold" Foreground="#14B8A6" TextWrapping="Wrap"/>
+                    <TextBlock Text="💰" FontSize="14"/>
+                    <TextBlock Text="Toplam Tahsilat" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="TotalPaidTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#14B8A6" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="2" Background="#0B1220" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="12" Padding="12">
+            <Border Grid.Column="2" Background="#0B1220" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="12" Padding="6">
                 <StackPanel>
-                    <TextBlock Text="📉" FontSize="24"/>
-                    <TextBlock Text="Toplam Kalan" FontSize="15" FontWeight="Bold" Margin="0,6,0,0"/>
-                    <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Margin="0,6,0,0" FontSize="18" FontWeight="Bold" Foreground="#F59E0B" TextWrapping="Wrap"/>
+                    <TextBlock Text="📉" FontSize="14"/>
+                    <TextBlock Text="Toplam Kalan" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#F59E0B" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </Grid>
