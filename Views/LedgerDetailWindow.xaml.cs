@@ -6,6 +6,9 @@ using System.Windows.Input;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using Microsoft.Win32;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -265,6 +268,138 @@ db.SaveChanges();
             public decimal PaidAmount { get; set; }
             public decimal RemainingDebt { get; set; }
             public bool IsOverpaid { get; set; }
+        }
+
+        // Export Popup button and methods
+        private void ExportBtn_Click(object sender, RoutedEventArgs e)
+        {
+            ExportPopup.IsOpen = !ExportPopup.IsOpen;
+        }
+
+        private void ExportWord_Click(object sender, RoutedEventArgs e)
+        {
+            ExportPopup.IsOpen = false;
+            ExportToWord();
+        }
+
+        private void ExportExcel_Click(object sender, RoutedEventArgs e)
+        {
+            ExportPopup.IsOpen = false;
+            ExportToExcel();
+        }
+
+        private void ExportPdf_Click(object sender, RoutedEventArgs e)
+        {
+            ExportPopup.IsOpen = false;
+            ExportToPdf();
+        }
+
+        private void ExportToWord()
+        {
+            try
+            {
+                var sfd = new SaveFileDialog { Filter = "Word Dosyası (*.docx)|*.docx", DefaultExt = ".docx", FileName = GetDefaultFileName() };
+                if (sfd.ShowDialog() != true) return;
+
+                var headers = new List<string> { "Tur", "Dönem", "Grup Türü", "Gün", "Borç", "Ödenen", "Kalan", "Para Birimi" };
+                var rows = GetExportData();
+                var footers = GetExportFooters();
+                var title = $"Cari Hesap Detayı - {TbName.Text}";
+
+                Services.ExportHelper.ExportWord(sfd.FileName, rows, headers, title, footers);
+                MessageBox.Show("Word dosyası başarıyla kaydedildi.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Word export hatası: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExportToExcel()
+        {
+            try
+            {
+                var sfd = new SaveFileDialog { Filter = "Excel Dosyası (*.xlsx)|*.xlsx", DefaultExt = ".xlsx", FileName = GetDefaultFileName() };
+                if (sfd.ShowDialog() != true) return;
+
+                var headers = new List<string> { "Tur", "Dönem", "Grup Türü", "Gün", "Borç", "Ödenen", "Kalan", "Para Birimi" };
+                var rows = GetExportData();
+                var footers = GetExportFooters();
+                var title = $"Cari Hesap Detayı - {TbName.Text}";
+
+                Services.ExportHelper.ExportExcel(sfd.FileName, rows, headers, title, footers);
+                MessageBox.Show("Excel dosyası başarıyla kaydedildi.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Excel export hatası: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExportToPdf()
+        {
+            try
+            {
+                var sfd = new SaveFileDialog { Filter = "PDF Dosyası (*.pdf)|*.pdf", DefaultExt = ".pdf", FileName = GetDefaultFileName() };
+                if (sfd.ShowDialog() != true) return;
+
+                var headers = new List<string> { "Tur", "Dönem", "Grup Türü", "Gün", "Borç", "Ödenen", "Kalan", "Para Birimi" };
+                var rows = GetExportData();
+                var footers = GetExportFooters();
+                var title = $"Cari Hesap Detayı - {TbName.Text}";
+
+                Services.ExportHelper.ExportPdf(sfd.FileName, rows, headers, title, footers);
+                MessageBox.Show("PDF dosyası başarıyla kaydedildi.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"PDF export hatası: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private List<Dictionary<string, string>> GetExportData()
+        {
+            var rows = new List<Dictionary<string, string>>();
+            if (DetailGrid.ItemsSource is List<RegistrationDetail> items)
+            {
+                foreach (var item in items)
+                {
+                    rows.Add(new Dictionary<string, string>
+                    {
+                        { "Tur", item.TourType ?? "" },
+                        { "Dönem", item.Period ?? "" },
+                        { "Grup Türü", item.GroupType ?? "" },
+                        { "Gün", item.DaysCount ?? "" },
+                        { "Borç", item.TotalPrice.ToString("N2") },
+                        { "Ödenen", item.PaidAmount.ToString("N2") },
+                        { "Kalan", item.RemainingDebt.ToString("N2") },
+                        { "Para Birimi", item.Currency ?? "" }
+                    });
+                }
+            }
+            return rows;
+        }
+
+        private List<string> GetExportFooters()
+        {
+            var footers = new List<string>
+            {
+                "",
+                $"Ad Soyad: {TbName.Text}",
+                $"TC / Pasaport: {TbTc.Text}",
+                $"Toplam Borç: {TbTotal.Text}",
+                $"Toplam Ödenen: {TbPaid.Text}",
+                $"Kalan Borç: {TbRemaining.Text}",
+                "",
+                $"Hazırlama Tarihi: {DateTime.Now:dd.MM.yyyy HH:mm:ss}"
+            };
+            return footers;
+        }
+
+        private string GetDefaultFileName()
+        {
+            var nameClean = System.Text.RegularExpressions.Regex.Replace(TbName.Text, @"[^\w\s-]", "").Replace(" ", "_");
+            return $"CariHesap_{nameClean}_{DateTime.Now:yyyyMMdd_HHmmss}";
         }
     }
 }

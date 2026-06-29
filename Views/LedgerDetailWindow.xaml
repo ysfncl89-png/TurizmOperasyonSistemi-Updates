@@ -140,15 +140,53 @@
                 </DataGrid>
             </StackPanel>
 
-            <!-- Kapat butonu: sağ altta belirgin olacak -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,8,0,0">
-                <Button x:Name="CloseBtn" Content="Kapat" Width="120" Height="38" Click="CloseBtn_Click" FontWeight="Bold" Cursor="Hand"
-                        Background="#8B5CF6" Foreground="White" BorderThickness="0" Padding="10,4">
-                    <Button.Effect>
-                        <DropShadowEffect Color="#8B5CF6" BlurRadius="18" ShadowDepth="0" Opacity="0.65" />
-                    </Button.Effect>
-                </Button>
-            </StackPanel>
+            <!-- Çıktı Alma ve Kapat butonları: sol (çıktı) ve sağ (kapat) -->
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Sol tarafta Çıktı Al dropdown menüsü -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,8,0,0">
+                        <Button x:Name="ExportBtn" Width="160" Height="38" FontWeight="Bold" Cursor="Hand"
+                                Background="#10B981" Foreground="White" BorderThickness="0" Padding="10,4"
+                                Click="ExportBtn_Click">
+                            <Button.Effect>
+                                <DropShadowEffect Color="#10B981" BlurRadius="18" ShadowDepth="0" Opacity="0.65" />
+                            </Button.Effect>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="📥 Çıktı Al" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            </StackPanel>
+                        </Button>
+                    <Popup x:Name="ExportPopup" PlacementTarget="{x:Reference ExportBtn}" Placement="Top" StaysOpen="False">
+                        <Border Background="#1F2937" BorderBrush="#374151" BorderThickness="1" CornerRadius="6" Padding="4">
+                            <StackPanel>
+                                <Button x:Name="ExportWordBtn" Content="📄 Word (.docx)" Height="36" Click="ExportWord_Click" 
+                                        Background="#3B82F6" Foreground="White" BorderThickness="0" FontSize="12" 
+                                        Cursor="Hand" Margin="2" />
+                                <Button x:Name="ExportExcelBtn" Content="📊 Excel (.xlsx)" Height="36" Click="ExportExcel_Click" 
+                                        Background="#059669" Foreground="White" BorderThickness="0" FontSize="12" 
+                                        Cursor="Hand" Margin="2" />
+                                <Button x:Name="ExportPdfBtn" Content="📋 PDF (.pdf)" Height="36" Click="ExportPdf_Click" 
+                                        Background="#EF4444" Foreground="White" BorderThickness="0" FontSize="12" 
+                                        Cursor="Hand" Margin="2" />
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </StackPanel>
+
+                <!-- Sağ tarafta Kapat butonu -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,8,0,0">
+                    <Button x:Name="CloseBtn" Content="Kapat" Width="120" Height="38" Click="CloseBtn_Click" FontWeight="Bold" Cursor="Hand"
+                            Background="#8B5CF6" Foreground="White" BorderThickness="0" Padding="10,4">
+                        <Button.Effect>
+                            <DropShadowEffect Color="#8B5CF6" BlurRadius="18" ShadowDepth="0" Opacity="0.65" />
+                        </Button.Effect>
+                    </Button>
+                </StackPanel>
+            </Grid>
 
         </Grid>
     </Border>
