@@ -252,6 +252,13 @@ namespace TurizmOperasyonSistemi
                     PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
                 }
 
+                // Tur kârlılık analizi, payments modülünün alt ekranı gibi davransın
+                if (view is TourProfitabilityAnalysisWindow)
+                {
+                    System.Diagnostics.Debug.WriteLine("TourProfitabilityAnalysisWindow tespit edildi.");
+                    PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
+                }
+
                 // CargoTrackingInfoView'e geri dönüyorsak, buton rengini ayarla
                 if (view is CargoTrackingInfoView)
                 {

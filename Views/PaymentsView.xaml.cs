@@ -701,5 +701,33 @@ namespace TurizmOperasyonSistemi.Views
                 MessageBox.Show(ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void TourProfitability_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var view = new TourProfitabilityAnalysisWindow();
+
+                var mw = System.Windows.Application.Current?.MainWindow as MainWindow;
+                if (mw != null)
+                {
+                    mw.NavigateTo(view);
+                    return;
+                }
+
+                var host = Window.GetWindow(this);
+                if (host is MainWindow hostMw)
+                {
+                    hostMw.NavigateTo(view);
+                    return;
+                }
+
+                MessageBox.Show("Ana pencere bulunamadı. Lütfen uygulamayı yeniden başlatın.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

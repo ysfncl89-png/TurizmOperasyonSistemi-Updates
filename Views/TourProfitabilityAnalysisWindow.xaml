@@ -1,0 +1,87 @@
+<UserControl x:Class="TurizmOperasyonSistemi.Views.TourProfitabilityAnalysisWindow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#0F172A"
+             Foreground="#E2E8F0">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Tur Kârlılık Analizi Hesaplama Ekranı"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       Foreground="#F59E0B"/>
+            <TextBlock Text="Kayıtlı tur seçeneklerinden birini seçin; toplam bedel, tahsilat ve kalan borç özetine göre gelir gider hesabı yapabilirsiniz"
+                       Margin="0,6,0,0"
+                       Foreground="#94A3B8"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <Border Grid.Row="1"
+                Background="#111827"
+                BorderBrush="#334155"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Tur Seçimi" Foreground="#CBD5E1" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                <ComboBox x:Name="TourComboBox"
+                          Height="36"
+                          IsEditable="False"
+                          SelectionChanged="TourComboBox_SelectionChanged"
+                          DisplayMemberPath="DisplayText"
+                          TextSearch.TextPath="DisplayText"/>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#8B5CF6" BorderThickness="1" CornerRadius="12" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="📚" FontSize="24"/>
+                    <TextBlock Text="Toplam Tur Bedeli" FontSize="15" FontWeight="Bold" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="TotalPriceTextBlock" Text="-" Margin="0,6,0,0" FontSize="18" FontWeight="Bold" Foreground="#8B5CF6" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#14B8A6" BorderThickness="1" CornerRadius="12" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="💰" FontSize="24"/>
+                    <TextBlock Text="Toplam Tahsilat" FontSize="15" FontWeight="Bold" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="TotalPaidTextBlock" Text="-" Margin="0,6,0,0" FontSize="18" FontWeight="Bold" Foreground="#14B8A6" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Background="#0B1220" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="12" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="📉" FontSize="24"/>
+                    <TextBlock Text="Toplam Kalan" FontSize="15" FontWeight="Bold" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Margin="0,6,0,0" FontSize="18" FontWeight="Bold" Foreground="#F59E0B" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="3"
+                Background="#111827"
+                BorderBrush="#334155"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16">
+            <TextBlock x:Name="HintTextBlock"
+                       Text="Henüz bir tur seçilmedi."
+                       Foreground="#94A3B8"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
