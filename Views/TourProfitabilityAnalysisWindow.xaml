@@ -3,85 +3,183 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="#0F172A"
              Foreground="#E2E8F0">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="Tur Kârlılık Analizi Hesaplama Ekranı"
-                       FontSize="28"
-                       FontWeight="Bold"
-                       Foreground="#F59E0B"/>
-            <TextBlock Text="Kayıtlı tur seçeneklerinden birini seçin; toplam bedel, tahsilat ve kalan borç özetine göre gelir gider hesabı yapabilirsiniz."
-                       Margin="0,6,0,0"
-                       Foreground="#94A3B8"
-                       TextWrapping="Wrap"/>
-        </StackPanel>
-
-        <Border Grid.Row="1"
-                Background="#111827"
-                BorderBrush="#334155"
-                BorderThickness="1"
-                CornerRadius="12"
-                Padding="16"
-                Margin="0,0,0,16">
-            <StackPanel>
-                <TextBlock Text="Tur Seçimi" Foreground="#CBD5E1" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                <ComboBox x:Name="TourComboBox"
-                          Height="36"
-                          IsEditable="False"
-                          SelectionChanged="TourComboBox_SelectionChanged"
-                          DisplayMemberPath="DisplayText"
-                          TextSearch.TextPath="DisplayText"/>
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <TextBlock Text="Tur K&#xE2;rl&#x131;l&#x131;k Analizi Hesaplama Ekran&#x131;"
+                           FontSize="28"
+                           FontWeight="Bold"
+                           Foreground="#F59E0B"/>
+                <TextBlock Text="Kay&#x131;tl&#x131; tur se&#xE7;eneklerinden birini se&#xE7;in; toplam bedel, tahsilat ve kalan bor&#xE7; &#xF6;zetine g&#xF6;re gelir gider hesab&#x131; yapabilirsiniz."
+                           Margin="0,6,0,0"
+                           Foreground="#94A3B8"
+                           TextWrapping="Wrap"/>
             </StackPanel>
-        </Border>
 
-        <Grid Grid.Row="2" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <Border Grid.Column="0" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#8B5CF6" BorderThickness="1" CornerRadius="12" Padding="6">
+            <Border Grid.Row="1"
+                    Background="#111827"
+                    BorderBrush="#334155"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="16"
+                    Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="📚" FontSize="14"/>
-                    <TextBlock Text="Toplam Tur Bedeli" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
-                    <TextBlock x:Name="TotalPriceTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#8B5CF6" TextWrapping="Wrap"/>
+                    <TextBlock Text="Tur Se&#xE7;imi" Foreground="#CBD5E1" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <ComboBox x:Name="TourComboBox"
+                              Height="36"
+                              IsEditable="False"
+                              SelectionChanged="TourComboBox_SelectionChanged"
+                              DisplayMemberPath="DisplayText"
+                              TextSearch.TextPath="DisplayText"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="1" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#14B8A6" BorderThickness="1" CornerRadius="12" Padding="6">
+            <Grid Grid.Row="2" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#0B1220" BorderThickness="1" CornerRadius="12" Padding="6">
+                    <StackPanel>
+                        <TextBlock Text="&#x1F4DA;" FontSize="14"/>
+                        <TextBlock Text="Toplam Tur Bedeli" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
+                        <TextBlock x:Name="TotalPriceTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#8B5CF6" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#0B1220" BorderThickness="1" CornerRadius="12" Padding="6">
+                    <StackPanel>
+                        <TextBlock Text="&#x1F4B0;" FontSize="14"/>
+                        <TextBlock Text="Toplam Tahsilat" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
+                        <TextBlock x:Name="TotalPaidTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#14B8A6" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Background="#0B1220" BorderBrush="#0B1220" BorderThickness="1" CornerRadius="12" Padding="6">
+                    <StackPanel>
+                        <TextBlock Text="&#x1F4C9;" FontSize="14"/>
+                        <TextBlock Text="Toplam Kalan" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
+                        <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#F59E0B" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="3"
+                    Background="#111827"
+                    BorderBrush="#334155"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="16"
+                    Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="💰" FontSize="14"/>
-                    <TextBlock Text="Toplam Tahsilat" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
-                    <TextBlock x:Name="TotalPaidTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#14B8A6" TextWrapping="Wrap"/>
+                    <TextBlock Text="Giderler" Foreground="#CBD5E1" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                    <UniformGrid Columns="2" Rows="2">
+                        <Border Margin="0,0,12,12" Background="#0B1220" BorderBrush="#334155" BorderThickness="1" CornerRadius="10" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="Vize Harcamalar&#x131;" Foreground="#CBD5E1" FontSize="12" Margin="0,0,0,6"/>
+                                <TextBox x:Name="VisaExpenseTextBox" Height="40" FontSize="14" />
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="0,0,0,12" Background="#0B1220" BorderBrush="#334155" BorderThickness="1" CornerRadius="10" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="Otel Harcamalar&#x131;" Foreground="#CBD5E1" FontSize="12" Margin="0,0,0,6"/>
+                                <TextBox x:Name="HotelExpenseTextBox" Height="40" FontSize="14" />
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="0,0,12,0" Background="#0B1220" BorderBrush="#334155" BorderThickness="1" CornerRadius="10" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="Bilet Harcamalar&#x131;" Foreground="#CBD5E1" FontSize="12" Margin="0,0,0,6"/>
+                                <TextBox x:Name="TicketExpenseTextBox" Height="41" FontSize="14" />
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="0,0,0,0" Background="#0B1220" BorderBrush="#334155" BorderThickness="1" CornerRadius="10" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="&#xC7;anta / &#x130;hram vb. Harcamalar" Foreground="#CBD5E1" FontSize="12" Margin="0,0,0,6"/>
+                                <TextBox x:Name="BagExpenseTextBox" Height="40" FontSize="14" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <Button x:Name="CalculateButton"
+                            Content="Hesapla"
+                            Click="CalculateButton_Click"
+                            Height="38"
+                            Width="160"
+                            HorizontalAlignment="Right"
+                            Margin="0,14,0,0"
+                            Background="#F59E0B"
+                            Foreground="#0F172A"
+                            BorderThickness="0"
+                            FontWeight="Bold"
+                            Cursor="Hand"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="2" Background="#0B1220" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="12" Padding="6">
+            <Grid Grid.Row="4" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#8B5CF6" BorderThickness="1" CornerRadius="12" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Toplam Tur Bedeli" Foreground="#CBD5E1" FontSize="12"/>
+                        <TextBlock x:Name="SummaryTourTotalTextBlock" Text="-" Margin="0,6,0,0" FontSize="16" FontWeight="Bold" Foreground="#8B5CF6" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Margin="0,0,12,0" Background="#0B1220" BorderBrush="#14B8A6" BorderThickness="1" CornerRadius="12" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Toplam Maliyet" Foreground="#CBD5E1" FontSize="12"/>
+                        <TextBlock x:Name="TotalExpenseTextBlock" Text="-" Margin="0,6,0,0" FontSize="16" FontWeight="Bold" Foreground="#14B8A6" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Background="#0B1220" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="12" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Toplam Kar / Zarar" Foreground="#CBD5E1" FontSize="12"/>
+                        <TextBlock x:Name="TotalProfitLossTextBlock" Text="-" Margin="0,6,0,0" FontSize="16" FontWeight="Bold" Foreground="#F59E0B" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="5"
+                    Background="#111827"
+                    BorderBrush="#334155"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="10"
+                    Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="📉" FontSize="14"/>
-                    <TextBlock Text="Toplam Kalan" FontSize="12" FontWeight="Bold" Margin="0,6,0,0"/>
-                    <TextBlock x:Name="TotalRemainingTextBlock" Text="-" Margin="0,6,0,0" FontSize="14" FontWeight="Bold" Foreground="#F59E0B" TextWrapping="Wrap"/>
+                    <TextBlock Text="Anl&#x131;k Tahsilata G&#xF6;re Kar / Zarar" Foreground="#CBD5E1" FontSize="12"/>
+                    <TextBlock x:Name="InstantProfitLossTextBlock" Text="-" Margin="0,6,0,0" FontSize="18" FontWeight="Bold" Foreground="#E2E8F0" TextWrapping="Wrap"/>
                 </StackPanel>
+            </Border>
+
+            <Border Grid.Row="6"
+                    Background="#111827"
+                    BorderBrush="#334155"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="16">
+                <TextBlock x:Name="HintTextBlock"
+                           Text="Hen&#xFC;z bir tur se&#xE7;ilmedi."
+                           Foreground="#94A3B8"
+                           TextWrapping="Wrap"/>
             </Border>
         </Grid>
-
-        <Border Grid.Row="3"
-                Background="#111827"
-                BorderBrush="#334155"
-                BorderThickness="1"
-                CornerRadius="12"
-                Padding="16">
-            <TextBlock x:Name="HintTextBlock"
-                       Text="Henüz bir tur seçilmedi."
-                       Foreground="#94A3B8"
-                       TextWrapping="Wrap"/>
-        </Border>
-    </Grid>
+    </ScrollViewer>
 </UserControl>

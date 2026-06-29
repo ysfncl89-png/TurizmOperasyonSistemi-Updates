@@ -11,7 +11,12 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class TourProfitabilityAnalysisWindow : UserControl
     {
-        private List<TourOption> _tourOptions = new();
+        private readonly List<TourOption> _tourOptions = new();
+        private List<Models.Registration> _currentRegistrations = new();
+        private string _currentPrimaryCurrency = string.Empty;
+        private decimal _currentTourTotal;
+        private decimal _currentPaidTotal;
+        private decimal _currentRemainingTotal;
 
         public TourProfitabilityAnalysisWindow()
         {
@@ -30,28 +35,29 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using var db = new AppDbContext();
 
-                _tourOptions = db.Registrations
-                    .AsNoTracking()
-                    .Where(r => r.IsActive)
-                    .GroupBy(r => new
-                    {
-                        TourType = (r.TourType ?? "").Trim(),
-                        Period = (r.Period ?? "").Trim(),
-                        GroupType = (r.GroupType ?? "").Trim(),
-                        DaysCount = (r.DaysCount ?? "").Trim()
-                    })
-                    .Select(g => new TourOption
-                    {
-                        TourType = g.Key.TourType,
-                        Period = g.Key.Period,
-                        GroupType = g.Key.GroupType,
-                        DaysCount = g.Key.DaysCount
-                    })
-                    .OrderBy(x => x.TourType)
-                    .ThenBy(x => x.Period)
-                    .ThenBy(x => x.GroupType)
-                    .ThenBy(x => x.DaysCount)
-                    .ToList();
+                _tourOptions.Clear();
+                _tourOptions.AddRange(
+                    db.Registrations
+                        .AsNoTracking()
+                        .Where(r => r.IsActive)
+                        .GroupBy(r => new
+                        {
+                            TourType = (r.TourType ?? "").Trim(),
+                            Period = (r.Period ?? "").Trim(),
+                            GroupType = (r.GroupType ?? "").Trim(),
+                            DaysCount = (r.DaysCount ?? "").Trim()
+                        })
+                        .Select(g => new TourOption
+                        {
+                            TourType = g.Key.TourType,
+                            Period = g.Key.Period,
+                            GroupType = g.Key.GroupType,
+                            DaysCount = g.Key.DaysCount
+                        })
+                        .OrderBy(x => x.TourType)
+                        .ThenBy(x => x.Period)
+                        .ThenBy(x => x.GroupType)
+                        .ThenBy(x => x.DaysCount));
 
                 TourComboBox.ItemsSource = _tourOptions;
                 if (_tourOptions.Any())
@@ -60,13 +66,13 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 else
                 {
-                    HintTextBlock.Text = "Veritabanında aktif tur kaydı bulunamadı.";
+                    HintTextBlock.Text = "Veritaban\u0131nda aktif tur kayd\u0131 bulunamad\u0131.";
                     UpdateSummary(Enumerable.Empty<Models.Registration>());
                 }
             }
             catch (Exception ex)
             {
-                HintTextBlock.Text = $"Tur listesi yüklenemedi: {ex.Message}";
+                HintTextBlock.Text = $"Tur listesi y\u00FCklenemedi: {ex.Message}";
             }
         }
 
@@ -92,26 +98,37 @@ namespace TurizmOperasyonSistemi.Views
                     .ToList();
 
                 UpdateSummary(regs);
-                HintTextBlock.Text = $"{selected.DisplayText} için {regs.Count} kayıt bulundu.";
+                HintTextBlock.Text = $"{selected.DisplayText} i\u00E7in {regs.Count} kay\u0131t bulundu. Giderleri girip Hesapla'ya basabilirsiniz.";
             }
             catch (Exception ex)
             {
-                HintTextBlock.Text = $"Hesaplama sırasında hata oluştu: {ex.Message}";
+                HintTextBlock.Text = $"Hesaplama s\u0131ras\u0131nda hata olu\u015Ftu: {ex.Message}";
             }
         }
 
         private void UpdateSummary(IEnumerable<Models.Registration> regs)
         {
-            var list = regs.ToList();
-            if (!list.Any())
+            _currentRegistrations = regs.ToList();
+
+            if (!_currentRegistrations.Any())
             {
+                _currentPrimaryCurrency = string.Empty;
+                _currentTourTotal = 0m;
+                _currentPaidTotal = 0m;
+                _currentRemainingTotal = 0m;
+
                 TotalPriceTextBlock.Text = "-";
                 TotalPaidTextBlock.Text = "-";
                 TotalRemainingTextBlock.Text = "-";
+                SummaryTourTotalTextBlock.Text = "-";
+                TotalExpenseTextBlock.Text = "-";
+                TotalProfitLossTextBlock.Text = "-";
+                InstantProfitLossTextBlock.Text = "-";
                 return;
             }
 
-            var grouped = list.GroupBy(r => string.IsNullOrWhiteSpace(r.Currency) ? "Seçilmedi" : r.Currency.Trim())
+            var grouped = _currentRegistrations
+                .GroupBy(r => string.IsNullOrWhiteSpace(r.Currency) ? "Se\u00E7ilmedi" : r.Currency.Trim())
                 .Select(g => new
                 {
                     Currency = g.Key,
@@ -121,9 +138,94 @@ namespace TurizmOperasyonSistemi.Views
                 })
                 .ToList();
 
+            _currentPrimaryCurrency = grouped
+                .OrderByDescending(x => x.TotalPrice)
+                .Select(x => x.Currency)
+                .FirstOrDefault() ?? string.Empty;
+
+            var primary = grouped.FirstOrDefault(x => string.Equals(x.Currency, _currentPrimaryCurrency, StringComparison.OrdinalIgnoreCase))
+                          ?? grouped.First();
+
+            _currentTourTotal = primary.TotalPrice;
+            _currentPaidTotal = primary.Paid;
+            _currentRemainingTotal = primary.Remaining;
+
             TotalPriceTextBlock.Text = string.Join("\n", grouped.Select(x => FormatAmount(x.TotalPrice, x.Currency)));
             TotalPaidTextBlock.Text = string.Join("\n", grouped.Select(x => FormatAmount(x.Paid, x.Currency)));
             TotalRemainingTextBlock.Text = string.Join("\n", grouped.Select(x => FormatAmount(x.Remaining, x.Currency)));
+
+            SummaryTourTotalTextBlock.Text = FormatAmount(_currentTourTotal, _currentPrimaryCurrency);
+            TotalExpenseTextBlock.Text = "-";
+            TotalProfitLossTextBlock.Text = "-";
+            InstantProfitLossTextBlock.Text = "-";
+        }
+
+        private void CalculateButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!_currentRegistrations.Any())
+                {
+                HintTextBlock.Text = "\u00D6nce bir tur se\u00E7in.";
+                    return;
+                }
+
+                var visaExpense = ReadAmount(VisaExpenseTextBox);
+                var hotelExpense = ReadAmount(HotelExpenseTextBox);
+                var ticketExpense = ReadAmount(TicketExpenseTextBox);
+                var bagExpense = ReadAmount(BagExpenseTextBox);
+                var totalExpense = visaExpense + hotelExpense + ticketExpense + bagExpense;
+
+                var tourProfitLoss = _currentTourTotal - totalExpense;
+                var instantProfitLoss = _currentPaidTotal - totalExpense;
+
+                TotalExpenseTextBlock.Text = FormatAmount(totalExpense, _currentPrimaryCurrency);
+                TotalProfitLossTextBlock.Text = FormatSignedAmount(tourProfitLoss, _currentPrimaryCurrency);
+                InstantProfitLossTextBlock.Text = FormatSignedAmount(instantProfitLoss, _currentPrimaryCurrency);
+
+                HintTextBlock.Text = $"Hesapland\u0131. Ana para birimi: {(_currentPrimaryCurrency ?? "Se\u00E7ilmedi")}.";
+            }
+            catch (Exception ex)
+            {
+                HintTextBlock.Text = $"Hesaplama s\u0131ras\u0131nda hata olu\u015Ftu: {ex.Message}";
+            }
+        }
+
+        private static decimal ReadAmount(TextBox textBox)
+        {
+            if (textBox == null)
+            {
+                return 0m;
+            }
+
+            var text = (textBox.Text ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return 0m;
+            }
+
+            if (decimal.TryParse(text, NumberStyles.Any, CultureInfo.CurrentCulture, out var value))
+            {
+                return value;
+            }
+
+            if (decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out value))
+            {
+                return value;
+            }
+
+            var cleaned = new string(text.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+            if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.CurrentCulture, out value))
+            {
+                return value;
+            }
+
+            if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out value))
+            {
+                return value;
+            }
+
+            return 0m;
         }
 
         private static string FormatAmount(decimal amount, string currency)
@@ -136,17 +238,23 @@ namespace TurizmOperasyonSistemi.Views
             var code = currency.Trim().ToUpperInvariant();
             var symbol = code switch
             {
-                "TRY" or "TL" => "₺",
+                "TRY" or "TL" => "\u20BA",
                 "USD" => "$",
-                "EUR" => "€",
-                "GBP" => "£",
-                "SAR" => "﷼",
+                "EUR" => "\u20AC",
+                "GBP" => "\u00A3",
+                "SAR" => "\uFDFC",
                 _ => ""
             };
 
             return string.IsNullOrEmpty(symbol)
                 ? $"{amount:N0} {currency}"
                 : $"{symbol}{amount:N0}";
+        }
+
+        private static string FormatSignedAmount(decimal amount, string currency)
+        {
+            var prefix = amount >= 0 ? "+" : "-";
+            return $"{prefix}{FormatAmount(Math.Abs(amount), currency)}";
         }
 
         public sealed class TourOption : IEquatable<TourOption>
@@ -156,7 +264,7 @@ namespace TurizmOperasyonSistemi.Views
             public string GroupType { get; set; } = string.Empty;
             public string DaysCount { get; set; } = string.Empty;
 
-            public string DisplayText => $"{TourType} • {Period} • {GroupType} • {DaysCount}";
+            public string DisplayText => $"{TourType} \u2022 {Period} \u2022 {GroupType} \u2022 {DaysCount}";
 
             public override string ToString() => DisplayText;
 
