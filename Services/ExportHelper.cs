@@ -1261,11 +1261,7 @@ namespace TurizmOperasyonSistemi.Services
 
         private static string EscapeXml(string value) { return SecurityElement.Escape(value) ?? string.Empty; }
         private static string EscapePdf(string value) { return (value ?? string.Empty).Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)"); }
-        private static string EscapePdfText(string value) { return EscapePdf(TransliterateTurkish(value)); }
-        private static string TransliterateTurkish(string value)
-        {
-            return (value ?? string.Empty).Replace("İ", "I").Replace("ı", "i").Replace("Ş", "S").Replace("ş", "s").Replace("Ğ", "G").Replace("ğ", "g").Replace("Ü", "U").Replace("ü", "u").Replace("Ö", "O").Replace("ö", "o").Replace("Ç", "C").Replace("ç", "c");
-        }
+        private static string EscapePdfText(string value) { return EscapePdf(value); }
 
         private static string ColumnName(int index)
         {

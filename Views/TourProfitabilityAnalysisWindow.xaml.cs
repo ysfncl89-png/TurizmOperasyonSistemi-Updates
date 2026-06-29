@@ -6,6 +6,9 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using TurizmOperasyonSistemi.Data;
+using Microsoft.Win32;
+using System.IO;
+using TurizmOperasyonSistemi.Services;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -66,13 +69,13 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 else
                 {
-                    HintTextBlock.Text = "Veritaban\u0131nda aktif tur kayd\u0131 bulunamad\u0131.";
+                    HintTextBlock.Text = "Veritabanında aktif tur kaydı bulunamadı.";
                     UpdateSummary(Enumerable.Empty<Models.Registration>());
                 }
             }
             catch (Exception ex)
             {
-                HintTextBlock.Text = $"Tur listesi y\u00FCklenemedi: {ex.Message}";
+                HintTextBlock.Text = $"Tur listesi yüklenemedi: {ex.Message}";
             }
         }
 
@@ -98,11 +101,11 @@ namespace TurizmOperasyonSistemi.Views
                     .ToList();
 
                 UpdateSummary(regs);
-                HintTextBlock.Text = $"{selected.DisplayText} i\u00E7in {regs.Count} kay\u0131t bulundu. Giderleri girip Hesapla'ya basabilirsiniz.";
+                HintTextBlock.Text = $"{selected.DisplayText} için {regs.Count} kayıt bulundu. Giderleri giriniz - hesaplama otomatik yapılacak.";
             }
             catch (Exception ex)
             {
-                HintTextBlock.Text = $"Hesaplama s\u0131ras\u0131nda hata olu\u015Ftu: {ex.Message}";
+                HintTextBlock.Text = $"Hesaplama sırasında hata oluştu: {ex.Message}";
             }
         }
 
@@ -120,15 +123,18 @@ namespace TurizmOperasyonSistemi.Views
                 TotalPriceTextBlock.Text = "-";
                 TotalPaidTextBlock.Text = "-";
                 TotalRemainingTextBlock.Text = "-";
-                SummaryTourTotalTextBlock.Text = "-";
                 TotalExpenseTextBlock.Text = "-";
                 TotalProfitLossTextBlock.Text = "-";
                 InstantProfitLossTextBlock.Text = "-";
+                ProfitMarginTextBlock.Text = "-";
+                ProfitRateTextBlock.Text = "-";
+                InstantProfitMarginTextBlock.Text = "-";
+                InstantProfitRateTextBlock.Text = "-";
                 return;
             }
 
             var grouped = _currentRegistrations
-                .GroupBy(r => string.IsNullOrWhiteSpace(r.Currency) ? "Se\u00E7ilmedi" : r.Currency.Trim())
+                .GroupBy(r => string.IsNullOrWhiteSpace(r.Currency) ? "Seçilmedi" : r.Currency.Trim())
                 .Select(g => new
                 {
                     Currency = g.Key,
@@ -154,41 +160,85 @@ namespace TurizmOperasyonSistemi.Views
             TotalPaidTextBlock.Text = string.Join("\n", grouped.Select(x => FormatAmount(x.Paid, x.Currency)));
             TotalRemainingTextBlock.Text = string.Join("\n", grouped.Select(x => FormatAmount(x.Remaining, x.Currency)));
 
-            SummaryTourTotalTextBlock.Text = FormatAmount(_currentTourTotal, _currentPrimaryCurrency);
             TotalExpenseTextBlock.Text = "-";
             TotalProfitLossTextBlock.Text = "-";
             InstantProfitLossTextBlock.Text = "-";
+            ProfitMarginTextBlock.Text = "-";
+            ProfitRateTextBlock.Text = "-";
+            InstantProfitMarginTextBlock.Text = "-";
+            InstantProfitRateTextBlock.Text = "-";
+
+            // TextBox'ları temizle
+            HotelExpenseTextBox.Text = "";
+            TicketExpenseTextBox.Text = "";
+            VisaExpenseTextBox.Text = "";
+            BagExpenseTextBox.Text = "";
+            StaffExpenseTextBox.Text = "";
+            OtherExpenseTextBox.Text = "";
         }
 
-        private void CalculateButton_Click(object sender, RoutedEventArgs e)
+        private void ExpenseTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            CalculateResults();
+        }
+
+        private void CalculateResults()
         {
             try
             {
                 if (!_currentRegistrations.Any())
                 {
-                HintTextBlock.Text = "\u00D6nce bir tur se\u00E7in.";
+                    TotalExpenseTextBlock.Text = "-";
+                    TotalProfitLossTextBlock.Text = "-";
+                    InstantProfitLossTextBlock.Text = "-";
+                    ProfitMarginTextBlock.Text = "-";
+                    ProfitRateTextBlock.Text = "-";
+                    InstantProfitMarginTextBlock.Text = "-";
+                    InstantProfitRateTextBlock.Text = "-";
                     return;
                 }
 
-                var visaExpense = ReadAmount(VisaExpenseTextBox);
                 var hotelExpense = ReadAmount(HotelExpenseTextBox);
                 var ticketExpense = ReadAmount(TicketExpenseTextBox);
+                var visaExpense = ReadAmount(VisaExpenseTextBox);
                 var bagExpense = ReadAmount(BagExpenseTextBox);
-                var totalExpense = visaExpense + hotelExpense + ticketExpense + bagExpense;
+                var staffExpense = ReadAmount(StaffExpenseTextBox);
+                var otherExpense = ReadAmount(OtherExpenseTextBox);
+
+                var totalExpense = hotelExpense + ticketExpense + visaExpense + bagExpense + staffExpense + otherExpense;
 
                 var tourProfitLoss = _currentTourTotal - totalExpense;
                 var instantProfitLoss = _currentPaidTotal - totalExpense;
 
                 TotalExpenseTextBlock.Text = FormatAmount(totalExpense, _currentPrimaryCurrency);
-                TotalProfitLossTextBlock.Text = FormatSignedAmount(tourProfitLoss, _currentPrimaryCurrency);
-                InstantProfitLossTextBlock.Text = FormatSignedAmount(instantProfitLoss, _currentPrimaryCurrency);
+                TotalProfitLossTextBlock.Text = FormatSignedAmountWithColor(tourProfitLoss, _currentPrimaryCurrency, TotalProfitLossTextBlock);
+                InstantProfitLossTextBlock.Text = FormatSignedAmountWithColor(instantProfitLoss, _currentPrimaryCurrency, InstantProfitLossTextBlock);
 
-                HintTextBlock.Text = $"Hesapland\u0131. Ana para birimi: {(_currentPrimaryCurrency ?? "Se\u00E7ilmedi")}.";
+                // Kar Marjı = (Net Kar / Toplam Satış) × 100
+                var profitMargin = _currentTourTotal != 0 ? (tourProfitLoss / _currentTourTotal) * 100 : 0;
+                ProfitMarginTextBlock.Text = FormatSignedAmountWithColor(profitMargin, "%", ProfitMarginTextBlock);
+
+                // Kar Oranı = (Net Kar / Toplam Maliyet) × 100
+                var profitRate = totalExpense != 0 ? (tourProfitLoss / totalExpense) * 100 : 0;
+                ProfitRateTextBlock.Text = FormatSignedAmountWithColor(profitRate, "%", ProfitRateTextBlock);
+
+                // Tahsilata göre Kar Marjı = (Tahsilata göre Net Kar / Tahsil Edilen) × 100
+                var instantProfitMargin = _currentPaidTotal != 0 ? (instantProfitLoss / _currentPaidTotal) * 100 : 0;
+                InstantProfitMarginTextBlock.Text = FormatSignedAmountWithColor(instantProfitMargin, "%", InstantProfitMarginTextBlock);
+
+                // Tahsilata göre Kar Oranı = (Tahsilata göre Net Kar / Toplam Maliyet) × 100
+                var instantProfitRate = totalExpense != 0 ? (instantProfitLoss / totalExpense) * 100 : 0;
+                InstantProfitRateTextBlock.Text = FormatSignedAmountWithColor(instantProfitRate, "%", InstantProfitRateTextBlock);
             }
             catch (Exception ex)
             {
-                HintTextBlock.Text = $"Hesaplama s\u0131ras\u0131nda hata olu\u015Ftu: {ex.Message}";
+                HintTextBlock.Text = $"Hesaplama sırasında hata oluştu: {ex.Message}";
             }
+        }
+
+        private void CalculateButton_Click(object sender, RoutedEventArgs e)
+        {
+            CalculateResults();
         }
 
         private static decimal ReadAmount(TextBox textBox)
@@ -238,21 +288,40 @@ namespace TurizmOperasyonSistemi.Views
             var code = currency.Trim().ToUpperInvariant();
             var symbol = code switch
             {
-                "TRY" or "TL" => "\u20BA",
+                "TRY" or "TL" => "₺",
                 "USD" => "$",
-                "EUR" => "\u20AC",
-                "GBP" => "\u00A3",
-                "SAR" => "\uFDFC",
+                "EUR" => "€",
+                "GBP" => "£",
+                "SAR" => "﷼",
+                "%" => "%",
                 _ => ""
             };
 
             return string.IsNullOrEmpty(symbol)
                 ? $"{amount:N0} {currency}"
-                : $"{symbol}{amount:N0}";
+                : code == "%" 
+                    ? $"{amount:N2}{symbol}"
+                    : $"{symbol}{amount:N0}";
         }
 
         private static string FormatSignedAmount(decimal amount, string currency)
         {
+            var prefix = amount >= 0 ? "+" : "-";
+            return $"{prefix}{FormatAmount(Math.Abs(amount), currency)}";
+        }
+
+        private static string FormatSignedAmountWithColor(decimal amount, string currency, TextBlock textBlock)
+        {
+            // Rengi değiştir: yeşil pozitif, kırmızı negatif
+            if (amount >= 0)
+            {
+                textBlock.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 16, 185, 129)); // Yeşil #10B981
+            }
+            else
+            {
+                textBlock.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 239, 68, 68)); // Kırmızı #EF4444
+            }
+
             var prefix = amount >= 0 ? "+" : "-";
             return $"{prefix}{FormatAmount(Math.Abs(amount), currency)}";
         }
@@ -264,7 +333,7 @@ namespace TurizmOperasyonSistemi.Views
             public string GroupType { get; set; } = string.Empty;
             public string DaysCount { get; set; } = string.Empty;
 
-            public string DisplayText => $"{TourType} \u2022 {Period} \u2022 {GroupType} \u2022 {DaysCount}";
+            public string DisplayText => $"{TourType} • {Period} • {GroupType} • {DaysCount}";
 
             public override string ToString() => DisplayText;
 
@@ -287,6 +356,240 @@ namespace TurizmOperasyonSistemi.Views
                     GroupType?.ToLowerInvariant(),
                     DaysCount?.ToLowerInvariant());
             }
+        }
+
+        // ============ EXPORT METHODS ============
+        private void ExportButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var btn = this.FindName("ExportButton") as Button;
+                if (btn?.ContextMenu != null)
+                {
+                    btn.ContextMenu.PlacementTarget = btn;
+                    btn.ContextMenu.IsOpen = true;
+                }
+            }
+            catch { }
+        }
+
+        private void ExportWord_Click(object sender, RoutedEventArgs e)
+        {
+            var defaultName = GetExportDefaultFileName("docx");
+            var path = AskForPath("Word belgesi", "Word dosyası (*.docx)|*.docx", defaultName);
+            if (path == null) return;
+            ExportWord(NormalizeExtension(path, ".docx"));
+        }
+
+        private void ExportExcel_Click(object sender, RoutedEventArgs e)
+        {
+            var defaultName = GetExportDefaultFileName("xlsx");
+            var path = AskForPath("Excel çalışma kitabı", "Excel dosyası (*.xlsx)|*.xlsx", defaultName);
+            if (path == null) return;
+            ExportExcel(NormalizeExtension(path, ".xlsx"));
+        }
+
+        private void ExportPdf_Click(object sender, RoutedEventArgs e)
+        {
+            var defaultName = GetExportDefaultFileName("pdf");
+            var path = AskForPath("PDF belgesi", "PDF dosyası (*.pdf)|*.pdf", defaultName);
+            if (path == null) return;
+            ExportPdf(NormalizeExtension(path, ".pdf"));
+        }
+
+        private string AskForPath(string title, string filter, string defaultFileName)
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = title,
+                Filter = filter,
+                FileName = defaultFileName,
+                AddExtension = true,
+                OverwritePrompt = true
+            };
+
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+
+        private string NormalizeExtension(string filePath, string extension)
+        {
+            if (string.IsNullOrWhiteSpace(filePath)) return filePath;
+            return Path.ChangeExtension(filePath, extension);
+        }
+
+        private string GetExportDefaultFileName(string extWithoutDot)
+        {
+            var name = "Tur_Karlilık_Analizi";
+
+            try
+            {
+                var selected = TourComboBox.SelectedItem as TourOption;
+                if (selected != null)
+                {
+                    var tourParts = new List<string>();
+                    if (!string.IsNullOrWhiteSpace(selected.TourType)) tourParts.Add(selected.TourType.Trim());
+                    if (!string.IsNullOrWhiteSpace(selected.Period)) tourParts.Add(selected.Period.Trim());
+                    if (!string.IsNullOrWhiteSpace(selected.GroupType)) tourParts.Add(selected.GroupType.Trim());
+                    if (!string.IsNullOrWhiteSpace(selected.DaysCount)) tourParts.Add(selected.DaysCount.Trim());
+
+                    if (tourParts.Count > 0)
+                    {
+                        var tourName = string.Join("_", tourParts);
+                        name = $"Tur_Karlilık_Analizi_{tourName}";
+                    }
+                }
+            }
+            catch { }
+
+            // Tarih ve saat ekle
+            name += $"_{DateTime.Now:yyyyMMdd_HHmmss}";
+
+            // Karakterleri temizle
+            foreach (var c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '-');
+
+            // Uzunluğu sınırla
+            const int maxLength = 120;
+            if (name.Length > maxLength) name = name.Substring(0, maxLength).Trim();
+
+            return name + "." + extWithoutDot;
+        }
+
+        private void ExportWord(string filePath)
+        {
+            try
+            {
+                var headers = GetExportHeaders();
+                var rows = GetExportRows(headers);
+                var title = GetExportTitle();
+                ExportHelper.ExportWord(filePath, rows, headers, title);
+                MessageBox.Show("Çıktı başarıyla kaydedildi.", "Başarı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Çıktı kaydedilirken hata oluştu: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExportExcel(string filePath)
+        {
+            try
+            {
+                var headers = GetExportHeaders();
+                var rows = GetExportRows(headers);
+                var title = GetExportTitle();
+                ExportHelper.ExportExcel(filePath, rows, headers, title);
+                MessageBox.Show("Çıktı başarıyla kaydedildi.", "Başarı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Çıktı kaydedilirken hata oluştu: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExportPdf(string filePath)
+        {
+            try
+            {
+                var headers = GetExportHeaders();
+                // PDF için Türkçe karakterleri transliterate et
+                var headersForPdf = headers.Select(h => TransliterateTurkish(h)).ToList();
+                var rowsForPdf = GetExportRowsForPdf(headers);
+                var titleForPdf = TransliterateTurkish(GetExportTitle());
+                ExportHelper.ExportPdf(filePath, rowsForPdf, headersForPdf, titleForPdf);
+                MessageBox.Show("Çıktı başarıyla kaydedildi.", "Başarı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Çıktı kaydedilirken hata oluştu: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private string GetExportTitle()
+        {
+            var selected = TourComboBox.SelectedItem as TourOption;
+            return selected != null ? $"Tur Kârlılık Analizi - {selected.DisplayText}" : "Tur Kârlılık Analizi";
+        }
+
+        private List<string> GetExportHeaders()
+        {
+            return new List<string>
+            {
+                "Bölüm",
+                "Açıklama",
+                "Değer"
+            };
+        }
+
+        private List<Dictionary<string, string>> GetExportRows(List<string> headers)
+        {
+            var rows = new List<Dictionary<string, string>>();
+
+            // TUR ÖZETI - Satış Bilgileri
+            var line1 = new Dictionary<string, string> { { "Bölüm", "TUR ÖZETİ" }, { "Açıklama", "Toplam Satış" }, { "Değer", TotalPriceTextBlock.Text } };
+            rows.Add(line1);
+
+            var line2 = new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Tahsil Edilen" }, { "Değer", TotalPaidTextBlock.Text } };
+            rows.Add(line2);
+
+            var line3 = new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Bekleyen Tahsilat" }, { "Değer", TotalRemainingTextBlock.Text } };
+            rows.Add(line3);
+
+            // GİDERLER
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } }); // Boş satır
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "GİDERLER" }, { "Açıklama", "Otel ve Yemek" }, { "Değer", HotelExpenseTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Uçak Bileti" }, { "Değer", TicketExpenseTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Vize Masrafı" }, { "Değer", VisaExpenseTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Çanta / Kitapçık" }, { "Değer", BagExpenseTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Eleman Gideri" }, { "Değer", StaffExpenseTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Diğer Gider" }, { "Değer", OtherExpenseTextBox.Text ?? "" } });
+
+            // KAR / ZARAR ANALİZİ
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } }); // Boş satır
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "KAR / ZARAR ANALİZİ" }, { "Açıklama", "Toplam Maliyet" }, { "Değer", TotalExpenseTextBlock.Text } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Net Kâr" }, { "Değer", TotalProfitLossTextBlock.Text } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Tahsilata Göre" }, { "Değer", InstantProfitLossTextBlock.Text } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Marjı (Net Kâr)" }, { "Değer", ProfitMarginTextBlock.Text } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Oranı (Net Kâr)" }, { "Değer", ProfitRateTextBlock.Text } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Marjı (Tahsil.Göre)" }, { "Değer", InstantProfitMarginTextBlock.Text } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Oranı (Tahsil.Göre)" }, { "Değer", InstantProfitRateTextBlock.Text } });
+
+            return rows;
+        }
+
+        private List<Dictionary<string, string>> GetExportRowsForPdf(List<string> headers)
+        {
+            // PDF için Türkçe karakterleri transliterate et
+            var rows = GetExportRows(headers);
+
+            var transliteratedRows = new List<Dictionary<string, string>>();
+            foreach (var row in rows)
+            {
+                var transliteratedRow = new Dictionary<string, string>();
+                foreach (var kvp in row)
+                {
+                    // Key ve value ikisini de transliterate et
+                    var transliteratedKey = TransliterateTurkish(kvp.Key);
+                    var transliteratedValue = TransliterateTurkish(kvp.Value);
+                    transliteratedRow[transliteratedKey] = transliteratedValue;
+                }
+                transliteratedRows.Add(transliteratedRow);
+            }
+
+            return transliteratedRows;
+        }
+
+        private string TransliterateTurkish(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+
+            return value
+                .Replace("İ", "I").Replace("ı", "i")
+                .Replace("Ş", "S").Replace("ş", "s")
+                .Replace("Ğ", "G").Replace("ğ", "g")
+                .Replace("Ü", "U").Replace("ü", "u")
+                .Replace("Ö", "O").Replace("ö", "o")
+                .Replace("Ç", "C").Replace("ç", "c")
+                .Replace("â", "a").Replace("Â", "A");
         }
     }
 }
