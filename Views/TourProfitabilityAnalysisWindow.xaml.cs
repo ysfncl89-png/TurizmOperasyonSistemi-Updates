@@ -532,6 +532,16 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // Öncelikle popup'ı açmayı dene (ikonlu büyük butonlar)
+                var popup = this.FindName("ExportPopup") as System.Windows.Controls.Primitives.Popup;
+                if (popup != null)
+                {
+                    popup.PlacementTarget = this.FindName("ExportButton") as UIElement;
+                    popup.IsOpen = true;
+                    return;
+                }
+
+                // Eğer popup bulunamazsa fallback olarak ContextMenu aç
                 var btn = this.FindName("ExportButton") as Button;
                 if (btn?.ContextMenu != null)
                 {
