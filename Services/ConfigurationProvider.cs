@@ -433,27 +433,58 @@ namespace TurizmOperasyonSistemi.Services
                 {
                     try
                     {
+                        // Eğer kaynak dosya uygulama kurulumu dizinindeyse (installer tarafından yerleştirilmiş)
+                        // mevcut local DB'yi KESİNLİKLE overwrite etmeyelim. Bunun yerine kaynak dosyayı arşivleyelim.
+                        var appBaseDir = AppDomain.CurrentDomain.BaseDirectory ?? string.Empty;
+                        bool sourceIsAppInstall = false;
+                        try
+                        {
+                            sourceIsAppInstall = currentDb.StartsWith(appBaseDir, StringComparison.OrdinalIgnoreCase)
+                                               || Path.GetDirectoryName(currentDb)?.StartsWith(appBaseDir, StringComparison.OrdinalIgnoreCase) == true;
+                        }
+                        catch { sourceIsAppInstall = false; }
+
                         if (!File.Exists(targetDbPath))
                         {
+                            // Hedef yoksa güvenli şekilde kopyala
                             File.Copy(currentDb, targetDbPath);
                             System.Diagnostics.Debug.WriteLine($"Database kopyalandı: {currentDb} -> {targetDbPath}");
                         }
                         else
                         {
-                            var srcInfo = new FileInfo(currentDb);
-                            var dstInfo = new FileInfo(targetDbPath);
-                            if (srcInfo.LastWriteTimeUtc > dstInfo.LastWriteTimeUtc)
+                            if (sourceIsAppInstall)
                             {
-                                // Önce mevcut local dosyayı arşivle
-                                string stamped = Path.GetFileNameWithoutExtension(targetDbPath) + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(targetDbPath);
-                                var archived = Path.Combine(Path.GetDirectoryName(targetDbPath) ?? string.Empty, stamped);
-                                File.Move(targetDbPath, archived);
-                                File.Copy(currentDb, targetDbPath);
-                                System.Diagnostics.Debug.WriteLine($"Local DB güncellendi: kaynak daha yeni, arşivlendi -> {archived}");
+                                // Installer'ın getirdiği DB, zaten var olan local DB'yi değiştirmesin.
+                                try
+                                {
+                                    var srcDir = Path.GetDirectoryName(currentDb) ?? appBaseDir;
+                                    string stamped = Path.GetFileNameWithoutExtension(currentDb) + "_installer_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(currentDb);
+                                    var archived = Path.Combine(srcDir, stamped);
+                                    File.Move(currentDb, archived);
+                                    System.Diagnostics.Debug.WriteLine($"Installer kaynaklı DB bulundu; mevcut local DB korunacak. Installer DB arşivlendi: {archived}");
+                                }
+                                catch (Exception mvEx)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Installer DB arşivleme başarısız: {mvEx.Message}");
+                                }
                             }
                             else
                             {
-                                System.Diagnostics.Debug.WriteLine("Local DB zaten daha yeni veya aynı; kopyalama atlandı.");
+                                var srcInfo = new FileInfo(currentDb);
+                                var dstInfo = new FileInfo(targetDbPath);
+                                if (srcInfo.LastWriteTimeUtc > dstInfo.LastWriteTimeUtc)
+                                {
+                                    // Önce mevcut local dosyayı arşivle
+                                    string stamped = Path.GetFileNameWithoutExtension(targetDbPath) + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(targetDbPath);
+                                    var archived = Path.Combine(Path.GetDirectoryName(targetDbPath) ?? string.Empty, stamped);
+                                    File.Move(targetDbPath, archived);
+                                    File.Copy(currentDb, targetDbPath);
+                                    System.Diagnostics.Debug.WriteLine($"Local DB güncellendi: kaynak daha yeni, arşivlendi -> {archived}");
+                                }
+                                else
+                                {
+                                    System.Diagnostics.Debug.WriteLine("Local DB zaten daha yeni veya aynı; kopyalama atlandı.");
+                                }
                             }
                         }
                     }
