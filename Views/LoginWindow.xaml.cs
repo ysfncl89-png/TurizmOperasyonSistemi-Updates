@@ -17,6 +17,35 @@ namespace TurizmOperasyonSistemi.Views
             InitializeLogin();
         }
 
+        private void ForgotPasswordLink_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new RecoveryCodeDialog();
+                dlg.Owner = this;
+                var res = dlg.ShowDialog();
+                if (res != true)
+                    return;
+
+                var entered = dlg.EnteredCode ?? string.Empty;
+                // Developer code required
+                if (entered == "2026TOSYSFNCL")
+                {
+                    var resetDlg = new PasswordResetDialog();
+                    resetDlg.Owner = this;
+                    resetDlg.ShowDialog();
+                }
+                else
+                {
+                    MessageBox.Show("Girilen kod geçersiz.", "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async void InitializeLogin()
         {
             try

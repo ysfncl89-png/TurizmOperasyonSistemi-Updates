@@ -74,6 +74,10 @@
                         BorderThickness="0"
                         Cursor="Hand"
                         Margin="0,0,0,10"/>
+                <!-- Şifremi unuttum -->
+                <TextBlock TextAlignment="Center" Margin="0,0,0,10">
+                    <Hyperlink Click="ForgotPasswordLink_Click" Foreground="#FF8B5CF6">Şifremi unuttum</Hyperlink>
+                </TextBlock>
 
                 <!-- Kayıt (Kaydol) linki kaldırıldı: yalnızca ilk çalıştırmada admin oluşturma izni verilir -->
 
