@@ -78,83 +78,146 @@ namespace TurizmOperasyonSistemi.Services
                 File.Copy(zipPath, targetPath);
                 System.Diagnostics.Debug.WriteLine($"Backup pushed to OneDrive: {targetPath}");
 
-                // After pushing to Backups, also update per-client latest and aggregate manifest
+                // After pushing to Backups, also create per-client latest zip FROM LIVE DB and update manifests
                 try
                 {
                     var clientId = _config.GetClientId();
                     var clientDir = Path.Combine(oneDriveBase, "Database", clientId);
                     Directory.CreateDirectory(clientDir);
 
-                    // compute zip checksum
-                    string zipChecksum = null;
+                    // create a temp zip directly from the live DB so per-client latest contains turizm.db
+                    string tempClientZip = null;
                     try
                     {
-                        using (var fs = File.OpenRead(targetPath))
-                        using (var sha = SHA256.Create())
+                        tempClientZip = Path.Combine(Path.GetTempPath(), $"turizm_client_{Guid.NewGuid():N}.zip");
+                        using (var z = ZipFile.Open(tempClientZip, ZipArchiveMode.Create))
                         {
-                            var hash = sha.ComputeHash(fs);
-                            zipChecksum = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                            z.CreateEntryFromFile(_dbPath, "turizm.db", CompressionLevel.Optimal);
                         }
-                    }
-                    catch { zipChecksum = null; }
-
-                    // determine db file timestamp from local DB file
-                    DateTime? dbFileTs = null;
-                    try { dbFileTs = File.GetLastWriteTimeUtc(_dbPath); } catch { dbFileTs = null; }
-
-                    // copy zip as latest per-client
-                    string clientLatest = Path.Combine(clientDir, "turizm_latest.zip");
-                    try { File.Copy(targetPath, clientLatest, true); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Copy to per-client latest failed: {ex.Message}"); }
-
-                    // Build manifest entry
-                    var manifest = new DbManifest
-                    {
-                        DbVersion = 0,
-                        AppVersion = string.Empty,
-                        CreatedAt = DateTime.UtcNow,
-                        LastModified = DateTime.UtcNow,
-                        MachineId = Environment.MachineName,
-                        User = Environment.UserName,
-                        Checksum = ComputeChecksumOfZipInnerDb(targetPath) ?? string.Empty,
-                        DbSize = new FileInfo(targetPath).Length,
-                        BackupVersion = 0,
-                        BackupCreatedAt = DateTime.UtcNow,
-                        DbFileTimestamp = dbFileTs,
-                        ZipChecksum = zipChecksum
-                    };
-
-                    // Write per-client manifest atomically
-                    try
-                    {
-                        var perClientManifestPath = Path.Combine(clientDir, "manifest.json");
-                        AtomicWriteJson(perClientManifestPath, manifest, 3, 200);
+                        // try to set entry timestamp
+                        try
+                        {
+                            using (var z = ZipFile.Open(tempClientZip, ZipArchiveMode.Update))
+                            {
+                                var e = z.Entries.FirstOrDefault();
+                                if (e != null) e.LastWriteTime = File.GetLastWriteTimeUtc(_dbPath);
+                            }
+                        }
+                        catch { }
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Per-client manifest write failed: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Create client temp zip failed: {ex.Message}");
                     }
 
-                    // Update aggregate manifest
-                    try
+                    if (!string.IsNullOrEmpty(tempClientZip) && File.Exists(tempClientZip))
                     {
-                        var aggPath = Path.Combine(oneDriveBase, "manifest.json");
-                        Dictionary<string, DbManifest> agg = new Dictionary<string, DbManifest>();
-                        if (File.Exists(aggPath))
+                        string clientLatest = Path.Combine(clientDir, "turizm_latest.zip");
+                        try { File.Copy(tempClientZip, clientLatest, true); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Copy client latest failed: {ex.Message}"); }
+
+                        // validate inner DB exists and checksum is computable; if not, attempt alternative using the backup zip
+                        string innerChecksum = ComputeChecksumOfZipInnerDb(clientLatest);
+                        if (string.IsNullOrEmpty(innerChecksum))
                         {
+                            System.Diagnostics.Debug.WriteLine("Client latest zip inner DB checksum missing - attempting to recover from backup zip.");
                             try
                             {
-                                var existing = File.ReadAllText(aggPath);
-                                agg = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, DbManifest>>(existing) ?? new Dictionary<string, DbManifest>();
+                                // attempt to extract inner DB from the backup targetPath in Backups and repackage
+                                using (var z = ZipFile.OpenRead(targetPath))
+                                {
+                                    var entry = z.Entries.FirstOrDefault(e => e.Name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".db", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".sqlite", StringComparison.OrdinalIgnoreCase));
+                                    if (entry != null)
+                                    {
+                                        var tmpExtract = Path.Combine(Path.GetTempPath(), $"turizm_ex_{Guid.NewGuid():N}.db");
+                                        entry.ExtractToFile(tmpExtract, true);
+                                        // create new zip from extracted DB
+                                        var rebuilt = Path.Combine(Path.GetTempPath(), $"turizm_client_rebuilt_{Guid.NewGuid():N}.zip");
+                                        using (var z2 = ZipFile.Open(rebuilt, ZipArchiveMode.Create))
+                                        {
+                                            z2.CreateEntryFromFile(tmpExtract, "turizm.db", CompressionLevel.Optimal);
+                                        }
+                                        try { File.Copy(rebuilt, clientLatest, true); } catch { }
+                                        try { File.Delete(tmpExtract); } catch { }
+                                        try { File.Delete(rebuilt); } catch { }
+                                    }
+                                }
                             }
-                            catch { agg = new Dictionary<string, DbManifest>(); }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Fallback rebuild of client latest failed: {ex.Message}");
+                            }
+
+                            // recompute
+                            innerChecksum = ComputeChecksumOfZipInnerDb(clientLatest);
                         }
 
-                        agg[clientId] = manifest;
-                        AtomicWriteJson(aggPath, agg, 5, 300);
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Aggregate manifest update failed: {ex.Message}");
+                        if (string.IsNullOrEmpty(innerChecksum))
+                        {
+                            System.Diagnostics.Debug.WriteLine("Per-client latest zip is invalid after attempts; deleting and skipping manifest update.");
+                            try { if (File.Exists(clientLatest)) File.Delete(clientLatest); } catch { }
+                        }
+                        else
+                        {
+                            // compute zip checksum
+                            string zipChecksum = null;
+                            try { using (var fs = File.OpenRead(clientLatest)) using (var sha = SHA256.Create()) { zipChecksum = BitConverter.ToString(sha.ComputeHash(fs)).Replace("-", "").ToLowerInvariant(); } } catch { zipChecksum = null; }
+                            DateTime? dbFileTs = null;
+                            try { dbFileTs = File.GetLastWriteTimeUtc(_dbPath); } catch { dbFileTs = null; }
+
+                            // attempt to get local manifest DbVersion
+                            long dbVersion = 0;
+                            try
+                            {
+                                var msvc = new ManifestService();
+                                var local = msvc.LoadManifest();
+                                if (local != null) dbVersion = local.DbVersion;
+                            }
+                            catch { }
+
+                            var manifest = new DbManifest
+                            {
+                                DbVersion = dbVersion,
+                                AppVersion = string.Empty,
+                                CreatedAt = DateTime.UtcNow,
+                                LastModified = DateTime.UtcNow,
+                                MachineId = Environment.MachineName,
+                                User = Environment.UserName,
+                                Checksum = innerChecksum,
+                                DbSize = new FileInfo(clientLatest).Length,
+                                BackupVersion = 0,
+                                BackupCreatedAt = DateTime.UtcNow,
+                                DbFileTimestamp = dbFileTs,
+                                ZipChecksum = zipChecksum
+                            };
+
+                            try
+                            {
+                                var perClientManifestPath = Path.Combine(clientDir, "manifest.json");
+                                AtomicWriteJson(perClientManifestPath, manifest, 3, 200);
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Per-client manifest write failed: {ex.Message}");
+                            }
+
+                            try
+                            {
+                                var aggPath = Path.Combine(oneDriveBase, "manifest.json");
+                                Dictionary<string, DbManifest> agg = new Dictionary<string, DbManifest>();
+                                if (File.Exists(aggPath))
+                                {
+                                    try { var existing = File.ReadAllText(aggPath); agg = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, DbManifest>>(existing) ?? new Dictionary<string, DbManifest>(); } catch { agg = new Dictionary<string, DbManifest>(); }
+                                }
+                                agg[clientId] = manifest;
+                                AtomicWriteJson(aggPath, agg, 5, 300);
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Aggregate manifest update failed: {ex.Message}");
+                            }
+                        }
+
+                        try { File.Delete(tempClientZip); } catch { }
                     }
                 }
                 catch (Exception ex)
