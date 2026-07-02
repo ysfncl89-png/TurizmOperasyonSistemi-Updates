@@ -33,6 +33,41 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        private void OpenMigrationDashboardButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                    bool enableLogin = setting != null && setting.Value.ToString().ToLower() == "true";
+
+                    // Eğer kullanıcı girişi devre dışıysa, kimse admin değil -> erişim yok
+                    if (!enableLogin)
+                    {
+                        MessageBox.Show("Sistem Yönetimi / Kurtarma yalnızca kullanıcı girişi aktifken ve admin kullanıcılar tarafından erişilebilir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // Eğer giriş aktifse, sadece CurrentUser admin ise erişim ver
+                    if (!CurrentUser.Instance.IsAdmin)
+                    {
+                        MessageBox.Show("Bu ekrana erişim yalnızca admin kullanıcılar içindir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // Açılır pencere olarak Migration Dashboard'ı başlat
+                    var win = new TurizmOperasyonSistemi.Windows.MigrationDashboardWindow(db, null);
+                    win.Owner = Window.GetWindow(this);
+                    win.ShowDialog();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Migration Dashboard açılamadı: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async void LoadUsers()
         {
             try
@@ -58,6 +93,42 @@ namespace TurizmOperasyonSistemi.Views
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 MessageBox.Show("Kullanıcı adı ve şifre giriniz.");
+                return;
+            }
+
+            // Erişim kontrolü: Eğer kullanıcı girişi devre dışıysa admin onayı iste
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                    bool enableLogin = setting != null && setting.Value.ToString().ToLower() == "true";
+
+                    if (!enableLogin)
+                    {
+                        var owner = Window.GetWindow(this);
+                        var dlg = new AdminAuthDialog();
+                        if (owner != null) dlg.Owner = owner;
+                        var res = dlg.ShowDialog();
+                        if (res != true || dlg.AuthenticatedUser == null)
+                        {
+                            MessageBox.Show("Yeni kullanıcı eklemek için admin onayı gerekli.", "Yetki Gerekli", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (!CurrentUser.Instance.IsAdmin)
+                        {
+                            MessageBox.Show("Yeni kullanıcı oluşturma yalnızca admin kullanıcılar içindir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Erişim doğrulanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -88,6 +159,43 @@ namespace TurizmOperasyonSistemi.Views
             if (!(sender is Button btn) || !(btn.Tag is int userId))
             {
                 MessageBox.Show("Silinecek kullanıcı bulunamadı.");
+                return;
+            }
+
+            // Erişim kontrolü: eğer kullanıcı girişi devre dışıysa admin onayı iste
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                    bool enableLogin = setting != null && setting.Value.ToString().ToLower() == "true";
+
+                    if (!enableLogin)
+                    {
+                        var owner = Window.GetWindow(this);
+                        var dlg = new AdminAuthDialog();
+                        if (owner != null) dlg.Owner = owner;
+                        var res = dlg.ShowDialog();
+                        if (res != true || dlg.AuthenticatedUser == null)
+                        {
+                            MessageBox.Show("Bu işlemi gerçekleştirmek için admin onayı gerekli.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (!CurrentUser.Instance.IsAdmin)
+                        {
+                            MessageBox.Show("Bu ekrana erişim yalnızca admin kullanıcılar içindir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Eğer doğrulama sırasında hata olursa işlemi durdur
+                MessageBox.Show("Erişim doğrulanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -133,6 +241,41 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
+            // Erişim kontrolü (admin onayı gerekebilir)
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                    bool enableLogin = setting != null && setting.Value.ToString().ToLower() == "true";
+                    if (!enableLogin)
+                    {
+                        var owner = Window.GetWindow(this);
+                        var dlg = new AdminAuthDialog();
+                        if (owner != null) dlg.Owner = owner;
+                        var res = dlg.ShowDialog();
+                        if (res != true || dlg.AuthenticatedUser == null)
+                        {
+                            MessageBox.Show("Bu işlemi gerçekleştirmek için admin onayı gerekli.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (!CurrentUser.Instance.IsAdmin)
+                        {
+                            MessageBox.Show("Bu ekrana erişim yalnızca admin kullanıcılar içindir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Erişim doğrulanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             var passwordDialog = new PasswordChangeDialog();
             if (passwordDialog.ShowDialog() != true)
                 return;
@@ -169,6 +312,41 @@ namespace TurizmOperasyonSistemi.Views
             if (!(sender is Button btn) || !(btn.Tag is int userId))
             {
                 MessageBox.Show("Kullanıcı bulunamadı.");
+                return;
+            }
+
+            // Erişim kontrolü (admin onayı gerekebilir)
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                    bool enableLogin = setting != null && setting.Value.ToString().ToLower() == "true";
+                    if (!enableLogin)
+                    {
+                        var owner = Window.GetWindow(this);
+                        var dlg = new AdminAuthDialog();
+                        if (owner != null) dlg.Owner = owner;
+                        var res = dlg.ShowDialog();
+                        if (res != true || dlg.AuthenticatedUser == null)
+                        {
+                            MessageBox.Show("Bu işlemi gerçekleştirmek için admin onayı gerekli.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (!CurrentUser.Instance.IsAdmin)
+                        {
+                            MessageBox.Show("Bu ekrana erişim yalnızca admin kullanıcılar içindir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Erişim doğrulanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -221,6 +399,23 @@ namespace TurizmOperasyonSistemi.Views
                     if (setting != null)
                     {
                         bool currentValue = setting.Value.ToString().ToLower() == "true";
+
+                        // Eğer şu an kapalı ise (currentValue == false) ve kullanıcı açmak istiyorsa
+                        // admin kimlik doğrulaması iste
+                        if (!currentValue)
+                        {
+                            var owner = Window.GetWindow(this);
+                            var dlg = new AdminAuthDialog();
+                            if (owner != null) dlg.Owner = owner;
+                            var result = dlg.ShowDialog();
+                            if (result != true || dlg.AuthenticatedUser == null)
+                            {
+                                MessageBox.Show("Kullanıcı girişi yalnızca admin onayıyla etkinleştirilebilir.", "Yetki Gerekli", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                return;
+                            }
+                        }
+
+                        // Eğer admin doğrulaması yapıldı veya kapatılıyorsa değişikliği uygula
                         setting.Value = (!currentValue).ToString().ToLower();
                         db.SaveChanges();
 
@@ -245,6 +440,21 @@ namespace TurizmOperasyonSistemi.Views
                 bool isEnabled = setting.Value.ToString().ToLower() == "true";
                 btn.Content = isEnabled ? "✓ Kullanıcı Girişi (Aktif)" : "Kullanıcı Girişi";
                 btn.Foreground = isEnabled ? new SolidColorBrush(Color.FromRgb(0, 255, 136)) : new SolidColorBrush(Color.FromRgb(255, 255, 255));
+            }
+
+            // Sadece admin'ler Migration dashboard butonunu görebilsin
+            if (FindName("OpenMigrationDashboardButton") is Button adminBtn)
+            {
+                adminBtn.Visibility = CurrentUser.Instance.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        // Loaded event handler for admin-only buttons inside DataGrid rows
+        private void AdminOnly_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button b)
+            {
+                b.Visibility = CurrentUser.Instance.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
             }
         }
     }

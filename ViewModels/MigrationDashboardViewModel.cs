@@ -21,6 +21,7 @@ namespace TurizmOperasyonSistemi.ViewModels
         private readonly MigrationRollbackService _rollbackService;
         private readonly ConfigurationProvider _config;
         private readonly MigrationLogger _logger;
+        private readonly DatabaseVersionManager _versionManager;
 
         // Observable Collections
         private ObservableCollection<HealthCheckItemViewModel> _healthChecks;
@@ -65,6 +66,7 @@ namespace TurizmOperasyonSistemi.ViewModels
             _healthCheckService = new HealthCheckService(context);
             _rollbackService = new MigrationRollbackService(context, dbPath);
             _logger = new MigrationLogger(context, dbPath);
+            _versionManager = new DatabaseVersionManager(context);
 
             // Initialize collections
             _healthChecks = new ObservableCollection<HealthCheckItemViewModel>();
@@ -271,10 +273,17 @@ namespace TurizmOperasyonSistemi.ViewModels
         {
             try
             {
+                // Veri tabanındaki MigrationLogs tablosundan son kayıtları al
                 var logs = await Task.Run(() =>
                 {
-                    // MigrationLogger'dan son 10 log'u al
-                        return new List<MigrationLogItem>(); // Şimdilik boş, MigrationLogger'a method eklenecek
+                    var dbLogs = _versionManager.GetMigrationHistory(10);
+                    return dbLogs.Select(d => new MigrationLogItem
+                    {
+                        Operation = d.MigrationName,
+                        Message = d.ErrorMessage ?? (d.Success ? "Başarılı" : "Başarısız"),
+                        IsSuccess = d.Success,
+                        CreatedAt = d.AppliedAt
+                    }).ToList();
                 });
 
                 MigrationLogs.Clear();
@@ -289,6 +298,29 @@ namespace TurizmOperasyonSistemi.ViewModels
                         CreatedAtFormatted = log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
                         StatusColor = log.IsSuccess ? "#4CAF50" : "#F44336"
                     });
+                }
+
+                // If database has no migration logs, fall back to file logs
+                if (!MigrationLogs.Any())
+                {
+                    var raw = await Task.Run(() => _logger.GetLogs(500));
+                    if (!string.IsNullOrWhiteSpace(raw))
+                    {
+                        var lines = raw.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        // Create items from last 20 lines
+                        foreach (var line in lines.TakeLast(20).Reverse())
+                        {
+                            MigrationLogs.Add(new MigrationLogItemViewModel
+                            {
+                                Operation = "FileLog",
+                                Message = line,
+                                IsSuccess = false,
+                                CreatedAt = DateTime.Now,
+                                CreatedAtFormatted = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                                StatusColor = "#757575"
+                            });
+                        }
+                    }
                 }
 
                 // Also load raw log text for display
