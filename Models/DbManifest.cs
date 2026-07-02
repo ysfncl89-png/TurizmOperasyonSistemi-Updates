@@ -13,5 +13,9 @@ namespace TurizmOperasyonSistemi.Models
         public string Checksum { get; set; }
         public long DbSize { get; set; }
         public int BackupVersion { get; set; }
+        // New metadata fields
+        public DateTime? BackupCreatedAt { get; set; }
+        public DateTime? DbFileTimestamp { get; set; }
+        public string ZipChecksum { get; set; }
     }
 }

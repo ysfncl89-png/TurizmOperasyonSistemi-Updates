@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using Microsoft.Data.Sqlite;
 using TurizmOperasyonSistemi.Data;
+using TurizmOperasyonSistemi.Models;
 
 namespace TurizmOperasyonSistemi.Services
 {
@@ -76,10 +77,131 @@ namespace TurizmOperasyonSistemi.Services
 
                 File.Copy(zipPath, targetPath);
                 System.Diagnostics.Debug.WriteLine($"Backup pushed to OneDrive: {targetPath}");
+
+                // After pushing to Backups, also update per-client latest and aggregate manifest
+                try
+                {
+                    var clientId = _config.GetClientId();
+                    var clientDir = Path.Combine(oneDriveBase, "Database", clientId);
+                    Directory.CreateDirectory(clientDir);
+
+                    // compute zip checksum
+                    string zipChecksum = null;
+                    try
+                    {
+                        using (var fs = File.OpenRead(targetPath))
+                        using (var sha = SHA256.Create())
+                        {
+                            var hash = sha.ComputeHash(fs);
+                            zipChecksum = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                        }
+                    }
+                    catch { zipChecksum = null; }
+
+                    // determine db file timestamp from local DB file
+                    DateTime? dbFileTs = null;
+                    try { dbFileTs = File.GetLastWriteTimeUtc(_dbPath); } catch { dbFileTs = null; }
+
+                    // copy zip as latest per-client
+                    string clientLatest = Path.Combine(clientDir, "turizm_latest.zip");
+                    try { File.Copy(targetPath, clientLatest, true); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Copy to per-client latest failed: {ex.Message}"); }
+
+                    // Build manifest entry
+                    var manifest = new DbManifest
+                    {
+                        DbVersion = 0,
+                        AppVersion = string.Empty,
+                        CreatedAt = DateTime.UtcNow,
+                        LastModified = DateTime.UtcNow,
+                        MachineId = Environment.MachineName,
+                        User = Environment.UserName,
+                        Checksum = ComputeChecksumOfZipInnerDb(targetPath) ?? string.Empty,
+                        DbSize = new FileInfo(targetPath).Length,
+                        BackupVersion = 0,
+                        BackupCreatedAt = DateTime.UtcNow,
+                        DbFileTimestamp = dbFileTs,
+                        ZipChecksum = zipChecksum
+                    };
+
+                    // Write per-client manifest atomically
+                    try
+                    {
+                        var perClientManifestPath = Path.Combine(clientDir, "manifest.json");
+                        AtomicWriteJson(perClientManifestPath, manifest, 3, 200);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Per-client manifest write failed: {ex.Message}");
+                    }
+
+                    // Update aggregate manifest
+                    try
+                    {
+                        var aggPath = Path.Combine(oneDriveBase, "manifest.json");
+                        Dictionary<string, DbManifest> agg = new Dictionary<string, DbManifest>();
+                        if (File.Exists(aggPath))
+                        {
+                            try
+                            {
+                                var existing = File.ReadAllText(aggPath);
+                                agg = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, DbManifest>>(existing) ?? new Dictionary<string, DbManifest>();
+                            }
+                            catch { agg = new Dictionary<string, DbManifest>(); }
+                        }
+
+                        agg[clientId] = manifest;
+                        AtomicWriteJson(aggPath, agg, 5, 300);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Aggregate manifest update failed: {ex.Message}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Post-push per-client/manifest actions failed: {ex.Message}");
+                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"PushBackupToOneDrive hata: {ex.Message}");
+            }
+        }
+
+        // Helper to compute checksum of inner DB within zip
+        private string ComputeChecksumOfZipInnerDb(string zipPath)
+        {
+            try
+            {
+                using (var z = ZipFile.OpenRead(zipPath))
+                {
+                    var entry = z.Entries.FirstOrDefault(e => e.Name.Equals("turizm.db", StringComparison.OrdinalIgnoreCase) || e.Name.Equals("turizm.sqlite", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase));
+                    if (entry == null) return null;
+                    using (var s = entry.Open())
+                    using (var ms = new MemoryStream())
+                    using (var sha = SHA256.Create())
+                    {
+                        s.CopyTo(ms);
+                        ms.Position = 0;
+                        var hash = sha.ComputeHash(ms);
+                        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                    }
+                }
+            }
+            catch { return null; }
+        }
+
+        // Use SyncService's atomic writer by composing a small helper
+        private void AtomicWriteJson(string path, object obj, int retries = 3, int delayMs = 200)
+        {
+            try
+            {
+                var sync = new SyncService();
+                sync.AtomicWriteJsonPublic(path, obj, retries, delayMs);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AtomicWriteJson wrapper failed: {ex.Message}");
             }
         }
 

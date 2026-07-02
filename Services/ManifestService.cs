@@ -53,6 +53,8 @@ namespace TurizmOperasyonSistemi.Services
                         {
                             manifest.Checksum = ComputeChecksum(dbPath) ?? manifest.Checksum;
                             manifest.DbSize = new FileInfo(dbPath).Length;
+                            manifest.DbFileTimestamp = File.GetLastWriteTimeUtc(dbPath);
+                            // Not setting BackupCreatedAt/ZipChecksum here; they will be set by BackupManager when pushing zips
                         }
                     }
                     catch { }

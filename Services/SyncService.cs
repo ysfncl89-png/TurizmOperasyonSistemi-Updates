@@ -3,6 +3,10 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.IO.Compression;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using TurizmOperasyonSistemi.Models;
 
 namespace TurizmOperasyonSistemi.Services
@@ -273,18 +277,60 @@ namespace TurizmOperasyonSistemi.Services
         {
             try
             {
-                var remote = Path.Combine(_oneDriveBase, "Database", remoteClientId, Path.GetFileName(GetLocalDbPath()));
-                var local = GetLocalDbPath();
-                if (!File.Exists(remote)) return;
-                // Ensure DB not open by app. We'll copy and overwrite local.
-                Directory.CreateDirectory(Path.GetDirectoryName(local) ?? string.Empty);
-                // Backup existing local
-                if (File.Exists(local))
+                var clientDir = Path.Combine(_oneDriveBase, "Database", remoteClientId);
+                // Prefer per-client latest zip
+                string zipPath = null;
+                try
                 {
-                    string archived = local + ".backup." + DateTime.Now.ToString("yyyyMMddHHmmss");
-                    File.Move(local, archived);
+                    if (Directory.Exists(clientDir))
+                    {
+                        var zips = Directory.GetFiles(clientDir, "*.zip").Select(p => new FileInfo(p)).OrderByDescending(f => f.LastWriteTimeUtc).ToList();
+                        if (zips.Any()) zipPath = zips.First().FullName;
+                    }
                 }
-                File.Copy(remote, local, true);
+                catch { zipPath = null; }
+
+                // fallback: search OneDrive Backups for client-specific zips
+                if (zipPath == null)
+                {
+                    try
+                    {
+                        var backupsRoot = Path.Combine(_oneDriveBase, "Backups");
+                        if (Directory.Exists(backupsRoot))
+                        {
+                            var zips = Directory.GetFiles(backupsRoot, "*.zip", SearchOption.AllDirectories)
+                                .Where(p => Path.GetFileName(p).Contains(remoteClientId) || true)
+                                .Select(p => new FileInfo(p)).OrderByDescending(f => f.LastWriteTimeUtc).ToList();
+                            if (zips.Any()) zipPath = zips.First().FullName;
+                        }
+                    }
+                    catch { zipPath = null; }
+                }
+
+                if (zipPath == null) return;
+
+                // Extract zip to temp and copy contained turizm.db to local
+                var extractDir = Path.Combine(Path.GetTempPath(), "turizm_restore_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(extractDir);
+                try
+                {
+                    ZipFile.ExtractToDirectory(zipPath, extractDir);
+                    var extractedDb = Directory.GetFiles(extractDir, "turizm.db", SearchOption.AllDirectories).FirstOrDefault();
+                    if (extractedDb == null) return;
+
+                    var local = GetLocalDbPath();
+                    Directory.CreateDirectory(Path.GetDirectoryName(local) ?? string.Empty);
+                    if (File.Exists(local))
+                    {
+                        string archived = local + ".backup." + DateTime.Now.ToString("yyyyMMddHHmmss");
+                        File.Move(local, archived);
+                    }
+                    File.Copy(extractedDb, local, true);
+                }
+                finally
+                {
+                    try { Directory.Delete(extractDir, true); } catch { }
+                }
             }
             catch (Exception ex)
             {
@@ -319,16 +365,52 @@ namespace TurizmOperasyonSistemi.Services
                     BackupVersion = 0
                 };
 
-                // Copy DB into per-client folder
-                var remoteDb = Path.Combine(remoteClientDir, Path.GetFileName(local));
-                File.Copy(local, remoteDb, true);
+                // Create zip of local DB to temp
+                string tempZip = CreateTempZipFromFile(local, "turizm.db");
+                if (tempZip == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Creating temp zip failed; aborting push.");
+                    return;
+                }
 
-                // Write per-client manifest in that folder
-                var perClientManifestPath = Path.Combine(remoteClientDir, _manifestFileName);
-                var perJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(perClientManifestPath, perJson);
+                // Copy zip to OneDrive Backups/YYYY/MM
+                try
+                {
+                    var now = DateTime.Now;
+                    string backupsDir = Path.Combine(remoteRoot, "Backups", now.ToString("yyyy"), now.ToString("MM"));
+                    Directory.CreateDirectory(backupsDir);
+                    string backupFileName = $"turizm_{manifest.DbVersion}_{now:yyyyMMdd_HHmmss}.zip";
+                    string backupTarget = Path.Combine(backupsDir, backupFileName);
+                    CopyWithRetries(tempZip, backupTarget, 3, 200);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Copy to OneDrive backups failed: {ex.Message}");
+                }
 
-                // Update aggregate manifest at OneDrive root: Dictionary<ClientId, DbManifest>
+                // Also copy zip to per-client folder as latest
+                try
+                {
+                    string clientZipTarget = Path.Combine(remoteClientDir, "turizm_latest.zip");
+                    CopyWithRetries(tempZip, clientZipTarget, 3, 200);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Copy to per-client folder failed: {ex.Message}");
+                }
+
+                // Write per-client manifest atomically
+                try
+                {
+                    var perClientManifestPath = Path.Combine(remoteClientDir, _manifestFileName);
+                    AtomicWriteJson(perClientManifestPath, manifest, 3, 200);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Write per-client manifest failed: {ex.Message}");
+                }
+
+                // Update aggregate manifest at OneDrive root atomically
                 try
                 {
                     var aggPath = Path.Combine(remoteRoot, _manifestFileName);
@@ -344,13 +426,14 @@ namespace TurizmOperasyonSistemi.Services
                     }
 
                     agg[clientId] = manifest;
-                    var aggJson = JsonSerializer.Serialize(agg, new JsonSerializerOptions { WriteIndented = true });
-                    File.WriteAllText(aggPath, aggJson);
+                    AtomicWriteJson(aggPath, agg, 5, 300);
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Updating aggregate manifest failed: {ex.Message}");
                 }
+
+                try { File.Delete(tempZip); } catch { }
             }
             catch (Exception ex)
             {
@@ -358,6 +441,118 @@ namespace TurizmOperasyonSistemi.Services
             }
 
             await Task.CompletedTask;
+        }
+
+        private string CreateTempZipFromFile(string sourceFile, string entryName)
+        {
+            try
+            {
+                if (!File.Exists(sourceFile)) return null;
+                string tempZip = Path.Combine(Path.GetTempPath(), $"turizm_{Guid.NewGuid()}.zip");
+                using (var z = ZipFile.Open(tempZip, ZipArchiveMode.Create))
+                {
+                    z.CreateEntryFromFile(sourceFile, entryName, CompressionLevel.Optimal);
+                }
+                // Ensure temp zip includes file metadata timestamp by setting entry's LastWriteTime
+                try
+                {
+                    using (var z = ZipFile.Open(tempZip, ZipArchiveMode.Update))
+                    {
+                        var e = z.Entries.FirstOrDefault();
+                        if (e != null)
+                        {
+                            e.LastWriteTime = File.GetLastWriteTimeUtc(sourceFile);
+                        }
+                    }
+                }
+                catch { }
+                return tempZip;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateTempZipFromFile error: {ex.Message}");
+                return null;
+            }
+        }
+
+        // Compute checksum of the inner DB file in a zip without extracting fully
+        private string ComputeChecksumOfZipInnerDb(string zipPath)
+        {
+            try
+            {
+                using (var z = ZipFile.OpenRead(zipPath))
+                {
+                    var entry = z.Entries.FirstOrDefault(e => e.Name.Equals("turizm.db", StringComparison.OrdinalIgnoreCase) || e.Name.Equals("turizm.sqlite", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase));
+                    if (entry == null) return null;
+                    using (var s = entry.Open())
+                    using (var ms = new MemoryStream())
+                    using (var sha = SHA256.Create())
+                    {
+                        s.CopyTo(ms);
+                        ms.Position = 0;
+                        var hash = sha.ComputeHash(ms);
+                        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                    }
+                }
+            }
+            catch { return null; }
+        }
+
+        private void CopyWithRetries(string source, string dest, int retries = 3, int delayMs = 200)
+        {
+            int attempt = 0;
+            while (attempt < retries)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(dest) ?? string.Empty);
+                    File.Copy(source, dest, true);
+                    return;
+                }
+                catch (IOException)
+                {
+                    attempt++;
+                    Thread.Sleep(delayMs * attempt);
+                }
+            }
+            // final attempt
+            File.Copy(source, dest, true);
+        }
+
+        private void AtomicWriteJson<T>(string path, T obj, int retries = 3, int delayMs = 200)
+        {
+            var dir = Path.GetDirectoryName(path) ?? string.Empty;
+            Directory.CreateDirectory(dir);
+            string tempPath = path + ".tmp." + Guid.NewGuid().ToString("N");
+            string json = JsonSerializer.Serialize(obj, new JsonSerializerOptions { WriteIndented = true });
+
+            File.WriteAllText(tempPath, json);
+
+            int attempt = 0;
+            while (true)
+            {
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        // use Replace for atomic overwrite
+                        string backup = path + ".bak";
+                        File.Replace(tempPath, path, backup);
+                        try { File.Delete(backup); } catch { }
+                    }
+                    else
+                    {
+                        File.Move(tempPath, path);
+                    }
+                    break;
+                }
+                catch (IOException)
+                {
+                    attempt++;
+                    if (attempt >= retries) throw;
+                    Thread.Sleep(delayMs * attempt);
+                }
+            }
         }
 
         private long ComputeLocalDbVersion()
@@ -378,6 +573,12 @@ namespace TurizmOperasyonSistemi.Services
                 return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
             }
             catch { return null; }
+        }
+
+        // Expose AtomicWriteJson for other services (e.g., BackupManager) by making it public
+        public void AtomicWriteJsonPublic<T>(string path, T obj, int retries = 3, int delayMs = 200)
+        {
+            AtomicWriteJson(path, obj, retries, delayMs);
         }
     }
 }
