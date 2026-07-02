@@ -25,6 +25,134 @@ namespace TurizmOperasyonSistemi.Services
             _localBase = _config.GetDefaultBaseDir();
         }
 
+        // Attempts to find a more recent turizm DB in common OneDrive locations and restore it over local DB.
+        private bool TryRestoreFromOneDriveLatest()
+        {
+            try
+            {
+                var localDb = GetLocalDbPath();
+                DateTime localTs = File.Exists(localDb) ? File.GetLastWriteTimeUtc(localDb) : DateTime.MinValue;
+
+                // 1) direct folder: OneDrive/turizm_latest/turizm.db
+                var oneDriveLatestDir = Path.Combine(_oneDriveBase, "turizm_latest");
+                var directRemoteDb = Path.Combine(oneDriveLatestDir, "turizm.db");
+                if (File.Exists(directRemoteDb))
+                {
+                    var remoteTs = File.GetLastWriteTimeUtc(directRemoteDb);
+                    if (remoteTs > localTs)
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(localDb) ?? string.Empty);
+                        if (File.Exists(localDb))
+                        {
+                            var archived = localDb + ".backup." + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                            try { File.Move(localDb, archived); } catch { }
+                        }
+                        CopyWithRetries(directRemoteDb, localDb, 3, 200);
+                        WriteSyncState(new SyncState { LastSyncAt = DateTime.UtcNow, LastSyncMachine = Environment.MachineName, LastSyncDbVersion = ComputeLocalDbVersion(), Status = "RestoredFromOneDrive_turizm_latest_direct" });
+                        return true;
+                    }
+                }
+
+                // helper to attempt restore from zip: returns true if restored
+                bool TryRestoreFromZip(string zipPath)
+                {
+                    try
+                    {
+                        if (!File.Exists(zipPath)) return false;
+                        using (var z = System.IO.Compression.ZipFile.OpenRead(zipPath))
+                        {
+                            var entry = z.Entries.FirstOrDefault(e => e.Name.Equals("turizm.db", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".db", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".sqlite", StringComparison.OrdinalIgnoreCase));
+                            if (entry == null) return false;
+                            DateTime entryTs = DateTime.MinValue;
+                            try { entryTs = entry.LastWriteTime.UtcDateTime; } catch { }
+                            if (entryTs == DateTime.MinValue)
+                            {
+                                // fallback to zip file timestamp
+                                entryTs = File.GetLastWriteTimeUtc(zipPath);
+                            }
+                            if (entryTs <= localTs) return false;
+
+                            // extract entry to temp and copy over local
+                            var tmp = Path.Combine(Path.GetTempPath(), $"turizm_restore_{Guid.NewGuid():N}.db");
+                            try
+                            {
+                                entry.ExtractToFile(tmp, true);
+                                Directory.CreateDirectory(Path.GetDirectoryName(localDb) ?? string.Empty);
+                                if (File.Exists(localDb))
+                                {
+                                    var archived = localDb + ".backup." + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                                    try { File.Move(localDb, archived); } catch { }
+                                }
+                                CopyWithRetries(tmp, localDb, 3, 200);
+                                WriteSyncState(new SyncState { LastSyncAt = DateTime.UtcNow, LastSyncMachine = Environment.MachineName, LastSyncDbVersion = ComputeLocalDbVersion(), Status = "RestoredFromOneDrive_turizm_latest_zip" });
+                                try { File.Delete(tmp); } catch { }
+                                return true;
+                            }
+                            catch (Exception ex)
+                            {
+                                try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+                                System.Diagnostics.Debug.WriteLine($"Restore from zip failed: {ex.Message}");
+                                return false;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"TryRestoreFromZip error: {ex.Message}");
+                    }
+                    return false;
+                }
+
+                // 2) root zip: OneDrive/turizm_latest.zip
+                var rootZip = Path.Combine(_oneDriveBase, "turizm_latest.zip");
+                if (TryRestoreFromZip(rootZip)) return true;
+
+                // 3) per-client Database/*/turizm_latest.zip
+                var dbRoot = Path.Combine(_oneDriveBase, "Database");
+                if (Directory.Exists(dbRoot))
+                {
+                    var clientDirs = Directory.GetDirectories(dbRoot);
+                    // prefer newest zip by LastWriteTimeUtc
+                    var candidateZips = new List<string>();
+                    foreach (var cd in clientDirs)
+                    {
+                        var p1 = Path.Combine(cd, "turizm_latest.zip");
+                        if (File.Exists(p1)) candidateZips.Add(p1);
+                        else
+                        {
+                            var any = Directory.GetFiles(cd, "turizm_latest*.zip");
+                            if (any != null && any.Length > 0) candidateZips.AddRange(any);
+                        }
+                    }
+                    // order by file write time descending
+                    foreach (var zip in candidateZips.OrderByDescending(p => File.GetLastWriteTimeUtc(p)))
+                    {
+                        if (TryRestoreFromZip(zip)) return true;
+                    }
+                }
+
+                // 4) Backups folder search for recent zip that might contain turizm.db
+                var backupsRoot = Path.Combine(_oneDriveBase, "Backups");
+                if (Directory.Exists(backupsRoot))
+                {
+                    var zips = Directory.GetFiles(backupsRoot, "*.zip", SearchOption.AllDirectories)
+                        .OrderByDescending(p => File.GetLastWriteTimeUtc(p)).ToList();
+                    foreach (var zip in zips)
+                    {
+                        if (Path.GetFileName(zip).IndexOf("turizm", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            if (TryRestoreFromZip(zip)) return true;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"TryRestoreFromOneDriveLatest exception: {ex.Message}");
+            }
+            return false;
+        }
+
         public async Task PerformShutdownSyncAsync()
         {
             // Ensure we have OneDrive configured; still perform local backup even if not
@@ -113,6 +241,20 @@ namespace TurizmOperasyonSistemi.Services
 
             // Wait for OneDrive to stabilize (basic polling)
             await WaitForOneDriveReadyAsync().ConfigureAwait(false);
+
+            // Try robust restore from OneDrive "turizm_latest" (support turizm.db or turizm_latest.zip in common locations)
+            try
+            {
+                if (TryRestoreFromOneDriveLatest())
+                {
+                    // restored successfully, stop further sync decisions
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"turizm_latest restore attempt failed: {ex.Message}");
+            }
 
             var localManifest = ReadLocalManifest();
 

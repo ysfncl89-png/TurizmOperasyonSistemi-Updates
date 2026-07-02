@@ -614,7 +614,7 @@
 
         <!-- ALT FOOTER -->
         <TextBlock Grid.Row="2"
-                   Text="© 2026 Turizm Operasyon Sistemi — Tüm hakları saklıdır."
+                   Text="© 2026 TOS Lite ( Turizm Operasyon Sistemi ) — Tüm hakları saklıdır."
                    FontSize="12"
                    Foreground="#94A3B8"
                    Opacity="0.9"
