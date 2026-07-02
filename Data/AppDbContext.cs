@@ -53,6 +53,48 @@ namespace TurizmOperasyonSistemi.Data
             }
         }
 
+        public override int SaveChanges()
+        {
+            var result = base.SaveChanges();
+            try
+            {
+                // After a successful save, increment manifest DbVersion
+                try
+                {
+                    var manifestService = new TurizmOperasyonSistemi.Services.ManifestService();
+                    manifestService.IncrementDbVersion();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Manifest increment failed after SaveChanges: {ex.Message}");
+                }
+            }
+            catch { }
+            return result;
+        }
+
+        public override System.Threading.Tasks.Task<int> SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default)
+        {
+            var task = base.SaveChangesAsync(cancellationToken);
+            task.ContinueWith(t =>
+            {
+                if (!t.IsFaulted && !t.IsCanceled)
+                {
+                    try
+                    {
+                        var manifestService = new TurizmOperasyonSistemi.Services.ManifestService();
+                        manifestService.IncrementDbVersion();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Manifest increment failed after SaveChangesAsync: {ex.Message}");
+                    }
+                }
+            });
+
+            return task;
+        }
+
         public void EnsureRoomAllocationHistoryTableExists()
         {
             try

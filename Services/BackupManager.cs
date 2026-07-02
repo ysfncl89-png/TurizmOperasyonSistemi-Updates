@@ -28,6 +28,61 @@ namespace TurizmOperasyonSistemi.Services
                 : _config.GetBackupDirectory();
         }
 
+        private string CreateZipForBackup(string backupPath)
+        {
+            try
+            {
+                if (!File.Exists(backupPath)) return null;
+                string baseName = Path.GetFileNameWithoutExtension(backupPath);
+                string zipName = baseName + ".zip";
+                string zipPath = Path.Combine(_backupDirectory, zipName);
+                // create a zip containing the backup file at root
+                using (var z = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+                {
+                    z.CreateEntryFromFile(backupPath, Path.GetFileName(backupPath), CompressionLevel.Optimal);
+                }
+                return zipPath;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateZipForBackup hata: {ex.Message}");
+                return null;
+            }
+        }
+
+        private void PushBackupToOneDrive(string zipPath)
+        {
+            try
+            {
+                var oneDriveBase = _config.GetOneDriveBaseDir();
+                if (string.IsNullOrEmpty(oneDriveBase) || !File.Exists(zipPath)) return;
+
+                string backupsDir = Path.Combine(oneDriveBase, "Backups");
+                var now = DateTime.Now;
+                string year = now.ToString("yyyy");
+                string month = now.ToString("MM");
+                string targetDir = Path.Combine(backupsDir, year, month);
+                Directory.CreateDirectory(targetDir);
+
+                string targetFileName = Path.GetFileName(zipPath);
+                string targetPath = Path.Combine(targetDir, targetFileName);
+
+                // If target exists, add timestamp
+                if (File.Exists(targetPath))
+                {
+                    string stamped = Path.GetFileNameWithoutExtension(targetFileName) + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(targetFileName);
+                    targetPath = Path.Combine(targetDir, stamped);
+                }
+
+                File.Copy(zipPath, targetPath);
+                System.Diagnostics.Debug.WriteLine($"Backup pushed to OneDrive: {targetPath}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"PushBackupToOneDrive hata: {ex.Message}");
+            }
+        }
+
         public BackupResult CreateBackup()
         {
             var result = new BackupResult();
@@ -278,6 +333,24 @@ namespace TurizmOperasyonSistemi.Services
                     {
                         System.Diagnostics.Debug.WriteLine($"Backup sıkıştırma başarısız: {ex.Message}");
                     }
+                }
+
+                // Eğer OneDrive konfigüre edilmişse, backup zip'i OneDrive/Backups/YYYY/MM/ altına kopyala
+                try
+                {
+                    var oneDriveBase = _config.GetOneDriveBaseDir();
+                    if (!string.IsNullOrEmpty(oneDriveBase) && result.IsSuccess && File.Exists(result.BackupPath))
+                    {
+                        string zipPath = CreateZipForBackup(result.BackupPath);
+                        if (!string.IsNullOrEmpty(zipPath))
+                        {
+                            PushBackupToOneDrive(zipPath);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"OneDrive push sırasında hata: {ex.Message}");
                 }
 
                 // helper: copy with Flush to avoid atomic move issues on some systems/processes

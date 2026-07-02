@@ -85,20 +85,33 @@ namespace TurizmOperasyonSistemi.Services
         }
 
         /// <summary>
-        /// OneDrive veya fallback base dizinini döndürür
+        /// Uygulamanın çalışma dizinini döndürür (LocalAppData altında).
+        /// SQLite ana veritabanı, yedek ve loglar her zaman LocalAppData içinde tutulacaktır.
+        /// OneDrive sadece yedek/senkronizasyon hedefine dönüşümlü olarak kullanılacaktır,
+        /// ancak veritabanı asla OneDrive içinde çalıştırılmayacaktır.
         /// </summary>
-        private string GetDefaultBaseDir()
+        public string GetDefaultBaseDir()
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            // Uygulamaya özel klasör
+            return Path.Combine(localAppData, "TurizmOperasyonSistemi");
+        }
+
+        /// <summary>
+        /// Eğer OneDrive kurulmuşsa OneDrive altındaki uygulama bazlı dizini döndürür, yoksa null döner.
+        /// Bu dizin yalnızca senkronize edilecek yedeklerin/manifestlerin kopyalanması için kullanılabilir;
+        /// veritabanı çalıştırılmaz.
+        /// </summary>
+        public string GetOneDriveBaseDir()
         {
             string oneDrive = Environment.GetEnvironmentVariable("OneDrive")
                               ?? Environment.GetEnvironmentVariable("OneDriveCommercial")
                               ?? Environment.GetEnvironmentVariable("OneDriveConsumer");
 
-            if (!string.IsNullOrEmpty(oneDrive))
-            {
-                return Path.Combine(oneDrive, "TurizmDB");
-            }
+            if (string.IsNullOrEmpty(oneDrive))
+                return null;
 
-            return @"C:\\TurizmDB";
+            return Path.Combine(oneDrive, "TurizmDB");
         }
 
         /// <summary>
@@ -306,9 +319,8 @@ namespace TurizmOperasyonSistemi.Services
                               ?? Environment.GetEnvironmentVariable("OneDriveCommercial")
                               ?? Environment.GetEnvironmentVariable("OneDriveConsumer");
 
-            string baseDir = !string.IsNullOrEmpty(oneDrive)
-                ? Path.Combine(oneDrive, "TurizmDB")
-                : @"C:\\TurizmDB";
+            // Default çalışma dizini artık LocalAppData altında olmalıdır (uygulamaya özel).
+            string baseDir = GetDefaultBaseDir();
 
             var configObj = new
             {
@@ -350,56 +362,99 @@ namespace TurizmOperasyonSistemi.Services
         }
 
         /// <summary>
-        /// Eğer kullanıcı daha önce C:\TurizmDB kullandıysa ve OneDrive mevcutsa,
-        /// dosyaları OneDrive altına taşı ve appsettings.json içindeki yolları güncelle.
-        /// Bu taşıma işleminde var olan dosyalar korunur; çakışma durumunda hedefe zaman damgası eklenir.
+        /// <summary>
+        /// Mevcut eski konumlardan (ör. C:\TurizmDB veya OneDrive) LocalAppData altındaki
+        /// uygulama dizinine veri taşıma / kopyalama işlemi yapar.
+        /// Önemli: Veritabanı asla OneDrive içinde çalıştırılmayacak. Eğer eski konumda DB varsa,
+        /// bu metot onu kopyalar ve appsettings.json içindeki yolları LocalAppData yollarına günceller.
+        /// Kaynak konumdaki dosyalar korunur (kopyalanır, taşınmaz).
         /// </summary>
         private void MigrateToOneDriveIfNeeded()
         {
             try
             {
-                string oneDrive = Environment.GetEnvironmentVariable("OneDrive")
-                                  ?? Environment.GetEnvironmentVariable("OneDriveCommercial")
-                                  ?? Environment.GetEnvironmentVariable("OneDriveConsumer");
-
-                if (string.IsNullOrEmpty(oneDrive))
-                    return; // OneDrive yüklü değilse çık
-
-                string oneDriveBase = Path.Combine(oneDrive, "TurizmDB");
+                string oneDriveBase = GetOneDriveBaseDir();
+                string localBase = GetDefaultBaseDir();
 
                 string currentDb = GetDatabasePath();
                 if (string.IsNullOrEmpty(currentDb))
                     return;
 
                 string currentRoot = Path.GetDirectoryName(currentDb) ?? string.Empty;
-                if (!currentRoot.StartsWith(@"C:\\TurizmDB", StringComparison.OrdinalIgnoreCase))
-                    return; // Zaten farklı bir yerdeyse taşıma gerekmiyor
 
-                // Oluşturulacak hedef yollar
-                Directory.CreateDirectory(oneDriveBase);
-                string targetDbPath = Path.Combine(oneDriveBase, Path.GetFileName(currentDb));
+                // Eğer zaten LocalAppData içindeyse hiçbir işlem yok
+                if (currentRoot.StartsWith(localBase, StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                // Potansiyel eski kaynaklar: OneDrive veya C:\TurizmDB
+                bool fromOneDrive = !string.IsNullOrEmpty(oneDriveBase) && currentRoot.StartsWith(oneDriveBase, StringComparison.OrdinalIgnoreCase);
+                bool fromLegacyC = currentRoot.StartsWith(@"C:\\TurizmDB", StringComparison.OrdinalIgnoreCase);
+
+                if (!fromOneDrive && !fromLegacyC)
+                    return; // Bilinmeyen bir konumdan geliyorsa müdahale etmiyoruz
+
+                // Hedef lokasyonları oluştur
+                Directory.CreateDirectory(localBase);
+                string targetDbPath = Path.Combine(localBase, Path.GetFileName(currentDb));
                 string currentBackup = GetBackupDirectory();
-                string targetBackup = Path.Combine(oneDriveBase, "backups");
+                string targetBackup = Path.Combine(localBase, "backups");
                 string currentLog = GetLogDirectory();
-                string targetLog = Path.Combine(oneDriveBase, "logs");
+                string targetLog = Path.Combine(localBase, "logs");
 
-                // Taşıma işlemleri
+                // Veritabanını güvenli şekilde kopyala (varsa karşılaştırma yap)
                 if (File.Exists(currentDb))
                 {
-                    SafeMoveFile(currentDb, targetDbPath);
+                    try
+                    {
+                        if (!File.Exists(targetDbPath))
+                        {
+                            File.Copy(currentDb, targetDbPath);
+                            System.Diagnostics.Debug.WriteLine($"Database kopyalandı: {currentDb} -> {targetDbPath}");
+                        }
+                        else
+                        {
+                            var srcInfo = new FileInfo(currentDb);
+                            var dstInfo = new FileInfo(targetDbPath);
+                            if (srcInfo.LastWriteTimeUtc > dstInfo.LastWriteTimeUtc)
+                            {
+                                // Önce mevcut local dosyayı arşivle
+                                string stamped = Path.GetFileNameWithoutExtension(targetDbPath) + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(targetDbPath);
+                                var archived = Path.Combine(Path.GetDirectoryName(targetDbPath) ?? string.Empty, stamped);
+                                File.Move(targetDbPath, archived);
+                                File.Copy(currentDb, targetDbPath);
+                                System.Diagnostics.Debug.WriteLine($"Local DB güncellendi: kaynak daha yeni, arşivlendi -> {archived}");
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine("Local DB zaten daha yeni veya aynı; kopyalama atlandı.");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Database kopyalama hatası: {ex.Message}");
+                    }
                 }
 
-                if (Directory.Exists(currentBackup))
+                // Yedek ve log dizinlerini kopyala (kaynak korunur)
+                try
                 {
-                    MoveDirectoryContents(currentBackup, targetBackup);
-                }
+                    if (Directory.Exists(currentBackup))
+                    {
+                        CopyDirectoryContents(currentBackup, targetBackup);
+                    }
 
-                if (Directory.Exists(currentLog))
+                    if (Directory.Exists(currentLog))
+                    {
+                        CopyDirectoryContents(currentLog, targetLog);
+                    }
+                }
+                catch (Exception ex)
                 {
-                    MoveDirectoryContents(currentLog, targetLog);
+                    System.Diagnostics.Debug.WriteLine($"Dizin kopyalama hatası: {ex.Message}");
                 }
 
-                // appsettings.json varsa içindeki yolları güncelle
+                // appsettings.json varsa içindeki yolları LocalAppData içindeki hedeflere güncelle
                 if (File.Exists(_configPath))
                 {
                     try
@@ -409,7 +464,7 @@ namespace TurizmOperasyonSistemi.Services
 
                         // Database.Path
                         if (!node.ContainsKey("Database")) node["Database"] = new JsonObject();
-                        ((JsonObject)node["Database"]) ["Path"] = targetDbPath;
+                        ((JsonObject)node["Database"])["Path"] = targetDbPath;
 
                         // Backup.Directory
                         if (!node.ContainsKey("Backup")) node["Backup"] = new JsonObject();
@@ -424,18 +479,44 @@ namespace TurizmOperasyonSistemi.Services
 
                         // Reload config root from updated file
                         _configRoot = JsonDocument.Parse(updated).RootElement;
-                        System.Diagnostics.Debug.WriteLine("Konfigürasyon yolları OneDrive'a taşındı ve appsettings.json güncellendi.");
+                        System.Diagnostics.Debug.WriteLine("Konfigürasyon yolları LocalAppData'ya kopyalandı ve appsettings.json güncellendi.");
                     }
                     catch (Exception ux)
                     {
                         System.Diagnostics.Debug.WriteLine($"Konfigürasyon güncellenemedi: {ux.Message}");
                     }
                 }
-
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"MigrateToOneDriveIfNeeded hata: {ex.Message}");
+            }
+        }
+
+        private void CopyDirectoryContents(string sourceDir, string targetDir)
+        {
+            Directory.CreateDirectory(targetDir);
+            foreach (var dir in Directory.GetDirectories(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                var relative = Path.GetRelativePath(sourceDir, dir);
+                Directory.CreateDirectory(Path.Combine(targetDir, relative));
+            }
+
+            foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                var relative = Path.GetRelativePath(sourceDir, file);
+                var dest = Path.Combine(targetDir, relative);
+                if (!File.Exists(dest))
+                {
+                    try
+                    {
+                        File.Copy(file, dest);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Dosya kopyalanamadı: {file} -> {dest} : {ex.Message}");
+                    }
+                }
             }
         }
 

@@ -15,14 +15,33 @@ namespace TurizmOperasyonSistemi
     public partial class App : Application
     {
         private AppDbContext _context;
+        private TurizmOperasyonSistemi.Services.SyncService _syncService;
 
         public App()
         {
+            InitializeComponent();
+        }
+
+        protected override async void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+
             // Enterprise startup: initialize configuration, run health checks, and apply migrations using configured paths
             try
             {
                 var config = Services.ConfigurationProvider.Instance;
                 config.LogConfiguration();
+
+                // Başlangıç senkronizasyonu: OneDrive ile manifest karşılaştırması ve gerekirse restore/push
+                try
+                {
+                    _syncService = new SyncService();
+                    await _syncService.StartInitialSyncAsync();
+                }
+                catch (Exception sx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Initial sync failed: {sx.Message}");
+                }
 
                 string dbPath = config.GetDatabasePath();
 
@@ -131,6 +150,28 @@ namespace TurizmOperasyonSistemi
                 // Uygulamayı kapat
                 this.Shutdown(1);
             }
+        }
+
+        protected override async void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                // Ensure we attempt a safe shutdown sync: backup + manifest push
+                try
+                {
+                    if (_syncService != null)
+                    {
+                        await _syncService.PerformShutdownSyncAsync().ConfigureAwait(false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Shutdown sync failed: {ex.Message}");
+                }
+            }
+            catch { }
+
+            base.OnExit(e);
         }
 
         /// <summary>

@@ -234,6 +234,17 @@ namespace TurizmOperasyonSistemi.Services
                     // 9. UPDATE DATABASE VERSION
                     System.Diagnostics.Debug.WriteLine("\n► Step 9: Updating Database Version");
                     UpdateDatabaseVersion(CurrentVersionString);
+                    // Also increment manifest DbVersion and update checksum/app version
+                    try
+                    {
+                        var manifestService = new ManifestService();
+                        var manifest = manifestService.IncrementDbVersion(Environment.MachineName);
+                        System.Diagnostics.Debug.WriteLine($"✓ Manifest updated: DbVersion={manifest?.DbVersion}");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Manifest update failed after migrations: {ex.Message}");
+                    }
                     System.Diagnostics.Debug.WriteLine($"✓ Database version updated to: {CurrentVersionString}");
 
                     stopwatch.Stop();
