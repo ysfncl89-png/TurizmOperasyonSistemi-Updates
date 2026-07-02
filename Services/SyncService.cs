@@ -111,35 +111,66 @@ namespace TurizmOperasyonSistemi.Services
             await WaitForOneDriveReadyAsync().ConfigureAwait(false);
 
             var localManifest = ReadLocalManifest();
-            var remoteManifest = ReadRemoteManifest();
 
-            // Compute local checksum if manifest exists
-            if (localManifest == null && remoteManifest == null)
+            // Read aggregate remote manifests (per-client) from OneDrive root
+            Dictionary<string, DbManifest> remoteAggregate = null;
+            try
+            {
+                var aggPath = Path.Combine(_oneDriveBase, _manifestFileName);
+                if (File.Exists(aggPath))
+                {
+                    var aggJson = File.ReadAllText(aggPath);
+                    remoteAggregate = JsonSerializer.Deserialize<Dictionary<string, DbManifest>>(aggJson);
+                }
+            }
+            catch { remoteAggregate = null; }
+
+            if (localManifest == null && (remoteAggregate == null || remoteAggregate.Count == 0))
                 return; // hiçbir manifest yoksa işlem yok
 
             try
             {
-                if (remoteManifest != null && (localManifest == null || remoteManifest.DbVersion > localManifest.DbVersion))
+                if (remoteAggregate != null && remoteAggregate.Count > 0)
                 {
-                    // Remote daha yeni -> restore to local
-                    RestoreDatabaseFromOneDrive();
-                    WriteSyncState(new SyncState { LastSyncAt = DateTime.UtcNow, LastSyncMachine = remoteManifest.MachineId, LastSyncDbVersion = remoteManifest.DbVersion, Status = "Restored from OneDrive" });
+                    // find the remote entry with highest DbVersion
+                    var best = remoteAggregate.OrderByDescending(kv => kv.Value?.DbVersion ?? 0).First();
+                    var remoteClientId = best.Key;
+                    var remoteManifest = best.Value;
+
+                    if (remoteManifest != null && (localManifest == null || remoteManifest.DbVersion > localManifest.DbVersion))
+                    {
+                        // Remote daha yeni -> restore to local from remote client's folder
+                        RestoreDatabaseFromOneDrive(remoteClientId);
+                        WriteSyncState(new SyncState { LastSyncAt = DateTime.UtcNow, LastSyncMachine = remoteManifest.MachineId, LastSyncDbVersion = remoteManifest.DbVersion, Status = "Restored from OneDrive" });
+                        return;
+                    }
+
+                    if (localManifest != null && (remoteManifest == null || localManifest.DbVersion > remoteManifest.DbVersion))
+                    {
+                        // Local daha yeni -> push backup to OneDrive
+                        await PushLocalDatabaseToOneDriveAsync().ConfigureAwait(false);
+                        WriteSyncState(new SyncState { LastSyncAt = DateTime.UtcNow, LastSyncMachine = Environment.MachineName, LastSyncDbVersion = localManifest.DbVersion, Status = "Pushed to OneDrive" });
+                        return;
+                    }
+
+                    if (localManifest != null && remoteManifest != null && localManifest.DbVersion == remoteManifest.DbVersion)
+                    {
+                        // Aynı versiyon ama checksum mismatch ise uyar
+                        var localChecksum = ComputeChecksum(GetLocalDbPath());
+                        if (!string.Equals(localChecksum, remoteManifest.Checksum, StringComparison.OrdinalIgnoreCase))
+                        {
+                            WriteSyncState(new SyncState { LastSyncAt = DateTime.UtcNow, LastSyncMachine = Environment.MachineName, LastSyncDbVersion = localManifest.DbVersion, Status = "ChecksumMismatch", Details = "Local and remote checksums differ" });
+                        }
+                        return;
+                    }
                 }
-                else if (localManifest != null && (remoteManifest == null || localManifest.DbVersion > remoteManifest.DbVersion))
+                else if (localManifest != null)
                 {
-                    // Local daha yeni -> push backup to OneDrive
+                    // No remote manifests found but local exists -> push
                     await PushLocalDatabaseToOneDriveAsync().ConfigureAwait(false);
                     WriteSyncState(new SyncState { LastSyncAt = DateTime.UtcNow, LastSyncMachine = Environment.MachineName, LastSyncDbVersion = localManifest.DbVersion, Status = "Pushed to OneDrive" });
                 }
-                else if (localManifest != null && remoteManifest != null && localManifest.DbVersion == remoteManifest.DbVersion)
-                {
-                    // Aynı versiyon ama checksum mismatch ise uyar
-                    var localChecksum = ComputeChecksum(GetLocalDbPath());
-                    if (!string.Equals(localChecksum, remoteManifest.Checksum, StringComparison.OrdinalIgnoreCase))
-                    {
-                        WriteSyncState(new SyncState { LastSyncAt = DateTime.UtcNow, LastSyncMachine = Environment.MachineName, LastSyncDbVersion = localManifest.DbVersion, Status = "ChecksumMismatch", Details = "Local and remote checksums differ" });
-                    }
-                }
+
             }
             catch (Exception ex)
             {
@@ -201,17 +232,7 @@ namespace TurizmOperasyonSistemi.Services
             catch { return null; }
         }
 
-        private DbManifest ReadRemoteManifest()
-        {
-            try
-            {
-                var path = Path.Combine(_oneDriveBase, _manifestFileName);
-                if (!File.Exists(path)) return null;
-                var json = File.ReadAllText(path);
-                return JsonSerializer.Deserialize<DbManifest>(json);
-            }
-            catch { return null; }
-        }
+
 
         private void WriteLocalManifest(DbManifest manifest)
         {
@@ -248,12 +269,12 @@ namespace TurizmOperasyonSistemi.Services
             return Path.Combine(_oneDriveBase, Path.GetFileName(GetLocalDbPath()));
         }
 
-        private void RestoreDatabaseFromOneDrive()
+        private void RestoreDatabaseFromOneDrive(string remoteClientId)
         {
-            var remote = GetRemoteDbPath();
-            var local = GetLocalDbPath();
             try
             {
+                var remote = Path.Combine(_oneDriveBase, "Database", remoteClientId, Path.GetFileName(GetLocalDbPath()));
+                var local = GetLocalDbPath();
                 if (!File.Exists(remote)) return;
                 // Ensure DB not open by app. We'll copy and overwrite local.
                 Directory.CreateDirectory(Path.GetDirectoryName(local) ?? string.Empty);
@@ -263,7 +284,7 @@ namespace TurizmOperasyonSistemi.Services
                     string archived = local + ".backup." + DateTime.Now.ToString("yyyyMMddHHmmss");
                     File.Move(local, archived);
                 }
-                File.Copy(remote, local);
+                File.Copy(remote, local, true);
             }
             catch (Exception ex)
             {
@@ -273,13 +294,16 @@ namespace TurizmOperasyonSistemi.Services
 
         private async Task PushLocalDatabaseToOneDriveAsync()
         {
-            var remoteDir = _oneDriveBase;
+            var remoteRoot = _oneDriveBase;
             var local = GetLocalDbPath();
 
             try
             {
-                if (string.IsNullOrEmpty(remoteDir)) return;
-                Directory.CreateDirectory(remoteDir);
+                if (string.IsNullOrEmpty(remoteRoot)) return;
+
+                var clientId = _config.GetClientId();
+                var remoteClientDir = Path.Combine(remoteRoot, "Database", clientId);
+                Directory.CreateDirectory(remoteClientDir);
 
                 // create manifest from local
                 var manifest = new DbManifest
@@ -295,14 +319,38 @@ namespace TurizmOperasyonSistemi.Services
                     BackupVersion = 0
                 };
 
-                // Copy DB
-                var remoteDb = Path.Combine(remoteDir, Path.GetFileName(local));
+                // Copy DB into per-client folder
+                var remoteDb = Path.Combine(remoteClientDir, Path.GetFileName(local));
                 File.Copy(local, remoteDb, true);
 
-                // Write remote manifest
-                var remoteManifestPath = Path.Combine(remoteDir, _manifestFileName);
-                var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(remoteManifestPath, json);
+                // Write per-client manifest in that folder
+                var perClientManifestPath = Path.Combine(remoteClientDir, _manifestFileName);
+                var perJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(perClientManifestPath, perJson);
+
+                // Update aggregate manifest at OneDrive root: Dictionary<ClientId, DbManifest>
+                try
+                {
+                    var aggPath = Path.Combine(remoteRoot, _manifestFileName);
+                    Dictionary<string, DbManifest> agg = new Dictionary<string, DbManifest>();
+                    if (File.Exists(aggPath))
+                    {
+                        try
+                        {
+                            var existing = File.ReadAllText(aggPath);
+                            agg = JsonSerializer.Deserialize<Dictionary<string, DbManifest>>(existing) ?? new Dictionary<string, DbManifest>();
+                        }
+                        catch { agg = new Dictionary<string, DbManifest>(); }
+                    }
+
+                    agg[clientId] = manifest;
+                    var aggJson = JsonSerializer.Serialize(agg, new JsonSerializerOptions { WriteIndented = true });
+                    File.WriteAllText(aggPath, aggJson);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Updating aggregate manifest failed: {ex.Message}");
+                }
             }
             catch (Exception ex)
             {

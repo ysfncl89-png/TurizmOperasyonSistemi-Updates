@@ -115,6 +115,33 @@ namespace TurizmOperasyonSistemi.Services
         }
 
         /// <summary>
+        /// Returns a persistent client id for this installation (GUID stored in LocalAppData).
+        /// Used to identify this machine's uploads in OneDrive to avoid name collisions.
+        /// </summary>
+        public string GetClientId()
+        {
+            try
+            {
+                var baseDir = GetDefaultBaseDir();
+                Directory.CreateDirectory(baseDir);
+                var idPath = Path.Combine(baseDir, "client.id");
+                if (File.Exists(idPath))
+                {
+                    var content = File.ReadAllText(idPath).Trim();
+                    if (Guid.TryParse(content, out var _)) return content;
+                }
+
+                var guid = Guid.NewGuid().ToString();
+                File.WriteAllText(idPath, guid);
+                return guid;
+            }
+            catch
+            {
+                return Guid.NewGuid().ToString();
+            }
+        }
+
+        /// <summary>
         /// Backup directory'sini döndürür
         /// </summary>
         public string GetBackupDirectory()
