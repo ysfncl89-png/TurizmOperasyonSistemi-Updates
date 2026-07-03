@@ -64,6 +64,13 @@ class Program
 
                 Console.WriteLine($"Extracting package to {tempDir}...");
                 ZipFile.ExtractToDirectory(package, tempDir);
+                // If the package contains a file named SIMULATE_CRASH, simulate a crash after backup and before copying.
+                var simulateCrashPath = Path.Combine(tempDir, "SIMULATE_CRASH");
+                if (File.Exists(simulateCrashPath))
+                {
+                    Console.WriteLine("SIMULATE_CRASH detected in package. Simulating updater crash.");
+                    throw new Exception("Simulated updater crash");
+                }
 
                 Console.WriteLine("Copying files to application directory...");
                 foreach (var src in Directory.GetFiles(tempDir, "*", SearchOption.AllDirectories))
