@@ -12,6 +12,11 @@
     <Compile Remove="Views\SettingDialogCities.xaml.cs" />
   </ItemGroup>
 
+  <!-- Exclude tools/Updater source files from main project compile to keep Updater as separate project -->
+  <ItemGroup>
+    <Compile Remove="tools\Updater\**\*.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Remove="Assets\Icons\Ekran görüntüsü 2026-06-01 202907.png" />
     <None Remove="Assets\Icons\Ekran görüntüsü 2026-06-01 202919.png" />
@@ -36,6 +41,7 @@
 
   <ItemGroup>
     <None Include=".github\copilot-instructions.md" />
+    <None Include="tools\SmokeTester\SmokeTester.csproj" />
     <None Include="tools\Updater\Updater.csproj" />
   </ItemGroup>
 

@@ -426,6 +426,32 @@ namespace TurizmOperasyonSistemi.Services
             return GetInt("Update:CheckIntervalSeconds", 86400);
         }
 
+        // Additional update-related configuration
+        public string GetUpdateChannel()
+        {
+            return GetString("Update:Channel", "stable");
+        }
+
+        public bool IsAutoDownloadEnabled()
+        {
+            return GetBool("Update:AutoDownload", true);
+        }
+
+        public bool IsAutoInstallEnabled()
+        {
+            return GetBool("Update:AutoInstall", false);
+        }
+
+        public int GetUpdateRetryCount()
+        {
+            return GetInt("Update:RetryCount", 3);
+        }
+
+        public int GetUpdateCheckIntervalHours()
+        {
+            return GetInt("Update:CheckIntervalHours", 24);
+        }
+
         /// <summary>
         /// <summary>
         /// Mevcut eski konumlardan (ör. C:\TurizmDB veya OneDrive) LocalAppData altındaki

@@ -15,7 +15,11 @@ namespace TurizmOperasyonSistemi.Services
         {
         }
 
-        public async Task LaunchInstallerAsync(string assetPath)
+        /// <summary>
+        /// Launches installer/updater for the given asset path. Returns true on success (process started).
+        /// This method does NOT show UI; it only starts the external process and returns the result.
+        /// </summary>
+        public Task<bool> LaunchInstallerAsync(string assetPath)
         {
             try
             {
@@ -32,15 +36,12 @@ namespace TurizmOperasyonSistemi.Services
                         UseShellExecute = true
                     });
 
-                    // Give installer a moment then shutdown the app to allow replacement
-                    await Task.Delay(500);
-                    Application.Current.Shutdown();
-                    return;
+                    // Caller decides when to shutdown the app
+                    return Task.FromResult(true);
                 }
 
                 if (ext == ".zip")
                 {
-                    // Prefer Updater.exe in application tools if present
                     var appDir = AppDomain.CurrentDomain.BaseDirectory;
                     var updaterPath = Path.Combine(appDir, "tools", "Updater", "Updater.exe");
                     if (File.Exists(updaterPath))
@@ -52,21 +53,17 @@ namespace TurizmOperasyonSistemi.Services
                             UseShellExecute = true
                         });
 
-                        await Task.Delay(500);
-                        Application.Current.Shutdown();
-                        return;
+                        return Task.FromResult(true);
                     }
 
-                    // Fallback: open folder for user to run manually
+                    // Fallback: open folder for user
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = Path.GetDirectoryName(assetPath),
                         UseShellExecute = true
                     });
 
-                    MessageBox.Show("Güncellenen paket zip olarak indirildi. Lütfen Updater.exe ile açın veya manuel olarak içeriği uygulama dizinine yerleştirin.",
-                        "Güncelleme Hazır", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
+                    return Task.FromResult(true);
                 }
 
                 // Unknown extension: just start it
@@ -76,13 +73,12 @@ namespace TurizmOperasyonSistemi.Services
                     UseShellExecute = true
                 });
 
-                await Task.Delay(500);
-                Application.Current.Shutdown();
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"UpdateInstallerService error: {ex.Message}");
-                MessageBox.Show($"Güncelleyici başlatılamadı: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                return Task.FromResult(false);
             }
         }
     }
