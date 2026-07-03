@@ -1,4 +1,6 @@
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -7,6 +9,101 @@ namespace TurizmOperasyonSistemi.Views
         public CargoView()
         {
             InitializeComponent();
+
+            // Arka plan resmi kaynakta varsa güvenli şekilde yükle
+            this.Loaded += CargoView_Loaded;
+        }
+
+        private void CargoView_Loaded(object? sender, System.Windows.RoutedEventArgs e)
+        {
+            // Tek seferlik deneme
+            this.Loaded -= CargoView_Loaded;
+            TrySetBackgroundImage();
+        }
+
+        private void TrySetBackgroundImage()
+        {
+            // Deneme dizisi: birkaç farklı pack URI ve yükleme yöntemi ile kaynak aranıp uygulanacak.
+            var attempts = new[]
+            {
+                // Basit pack uri (relative to application)
+                "pack://application:,,,/Assets/Backgrounds/CargoBackground.png",
+                // Assembly-qualified pack uri
+                $"pack://application:,,,/{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name};component/Assets/Backgrounds/CargoBackground.png",
+                // Type-assembly qualified (this assembly)
+                $"pack://application:,,,/{typeof(CargoView).Assembly.GetName().Name};component/Assets/Backgrounds/CargoBackground.png"
+            };
+
+            foreach (var uriStr in attempts)
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(uriStr))
+                        continue;
+
+                    var uri = new System.Uri(uriStr, System.UriKind.Absolute);
+
+                    System.Diagnostics.Debug.WriteLine("Trying cargo background uri: " + uri);
+
+                    // İlk olarak Application.GetResourceStream ile dene
+                    try
+                    {
+                        var info = System.Windows.Application.GetResourceStream(uri);
+                        if (info != null)
+                        {
+                            var bitmap = new BitmapImage();
+                            bitmap.BeginInit();
+                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                            bitmap.StreamSource = info.Stream;
+                            bitmap.EndInit();
+                            bitmap.Freeze();
+
+                            var brush = new ImageBrush(bitmap)
+                            {
+                                Stretch = Stretch.UniformToFill,
+                                Opacity = 0.45
+                            };
+                            this.Background = brush;
+                            System.Diagnostics.Debug.WriteLine("Cargo background image applied successfully via GetResourceStream: " + uri);
+                            return;
+                        }
+                    }
+                    catch (System.Exception inner)
+                    {
+                        System.Diagnostics.Debug.WriteLine("GetResourceStream failed for " + uri + " -> " + inner.Message);
+                    }
+
+                    // Eğer üstte başarısız olduysa doğrudan BitmapImage ile pack uri dene
+                    try
+                    {
+                        var bmp = new BitmapImage();
+                        bmp.BeginInit();
+                        bmp.UriSource = uri;
+                        bmp.CacheOption = BitmapCacheOption.OnLoad;
+                        bmp.EndInit();
+                        bmp.Freeze();
+
+                        var brush2 = new ImageBrush(bmp)
+                        {
+                            Stretch = Stretch.UniformToFill,
+                            Opacity = 0.45
+                        };
+                        this.Background = brush2;
+                        System.Diagnostics.Debug.WriteLine("Cargo background image applied successfully via BitmapImage.UriSource: " + uri);
+                        return;
+                    }
+                    catch (System.Exception inner2)
+                    {
+                        System.Diagnostics.Debug.WriteLine("BitmapImage(Uri) failed for " + uri + " -> " + inner2.Message);
+                    }
+                }
+                catch (System.Exception exTop)
+                {
+                    System.Diagnostics.Debug.WriteLine("Invalid uri or other error: " + exTop.Message);
+                }
+            }
+
+            System.Diagnostics.Debug.WriteLine("All attempts to apply cargo background failed.");
         }
 
         private void CargoList_Click(object sender, System.Windows.RoutedEventArgs e)

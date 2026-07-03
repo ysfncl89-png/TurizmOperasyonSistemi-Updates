@@ -52,6 +52,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Tüm arka plan PNG dosyalarını otomatik dahil et -->
+    <Resource Include="Assets\Backgrounds\**\*.png" />
     <Resource Include="Assets\Icons\excel.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
