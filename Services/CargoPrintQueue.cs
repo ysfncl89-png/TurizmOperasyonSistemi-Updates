@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 
@@ -112,6 +113,40 @@ namespace TurizmOperasyonSistemi.Services
                         Items.Remove(existing);
                         try { ItemRemoved?.Invoke(existing); } catch { }
                     }
+
+                    // Persist changes
+                    SaveToFile();
+                }
+                catch { }
+            }
+        }
+
+        // Increase the Quantity for an item by the specified amount.
+        public void IncrementQuantity(PrintQueueItem item, int amount = 1)
+        {
+            if (item == null) return;
+            if (amount <= 0) return;
+            lock (_sync)
+            {
+                try
+                {
+                    var existing = Items.FirstOrDefault(i => i == item);
+                    if (existing == null)
+                    {
+                        // Try to locate by RegistrationId fallback
+                        existing = Items.FirstOrDefault(i => i.RegistrationId == item.RegistrationId);
+                    }
+
+                    if (existing == null)
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        existing.Quantity = Math.Max(0, existing.Quantity + amount);
+                    }
+                    catch { existing.Quantity = Math.Max(1, amount); }
 
                     // Persist changes
                     SaveToFile();

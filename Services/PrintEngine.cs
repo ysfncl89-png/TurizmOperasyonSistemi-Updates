@@ -144,13 +144,21 @@ namespace TurizmOperasyonSistemi.Services
                             // top-right remove button: clicking should request immediate removal from preview queue
                             try
                             {
-                                var btn = new System.Windows.Controls.Button { Content = "✖", Width = 22, Height = 22, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, VerticalAlignment = System.Windows.VerticalAlignment.Top, Background = Brushes.Transparent, Foreground = Brushes.DarkRed, BorderThickness = new Thickness(0) };
-                                btn.Cursor = Cursors.Hand;
-                                btn.ToolTip = "Önizlemeden kaldır";
-                                btn.Click += (s, e) => { TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RequestRemove(it.RegistrationId); };
-                                // place button inside a DockPanel at top of stack
+                                var removeBtn = new System.Windows.Controls.Button { Content = "✖", Width = 22, Height = 22, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, VerticalAlignment = System.Windows.VerticalAlignment.Top, Background = Brushes.Transparent, Foreground = Brushes.DarkRed, BorderThickness = new Thickness(0), Margin = new Thickness(0,0,4,0) };
+                                removeBtn.Cursor = Cursors.Hand;
+                                removeBtn.ToolTip = "Önizlemeden kaldır";
+                                removeBtn.Click += (s, e) => { TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RequestRemove(it.RegistrationId); };
+
+                                var addBtn = new System.Windows.Controls.Button { Content = "+", Width = 22, Height = 22, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, VerticalAlignment = System.Windows.VerticalAlignment.Top, Background = Brushes.Transparent, Foreground = Brushes.DarkGreen, BorderThickness = new Thickness(0) };
+                                addBtn.Cursor = Cursors.Hand;
+                                addBtn.ToolTip = "Bu kişiden bir kart daha ekle";
+                                addBtn.Click += (s, e) => { TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RequestAddCopy(it.RegistrationId); };
+
+                                // place buttons inside a DockPanel at top of stack (add on left of remove so + appears next to ✖)
                                 var topDock = new DockPanel();
-                                topDock.Children.Add(btn);
+                                // Add button first so it appears to the left of the remove button when aligned right
+                                topDock.Children.Add(addBtn);
+                                topDock.Children.Add(removeBtn);
                                 stack.Children.Add(topDock);
                             }
                             catch { }

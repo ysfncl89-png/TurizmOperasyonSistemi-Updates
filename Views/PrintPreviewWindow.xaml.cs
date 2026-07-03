@@ -39,7 +39,10 @@ namespace TurizmOperasyonSistemi.Views
             OrientationCombo.SelectionChanged += (s, e) => RefreshPreview();
             // Listen for remove requests originating from generated document buttons
             TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RemoveRequested += PrintPreviewInteraction_RemoveRequested;
+            // Listen for add-copy requests from generated document buttons
+            TurizmOperasyonSistemi.Services.PrintPreviewInteraction.AddCopyRequested += PrintPreviewInteraction_AddCopyRequested;
             Unloaded += (s, e) => TurizmOperasyonSistemi.Services.PrintPreviewInteraction.RemoveRequested -= PrintPreviewInteraction_RemoveRequested;
+            Unloaded += (s, e) => TurizmOperasyonSistemi.Services.PrintPreviewInteraction.AddCopyRequested -= PrintPreviewInteraction_AddCopyRequested;
         }
 
         private void PrintPreviewInteraction_RemoveRequested(int registrationId)
@@ -69,6 +72,38 @@ namespace TurizmOperasyonSistemi.Views
                             catch
                             {
                                 try { CargoPrintQueue.Instance.Remove(itm); } catch { }
+                            }
+                        }
+                        // Refresh groups and preview
+                        BindQueueList();
+                        RefreshPreview();
+                    }
+                    catch { }
+                }));
+            }
+            catch { }
+        }
+
+        private void PrintPreviewInteraction_AddCopyRequested(int registrationId)
+        {
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        var itm = CargoPrintQueue.Instance.Items.FirstOrDefault(x => x.RegistrationId == registrationId);
+                        if (itm != null)
+                        {
+                            // Increase quantity by one so another copy appears in A4 layout
+                            try
+                            {
+                                CargoPrintQueue.Instance.IncrementQuantity(itm, 1);
+                            }
+                            catch
+                            {
+                                // fallback: directly modify quantity then refresh
+                                try { itm.Quantity = Math.Max(1, itm.Quantity + 1); } catch { }
                             }
                         }
                         // Refresh groups and preview
