@@ -9,6 +9,7 @@ namespace TurizmOperasyonSistemi.Services
     {
         public string Version { get; set; }
         public string Channel { get; set; }
+        public string ReleaseType { get; set; }
         public bool Mandatory { get; set; }
         public int? MinimumDatabaseVersion { get; set; }
         public string MinimumClientVersion { get; set; }

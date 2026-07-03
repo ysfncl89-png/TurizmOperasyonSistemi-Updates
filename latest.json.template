@@ -1,5 +1,6 @@
 {
   "version": "1.2.0",
+  "releaseType": "both",
   "minimumDatabaseVersion": 15,
   "minimumClientVersion": "1.0.0",
   "mandatory": false,

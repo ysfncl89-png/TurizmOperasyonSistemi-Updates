@@ -77,6 +77,7 @@ namespace TurizmOperasyonSistemi.Services
 
                 if (root.TryGetProperty("version", out var v)) info.Version = v.GetString();
                 if (root.TryGetProperty("channel", out var ch)) info.Channel = ch.GetString();
+                if (root.TryGetProperty("releaseType", out var rt)) info.ReleaseType = rt.GetString();
                 if (root.TryGetProperty("mandatory", out var m) && m.ValueKind == JsonValueKind.True) info.Mandatory = true;
                 if (root.TryGetProperty("minimumDatabaseVersion", out var mdv) && mdv.ValueKind == JsonValueKind.Number)
                 {

@@ -1,4 +1,4 @@
-﻿using System.Configuration;
+using System.Configuration;
 using System.Data;
 using System.Windows;
 using System.IO;
@@ -187,7 +187,7 @@ namespace TurizmOperasyonSistemi
                         {
                             try
                             {
-                                if (key == "update.available")
+                                if (key == "update.available" || key == "update.migration.required" || key == "update.both.required")
                                 {
                                     var info = TryExtractUpdateInfo(payload);
                                     if (info == null) return;
@@ -199,7 +199,11 @@ namespace TurizmOperasyonSistemi
                                         {
                                             try
                                             {
-                                                var msg = $"Yeni sürüm {info.Version} bulundu.\n\nNotlar: {info.ReleaseNotes}\n\nİndirilsin mi?";
+                                                var msg = key == "update.migration.required"
+                                                    ? $"Veritabanı güncellemesi bulundu.\n\nSürüm: {info.Version}\nHedef DB versiyonu: {info.MinimumDatabaseVersion?.ToString() ?? "N/A"}\n\nNotlar: {info.ReleaseNotes}\n\nİndirilsin mi?"
+                                                    : key == "update.both.required"
+                                                        ? $"Uygulama ve veritabanı güncellemesi bulundu.\n\nSürüm: {info.Version}\nHedef DB versiyonu: {info.MinimumDatabaseVersion?.ToString() ?? "N/A"}\n\nNotlar: {info.ReleaseNotes}\n\nİndirilsin mi?"
+                                                        : $"Yeni sürüm {info.Version} bulundu.\n\nNotlar: {info.ReleaseNotes}\n\nİndirilsin mi?";
                                                 var res = MessageBox.Show(msg, "Güncelleme Bulundu", MessageBoxButton.YesNo, MessageBoxImage.Information);
                                                 if (res == MessageBoxResult.Yes)
                                                 {
@@ -239,7 +243,11 @@ namespace TurizmOperasyonSistemi
                                         {
                                             try
                                             {
-                                                MessageBox.Show($"Yeni sürüm {info.Version} bulundu. İndiriliyor arka planda.", "Güncelleme", MessageBoxButton.OK, MessageBoxImage.Information);
+                                                MessageBox.Show(key == "update.migration.required"
+                                                    ? "Veritabanı güncellemesi bulundu. İndiriliyor arka planda."
+                                                    : key == "update.both.required"
+                                                        ? "Uygulama ve veritabanı güncellemesi bulundu. İndiriliyor arka planda."
+                                                        : $"Yeni sürüm {info.Version} bulundu. İndiriliyor arka planda.", "Güncelleme", MessageBoxButton.OK, MessageBoxImage.Information);
                                             }
                                             catch { }
                                         });

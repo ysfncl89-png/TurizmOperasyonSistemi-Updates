@@ -106,16 +106,37 @@ namespace TurizmOperasyonSistemi.Services
                 return;
             }
 
-            // compare versions
-            var current = MigrationService.GetApplicationVersion();
-            if (!IsNewerVersion(info.Version, current))
+            // compare versions and database requirements
+            var currentAppVersion = MigrationService.GetApplicationVersion();
+            var currentDbVersion = GetCurrentDatabaseVersion();
+
+            var appUpdateAvailable = IsNewerVersion(info.Version, currentAppVersion);
+            var migrationRequired = info.MinimumDatabaseVersion.HasValue && currentDbVersion < info.MinimumDatabaseVersion.Value;
+
+            if (!appUpdateAvailable && !migrationRequired)
             {
-                Debug.WriteLine($"UpdateBackgroundService: no newer version available. current={current} latest={info.Version}");
+                Debug.WriteLine($"UpdateBackgroundService: no update required. currentApp={currentAppVersion}, latestApp={info.Version}, currentDb={currentDbVersion}, minDb={info.MinimumDatabaseVersion?.ToString() ?? "N/A"}");
                 return;
             }
 
-            // notify that update is available
-            NotificationCenter.Publish("update.available", info, persistToDb: true);
+            var notificationKey = appUpdateAvailable && migrationRequired
+                ? "update.both.required"
+                : appUpdateAvailable
+                    ? "update.available"
+                    : "update.migration.required";
+
+            var payload = new
+            {
+                Info = info,
+                CurrentAppVersion = currentAppVersion,
+                CurrentDatabaseVersion = currentDbVersion,
+                RequiredDatabaseVersion = info.MinimumDatabaseVersion,
+                ReleaseType = info.ReleaseType,
+                AppUpdateAvailable = appUpdateAvailable,
+                MigrationRequired = migrationRequired
+            };
+
+            NotificationCenter.Publish(notificationKey, payload, persistToDb: true);
 
             // AutoDownload
             if (_config.IsAutoDownloadEnabled())
@@ -132,7 +153,7 @@ namespace TurizmOperasyonSistemi.Services
 
                 if (dl != null && dl.Success)
                 {
-                    NotificationCenter.Publish("update.downloaded", new { Info = info, Path = dl.FilePath }, persistToDb: true);
+                    NotificationCenter.Publish("update.downloaded", new { Info = info, Path = dl.FilePath, NotificationKey = notificationKey }, persistToDb: true);
 
                     // AutoInstall
                     if (_config.IsAutoInstallEnabled())
@@ -157,8 +178,21 @@ namespace TurizmOperasyonSistemi.Services
                 }
                 else
                 {
-                    NotificationCenter.Publish("update.download_failed", new { Info = info, Error = dl?.ErrorMessage }, persistToDb: true);
+                    NotificationCenter.Publish("update.download_failed", new { Info = info, Error = dl?.ErrorMessage, NotificationKey = notificationKey }, persistToDb: true);
                 }
+            }
+        }
+
+        private long GetCurrentDatabaseVersion()
+        {
+            try
+            {
+                var manifest = new ManifestService().LoadManifest();
+                return manifest?.DbVersion ?? 0;
+            }
+            catch
+            {
+                return 0;
             }
         }
 
