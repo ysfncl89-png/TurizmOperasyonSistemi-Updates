@@ -81,9 +81,44 @@ namespace TurizmOperasyonSistemi.Services
         }
 
         /// <summary>
-        /// Eksik migration'ları kontrol eder, validasyon yapar, backup alır ve çalıştırır (Full robust process)
+        /// Public wrapper: Eksik migration'ları kontrol eder ve çalıştırır. Uzun sürebilecek migration işlemleri için yapılandırılabilir bir timeout uygular.
+        /// Eğer timeout aşılırsa işlem iptal edilmiş kabul edilir ve false döndürülür.
         /// </summary>
         public bool ApplyMigrations()
+        {
+            int timeoutSeconds = _config.GetMigrationTimeoutSeconds();
+
+            try
+            {
+                var task = System.Threading.Tasks.Task.Run(() => ApplyMigrationsInternal());
+                bool completed = task.Wait(TimeSpan.FromSeconds(timeoutSeconds));
+                if (!completed)
+                {
+                    System.Diagnostics.Debug.WriteLine($"✗ Migration process timed out after {timeoutSeconds}s");
+                    _logger.LogError("ApplyMigrations", new TimeoutException($"Migration timed out after {timeoutSeconds} seconds"));
+                    return false;
+                }
+
+                return task.Result;
+            }
+            catch (AggregateException aex)
+            {
+                System.Diagnostics.Debug.WriteLine($"✗ Migration task threw: {aex.Flatten().Message}");
+                _logger.LogMigrationFailed(CurrentVersionString, aex.Flatten(), TimeSpan.Zero);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"✗ Migration wrapper failed: {ex.Message}");
+                _logger.LogMigrationFailed(CurrentVersionString, ex, TimeSpan.Zero);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Internal: Eski ApplyMigrations içeriği buraya taşındı. Bu metot doğrudan uzun işlemler gerçekleştirir.
+        /// </summary>
+        private bool ApplyMigrationsInternal()
         {
             var stopwatch = Stopwatch.StartNew();
             string currentDbVersion = null;

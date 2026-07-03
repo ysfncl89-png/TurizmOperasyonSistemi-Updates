@@ -200,6 +200,16 @@ namespace TurizmOperasyonSistemi.Migrations
 - **Target**: .NET 8
 - **Language**: C# 12
 
+## Release ve Publish Adımları (Örnek: GitHub Releases + latest.json)
+
+1. Build yapın: `dotnet publish -c Release -r win-x64 --self-contained false` (veya installer için `msi`/`exe` paket oluşturun)
+2. Zip içeriği oluşturun: uygulama dosyalarını bir `.zip` paketine koyun (DB hariç)
+3. GitHub Releases oluşturun: `vX.Y.Z` tag ile release oluşturun ve zip/installer dosyasını asset olarak yükleyin
+4. latest.json dosyasını güncelleyin veya üretin (örnek `latest.json.template`) ve barındırın (ör. GitHub Pages veya CDN). `url` alanı asset indirme linki olmalı.
+5. Kullanıcılar uygulamayı açtığında UpdateService manifest'i okuyacak, yeni sürüm varsa indirip Updater.exe ile güncelleme başlatacaktır.
+
+Not: Updater.exe Windows izinleri gerektirebilir; production ortamda kod imzalama ve UAC davranışını test edin.
+
 ## İletişim ve Destek
 
 Versiyonlama sistemi ile ilgili sorularınız varsa:

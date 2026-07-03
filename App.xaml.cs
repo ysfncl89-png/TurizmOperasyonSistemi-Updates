@@ -119,6 +119,27 @@ namespace TurizmOperasyonSistemi
                 System.Diagnostics.Debug.WriteLine("\n╔══════════════════════════════════════════════════════╗");
                 System.Diagnostics.Debug.WriteLine("║    ✓ UYGULAMA BAŞARILI BAŞLATILDI (ENTERPRISE)        ║");
                 System.Diagnostics.Debug.WriteLine("╚══════════════════════════════════════════════════════╝\n");
+
+                // Start background update check after UI is available (non-blocking)
+                try
+                {
+                    System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(new Action(async () =>
+                    {
+                        try
+                        {
+                            var updateService = new UpdateService();
+                            await updateService.StartBackgroundCheckAsync().ConfigureAwait(true);
+                        }
+                        catch (Exception uex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Background update check failed: {uex.Message}");
+                        }
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                }
+                catch (Exception dex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to schedule background update check: {dex.Message}");
+                }
             }
             catch (Exception ex)
             {

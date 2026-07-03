@@ -210,6 +210,14 @@ namespace TurizmOperasyonSistemi.Services
         }
 
         /// <summary>
+        /// Migration işlemi için maksimum süre (saniye). Eğer migration bu süreyi aşarsa işlem "timeout" kabul edilir.
+        /// </summary>
+        public int GetMigrationTimeoutSeconds()
+        {
+            return GetInt("Migration:TimeoutSeconds", 600);
+        }
+
+        /// <summary>
         /// Retry delay (ms) döndürür
         /// </summary>
         public int GetRetryDelayMs()
@@ -374,6 +382,12 @@ namespace TurizmOperasyonSistemi.Services
                     RetryDelayMs = 1000,
                     AllowRollback = true
                 },
+                Update = new
+                {
+                    Enabled = true,
+                    ManifestUrl = "",
+                    CheckIntervalSeconds = 86400
+                },
                 Logging = new
                 {
                     Directory = Path.Combine(baseDir, "logs"),
@@ -386,6 +400,30 @@ namespace TurizmOperasyonSistemi.Services
 
             string json = System.Text.Json.JsonSerializer.Serialize(configObj, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             return System.Text.Json.JsonDocument.Parse(json).RootElement;
+        }
+
+        /// <summary>
+        /// Update mekanizmasının aktif olup olmadığını döndürür
+        /// </summary>
+        public bool IsUpdateEnabled()
+        {
+            return GetBool("Update:Enabled", true);
+        }
+
+        /// <summary>
+        /// Update manifest (latest.json) URL'si
+        /// </summary>
+        public string GetUpdateManifestUrl()
+        {
+            return GetString("Update:ManifestUrl", string.Empty);
+        }
+
+        /// <summary>
+        /// Update kontrol sıklığı (saniye)
+        /// </summary>
+        public int GetUpdateCheckIntervalSeconds()
+        {
+            return GetInt("Update:CheckIntervalSeconds", 86400);
         }
 
         /// <summary>

@@ -1,0 +1,8 @@
+{
+  "version": "1.2.0",
+  "mandatory": false,
+  "minimumDatabaseVersion": 15,
+  "releaseDate": "2026-07-01",
+  "notes": "Yeni rapor ekranı eklendi.",
+  "url": "https://example.com/downloads/TurizmOperasyonSistemi-1.2.0.zip"
+}
