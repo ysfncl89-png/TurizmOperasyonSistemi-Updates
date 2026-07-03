@@ -14,7 +14,7 @@
 
   <!-- Exclude tools/Updater source files from main project compile to keep Updater as separate project -->
   <ItemGroup>
-    <Compile Remove="tools\Updater\**\*.cs" />
+    <Compile Remove="tools\\**\\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -80,3 +80,4 @@
   </ItemGroup>
 
 </Project>
+
