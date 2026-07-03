@@ -15,7 +15,7 @@
 
                 <!-- Durum Mesajı -->
                 <TextBlock TextWrapping="Wrap" Foreground="#E2E8F0" FontSize="14" LineHeight="24" Margin="0,0,0,16" TextAlignment="Justify">
-                    <Run Text="Bu özellik şu anda geliştirilme aşamasındadır. Henüz API entegrasyonu tamamlanmadığından kargo takip işlemi yapılamamaktadır."/>
+                    <Run Text="Bu özellik şu anda geliştirilme aşamasındadır. Henüz API entegrasyonu yapılmadığından kargo takip işlemi yapılamamaktadır."/>
                 </TextBlock>
 
                 <!-- Planlanan Özellikler -->

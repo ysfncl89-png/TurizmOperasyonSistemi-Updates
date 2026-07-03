@@ -61,7 +61,8 @@ namespace TurizmOperasyonSistemi.Views
                             var brush = new ImageBrush(bitmap)
                             {
                                 Stretch = Stretch.UniformToFill,
-                                Opacity = 0.45
+                                // Opaklığı %30 artırmak için mevcut 0.45 değerini 1.3 ile çarpıyoruz => 0.585
+                                Opacity = 0.585
                             };
                             this.Background = brush;
                             System.Diagnostics.Debug.WriteLine("Cargo background image applied successfully via GetResourceStream: " + uri);
@@ -86,7 +87,8 @@ namespace TurizmOperasyonSistemi.Views
                         var brush2 = new ImageBrush(bmp)
                         {
                             Stretch = Stretch.UniformToFill,
-                            Opacity = 0.45
+                            // Opaklığı %30 artırmak için mevcut 0.45 değerini 1.3 ile çarpıyoruz => 0.585
+                            Opacity = 0.585
                         };
                         this.Background = brush2;
                         System.Diagnostics.Debug.WriteLine("Cargo background image applied successfully via BitmapImage.UriSource: " + uri);
