@@ -8,7 +8,7 @@
              Background="#0F172A" Width="1229">
 
     <Grid Margin="20">
-        <StackPanel Margin="-18,0,0,152">
+        <StackPanel Margin="-18,0,0,0" RenderTransformOrigin="0.511,0.666">
             <!-- Header -->
 
             <!-- DataGrid Section -->
