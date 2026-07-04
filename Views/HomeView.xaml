@@ -67,7 +67,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Sol üst: Aktif Turlar combobox (daha düzenli Grid ile hizalandı) -->
-            <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Height="154" Width="1151">
+            <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Height="154" Width="1100">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
