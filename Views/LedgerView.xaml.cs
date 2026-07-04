@@ -413,7 +413,31 @@ namespace TurizmOperasyonSistemi.Views
             if (row == null) return;
 
             var wnd = new LedgerDetailWindow(row.PersonId);
-            wnd.Owner = System.Windows.Application.Current.MainWindow;
+            try
+            {
+                var app = System.Windows.Application.Current;
+                Window owner = null;
+                if (app != null)
+                {
+                    owner = app.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? app.MainWindow;
+                }
+
+                if (owner != null && !ReferenceEquals(owner, wnd) && owner.IsLoaded && owner.IsVisible)
+                {
+                    wnd.Owner = owner;
+                    wnd.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                }
+                else
+                {
+                    wnd.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                }
+            }
+            catch
+            {
+                // If any issue occurs while selecting owner, fallback to centering on screen.
+                wnd.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+
             wnd.ShowDialog();
         }
     }
