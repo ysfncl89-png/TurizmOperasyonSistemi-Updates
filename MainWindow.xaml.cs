@@ -63,23 +63,6 @@ namespace TurizmOperasyonSistemi
             HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C1A15"));
         }
 
-        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            try
-            {
-                var workArea = SystemParameters.WorkArea;
-
-                // If the window became smaller than the content, ensure scrollbars appear by not forcing zoom.
-                if (MainFrame.Content is UserControl uc)
-                {
-                    // Allow the content to shrink but limit minimum width to avoid extreme zoom
-                    uc.MinWidth = 800; // reasonable minimum, adjust if needed
-                    uc.MaxWidth = Math.Max(800, this.ActualWidth - 200);
-                }
-            }
-            catch { }
-        }
-
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             try

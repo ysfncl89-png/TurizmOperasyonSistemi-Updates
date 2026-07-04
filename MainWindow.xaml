@@ -4,12 +4,11 @@
         xmlns:views="clr-namespace:TurizmOperasyonSistemi.Views"
         xmlns:local="clr-namespace:TurizmOperasyonSistemi"
         Title="Turizm Operasyon Sistemi"
-        Height="800"
-        Width="1525"
+        MinHeight="700"
+        MinWidth="1200"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         Loaded="MainWindow_Loaded"
-        SizeChanged="MainWindow_SizeChanged"
         Background="#0F172A">
 
  
@@ -299,15 +298,8 @@
             <Border Background="#1E293B"
                     CornerRadius="20">
 
-                <!-- Replace Viewbox (causes zooming) with ScrollViewer so pages can scroll instead of being zoomed.
-                     Long-term: update individual Views to use fluid layouts (star sizing, MaxWidth, ScrollViewer inside pages).
-                -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" CanContentScroll="True" HorizontalContentAlignment="Center">
-                    <Frame x:Name="MainFrame"
-                           NavigationUIVisibility="Hidden"
-                           HorizontalAlignment="Center"
-                           MaxWidth="1200" />
-                </ScrollViewer>
+                <Frame x:Name="MainFrame"
+                       NavigationUIVisibility="Hidden"/>
 
             </Border>
 
