@@ -8,6 +8,7 @@
         Width="1525"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
+        Loaded="MainWindow_Loaded"
         Background="#0F172A">
 
  

@@ -63,6 +63,33 @@ namespace TurizmOperasyonSistemi
             HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C1A15"));
         }
 
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var workArea = SystemParameters.WorkArea;
+
+                // If window is larger than work area, constrain it
+                if (this.Height > workArea.Height) this.Height = workArea.Height;
+                if (this.Width > workArea.Width) this.Width = workArea.Width;
+
+                // Ensure window is inside visible area
+                this.Left = Math.Max(workArea.Left, Math.Min(this.Left, workArea.Right - this.Width));
+                this.Top = Math.Max(workArea.Top, Math.Min(this.Top, workArea.Bottom - this.Height));
+
+                // If still maximized but content overflows, try measuring frame content and enable scroll
+                if (this.WindowState == WindowState.Maximized && MainFrame.Content is UserControl uc)
+                {
+                    // If UC height is larger than visible area, set its MaxHeight
+                    if (uc.ActualHeight > workArea.Height)
+                    {
+                        uc.MaxHeight = workArea.Height;
+                    }
+                }
+            }
+            catch { }
+        }
+
         private void ResetMenuColors()
         {
             HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
