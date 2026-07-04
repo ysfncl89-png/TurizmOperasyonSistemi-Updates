@@ -120,17 +120,11 @@
 
             <StackPanel>
 
-                <TextBlock Text="TURİZM"
+                <TextBlock Text="TOS Lite"
                            Foreground="#38BDF8"
-                           FontSize="15"
+                           FontSize="20"
                            FontWeight="Bold"
                            Margin="20,30,20,10"
-                           Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
-
-                <TextBlock Text="Operasyon Sistemi"
-                           Foreground="White"
-                           FontSize="10"
-                           Margin="20,0,20,30"
                            Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
 
                 <!-- Collapsed state icon -->

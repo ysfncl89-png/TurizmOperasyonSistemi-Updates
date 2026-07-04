@@ -14,8 +14,7 @@
             <Setter Property="Foreground" Value="#E2E8F0"/>
             <Setter Property="BorderBrush" Value="#334155"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <!-- Reduced padding/scale to make cards ~30% smaller -->
-            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Padding" Value="14"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -29,8 +28,7 @@
                                 SnapsToDevicePixels="True"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>
-                                <!-- Start smaller (≈70%) and animate slightly on hover -->
-                                <ScaleTransform x:Name="scaleTransform" ScaleX="0.7" ScaleY="0.7"/>
+                                <ScaleTransform x:Name="scaleTransform" ScaleX="1" ScaleY="1.04"/>
                             </Border.RenderTransform>
 
                             <Border.Effect>
@@ -46,9 +44,8 @@
                             <EventTrigger RoutedEvent="MouseEnter">
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <!-- Hover target scaled relative to base (0.7 * 1.05 ≈ 0.735) -->
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="0.735" Duration="0:0:0.12"/>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="0.735" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1.05" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1.05" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0.85" Duration="0:0:0.15"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="BlurRadius" To="30" Duration="0:0:0.15"/>
                                     </Storyboard>
@@ -58,9 +55,8 @@
                             <EventTrigger RoutedEvent="MouseLeave">
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <!-- Return to reduced base size -->
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="0.7" Duration="0:0:0.12"/>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="0.7" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="BlurRadius" To="6" Duration="0:0:0.12"/>
                                     </Storyboard>
@@ -256,8 +252,15 @@
 
                 <!-- ANA İÇERİK: Büyük işlem kartları (action center) -->
                 <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top">
-                    <WrapPanel HorizontalAlignment="Center" Margin="0,10,0,20">
-                        <Button Style="{StaticResource CardButtonStyle}" Click="Ledger_Click" BorderBrush="#8B5CF6" Margin="16" MinWidth="320" MinHeight="220">
+                    <!-- Üç kartı tek bir Grid içinde hizala -->
+                    <Grid Margin="0,10,0,20" HorizontalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" Style="{StaticResource CardButtonStyle}" Click="Ledger_Click" BorderBrush="#8B5CF6" Margin="12" MinWidth="320" MinHeight="220">
                             <StackPanel HorizontalAlignment="Left" Margin="12">
                                 <TextBlock Text="📒" FontSize="48"/>
                                 <TextBlock Text="Cari İşlemler" FontSize="25" FontWeight="Bold" Margin="0,10,0,0"/>
@@ -266,25 +269,25 @@
                                 <TextBlock Text="Dekont/Belge Yükle." Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
                                 <TextBlock Text="Ödeme Hareketlerini Gör" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
                                 <TextBlock Text="Ödeme Hareketleri İndir" Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
-
                             </StackPanel>
                         </Button>
 
-                        <Button Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#14B8A6" Margin="16" MinWidth="320" MinHeight="220">
+                        <Button Grid.Column="1" Style="{StaticResource CardButtonStyle}" Click="PaymentList_Click" BorderBrush="#14B8A6" Margin="12" MinWidth="320" MinHeight="220">
                             <StackPanel HorizontalAlignment="Left" Margin="12">
                                 <TextBlock Text="📋" FontSize="48"/>
                                 <TextBlock Text="Ödeme Listesi İndir" FontSize="25" FontWeight="Bold" Margin="0,10,0,0"/>
                                 <TextBlock Text="Tur ve dönemlere göre ödeme listesi görüntüleme ve indirme." Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource CardButtonStyle}" Click="TourProfitability_Click" BorderBrush="#F59E0B" Margin="16" MinWidth="320" MinHeight="220">
+
+                        <Button Grid.Column="2" Style="{StaticResource CardButtonStyle}" Click="TourProfitability_Click" BorderBrush="#F59E0B" Margin="12" MinWidth="320" MinHeight="220">
                             <StackPanel HorizontalAlignment="Left" Margin="12">
                                 <TextBlock Text="📈 🧮 💰 📊" FontSize="34"/>
                                 <TextBlock Text="Tur Kârlılık Analizi" FontSize="25" FontWeight="Bold" Margin="0,10,0,0"/>
                                 <TextBlock Text="Tur gelirlerini ve tüm giderleri analiz ederek net kârlılığı görüntüleyin." Foreground="#94A3B8" Margin="0,6,0,0" TextWrapping="Wrap" Width="320"/>
                             </StackPanel>
                         </Button>
-                    </WrapPanel>
+                    </Grid>
                 </StackPanel>
 
                 <!-- Alt: sistem bilgisi çubuğu -->
