@@ -4013,7 +4013,9 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 // Use a separate mode key for PaymentsListCardMode to keep templates isolated from general mode
                 var dialogModeKey = this.PaymentsListCardMode ? _currentMode.ToString() + ".PaymentsList" : _currentMode.ToString();
                 var dialog = new ListDesignDialog(cols, dialogModeKey, ResultsDataGrid);
-                dialog.Owner = Application.Current?.MainWindow;
+                // Safely pick an owner window (avoid assigning Owner to the dialog itself)
+                Window owner = Window.GetWindow(this) ?? (Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current?.MainWindow);
+                if (owner != null && owner != dialog) dialog.Owner = owner;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
                 // If the dialog saved the template persistently, reload templates from store.

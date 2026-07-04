@@ -950,7 +950,9 @@ namespace TurizmOperasyonSistemi.Views
             {
                 // Open the dialog and let it either apply temporarily or save persistently.
                 var dialog = new ListDesignDialog(ResultsDataGrid.Columns, "Saglik", ResultsDataGrid);
-                dialog.Owner = Application.Current?.MainWindow;
+                // Safely pick an owner window (avoid assigning Owner to the dialog itself)
+                Window owner = Window.GetWindow(this) ?? (Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current?.MainWindow);
+                if (owner != null && owner != dialog) dialog.Owner = owner;
                 var res = dialog.ShowDialog();
                 if (res != true) return;
 
