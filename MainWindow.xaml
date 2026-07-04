@@ -122,14 +122,14 @@
 
                 <TextBlock Text="TURİZM"
                            Foreground="#38BDF8"
-                           FontSize="28"
+                           FontSize="15"
                            FontWeight="Bold"
                            Margin="20,30,20,10"
                            Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
 
                 <TextBlock Text="Operasyon Sistemi"
                            Foreground="White"
-                           FontSize="14"
+                           FontSize="10"
                            Margin="20,0,20,30"
                            Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
 

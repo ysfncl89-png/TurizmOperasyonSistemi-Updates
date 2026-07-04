@@ -14,7 +14,8 @@
             <Setter Property="Foreground" Value="#E2E8F0"/>
             <Setter Property="BorderBrush" Value="#334155"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="14"/>
+            <!-- Reduced padding/scale to make cards ~30% smaller -->
+            <Setter Property="Padding" Value="10"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -28,7 +29,8 @@
                                 SnapsToDevicePixels="True"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>
-                                <ScaleTransform x:Name="scaleTransform" ScaleX="1" ScaleY="1.04"/>
+                                <!-- Start smaller (≈70%) and animate slightly on hover -->
+                                <ScaleTransform x:Name="scaleTransform" ScaleX="0.7" ScaleY="0.7"/>
                             </Border.RenderTransform>
 
                             <Border.Effect>
@@ -44,8 +46,9 @@
                             <EventTrigger RoutedEvent="MouseEnter">
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1.05" Duration="0:0:0.12"/>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1.05" Duration="0:0:0.12"/>
+                                        <!-- Hover target scaled relative to base (0.7 * 1.05 ≈ 0.735) -->
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="0.735" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="0.735" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0.85" Duration="0:0:0.15"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="BlurRadius" To="30" Duration="0:0:0.15"/>
                                     </Storyboard>
@@ -55,8 +58,9 @@
                             <EventTrigger RoutedEvent="MouseLeave">
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.12"/>
-                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.12"/>
+                                        <!-- Return to reduced base size -->
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleX" To="0.7" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="scaleTransform" Storyboard.TargetProperty="ScaleY" To="0.7" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
                                         <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="BlurRadius" To="6" Duration="0:0:0.12"/>
                                     </Storyboard>

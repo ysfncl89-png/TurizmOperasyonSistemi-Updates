@@ -167,7 +167,7 @@
 
                 <!-- Bildirim ikonu: badge + sallanma animasyonu -->
                 <Grid Grid.Column="0" Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <Button x:Name="NotificationsButton" Width="40" Height="40" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="6" ToolTip="Bildirimler" Click="NotificationsButton_Click" RenderTransformOrigin="0.5,0.2">
+                    <Button x:Name="NotificationsButton" Width="35" Height="35" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Padding="6" ToolTip="Bildirimler" Click="NotificationsButton_Click" RenderTransformOrigin="0.5,0.2">
                         <Button.Resources>
                             <!-- Zil sallanma storyboard (button namescope içinde) -->
                             <Storyboard x:Key="NotificationsShakeStoryboard" RepeatBehavior="Forever" AutoReverse="True">
@@ -219,7 +219,7 @@
 
                 <!-- Dijital saat ve tarih (sağ sütun) -->
                 <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Border Background="#1E293B" CornerRadius="8" Padding="8" Width="160" HorizontalAlignment="Right">
+                    <Border Background="#1E293B" CornerRadius="8" Padding="8" Width="170" HorizontalAlignment="Right">
                         <StackPanel>
                             <TextBlock x:Name="DigitalTimeText" Text="00:00:00" FontSize="22" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Right">
                                 <TextBlock.Effect>
@@ -241,7 +241,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,19,0,88" Grid.Row="1">
             <StackPanel Margin="30">
                 <!-- Dashboard özet kartları: Vize / Bilet / Kargo / Odalama -->
-                <Grid Margin="0,6,0,18" Height="259">
+                <Grid Margin="0,6,0,18" Height="225">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
