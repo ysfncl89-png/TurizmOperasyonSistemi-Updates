@@ -23,6 +23,84 @@ namespace TurizmOperasyonSistemi
         public App()
         {
             InitializeComponent();
+            // Register global exception handlers to capture runtime errors and avoid silent exits
+            try
+            {
+                RegisterGlobalExceptionHandlers();
+            }
+            catch { }
+        }
+
+        private void RegisterGlobalExceptionHandlers()
+        {
+            // UI thread exceptions
+            this.DispatcherUnhandledException += (s, ev) =>
+            {
+                try
+                {
+                    LogUnhandledException(ev.Exception, "DispatcherUnhandledException");
+                }
+                catch { }
+                // mark handled so app does not crash immediately; user can decide to continue
+                ev.Handled = true;
+            };
+
+            // Non-UI thread exceptions
+            AppDomain.CurrentDomain.UnhandledException += (s, ev) =>
+            {
+                try
+                {
+                    var ex = ev.ExceptionObject as Exception;
+                    LogUnhandledException(ex, "AppDomain.UnhandledException");
+                }
+                catch { }
+            };
+
+            // Unobserved task exceptions
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, ev) =>
+            {
+                try
+                {
+                    LogUnhandledException(ev.Exception, "TaskScheduler.UnobservedTaskException");
+                }
+                catch { }
+                ev.SetObserved();
+            };
+        }
+
+        private void LogUnhandledException(Exception ex, string source)
+        {
+            try
+            {
+                string logDir;
+                try { logDir = Services.ConfigurationProvider.Instance.GetLogDirectory(); } catch { logDir = Path.GetTempPath(); }
+                Directory.CreateDirectory(logDir);
+                var file = Path.Combine(logDir, $"unhandled_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")}.log");
+                using (var sw = new StreamWriter(file, false))
+                {
+                    sw.WriteLine($"Source: {source}");
+                    sw.WriteLine($"TimeUtc: {DateTime.UtcNow:O}");
+                    if (ex != null)
+                    {
+                        sw.WriteLine(ex.ToString());
+                    }
+                    else
+                    {
+                        sw.WriteLine("Exception object was null or not an Exception");
+                    }
+                }
+
+                // Show a concise message to the user on UI thread
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        MessageBox.Show($"Beklenmeyen bir hata oluştu ({source}). Detaylar log dosyasına kaydedildi:\n{file}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    catch { }
+                });
+            }
+            catch { }
         }
 
         private UpdateInfo TryExtractUpdateInfo(object payload)

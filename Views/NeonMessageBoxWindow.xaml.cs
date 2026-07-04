@@ -36,8 +36,33 @@ namespace TurizmOperasyonSistemi.Views
             win.TitleText.Text = title;
             win.MessageText.Text = message;
             win.BtnSecondary.Visibility = showCancel ? Visibility.Visible : Visibility.Collapsed;
-            win.Owner = Application.Current?.MainWindow;
-            win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            // Safely set owner: only when there is a shown/loaded main window. Setting Owner to a
+            // Window that has not been shown throws InvalidOperationException on some systems.
+            try
+            {
+                var app = Application.Current;
+                Window owner = null;
+                if (app != null)
+                {
+                    // Prefer the active window if available
+                    owner = app.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? app.MainWindow;
+                }
+
+                if (owner != null && owner.IsLoaded && owner.IsVisible)
+                {
+                    win.Owner = owner;
+                    win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                }
+                else
+                {
+                    win.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                }
+            }
+            catch
+            {
+                // Fallback: center on screen if any error occurs while setting owner
+                win.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
             return win.ShowDialog();
         }
     }
