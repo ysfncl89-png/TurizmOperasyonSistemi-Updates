@@ -89,9 +89,9 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Sıra" Binding="{Binding Sequence}" Width="60"/>
                     <!-- daha sıkı hizalama: sabit genişlikler, çok fazla yakınlaştırma yok -->
-                    <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="160"/>
-                    <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="160"/>
-                    <DataGridTextColumn Header="TC / Pasaport" Binding="{Binding TcOrPassport}" Width="200">
+                    <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="150"/>
+                    <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="150"/>
+                    <DataGridTextColumn Header="TC / Pasaport" Binding="{Binding TcOrPassport}" Width="150">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Foreground" Value="#FFF59E0B"/>

@@ -15,7 +15,7 @@
             <Border Background="#1a2942"
                     CornerRadius="12"
                     Padding="15"
-                    Margin="0,0,0,25">
+                    Margin="0,0,0,25" Height="340">
                 <StackPanel>
                     <TextBlock Text="Sistem Kullanıcıları"
                                FontSize="13"
@@ -153,158 +153,163 @@
                     </DataGrid>
                 </StackPanel>
             </Border>
+            <!-- Birleştirilmiş: Yeni Kullanıcı Ekle ve Kullanıcı Girişi Durumu tek Grid içinde -->
+            <Grid Margin="0,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="2*" />
+                </Grid.ColumnDefinitions>
 
-            <!-- Create User Section -->
-            <Border Background="#1a2942"
-                    CornerRadius="12"
-                    Padding="20"
-                    Margin="0,0,0,25">
-                <StackPanel>
-                    <TextBlock Text="Yeni Kullanıcı Ekle"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Foreground="White"
-                               Margin="0,0,0,20"/>
+                <!-- Sol: Yeni Kullanıcı Ekle -->
+                <Border Grid.Column="0" Background="#1a2942"
+                        CornerRadius="12"
+                        Padding="20"
+                        Margin="0,0,71,0">
+                    <StackPanel>
+                        <TextBlock Text="Yeni Kullanıcı Ekle"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"
+                                   Margin="0,0,0,20"/>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="auto"/>
-                            <RowDefinition Height="auto"/>
-                        </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                            </Grid.RowDefinitions>
 
-                        <!-- Kullanıcı Adı -->
-                        <TextBlock Grid.Column="0" Grid.Row="0"
-                                  Text="Kullanıcı Adı:" 
-                                  Foreground="#9CA3AF" 
-                                  FontSize="12"
-                                  VerticalAlignment="Bottom"
-                                  Margin="0,0,10,5"/>
-                        <TextBox Grid.Column="1" Grid.Row="0"
-                                x:Name="NewUsernameTextBox" 
-                                Height="36" 
-                                Padding="12,8"
-                                Background="#1F2937"
-                                Foreground="White"
-                                BorderBrush="#374151"
-                                VerticalContentAlignment="Center"
-                                Margin="0,0,15,0"/>
-
-                        <!-- Şifre -->
-                        <TextBlock Grid.Column="2" Grid.Row="0"
-                                  Text="Şifre:" 
-                                  Foreground="#9CA3AF" 
-                                  FontSize="12"
-                                  VerticalAlignment="Bottom"
-                                  Margin="0,0,10,5"/>
-                        <PasswordBox Grid.Column="3" Grid.Row="0"
-                                    x:Name="NewPasswordBox" 
+                            <!-- Kullanıcı Adı -->
+                            <TextBlock Grid.Column="0" Grid.Row="0"
+                                      Text="Kullanıcı Adı:" 
+                                      Foreground="#9CA3AF" 
+                                      FontSize="12"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,0,10,5"/>
+                            <TextBox Grid.Column="1" Grid.Row="0"
+                                    x:Name="NewUsernameTextBox" 
                                     Height="36" 
                                     Padding="12,8"
                                     Background="#1F2937"
                                     Foreground="White"
+                                    BorderBrush="#374151"
                                     VerticalContentAlignment="Center"
                                     Margin="0,0,15,0"/>
 
-                        <!-- Rol -->
-                        <TextBlock Grid.Column="4" Grid.Row="0"
-                                  Text="Rol:" 
-                                  Foreground="#9CA3AF" 
-                                  FontSize="12"
-                                  VerticalAlignment="Bottom"
-                                  Margin="0,0,10,5"/>
-                        <ComboBox Grid.Column="5" Grid.Row="0"
-                                 x:Name="RoleComboBox" 
-                                 Height="36" 
-                                 Background="#1F2937"
-                                 Foreground="White"
-                                 BorderBrush="#374151"
-                                 VerticalContentAlignment="Center"
-                                 Margin="0,0,15,0">
-                            <ComboBoxItem Content="admin"/>
-                            <ComboBoxItem Content="moderatör"/>
-                            <ComboBoxItem Content="muhasebe"/>
-                            <ComboBoxItem Content="kargo"/>
-                            <ComboBoxItem Content="kullanıcı"/>
-                        </ComboBox>
+                            <!-- Şifre -->
+                            <TextBlock Grid.Column="2" Grid.Row="0"
+                                      Text="Şifre:" 
+                                      Foreground="#9CA3AF" 
+                                      FontSize="12"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,0,10,5"/>
+                            <PasswordBox Grid.Column="3" Grid.Row="0"
+                                        x:Name="NewPasswordBox" 
+                                        Height="36" 
+                                        Padding="12,8"
+                                        Background="#1F2937"
+                                        Foreground="White"
+                                        VerticalContentAlignment="Center"
+                                        Margin="0,0,15,0"/>
 
-                        <!-- Oluştur Button -->
-                        <Button Grid.Column="6" Grid.Row="0"
-                               Content="Ekle" 
-                               Width="100" 
-                               Height="36"
-                               Margin="15,0,0,0"
-                               Background="#06B6D4" 
-                               Foreground="White"
-                               Click="CreateUserButton_Click"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               Cursor="Hand"
-                               VerticalAlignment="Bottom"
-                               BorderThickness="0"
-                               Style="{StaticResource RoundButtonStyle}"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
+                            <!-- Rol -->
+                            <TextBlock Grid.Column="4" Grid.Row="0"
+                                      Text="Rol:" 
+                                      Foreground="#9CA3AF" 
+                                      FontSize="12"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,0,10,5"/>
+                            <ComboBox Grid.Column="5" Grid.Row="0"
+                                     x:Name="RoleComboBox" 
+                                     Height="36" 
+                                     Background="#1F2937"
+                                     Foreground="White"
+                                     BorderBrush="#374151"
+                                     VerticalContentAlignment="Center"
+                                     Margin="0,0,15,0">
+                                <ComboBoxItem Content="admin"/>
+                                <ComboBoxItem Content="moderatör"/>
+                                <ComboBoxItem Content="muhasebe"/>
+                                <ComboBoxItem Content="kargo"/>
+                                <ComboBoxItem Content="kullanıcı"/>
+                            </ComboBox>
 
-            <!-- User Login Enable Section -->
-            <Border Background="#1a2942"
-                    CornerRadius="12"
-                    Padding="20"
-                    Margin="0,0,0,0">
-                <StackPanel>
-                    <TextBlock Text="Kullanıcı Girişi Durumu"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Foreground="White"
-                               Margin="0,0,0,15"/>
-
-                    <TextBlock Text="Sistem kullanıcılarının girişi yapmasını etkinleştir veya devre dışı bırak.Eğer etkinse rol verdiğiniz kişiler şifre ile giriş yapacaktır.  Devre dışı bırakırsanız herkes şifresiz giriş yapabilir "
-                               FontSize="13"
-                               Foreground="#D1D5DB"
-                               Margin="0,0,0,15"/>
-
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                        <Button x:Name="EnableUserLoginButton"
-                               Content="Kullanıcı Girişi"
-                               Width="250" 
-                               Height="45"
-                               Background="#1F2937"
-                               Foreground="White"
-                               Click="EnableUserLoginButton_Click"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               Cursor="Hand"
-                               BorderThickness="1"
-                               BorderBrush="#374151"
-                               Style="{StaticResource RoundButtonStyle}"/>
-
-                        <Button x:Name="OpenMigrationDashboardButton"
-                                Content="Sistem Yönetimi / Kurtarma"
-                                Width="220"
-                                Height="45"
-                                Margin="12,0,0,0"
-                                Background="#0F2847"
-                                Foreground="White"
-                                Click="OpenMigrationDashboardButton_Click"
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Cursor="Hand"
-                                BorderThickness="1"
-                                BorderBrush="#374151"
-                                Style="{StaticResource RoundButtonStyle}"/>
+                            <!-- Oluştur Button -->
+                            <Button Grid.Column="3" Grid.Row="1"
+                                   Content="Ekle" 
+                                   Width="120" 
+                                   Height="36"
+                                   Margin="10,12,0,0"
+                                   Background="#06B6D4" 
+                                   Foreground="White"
+                                   Click="CreateUserButton_Click"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Cursor="Hand"
+                                   HorizontalAlignment="Left"
+                                   BorderThickness="0"
+                                   Style="{StaticResource RoundButtonStyle}"/>
+                        </Grid>
                     </StackPanel>
-                </StackPanel>
-            </Border>
+                </Border>
+
+                <!-- Sağ: Kullanıcı Girişi Durumu -->
+                <Border Background="#1a2942"
+                        CornerRadius="12"
+                        Padding="20"
+                        Height="177" Grid.ColumnSpan="2" Margin="658,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Kullanıcı Girişi Durumu"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"
+                                   Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Sistem kullanıcılarının girişi yapmasını etkinleştir veya devre dışı bırak.Eğer etkinse rol verdiğiniz kişiler şifre ile giriş yapacaktır.  Devre dışı bırakırsanız herkes şifresiz giriş yapabilir "
+                                   FontSize="13"
+                                   Foreground="#D1D5DB"
+                                   Margin="0,0,0,15"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button x:Name="EnableUserLoginButton"
+                                   Content="Kullanıcı Girişi"
+                                   Width="250" 
+                                   Height="45"
+                                   Background="#1F2937"
+                                   Foreground="White"
+                                   Click="EnableUserLoginButton_Click"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Cursor="Hand"
+                                   BorderThickness="1"
+                                   BorderBrush="#374151"
+                                   Style="{StaticResource RoundButtonStyle}"/>
+
+                            <Button x:Name="OpenMigrationDashboardButton"
+                                    Content="Sistem Yönetimi / Kurtarma"
+                                    Width="220"
+                                    Height="45"
+                                    Margin="12,0,0,0"
+                                    Background="#0F2847"
+                                    Foreground="White"
+                                    Click="OpenMigrationDashboardButton_Click"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Cursor="Hand"
+                                    BorderThickness="1"
+                                    BorderBrush="#374151"
+                                    Style="{StaticResource RoundButtonStyle}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </StackPanel>
     </Grid>
 </UserControl>

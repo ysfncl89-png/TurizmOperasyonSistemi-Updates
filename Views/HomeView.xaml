@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       Background="#1E293B">
 
-    <Grid>
+    <Grid Height="730">
         <Grid.Resources>
             <!-- Dashboard card style: subtle dark panel with soft border and inner padding -->
             <Style x:Key="DashboardCardStyle" TargetType="Border">
@@ -108,7 +108,7 @@
                 </StackPanel>
 
                 <!-- Sağ: Toplam tahsilat / kalan -->
-                <Border Grid.Column="2" x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="12" Margin="18,0,0,0" VerticalAlignment="Top" Width="550" Height="134">
+                <Border Grid.Column="2" x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="12" Margin="18,0,0,0" VerticalAlignment="Top" Width="500" Height="134">
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <Grid Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -613,14 +613,13 @@
         <!-- Rezerv alan: Analog ve tarih hizasına denk gelecek şekilde sağa yaslı, aşağıya kadar uzanan görünmez bölge -->
 
         <!-- ALT FOOTER -->
-        <TextBlock Grid.Row="2"
+        <TextBlock Grid.Row="1"
                    Text="© 2026 TOS Lite ( Turizm Operasyon Sistemi ) — Tüm hakları saklıdır."
                    FontSize="12"
                    Foreground="#94A3B8"
                    Opacity="0.9"
                    HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Margin="0,12,0,12" />
+                   VerticalAlignment="Top" Margin="0,495,0,0" />
 
     </Grid>
 

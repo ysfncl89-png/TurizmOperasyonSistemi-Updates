@@ -673,7 +673,7 @@
 
                         <DataGridTextColumn Header="Adres"
                                             Binding="{Binding Address}"
-                                            Width="486"/>
+                                            Width="200"/>
 
                         <DataGridTemplateColumn Header="Pasaport tipi" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
@@ -834,7 +834,7 @@
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="İşlem" Width="120">
+                        <DataGridTemplateColumn Header="İşlem" Width="150">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
