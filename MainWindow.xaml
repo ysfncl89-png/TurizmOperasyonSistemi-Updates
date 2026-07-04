@@ -120,9 +120,9 @@
 
             <StackPanel>
 
-                <TextBlock Text="TOS Lite"
+                <TextBlock Text="TOS Lite Turizm Operasyon Sistemi"
                            Foreground="#38BDF8"
-                           FontSize="20"
+                           FontSize="13"
                            FontWeight="Bold"
                            Margin="20,30,20,10"
                            Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
