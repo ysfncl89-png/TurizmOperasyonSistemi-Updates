@@ -51,220 +51,49 @@ namespace TurizmOperasyonSistemi.Services
             }
         }
 
-        private void PushBackupToOneDrive(string zipPath)
-        {
-            try
-            {
-                var oneDriveBase = _config.GetOneDriveBaseDir();
-                if (string.IsNullOrEmpty(oneDriveBase) || !File.Exists(zipPath)) return;
+        // Push to OneDrive removed. BackupManager now operates local-only.
 
-                string backupsDir = Path.Combine(oneDriveBase, "Backups");
-                var now = DateTime.Now;
-                string year = now.ToString("yyyy");
-                string month = now.ToString("MM");
-                string targetDir = Path.Combine(backupsDir, year, month);
-                Directory.CreateDirectory(targetDir);
+        // OneDrive-specific helpers removed; BackupManager is local-only now.
 
-                string targetFileName = Path.GetFileName(zipPath);
-                string targetPath = Path.Combine(targetDir, targetFileName);
-
-                // If target exists, add timestamp
-                if (File.Exists(targetPath))
-                {
-                    string stamped = Path.GetFileNameWithoutExtension(targetFileName) + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(targetFileName);
-                    targetPath = Path.Combine(targetDir, stamped);
-                }
-
-                File.Copy(zipPath, targetPath);
-                System.Diagnostics.Debug.WriteLine($"Backup pushed to OneDrive: {targetPath}");
-
-                // After pushing to Backups, also create per-client latest zip FROM LIVE DB and update manifests
-                try
-                {
-                    var clientId = _config.GetClientId();
-                    var clientDir = Path.Combine(oneDriveBase, "Database", clientId);
-                    Directory.CreateDirectory(clientDir);
-
-                    // create a temp zip directly from the live DB so per-client latest contains turizm.db
-                    string tempClientZip = null;
-                    try
-                    {
-                        tempClientZip = Path.Combine(Path.GetTempPath(), $"turizm_client_{Guid.NewGuid():N}.zip");
-                        using (var z = ZipFile.Open(tempClientZip, ZipArchiveMode.Create))
-                        {
-                            z.CreateEntryFromFile(_dbPath, "turizm.db", CompressionLevel.Optimal);
-                        }
-                        // try to set entry timestamp
-                        try
-                        {
-                            using (var z = ZipFile.Open(tempClientZip, ZipArchiveMode.Update))
-                            {
-                                var e = z.Entries.FirstOrDefault();
-                                if (e != null) e.LastWriteTime = File.GetLastWriteTimeUtc(_dbPath);
-                            }
-                        }
-                        catch { }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Create client temp zip failed: {ex.Message}");
-                    }
-
-                    if (!string.IsNullOrEmpty(tempClientZip) && File.Exists(tempClientZip))
-                    {
-                        string clientLatest = Path.Combine(clientDir, "turizm_latest.zip");
-                        try { File.Copy(tempClientZip, clientLatest, true); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Copy client latest failed: {ex.Message}"); }
-
-                        // validate inner DB exists and checksum is computable; if not, attempt alternative using the backup zip
-                        string innerChecksum = ComputeChecksumOfZipInnerDb(clientLatest);
-                        if (string.IsNullOrEmpty(innerChecksum))
-                        {
-                            System.Diagnostics.Debug.WriteLine("Client latest zip inner DB checksum missing - attempting to recover from backup zip.");
-                            try
-                            {
-                                // attempt to extract inner DB from the backup targetPath in Backups and repackage
-                                using (var z = ZipFile.OpenRead(targetPath))
-                                {
-                                    var entry = z.Entries.FirstOrDefault(e => e.Name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".db", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".sqlite", StringComparison.OrdinalIgnoreCase));
-                                    if (entry != null)
-                                    {
-                                        var tmpExtract = Path.Combine(Path.GetTempPath(), $"turizm_ex_{Guid.NewGuid():N}.db");
-                                        entry.ExtractToFile(tmpExtract, true);
-                                        // create new zip from extracted DB
-                                        var rebuilt = Path.Combine(Path.GetTempPath(), $"turizm_client_rebuilt_{Guid.NewGuid():N}.zip");
-                                        using (var z2 = ZipFile.Open(rebuilt, ZipArchiveMode.Create))
-                                        {
-                                            z2.CreateEntryFromFile(tmpExtract, "turizm.db", CompressionLevel.Optimal);
-                                        }
-                                        try { File.Copy(rebuilt, clientLatest, true); } catch { }
-                                        try { File.Delete(tmpExtract); } catch { }
-                                        try { File.Delete(rebuilt); } catch { }
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"Fallback rebuild of client latest failed: {ex.Message}");
-                            }
-
-                            // recompute
-                            innerChecksum = ComputeChecksumOfZipInnerDb(clientLatest);
-                        }
-
-                        if (string.IsNullOrEmpty(innerChecksum))
-                        {
-                            System.Diagnostics.Debug.WriteLine("Per-client latest zip is invalid after attempts; deleting and skipping manifest update.");
-                            try { if (File.Exists(clientLatest)) File.Delete(clientLatest); } catch { }
-                        }
-                        else
-                        {
-                            // compute zip checksum
-                            string zipChecksum = null;
-                            try { using (var fs = File.OpenRead(clientLatest)) using (var sha = SHA256.Create()) { zipChecksum = BitConverter.ToString(sha.ComputeHash(fs)).Replace("-", "").ToLowerInvariant(); } } catch { zipChecksum = null; }
-                            DateTime? dbFileTs = null;
-                            try { dbFileTs = File.GetLastWriteTimeUtc(_dbPath); } catch { dbFileTs = null; }
-
-                            // attempt to get local manifest DbVersion
-                            long dbVersion = 0;
-                            try
-                            {
-                                var msvc = new ManifestService();
-                                var local = msvc.LoadManifest();
-                                if (local != null) dbVersion = local.DbVersion;
-                            }
-                            catch { }
-
-                            var manifest = new DbManifest
-                            {
-                                DbVersion = dbVersion,
-                                AppVersion = string.Empty,
-                                CreatedAt = DateTime.UtcNow,
-                                LastModified = DateTime.UtcNow,
-                                MachineId = Environment.MachineName,
-                                User = Environment.UserName,
-                                Checksum = innerChecksum,
-                                DbSize = new FileInfo(clientLatest).Length,
-                                BackupVersion = 0,
-                                BackupCreatedAt = DateTime.UtcNow,
-                                DbFileTimestamp = dbFileTs,
-                                ZipChecksum = zipChecksum
-                            };
-
-                            try
-                            {
-                                var perClientManifestPath = Path.Combine(clientDir, "manifest.json");
-                                AtomicWriteJson(perClientManifestPath, manifest, 3, 200);
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"Per-client manifest write failed: {ex.Message}");
-                            }
-
-                            try
-                            {
-                                var aggPath = Path.Combine(oneDriveBase, "manifest.json");
-                                Dictionary<string, DbManifest> agg = new Dictionary<string, DbManifest>();
-                                if (File.Exists(aggPath))
-                                {
-                                    try { var existing = File.ReadAllText(aggPath); agg = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, DbManifest>>(existing) ?? new Dictionary<string, DbManifest>(); } catch { agg = new Dictionary<string, DbManifest>(); }
-                                }
-                                agg[clientId] = manifest;
-                                AtomicWriteJson(aggPath, agg, 5, 300);
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"Aggregate manifest update failed: {ex.Message}");
-                            }
-                        }
-
-                        try { File.Delete(tempClientZip); } catch { }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Post-push per-client/manifest actions failed: {ex.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"PushBackupToOneDrive hata: {ex.Message}");
-            }
-        }
-
-        // Helper to compute checksum of inner DB within zip
-        private string ComputeChecksumOfZipInnerDb(string zipPath)
-        {
-            try
-            {
-                using (var z = ZipFile.OpenRead(zipPath))
-                {
-                    var entry = z.Entries.FirstOrDefault(e => e.Name.Equals("turizm.db", StringComparison.OrdinalIgnoreCase) || e.Name.Equals("turizm.sqlite", StringComparison.OrdinalIgnoreCase) || e.Name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase));
-                    if (entry == null) return null;
-                    using (var s = entry.Open())
-                    using (var ms = new MemoryStream())
-                    using (var sha = SHA256.Create())
-                    {
-                        s.CopyTo(ms);
-                        ms.Position = 0;
-                        var hash = sha.ComputeHash(ms);
-                        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                    }
-                }
-            }
-            catch { return null; }
-        }
-
-        // Use SyncService's atomic writer by composing a small helper
+        // Internal atomic JSON write implementation (removed dependency on SyncService/OneDrive)
         private void AtomicWriteJson(string path, object obj, int retries = 3, int delayMs = 200)
         {
             try
             {
-                var sync = new SyncService();
-                sync.AtomicWriteJsonPublic(path, obj, retries, delayMs);
+                var dir = Path.GetDirectoryName(path) ?? string.Empty;
+                Directory.CreateDirectory(dir);
+                string tempPath = path + ".tmp." + Guid.NewGuid().ToString("N");
+                string json = System.Text.Json.JsonSerializer.Serialize(obj, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(tempPath, json);
+
+                int attempt = 0;
+                while (true)
+                {
+                    try
+                    {
+                        if (File.Exists(path))
+                        {
+                            string backup = path + ".bak";
+                            File.Replace(tempPath, path, backup);
+                            try { File.Delete(backup); } catch { }
+                        }
+                        else
+                        {
+                            File.Move(tempPath, path);
+                        }
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                        attempt++;
+                        if (attempt >= retries) throw;
+                        Thread.Sleep(delayMs * attempt);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"AtomicWriteJson wrapper failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"AtomicWriteJson failed: {ex.Message}");
             }
         }
 
@@ -520,23 +349,7 @@ namespace TurizmOperasyonSistemi.Services
                     }
                 }
 
-                // Eğer OneDrive konfigüre edilmişse, backup zip'i OneDrive/Backups/YYYY/MM/ altına kopyala
-                try
-                {
-                    var oneDriveBase = _config.GetOneDriveBaseDir();
-                    if (!string.IsNullOrEmpty(oneDriveBase) && result.IsSuccess && File.Exists(result.BackupPath))
-                    {
-                        string zipPath = CreateZipForBackup(result.BackupPath);
-                        if (!string.IsNullOrEmpty(zipPath))
-                        {
-                            PushBackupToOneDrive(zipPath);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"OneDrive push sırasında hata: {ex.Message}");
-                }
+                // OneDrive push removed: backups are kept local only
 
                 // helper: copy with Flush to avoid atomic move issues on some systems/processes
                 void CopyFileWithFlush(string source, string destination)

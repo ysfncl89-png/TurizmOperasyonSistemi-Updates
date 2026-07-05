@@ -17,7 +17,7 @@ namespace TurizmOperasyonSistemi
     public partial class App : Application
     {
         private AppDbContext _context;
-        private TurizmOperasyonSistemi.Services.SyncService _syncService;
+        // SyncService removed: OneDrive <-> LocalAppData automatic sync disabled
         private TurizmOperasyonSistemi.Services.BackgroundServiceManager _backgroundServiceManager;
 
         public App()
@@ -160,8 +160,8 @@ namespace TurizmOperasyonSistemi
                 var config = Services.ConfigurationProvider.Instance;
                 config.LogConfiguration();
 
-                // Note: initial sync moved to background services to avoid blocking startup (handled by BackgroundServiceManager)
-                _syncService = new SyncService();
+                // Note: OneDrive <-> LocalAppData automatic sync has been disabled.
+                // Initial sync / cloud sync responsibilities are removed; local backups remain.
 
                 string dbPath = config.GetDatabasePath();
 
@@ -245,9 +245,7 @@ namespace TurizmOperasyonSistemi
                 {
                     _backgroundServiceManager = new BackgroundServiceManager();
 
-                    // Register Sync background service
-                    var syncBg = new SyncBackgroundService(_syncService);
-                    _backgroundServiceManager.RegisterService(syncBg);
+                    // Sync background service removed (OneDrive sync disabled)
 
                     // Register Update background service
                     var updateChecker = new UpdateCheckerService();
@@ -428,22 +426,21 @@ namespace TurizmOperasyonSistemi
 
         protected override async void OnExit(ExitEventArgs e)
         {
-            try
-            {
-                // Ensure we attempt a safe shutdown sync: backup + manifest push
                 try
                 {
-                    if (_syncService != null)
+                    // Ensure we attempt a safe local-only shutdown backup
+                    try
                     {
-                        await _syncService.PerformShutdownSyncAsync().ConfigureAwait(false);
+                        var backupManager = new BackupManager(Services.ConfigurationProvider.Instance.GetDatabasePath());
+                        // CreateBackup is synchronous and robust; run without blocking UI unnecessarily
+                        try { backupManager.CreateBackup(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Shutdown local backup failed: {ex.Message}"); }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Shutdown local backup failed: {ex.Message}");
                     }
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Shutdown sync failed: {ex.Message}");
-                }
-            }
-            catch { }
+                catch { }
 
             base.OnExit(e);
         }
