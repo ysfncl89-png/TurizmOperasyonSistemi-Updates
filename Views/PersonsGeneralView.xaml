@@ -603,7 +603,7 @@
                     Background="#152234"
                     CornerRadius="12"
                     Padding="12"
-                    Margin="0"
+                    Margin="0" 
                     Visibility="Collapsed">
 
                 <DataGrid x:Name="ResultsDataGrid"
