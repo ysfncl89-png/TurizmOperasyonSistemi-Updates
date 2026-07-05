@@ -434,90 +434,31 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                             Printed = false
                         };
                         Services.CargoPrintQueue.Instance.Add(item);
-                        // Mark the row as sent so UI updates (change text, disable button)
+                        // Mark the row as sent and schedule UI updates on the dispatcher to avoid
+                        // modifying the visual tree during DataGrid layout/iteration which can
+                        // sometimes cause invalid-operation exceptions to bubble to the dispatcher.
                         try
                         {
                             row.IsSentToCargo = true;
-                            ResultsDataGrid.Items.Refresh();
-                            // Update all relevant buttons in the same DataGridRow to reflect sent state
-                            try
-                            {
-                                var container = ResultsDataGrid.ItemContainerGenerator.ContainerFromItem(row) as System.Windows.Controls.DataGridRow;
-                                if (container != null)
-                                {
-                                    foreach (var btn in FindVisualChildren<System.Windows.Controls.Button>(container))
-                                    {
-                                        try
-                                        {
-                                            // Only update buttons that are the send-to-cargo buttons (by matching their original content)
-                                            var text = btn.Content as string;
-                                            if (string.Equals(text, "Kargo havuzuna gönder", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "Kargo Havuzuna Gönderildi", StringComparison.OrdinalIgnoreCase))
-                                            {
-                                                var green = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x05, 0x96, 0x69));
-                                                btn.Background = green;
-                                                btn.Foreground = System.Windows.Media.Brushes.White;
-                                                // update content or any nested TextBlock
-                                                try
-                                                {
-                                                    // if button contains a TextBlock child, update its text
-                                                    var tbChild = FindVisualChildren<System.Windows.Controls.TextBlock>(btn).FirstOrDefault();
-                                                    if (tbChild != null)
-                                                    {
-                                                        tbChild.Text = "Kargo Havuzuna Gönderildi";
-                                                        tbChild.Foreground = System.Windows.Media.Brushes.White;
-                                                    }
-                                                    else
-                                                    {
-                                                        btn.Content = new System.Windows.Controls.TextBlock { Text = "Kargo Havuzuna Gönderildi", Foreground = System.Windows.Media.Brushes.White };
-                                                    }
-                                                }
-                                                catch
-                                                {
-                                                    try { btn.Content = "Kargo Havuzuna Gönderildi"; } catch { }
-                                                }
-                                                btn.IsEnabled = false;
-                                                btn.IsHitTestVisible = false;
-                                                btn.Opacity = 1.0;
-                                                try { btn.BorderBrush = green; } catch { }
-                                            }
-                                        }
-                                        catch { }
-                                    }
-                                }
-                                else
-                                {
-                                    // Fallback: update the clicked element if it was a button
-                                    if (fe is System.Windows.Controls.Button clickedBtn)
-                                    {
-                                        var green = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x05, 0x96, 0x69));
-                                        clickedBtn.Background = green;
-                                        clickedBtn.Foreground = System.Windows.Media.Brushes.White;
-                                        try
-                                        {
-                                            var tbChild = FindVisualChildren<System.Windows.Controls.TextBlock>(clickedBtn).FirstOrDefault();
-                                            if (tbChild != null)
-                                            {
-                                                tbChild.Text = "Kargo Havuzuna Gönderildi";
-                                                tbChild.Foreground = System.Windows.Media.Brushes.White;
-                                            }
-                                            else
-                                            {
-                                                clickedBtn.Content = "Kargo Havuzuna Gönderildi";
-                                            }
-                                        }
-                                        catch { try { clickedBtn.Content = "Kargo Havuzuna Gönderildi"; } catch { } }
-                                        // Disable interaction but keep visual appearance
-                                        clickedBtn.IsEnabled = false;
-                                        clickedBtn.IsHitTestVisible = false;
-                                        clickedBtn.Opacity = 1.0;
-                                        try { clickedBtn.BorderBrush = green; } catch { }
-                                    }
-                                }
-                            }
-                            catch { }
                         }
                         catch { }
-                        ShowSaveToast("Kayıt baskı havuzuna eklendi.");
+
+                        // Rely on data-binding in the DataGrid for visual updates instead of
+                        // modifying visual-tree elements directly. This avoids reparenting
+                        // or layout conflicts that may throw dispatcher exceptions.
+                        try
+                        {
+                            Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                try { ResultsDataGrid.Items.Refresh(); } catch { }
+                                try { ShowSaveToast("Kayıt baskı havuzuna eklendi."); } catch { }
+                            }));
+                        }
+                        catch
+                        {
+                            try { ResultsDataGrid.Items.Refresh(); } catch { }
+                            try { ShowSaveToast("Kayıt baskı havuzuna eklendi."); } catch { }
+                        }
                         // queue count UI removed from filter panel; Results area (if present) will refresh when needed
                         try { UpdatePrintPreviewButtonVisibility(); } catch { }
                     }
@@ -825,7 +766,16 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 else
                 {
                     // ensure normal look (use resource if available)
-                    try { border.Background = (Brush)FindResource("ResultsBorder") ?? origBg; } catch { border.Background = origBg; }
+                    try
+                    {
+                        // TryFindResource returns null instead of throwing when key not found
+                        var res = TryFindResource("ResultsBorder") as Brush;
+                        border.Background = res ?? origBg;
+                    }
+                    catch
+                    {
+                        border.Background = origBg;
+                    }
                 }
 
                 text.Text = message;
