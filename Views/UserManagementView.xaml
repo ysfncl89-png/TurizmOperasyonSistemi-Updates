@@ -15,7 +15,7 @@
             <Border Background="#1a2942"
                     CornerRadius="12"
                     Padding="15"
-                    Margin="0,0,0,25" Height="340">
+                    Margin="0,0,0,25" Height="425">
                 <StackPanel>
                     <TextBlock Text="Sistem Kullanıcıları"
                                FontSize="13"
