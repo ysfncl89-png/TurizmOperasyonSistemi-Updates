@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -11,6 +15,7 @@ namespace TurizmOperasyonSistemi
         public MainWindow()
         {
             InitializeComponent(); 
+            this.Closing += MainWindow_Closing;
 
             // Kullanıcı yönetimi ve modül butonlarını kullanıcının izinlerine göre göster
             // Show buttons if user has specific permission OR is admin (backward compatible)
@@ -61,6 +66,163 @@ namespace TurizmOperasyonSistemi
             MainFrame.Navigate(new HomeView());
             // Varsayılan olarak Anasayfa seçili görünmeli
             HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C1A15"));
+        }
+
+        private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
+            {
+                // Cancel close; we'll shutdown after sync completes
+                e.Cancel = true;
+
+                var config = Services.ConfigurationProvider.Instance;
+                var dbPath = config.GetDatabasePath();
+                var localBase = config.GetDefaultBaseDir();
+                var oneDriveBase = config.GetOneDriveBaseDir();
+
+                // Show modal progress window
+                Window progressWnd = new Window
+                {
+                    Title = "Senkronizasyon",
+                    Content = new TextBlock { Text = "SQLite bağlantısının kesilmesini ve dosyalarınızın bulut ortamına yüklenmesini bekleyin...", Margin = new Thickness(20), TextWrapping = TextWrapping.Wrap, Width = 420 },
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    ResizeMode = ResizeMode.NoResize,
+                    Owner = this,
+                    Topmost = true
+                };
+
+                // Start background sync task and keep dialog visible until user acknowledges
+                bool finished = false;
+                Exception bgEx = null;
+                var bgTask = Task.Run(() =>
+                {
+                    try
+                    {
+                        // Create consistent snapshot
+                        var bm = new BackupManager(dbPath);
+                        var res = bm.CreateBackup();
+                        string sourceForHash = res != null && res.IsSuccess && !string.IsNullOrEmpty(res.BackupPath) ? res.BackupPath : dbPath;
+
+                        // Compute current hash
+                        string currentHash = null;
+                        try
+                        {
+                            if (File.Exists(sourceForHash))
+                            {
+                                using var fs = File.OpenRead(sourceForHash);
+                                using var sha = System.Security.Cryptography.SHA256.Create();
+                                var h = sha.ComputeHash(fs);
+                                currentHash = BitConverter.ToString(h).Replace("-", "").ToLowerInvariant();
+                            }
+                        }
+                        catch { }
+
+                        // Read local manifest
+                        var localManifestPath = Path.Combine(localBase, "Manifest.json");
+                        long localVersion = 0; string localHash = null;
+                        if (File.Exists(localManifestPath))
+                        {
+                            try
+                            {
+                                var txt = File.ReadAllText(localManifestPath);
+                                using var doc = JsonDocument.Parse(txt);
+                                var root = doc.RootElement;
+                                if (root.TryGetProperty("Version", out var v) && v.TryGetInt64(out var lv)) localVersion = lv;
+                                if (root.TryGetProperty("Hash", out var h)) localHash = h.GetString();
+                            }
+                            catch { }
+                        }
+
+                        // If changed, update manifest and upload
+                        bool changed = !string.Equals(currentHash ?? string.Empty, localHash ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+                        if (changed)
+                        {
+                            var newVersion = localVersion + 1;
+                            var manifestObj = new { MachineId = Environment.MachineName, Version = newVersion, LastModified = DateTime.UtcNow.ToString("o"), Hash = currentHash };
+                            try
+                            {
+                                Directory.CreateDirectory(localBase);
+                                var json = JsonSerializer.Serialize(manifestObj, new JsonSerializerOptions { WriteIndented = true });
+                                File.WriteAllText(localManifestPath, json);
+                            }
+                            catch { }
+
+                            if (!string.IsNullOrEmpty(oneDriveBase))
+                            {
+                                try
+                                {
+                                    Directory.CreateDirectory(oneDriveBase);
+                                    var remoteDbPath = Path.Combine(oneDriveBase, Path.GetFileName(dbPath));
+                                    var remoteManifestPath = Path.Combine(oneDriveBase, Path.GetFileName(localManifestPath));
+
+                                    // copy DB snapshot or live DB
+                                    var sourceDb = sourceForHash;
+                                    var tempDb = Path.Combine(oneDriveBase, Path.GetFileName(dbPath) + ".tmp." + Guid.NewGuid().ToString("N"));
+                                    File.Copy(sourceDb, tempDb, true);
+                                    if (File.Exists(remoteDbPath))
+                                    {
+                                        var backupOld = remoteDbPath + ".bak";
+                                        File.Replace(tempDb, remoteDbPath, backupOld);
+                                        try { File.Delete(backupOld); } catch { }
+                                    }
+                                    else File.Move(tempDb, remoteDbPath);
+
+                                    // copy manifest
+                                    var tempMan = Path.Combine(oneDriveBase, Path.GetFileName(localManifestPath) + ".tmp." + Guid.NewGuid().ToString("N"));
+                                    File.Copy(localManifestPath, tempMan, true);
+                                    if (File.Exists(remoteManifestPath))
+                                    {
+                                        var backupOld = remoteManifestPath + ".bak";
+                                        File.Replace(tempMan, remoteManifestPath, backupOld);
+                                        try { File.Delete(backupOld); } catch { }
+                                    }
+                                    else File.Move(tempMan, remoteManifestPath);
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"MainWindow_Closing: OneDrive copy failed: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        bgEx = ex;
+                        System.Diagnostics.Debug.WriteLine($"MainWindow_Closing sync error: {ex.Message}");
+                    }
+                    finally
+                    {
+                        finished = true;
+                        // update UI to show completion message and OK button
+                        Application.Current?.Dispatcher.Invoke(() =>
+                        {
+                            try
+                            {
+                                var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(12) };
+                                var msg = bgEx == null ? "Senkronizasyon tamamlandı. Dosyalar OneDrive klasörüne kopyalandı (varsa). Devam etmek için Tamam'a basın." : $"Senkronizasyon sırasında hata oluştu: {bgEx.Message}. Devam için Tamam'a basın.";
+                                panel.Children.Add(new System.Windows.Controls.TextBlock { Text = msg, TextWrapping = TextWrapping.Wrap, Width = 420, Margin = new Thickness(0, 0, 0, 12) });
+                                var ok = new System.Windows.Controls.Button { Content = "Tamam", Width = 100, HorizontalAlignment = HorizontalAlignment.Center };
+                                ok.Click += (s2, e2) => { try { progressWnd.Close(); } catch { } };
+                                panel.Children.Add(ok);
+                                progressWnd.Content = panel;
+                            }
+                            catch { }
+                        });
+                    }
+                });
+
+                // Show dialog modally; it will be closed by OK button after bgTask finishes and updates content
+                try { progressWnd.ShowDialog(); } catch { try { progressWnd.Close(); } catch { } }
+
+                // unsubscribe and close application
+                this.Closing -= MainWindow_Closing;
+                Application.Current?.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"MainWindow_Closing unexpected: {ex.Message}");
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
