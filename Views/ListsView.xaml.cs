@@ -399,21 +399,25 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                var win = new TurProgramWindow();
-                // Prefer the actual host window that contains this Page (handles Frame hosting),
-                // fall back to Application.Current.MainWindow.
-                var main = Window.GetWindow(this) ?? Application.Current?.MainWindow;
-                // Only set Owner if main window is available and already shown; setting Owner to an
-                // unshown window throws an exception in some runtime states.
-                if (main != null && main.IsLoaded && main.IsVisible)
+                var page = new TurProgramPage();
+
+                // If this ListsView is hosted in a NavigationService-enabled frame, navigate there
+                if (this.NavigationService != null)
                 {
-                    win.Owner = main;
-                    win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                    this.NavigationService.Navigate(page);
+                    return;
                 }
-                else
+
+                // Otherwise open a new window hosting the page inside a Frame (consistent with other cards)
+                var win = new Window
                 {
-                    win.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-                }
+                    Title = "Tur Programı Hazırla",
+                    Content = new Frame { Content = page, NavigationUIVisibility = NavigationUIVisibility.Hidden },
+                    Width = 900,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current?.MainWindow
+                };
                 win.Show();
             }
             catch (Exception ex)
