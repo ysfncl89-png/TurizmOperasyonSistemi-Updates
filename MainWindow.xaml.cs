@@ -95,6 +95,10 @@ namespace TurizmOperasyonSistemi
                 // Start background sync task and keep dialog visible until user acknowledges
                 bool finished = false;
                 Exception bgEx = null;
+                bool copiedToOneDrive = false;
+                bool manifestCopied = false;
+                string remoteDbPath = null;
+                string remoteHash = null;
                 var bgTask = Task.Run(() =>
                 {
                     try
@@ -153,7 +157,7 @@ namespace TurizmOperasyonSistemi
                                 try
                                 {
                                     Directory.CreateDirectory(oneDriveBase);
-                                    var remoteDbPath = Path.Combine(oneDriveBase, Path.GetFileName(dbPath));
+                                    remoteDbPath = Path.Combine(oneDriveBase, Path.GetFileName(dbPath));
                                     var remoteManifestPath = Path.Combine(oneDriveBase, Path.GetFileName(localManifestPath));
 
                                     // copy DB snapshot or live DB
@@ -167,6 +171,19 @@ namespace TurizmOperasyonSistemi
                                         try { File.Delete(backupOld); } catch { }
                                     }
                                     else File.Move(tempDb, remoteDbPath);
+                                    // verify remote file exists and compute hash
+                                    try
+                                    {
+                                        if (File.Exists(remoteDbPath))
+                                        {
+                                            copiedToOneDrive = true;
+                                            using var rfs = File.OpenRead(remoteDbPath);
+                                            using var rsha = System.Security.Cryptography.SHA256.Create();
+                                            var rh = rsha.ComputeHash(rfs);
+                                            remoteHash = BitConverter.ToString(rh).Replace("-", "").ToLowerInvariant();
+                                        }
+                                    }
+                                    catch { }
 
                                     // copy manifest
                                     var tempMan = Path.Combine(oneDriveBase, Path.GetFileName(localManifestPath) + ".tmp." + Guid.NewGuid().ToString("N"));
@@ -178,6 +195,7 @@ namespace TurizmOperasyonSistemi
                                         try { File.Delete(backupOld); } catch { }
                                     }
                                     else File.Move(tempMan, remoteManifestPath);
+                                    manifestCopied = true;
                                 }
                                 catch (Exception ex)
                                 {
@@ -200,7 +218,31 @@ namespace TurizmOperasyonSistemi
                             try
                             {
                                 var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(12) };
-                                var msg = bgEx == null ? "Senkronizasyon tamamlandı. Dosyalar OneDrive klasörüne kopyalandı (varsa). Devam etmek için Tamam'a basın." : $"Senkronizasyon sırasında hata oluştu: {bgEx.Message}. Devam için Tamam'a basın.";
+                                string msg;
+                                if (!string.IsNullOrEmpty(oneDriveBase))
+                                {
+                                    if (bgEx != null)
+                                    {
+                                        msg = $"Senkronizasyon sırasında hata oluştu: {bgEx.Message}. Devam için Tamam'a basın.";
+                                    }
+                                    else if (copiedToOneDrive)
+                                    {
+                                        // we have verified remote file exists; report copy
+                                        msg = "Dosyalar yerel OneDrive klasörüne kopyalandı. OneDrive istemcisi çalışıyorsa buluta yüklenecektir. Devam etmek için Tamam'a basın.";
+                                    }
+                                    else if (manifestCopied)
+                                    {
+                                        msg = "Manifest yerel OneDrive klasörüne kopyalandı. DB kopyalanamadı. Devam için Tamam'a basın.";
+                                    }
+                                    else
+                                    {
+                                        msg = "OneDrive klasörüne kopyalama yapılmadı (OneDrive yapılandırılmamış veya hata oldu). Devam için Tamam'a basın.";
+                                    }
+                                }
+                                else
+                                {
+                                    msg = bgEx == null ? "Senkronizasyon atlandı (OneDrive yapılandırılmamış). Local manifest güncellendi." : $"Senkronizasyon sırasında hata oluştu: {bgEx.Message}. Devam için Tamam'a basın.";
+                                }
                                 panel.Children.Add(new System.Windows.Controls.TextBlock { Text = msg, TextWrapping = TextWrapping.Wrap, Width = 420, Margin = new Thickness(0, 0, 0, 12) });
                                 var ok = new System.Windows.Controls.Button { Content = "Tamam", Width = 100, HorizontalAlignment = HorizontalAlignment.Center };
                                 ok.Click += (s2, e2) => { try { progressWnd.Close(); } catch { } };
