@@ -48,6 +48,7 @@
         <SolidColorBrush x:Key="CardBg3" Color="#0B1220" />
         <SolidColorBrush x:Key="CardBg4" Color="#0B1220" />
         <SolidColorBrush x:Key="CardBg5" Color="#0B1220" />
+        <SolidColorBrush x:Key="CardBg6" Color="#0B1220" />
 
         <!-- hover target colors (subtle neon tint) -->
         <Color x:Key="HoverColor1">#112033</Color>
@@ -125,6 +126,8 @@
                         <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
+
+
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#208B5CF6"/>
@@ -690,6 +693,7 @@
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </EventTrigger>
+
                             </Button.Triggers>
                         </Button>
 
@@ -836,6 +840,52 @@
                         </Button>
 
                         <TextBlock x:Name="kg_desc" Text="Dönemlere Göre Kargo Listesi Görüntüle / İndir" Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
+                    </Grid>
+                </Border>
+
+                <!-- Tur Programı Hazırla Card (simple icon card) -->
+                <Border x:Name="border6" MinWidth="280" MaxWidth="420" Height="260" CornerRadius="18" Background="{StaticResource CardBg6}" Margin="18" Padding="18" ClipToBounds="True">
+                    <Border.Triggers>
+                        <EventTrigger RoutedEvent="MouseEnter">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetName="border6" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource GlowOdemeColor}" Duration="0:0:0.18" />
+                                    <DoubleAnimation Storyboard.TargetName="tp_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.75" Duration="0:0:0.18" />
+                                    <DoubleAnimation Storyboard.TargetName="tp_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="28" Duration="0:0:0.18" />
+                                    <ColorAnimation Storyboard.TargetName="tp_title" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="tp_desc" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeave">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetName="border6" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#0B1220" Duration="0:0:0.12" />
+                                    <DoubleAnimation Storyboard.TargetName="tp_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0:0:0.12" />
+                                    <DoubleAnimation Storyboard.TargetName="tp_center" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="0" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="tp_title" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="White" Duration="0:0:0.12" />
+                                    <ColorAnimation Storyboard.TargetName="tp_desc" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#9CA3AF" Duration="0:0:0.12" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Border.Triggers>
+
+                    <Grid x:Name="card6">
+                        <TextBlock x:Name="tp_title" Text="Tur Programı Hazırla" Foreground="White" FontSize="18" FontWeight="Bold"
+                                   HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"/>
+
+                        <Button x:Name="tp_center" Style="{StaticResource CenterButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="2" ToolTip="Tur Programı Hazırla" Click="TpCenter_Click">
+                            <Button.Content>
+                                <TextBlock Text="🗓️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button.Content>
+                            <Button.Effect>
+                                <DropShadowEffect Color="#FF8B5CF6" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                            </Button.Effect>
+
+                        </Button>
+
+                        <TextBlock x:Name="tp_desc" Text="Tarih ve saate göre umre programı hazırla  / Çıktı Al İndir" Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12"/>
                     </Grid>
                 </Border>
 

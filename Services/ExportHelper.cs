@@ -10,6 +10,9 @@ using System.Globalization;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using QuestPDF.Helpers;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 
 namespace TurizmOperasyonSistemi.Services
 {
@@ -30,6 +33,8 @@ namespace TurizmOperasyonSistemi.Services
             {
                 AddDocxDocumentXml(archive, rows, headers, title, footers);
             }
+
+
             else
             {
                 AddDocxDocumentXml_Generic(archive, rows, headers, title, footers);
@@ -267,7 +272,8 @@ namespace TurizmOperasyonSistemi.Services
             string tourType = null,
             string period = null,
             string groupType = null,
-            string daysCount = null)
+            string daysCount = null,
+            string imagePath = null)
         {
             if (rows == null) rows = new List<Dictionary<string, string>>();
             if (headers == null) headers = new List<string>();
@@ -292,6 +298,28 @@ namespace TurizmOperasyonSistemi.Services
 
                         page.Header().PaddingBottom(8).Column(col =>
                         {
+                            if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
+                            {
+                                try
+                                {
+                                    var imgBytes = File.ReadAllBytes(imagePath);
+                                    // resize large images to a reasonable width so they fit the page (max 600px)
+                                    var resized = ResizeImageBytesIfNeeded(imgBytes, 600);
+                                    // limit image dimensions so header image doesn't become unnecessarily large in output
+                                    var maxImageWidth = 560; // points / approximate pixels for page layout
+                                    var maxImageHeight = 200;
+                                    // ensure the image fits within max bounds while preserving aspect ratio
+                                    if (resized != null)
+                                    {
+                                        col.Item().MaxWidth(maxImageWidth).MaxHeight(maxImageHeight).AlignCenter().Image(resized);
+                                    }
+                                    else
+                                    {
+                                        col.Item().MaxWidth(maxImageWidth).MaxHeight(maxImageHeight).AlignCenter().Image(imgBytes);
+                                    }
+                                }
+                                catch { }
+                            }
                             col.Item().Text(title ?? string.Empty).FontSize(14).Bold();
                             if (isRoomAllocation)
                             {
@@ -1386,6 +1414,51 @@ namespace TurizmOperasyonSistemi.Services
             var dividend = index; var columnName = string.Empty;
             while (dividend > 0) { var modulo = (dividend - 1) % 26; columnName = Convert.ToChar(65 + modulo) + columnName; dividend = (dividend - modulo) / 26; }
             return columnName;
+        }
+
+        // Resize image bytes to max width preserving aspect ratio. Returns resized JPEG bytes or null on failure.
+        public static byte[] ResizeImageBytesIfNeeded(byte[] imgBytes, int maxWidth)
+        {
+            try
+            {
+                using var ms = new MemoryStream(imgBytes);
+                using var img = System.Drawing.Image.FromStream(ms);
+                if (img.Width <= maxWidth) return imgBytes;
+
+                var ratio = (double)maxWidth / img.Width;
+                var newW = maxWidth;
+                var newH = (int)Math.Round(img.Height * ratio);
+
+                using var dest = new Bitmap(newW, newH);
+                dest.SetResolution(img.HorizontalResolution, img.VerticalResolution);
+                using (var g = Graphics.FromImage(dest))
+                {
+                    g.CompositingQuality = CompositingQuality.HighQuality;
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.SmoothingMode = SmoothingMode.HighQuality;
+                    g.DrawImage(img, 0, 0, newW, newH);
+                }
+
+                using var outMs = new MemoryStream();
+                // save as JPEG to keep size reasonable
+                var jpegEncoder = ImageCodecInfo.GetImageEncoders().FirstOrDefault(e => e.FormatID == System.Drawing.Imaging.ImageFormat.Jpeg.Guid);
+                var encParams = new EncoderParameters(1);
+                encParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 85L);
+                if (jpegEncoder != null)
+                {
+                    dest.Save(outMs, jpegEncoder, encParams);
+                }
+                else
+                {
+                    dest.Save(outMs, System.Drawing.Imaging.ImageFormat.Jpeg);
+                }
+
+                return outMs.ToArray();
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

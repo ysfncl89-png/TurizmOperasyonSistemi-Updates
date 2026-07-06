@@ -1,0 +1,69 @@
+<Window x:Class="TurizmOperasyonSistemi.Views.TurProgramWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Tur Programı Hazırla" Height="700" Width="900" Background="#0F1724">
+    <!-- No-op edit: ensure file is saved -->
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top toolbar -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <Button x:Name="BackButton" Content="← Geri" Click="BackButton_Click" HorizontalAlignment="Left" Padding="8" Background="#2D3748" Foreground="White"/>
+            <TextBlock Text="Tur Programı Hazırla" Foreground="White" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12"/>
+        </DockPanel>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel>
+                <!-- Image upload and preview -->
+                <Border Background="#0B1220" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,8">
+                            <Button x:Name="UploadImageButton" Click="UploadImageButton_Click" Padding="8" Background="#2D3748" Foreground="White">Görsel Yükle</Button>
+                            <TextBlock Text="  (Üstte görünecek logo veya fotoğraf)" Foreground="#9CA3AF" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        </StackPanel>
+
+                        <Image x:Name="PreviewImage" Height="160" Stretch="Uniform" HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Entries list -->
+                <ItemsControl x:Name="EntriesControl">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#0B1220" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="170"/>
+                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <DatePicker SelectedDate="{Binding Date}" Grid.Column="0" />
+                                    <TextBox Text="{Binding Time, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Margin="8,0,0,0" VerticalContentAlignment="Center" />
+                                    <TextBox Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="2" Margin="8,0,0,0" AcceptsReturn="True" TextWrapping="Wrap" Height="80"/>
+                                    <Button Content="Kaldır" Grid.Column="3" Click="RemoveEntry_Click" Tag="{Binding}" Padding="6" Background="#2D3748" Foreground="White"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Button x:Name="AddRowButton" Content="+ Satır Ekle" Click="AddRowButton_Click" Width="140" HorizontalAlignment="Left" Padding="8" Background="#2D3748" Foreground="White"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Bottom actions -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="ExportWordButton" Content="Çıktı Al (Word)" Click="ExportWordButton_Click" Margin="8" Padding="8" Background="#2D3748" Foreground="White"/>
+            <Button x:Name="ExportPdfButton" Content="Çıktı Al (PDF)" Click="ExportPdfButton_Click" Margin="8" Padding="8" Background="#2D3748" Foreground="White"/>
+        </StackPanel>
+
+    </Grid>
+
+</Window>

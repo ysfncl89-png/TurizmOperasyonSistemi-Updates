@@ -395,6 +395,33 @@ namespace TurizmOperasyonSistemi.Views
             OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode.Genel);
         }
 
+        private void TpCenter_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var win = new TurProgramWindow();
+                // Prefer the actual host window that contains this Page (handles Frame hosting),
+                // fall back to Application.Current.MainWindow.
+                var main = Window.GetWindow(this) ?? Application.Current?.MainWindow;
+                // Only set Owner if main window is available and already shown; setting Owner to an
+                // unshown window throws an exception in some runtime states.
+                if (main != null && main.IsLoaded && main.IsVisible)
+                {
+                    win.Owner = main;
+                    win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                }
+                else
+                {
+                    win.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                }
+                win.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
         private void OpenPersonsGeneralWithMode(PersonsGeneralView.ViewMode mode)
         {
             try
