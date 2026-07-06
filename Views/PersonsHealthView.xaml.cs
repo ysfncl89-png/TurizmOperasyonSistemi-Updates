@@ -1409,33 +1409,11 @@ namespace TurizmOperasyonSistemi.Views
 
         private byte[] BuildSimplePdf(List<Dictionary<string, string>> rows, IReadOnlyList<ExportColumn> columns)
         {
-            var pageWidth = 842;
-            var pageHeight = 595;
-            var margin = 28;
-            var top = 40;
-            var rowHeight = 22;
-            var usableWidth = pageWidth - margin * 2;
-            var columnWidth = usableWidth / columns.Count;
-
-            var content = new List<string>
-            {
-                $"BT /F1 16 Tf 40 560 Td ({EscapePdfText("Sağlık Listesi")}) Tj ET"
-            };
-
-            var y = 520;
+            var pageWidth = 842; var pageHeight = 595;
             var headers = columns.Select(c => c.Header).ToList();
-            content.AddRange(BuildPdfRow(headers, margin, y, columnWidth, rowHeight, true));
-            y -= rowHeight;
-
-            foreach (var row in rows)
-            {
-                if (y < 50) break;
-                content.AddRange(BuildPdfRow(headers.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList(), margin, y, columnWidth, rowHeight, false));
-                y -= rowHeight;
-            }
-
-            var contentText = string.Join("\n", content);
-            return BuildMinimalPdfBytes(pageWidth, pageHeight, contentText);
+            // Render to image and embed into PDF to preserve Turkish characters
+            var imageBytes = Services.ExportHelper.RenderTableToJpeg(rows, headers, "Sağlık Listesi", null, pageWidth, pageHeight);
+            return Services.ExportHelper.BuildPdfWithImage(pageWidth, pageHeight, imageBytes);
         }
 
         private IEnumerable<string> BuildPdfRow(IReadOnlyList<string> values, int x, int y, double columnWidth, int rowHeight, bool header)

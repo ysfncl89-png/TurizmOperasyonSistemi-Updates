@@ -306,12 +306,12 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         RegistrationId = _registrationId,
                         OriginalAmount = amount,
-                        OriginalCurrency = selectedCurrency,
+                        OriginalCurrency = selectedCurrency ?? string.Empty,
                         AmountInRegistrationCurrency = added,
                         Rate = rateUsed,
-                        Note = TbNote.Text,
-                        PaymentMethod = CbPaymentMethod.SelectedItem as string,
-                        UploadedDocumentPath = _uploadedPath
+                        Note = TbNote.Text ?? string.Empty,
+                        PaymentMethod = CbPaymentMethod.SelectedItem as string ?? string.Empty,
+                        UploadedDocumentPath = _uploadedPath ?? string.Empty
                     };
                     db.Payments.Add(payment);
 
@@ -358,7 +358,14 @@ namespace TurizmOperasyonSistemi.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ödeme kaydedilirken hata: " + ex.Message);
+                // Show full exception including inner exceptions to help diagnose the real cause
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine("Payment save error: " + ex.ToString());
+                }
+                catch { }
+
+                MessageBox.Show("Ödeme kaydedilirken hata: " + ex.ToString());
             }
         }
     }

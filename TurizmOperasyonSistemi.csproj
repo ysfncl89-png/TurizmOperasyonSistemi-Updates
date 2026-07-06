@@ -67,7 +67,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="QRCoder" Version="1.7.4" />
+    <PackageReference Include="QuestPDF" Version="2026.7.0" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+    <PackageReference Include="QuestPDF" Version="2026.7.0" />
   </ItemGroup>
 
   <ItemGroup>

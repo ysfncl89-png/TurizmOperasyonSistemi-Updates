@@ -7,6 +7,9 @@ using System.Reflection;
 using System.Security;
 using System.Text;
 using System.Globalization;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
+using QuestPDF.Helpers;
 
 namespace TurizmOperasyonSistemi.Services
 {
@@ -49,29 +52,144 @@ namespace TurizmOperasyonSistemi.Services
         }
 
         // Generic PDF builder for non-room-allocation exports
+        // Reimplemented to render the table to an image using System.Drawing and embed the image into a PDF page.
+        // This approach ensures proper rendering of Unicode (Türkçe) characters by using a TrueType system font (Arial).
         private static byte[] BuildSimplePdf_Generic(List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
         {
-            var pageWidth = 842; var pageHeight = 595; var margin = 28; var rowHeight = 22; var usableWidth = pageWidth - margin * 2; var columnWidth = usableWidth / Math.Max(1, headers.Count);
-            var content = new List<string> { $"BT /F1 16 Tf 40 560 Td ({EscapePdfText(title ?? "Liste")}) Tj ET" };
-            var y = 520; content.AddRange(BuildPdfRowHelper(headers, margin, y, columnWidth, rowHeight, true)); y -= rowHeight;
+            var pageWidth = 842; var pageHeight = 595;
+            // Render table to JPEG image
+            var imageBytes = RenderTableToJpeg(rows, headers, title ?? "Liste", footers, pageWidth, pageHeight);
+            return BuildPdfWithImage(pageWidth, pageHeight, imageBytes);
+        }
+
+        // Render the table into a JPEG image using System.Drawing (uses Arial which supports Turkish characters)
+        public static byte[] RenderTableToJpeg(List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers, int pageWidth, int pageHeight)
+        {
+            using var bmp = new System.Drawing.Bitmap(pageWidth, pageHeight);
+            bmp.SetResolution(72, 72);
+            using var g = System.Drawing.Graphics.FromImage(bmp);
+            g.Clear(System.Drawing.Color.White);
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            // Fonts
+            using var titleFont = new System.Drawing.Font("Arial", 14, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            using var headerFont = new System.Drawing.Font("Arial", 10, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            using var cellFont = new System.Drawing.Font("Arial", 10, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+
+            var margin = 28;
+            var usableWidth = pageWidth - margin * 2;
+            var colCount = Math.Max(1, headers?.Count ?? 0);
+            var colWidth = usableWidth / colCount;
+            var y = margin;
+
+            // Title
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                var titleRect = new System.Drawing.RectangleF(margin, y, usableWidth, 30);
+                g.DrawString(title, titleFont, System.Drawing.Brushes.Black, titleRect);
+                y += 36;
+            }
+
+            // Header row background
+            var headerHeight = 24;
+            var headerRect = new System.Drawing.Rectangle(margin, y, usableWidth, headerHeight);
+            g.FillRectangle(new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(23, 59, 114)), headerRect);
+            for (var i = 0; i < colCount; i++)
+            {
+                var cellRect = new System.Drawing.RectangleF(margin + i * colWidth, y, colWidth, headerHeight);
+                var headerText = headers[i] ?? string.Empty;
+                g.DrawString(headerText, headerFont, System.Drawing.Brushes.White, cellRect);
+                g.DrawRectangle(System.Drawing.Pens.LightGray, margin + i * colWidth, y, colWidth, headerHeight);
+            }
+            y += headerHeight;
+
+            // Rows
+            var rowHeight = 20;
             foreach (var row in rows)
             {
-                if (y < 50) break;
-                content.AddRange(BuildPdfRowHelper(headers.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList(), margin, y, columnWidth, rowHeight, false));
-                y -= rowHeight;
+                if (y + rowHeight + 40 > pageHeight) break; // simple pagination: stop if page full
+                for (var i = 0; i < colCount; i++)
+                {
+                    var cellRect = new System.Drawing.RectangleF(margin + i * colWidth + 4, y + 2, colWidth - 8, rowHeight - 4);
+                    var txt = row != null && headers != null && i < headers.Count && row.ContainsKey(headers[i]) ? row[headers[i]] ?? string.Empty : string.Empty;
+                    g.DrawString(txt, cellFont, System.Drawing.Brushes.Black, cellRect);
+                    g.DrawRectangle(System.Drawing.Pens.LightGray, margin + i * colWidth, y, colWidth, rowHeight);
+                }
+                y += rowHeight;
             }
+
+            // Footers
             if (footers != null && footers.Count > 0)
             {
-                y -= 8;
+                y += 6;
                 foreach (var f in footers)
                 {
-                    if (y < 40) break;
-                    content.Add($"BT /F1 9 Tf {margin} {y} Td ({EscapePdfText(f)}) Tj ET");
-                    y -= 14;
+                    if (y + 18 > pageHeight) break;
+                    g.DrawString(f ?? string.Empty, cellFont, System.Drawing.Brushes.Black, new System.Drawing.RectangleF(margin, y, usableWidth, 18));
+                    y += 18;
                 }
             }
-            var contentText = string.Join("\n", content);
-            return BuildMinimalPdfBytes(pageWidth, pageHeight, contentText);
+
+            using var ms = new MemoryStream();
+            // save as JPEG to keep PDF size small
+            bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+            return ms.ToArray();
+        }
+
+        // Build a minimal PDF that embeds a single JPEG image covering the page
+        public static byte[] BuildPdfWithImage(int pageWidth, int pageHeight, byte[] imageJpegBytes)
+        {
+            var objects = new List<byte[]>();
+
+            // 1: Catalog
+            objects.Add(Encoding.ASCII.GetBytes("<< /Type /Catalog /Pages 2 0 R >>\n"));
+            // 2: Pages
+            objects.Add(Encoding.ASCII.GetBytes($"<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n"));
+
+            // 3: Page placeholder (will reference XObject 4)
+            var pageObj = $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {pageWidth} {pageHeight}] /Resources << /XObject << /Im1 4 0 R >> /ProcSet [/PDF /ImageC] >> /Contents 5 0 R >>\n";
+            objects.Add(Encoding.ASCII.GetBytes(pageObj));
+
+            // 4: Image XObject (stream with JPEG)
+            var imageHeader = Encoding.ASCII.GetBytes($"<< /Type /XObject /Subtype /Image /Width {pageWidth} /Height {pageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length {imageJpegBytes.Length} >>\nstream\n");
+            var imageFooter = Encoding.ASCII.GetBytes("\nendstream\n");
+            using var msImg = new MemoryStream();
+            msImg.Write(imageHeader, 0, imageHeader.Length);
+            msImg.Write(imageJpegBytes, 0, imageJpegBytes.Length);
+            msImg.Write(imageFooter, 0, imageFooter.Length);
+            objects.Add(msImg.ToArray());
+
+            // 5: Content stream that draws the image
+            var content = Encoding.ASCII.GetBytes($"<< /Length { (pageWidth * pageHeight) } >>\nstream\nq\n{pageWidth} 0 0 {pageHeight} 0 0 cm\n/Im1 Do\nQ\nendstream\n");
+            objects.Add(content);
+
+            // build PDF
+            using var ms = new MemoryStream();
+            ms.Write(Encoding.ASCII.GetBytes("%PDF-1.4\n%âãÏÓ\n"), 0, Encoding.ASCII.GetBytes("%PDF-1.4\n%âãÏÓ\n").Length);
+            var offsets = new List<long>();
+            for (var i = 0; i < objects.Count; i++)
+            {
+                offsets.Add(ms.Position);
+                var header = Encoding.ASCII.GetBytes($"{i + 1} 0 obj\n");
+                ms.Write(header, 0, header.Length);
+                ms.Write(objects[i], 0, objects[i].Length);
+                var endobj = Encoding.ASCII.GetBytes("endobj\n");
+                ms.Write(endobj, 0, endobj.Length);
+            }
+
+            var xrefPosition = ms.Position;
+            var xrefWriter = new StreamWriter(ms, Encoding.ASCII, 1024, leaveOpen: true);
+            xrefWriter.WriteLine("xref");
+            xrefWriter.WriteLine($"0 {objects.Count + 1}");
+            xrefWriter.WriteLine("0000000000 65535 f ");
+            foreach (var offset in offsets) xrefWriter.WriteLine($"{offset:0000000000} 00000 n ");
+            xrefWriter.WriteLine("trailer");
+            xrefWriter.WriteLine($"<< /Size {objects.Count + 1} /Root 1 0 R >>");
+            xrefWriter.WriteLine("startxref");
+            xrefWriter.WriteLine(xrefPosition);
+            xrefWriter.WriteLine("%%EOF");
+            xrefWriter.Flush();
+            return ms.ToArray();
         }
 
         // helper used by generic PDF builder (keeps same signature as earlier helpers)
@@ -154,23 +272,103 @@ namespace TurizmOperasyonSistemi.Services
             if (rows == null) rows = new List<Dictionary<string, string>>();
             if (headers == null) headers = new List<string>();
             if (File.Exists(filePath)) File.Delete(filePath);
-            byte[] pdf;
-            // If no room-allocation metadata provided, build a generic table PDF
-            if (string.IsNullOrWhiteSpace(hotelName)
-                && string.IsNullOrWhiteSpace(checkInDate)
-                && string.IsNullOrWhiteSpace(checkOutDate)
-                && string.IsNullOrWhiteSpace(tourType)
-                && string.IsNullOrWhiteSpace(period)
-                && string.IsNullOrWhiteSpace(groupType)
-                && string.IsNullOrWhiteSpace(daysCount))
+            // Use QuestPDF to produce a vektörel, high-quality PDF with proper Turkish font rendering.
+            try
             {
-                pdf = BuildSimplePdf_Generic(rows, headers, title, footers);
+                // Inline document definition using QuestPDF fluent API
+                QuestPDF.Settings.License = LicenseType.Community;
+
+                var isRoomAllocation = !string.IsNullOrWhiteSpace(hotelName) || (!string.IsNullOrWhiteSpace(tourType)) || (headers != null && headers.Contains("Oda No") && headers.Contains("Oda Türü"));
+
+                var doc = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(QuestPDF.Helpers.PageSizes.A4);
+                        // Use landscape when table has many columns
+                        if (headers.Count > 5) page.Size(QuestPDF.Helpers.PageSizes.A4.Landscape());
+                        page.Margin(20);
+                        page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+
+                        page.Header().PaddingBottom(8).Column(col =>
+                        {
+                            col.Item().Text(title ?? string.Empty).FontSize(14).Bold();
+                            if (isRoomAllocation)
+                            {
+                                col.Item().Row(r =>
+                                {
+                                    r.RelativeColumn().Text($"{hotelName ?? string.Empty}").FontSize(10);
+                                    r.RelativeColumn().Text($"Giriş: {checkInDate ?? "-"}").FontSize(10);
+                                    r.RelativeColumn().Text($"Çıkış: {checkOutDate ?? "-"}").FontSize(10);
+                                });
+                            }
+                        });
+
+                        page.Content().PaddingVertical(4).Table(table =>
+                        {
+                            // define columns
+                            table.ColumnsDefinition(columns =>
+                            {
+                                foreach (var _ in headers) columns.RelativeColumn();
+                            });
+
+                            // header
+                            table.Header(header =>
+                            {
+                                foreach (var h in headers)
+                                {
+                                    header.Cell().Background(QuestPDF.Helpers.Colors.Blue.Medium).Padding(6).Text(h).FontColor(QuestPDF.Helpers.Colors.White).FontSize(9).Bold();
+                                }
+                            });
+
+                            // rows
+                            foreach (var row in rows)
+                            {
+                                var values = headers.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList();
+                                foreach (var v in values)
+                                {
+                                    table.Cell().Padding(6).Text(v ?? string.Empty).FontSize(9);
+                                }
+                            }
+                        });
+
+                        page.Footer().AlignCenter().Text(txt =>
+                        {
+                            txt.CurrentPageNumber(); txt.Span(" / "); txt.TotalPages();
+                        });
+                    });
+                });
+
+                // Generate PDF file
+                doc.GeneratePdf(filePath);
             }
-            else
+            catch (Exception ex)
             {
-                pdf = BuildSimplePdf(rows, headers, title, footers, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
+                // Fall back to image-based generation if QuestPDF fails for any reason
+                try
+                {
+                    byte[] pdf;
+                    if (string.IsNullOrWhiteSpace(hotelName)
+                        && string.IsNullOrWhiteSpace(checkInDate)
+                        && string.IsNullOrWhiteSpace(checkOutDate)
+                        && string.IsNullOrWhiteSpace(tourType)
+                        && string.IsNullOrWhiteSpace(period)
+                        && string.IsNullOrWhiteSpace(groupType)
+                        && string.IsNullOrWhiteSpace(daysCount))
+                    {
+                        pdf = BuildSimplePdf_Generic(rows, headers, title, footers);
+                    }
+                    else
+                    {
+                        pdf = BuildSimplePdf(rows, headers, title, footers, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
+                    }
+                    File.WriteAllBytes(filePath, pdf);
+                }
+                catch
+                {
+                    throw new Exception($"QuestPDF export failed: {ex.Message}");
+                }
             }
-            File.WriteAllBytes(filePath, pdf);
         }
 
         public static void ExportRoomAllocationWord(string filePath, List<Dictionary<string, string>> rows, string hotelName, string checkInDate, string checkOutDate, string tourType, string period, string groupType, string daysCount)
@@ -959,94 +1157,14 @@ namespace TurizmOperasyonSistemi.Services
             string groupType,
             string daysCount)
         {
-            var pageWidth = 842;
-            var pageHeight = 595;
-            var margin = 24;
-            var content = new List<string>();
-            var y = pageHeight - 24;
-            var headersList = headers.ToList();
-
-            DrawPdfInfoCards(content, margin, ref y, hotelName, checkInDate, checkOutDate, tourType, period, groupType, daysCount);
-
-            y -= 12;
-            var usableWidth = pageWidth - margin * 2;
-            var colCount = headersList.Count;
-            double[] weights;
-            if (colCount <= 0)
-            {
-                weights = new double[] { 1 };
-            }
-            else if (colCount == 6)
-            {
-                weights = new double[] { 56, 76, 50, 90, 450, 70 };
-            }
-            else if (colCount == 7)
-            {
-                // Sıra, Ad, Soyad, TC Kimlik, Telefon, Adres, Kargo Talebi
-                weights = new double[] { 40, 140, 140, 100, 110, 320, 90 };
-            }
-            else
-            {
-                // distribute evenly as fallback
-                weights = Enumerable.Repeat(1.0, colCount).ToArray();
-            }
-
-            var scale = usableWidth / weights.Sum();
-            var columnWidths = weights.Select(value => value * scale).ToArray();
-
-            DrawPdfTableHeader(content, margin, y, columnWidths, headersList);
-            y -= 20;
-
-            foreach (var row in rows)
-            {
-                if (y < 120)
-                {
-                    break;
-                }
-
-                var values = headersList.Select(header => row.ContainsKey(header) ? row[header] : string.Empty).ToList();
-                // If source requested increased occupant prominence, mark occupant cell so DrawPdfTableCell renders larger/bold
-                var increaseFlag = row != null && row.ContainsKey("__List_OdaArama_IncreaseOccupantRowHeight");
-                if (increaseFlag && values.Count > 4)
-                {
-                    values[4] = "!!LARGE!!" + values[4];
-                }
-                var occupantsText = values.Count > 4 ? values[4] : string.Empty;
-                var occupantLines = Math.Max(1, occupantsText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Length);
-                var rowHeight = Math.Max(20, 14 * occupantLines + 6);
-
-                // If export originates from Lists->Oda Listesi and requests increased occupant cell height,
-                // enlarge the computed PDF row height by 20% so the cell appears taller.
-                var increaseHeight = row != null && row.ContainsKey("__List_OdaArama_IncreaseOccupantRowHeight");
-                if (increaseHeight)
-                {
-                    rowHeight = (int)Math.Ceiling(rowHeight * 1.2);
-                }
-
-                DrawPdfTableRow(content, margin, y, columnWidths, values, rowHeight);
-                y -= rowHeight;
-            }
-
-            y -= 14;
-            DrawPdfSummary(content, margin, ref y, rows);
-
-            if (footers != null && footers.Count > 0)
-            {
-                y -= 8;
-                foreach (var footer in footers)
-                {
-                    if (y < 40)
-                    {
-                        break;
-                    }
-
-                    content.Add($"BT /F1 9 Tf {margin} {y} Td ({EscapePdfText(footer)}) Tj ET");
-                    y -= 14;
-                }
-            }
-
-            var contentText = string.Join("\n", content);
-            return BuildMinimalPdfBytes(pageWidth, pageHeight, contentText);
+            // For room-allocation exports we render the table to an image to ensure proper
+            // Unicode/Turkish character rendering, then embed that image into a PDF page.
+            var pageWidth = 842; var pageHeight = 595;
+            // Compose a human-readable title that includes hotel and dates if provided
+            var composedTitle = title;
+            // Delegate rendering to the shared image renderer which produces a JPEG
+            var imageBytes = RenderTableToJpeg(rows, headers, composedTitle ?? "Otel Odalama Listesi", footers, pageWidth, pageHeight);
+            return BuildPdfWithImage(pageWidth, pageHeight, imageBytes);
         }
 
         private static void DrawPdfInfoCards(

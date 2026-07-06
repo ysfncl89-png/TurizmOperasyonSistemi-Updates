@@ -2437,17 +2437,9 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
 
         private byte[] BuildSimplePdf(List<Dictionary<string, string>> rows, List<string> headers)
         {
-            var pageWidth = 842; var pageHeight = 595; var margin = 28; var rowHeight = 22; var usableWidth = pageWidth - margin * 2; var columnWidth = usableWidth / Math.Max(1, headers.Count);
-            var content = new List<string> { $"BT /F1 16 Tf 40 560 Td ({EscapePdfText("Genel Liste")}) Tj ET" };
-            var y = 520; content.AddRange(BuildPdfRow(headers, margin, y, columnWidth, rowHeight, true)); y -= rowHeight;
-            foreach (var row in rows)
-            {
-                if (y < 50) break;
-                content.AddRange(BuildPdfRow(headers.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList(), margin, y, columnWidth, rowHeight, false));
-                y -= rowHeight;
-            }
-            var contentText = string.Join("\n", content);
-            return BuildMinimalPdfBytes(pageWidth, pageHeight, contentText);
+            var pageWidth = 842; var pageHeight = 595;
+            var image = Services.ExportHelper.RenderTableToJpeg(rows, headers, "Genel Liste", null, pageWidth, pageHeight);
+            return Services.ExportHelper.BuildPdfWithImage(pageWidth, pageHeight, image);
         }
 
         private IEnumerable<string> BuildPdfRow(IReadOnlyList<string> values, int x, int y, double columnWidth, int rowHeight, bool header)
@@ -2498,11 +2490,7 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
 
         private string EscapeXml(string value) { return SecurityElement.Escape(value) ?? string.Empty; }
         private string EscapePdf(string value) { return (value ?? string.Empty).Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)"); }
-        private string EscapePdfText(string value) { return EscapePdf(TransliterateTurkish(value)); }
-        private string TransliterateTurkish(string value)
-        {
-            return (value ?? string.Empty).Replace("İ", "I").Replace("ı", "i").Replace("Ş", "S").Replace("ş", "s").Replace("Ğ", "G").Replace("ğ", "g").Replace("Ü", "U").Replace("ü", "u").Replace("Ö", "O").Replace("ö", "o").Replace("Ç", "C").Replace("ç", "c");
-        }
+        private string EscapePdfText(string value) { return EscapePdf(value); }
 
         private string ColumnName(int index)
         {
@@ -3852,6 +3840,17 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             // collapse multiple whitespace into single space
             var parts = s.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             return string.Join(" ", parts);
+        }
+
+        private string TransliterateTurkish(string value)
+        {
+            return (value ?? string.Empty)
+                .Replace("İ", "I").Replace("ı", "i")
+                .Replace("Ş", "S").Replace("ş", "s")
+                .Replace("Ğ", "G").Replace("ğ", "g")
+                .Replace("Ü", "U").Replace("ü", "u")
+                .Replace("Ö", "O").Replace("ö", "o")
+                .Replace("Ç", "C").Replace("ç", "c");
         }
 
         // Helper converter-aware binding inversion used by XAML via ConverterParameter
