@@ -3,11 +3,16 @@ using System.Data;
 using System.Windows;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Services;
 using TurizmOperasyonSistemi.Windows;
 using System.Text.Json;
 using TurizmOperasyonSistemi.Models;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace TurizmOperasyonSistemi
 {
@@ -30,6 +35,319 @@ namespace TurizmOperasyonSistemi
             }
             catch { }
         }
+
+        private async Task SyncLocalFromOneDriveIfRemoteIsNewer(ConfigurationProvider config, string localDbPath, string localBase)
+        {
+            try
+            {
+                var oneDriveBase = config.GetOneDriveBaseDir();
+                if (string.IsNullOrEmpty(oneDriveBase))
+                {
+                    System.Diagnostics.Debug.WriteLine("Sync: OneDrive not configured or not found.");
+                    return;
+                }
+
+                var remoteManifestPath = Path.Combine(oneDriveBase, "Manifest.json");
+                var localManifestPath = Path.Combine(localBase, "Manifest.json");
+
+                if (!File.Exists(remoteManifestPath))
+                {
+                    System.Diagnostics.Debug.WriteLine("Sync: remote manifest not found.");
+                    return;
+                }
+
+                long remoteVersion = 0;
+                string remoteHash = null;
+                try
+                {
+                    var txt = File.ReadAllText(remoteManifestPath);
+                    using var doc = JsonDocument.Parse(txt);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("Version", out var v) && v.TryGetInt64(out var vv)) remoteVersion = vv;
+                    if (root.TryGetProperty("Hash", out var h)) remoteHash = h.GetString();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Sync: failed to read remote manifest: {ex.Message}");
+                    return;
+                }
+
+                long localVersion = 0;
+                string localHash = null;
+                if (File.Exists(localManifestPath))
+                {
+                    try
+                    {
+                        var txt = File.ReadAllText(localManifestPath);
+                        using var doc = JsonDocument.Parse(txt);
+                        var root = doc.RootElement;
+                        if (root.TryGetProperty("Version", out var v) && v.TryGetInt64(out var lv)) localVersion = lv;
+                        if (root.TryGetProperty("Hash", out var h)) localHash = h.GetString();
+                    }
+                    catch { }
+                }
+
+                // Decide if remote is newer: remoteVersion > localVersion OR (remoteVersion == localVersion && remoteHash != localHash)
+                bool remoteIsNewer = false;
+                if (remoteVersion > localVersion) remoteIsNewer = true;
+                else if (remoteVersion == localVersion && !string.Equals(remoteHash ?? string.Empty, localHash ?? string.Empty, StringComparison.OrdinalIgnoreCase)) remoteIsNewer = true;
+
+                if (!remoteIsNewer)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Sync: remote not newer (remote v{remoteVersion}, local v{localVersion}). Skipping.");
+                    return;
+                }
+
+                // Remote is newer -> copy remote DB over local DB atomically
+                var remoteDbPath = Path.Combine(oneDriveBase, Path.GetFileName(localDbPath));
+                if (!File.Exists(remoteDbPath))
+                {
+                    System.Diagnostics.Debug.WriteLine("Sync: remote DB file not found.");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Sync: remote is newer (v{remoteVersion}). Replacing local DB with remote DB.");
+
+                // Ensure any local DB connections closed: best-effort (at startup there should be none)
+                // Copy remote DB to a temp file in local folder, then replace
+                Directory.CreateDirectory(Path.GetDirectoryName(localDbPath) ?? localBase);
+                var temp = Path.Combine(Path.GetDirectoryName(localDbPath) ?? localBase, Path.GetFileName(localDbPath) + ".tmp." + Guid.NewGuid().ToString("N"));
+                try
+                {
+                    File.Copy(remoteDbPath, temp, true);
+                    // Retry replace to tolerate locks
+                    int attempts = 0;
+                    bool replaced = false;
+                    while (!replaced && attempts < 5)
+                    {
+                        try
+                        {
+                            if (File.Exists(localDbPath))
+                            {
+                                var backupOld = localDbPath + ".bak." + Guid.NewGuid().ToString("N");
+                                File.Replace(temp, localDbPath, backupOld);
+                                try { File.Delete(backupOld); } catch { }
+                            }
+                            else
+                            {
+                                File.Move(temp, localDbPath);
+                            }
+                            replaced = true;
+                        }
+                        catch (IOException)
+                        {
+                            attempts++;
+                            System.Threading.Thread.Sleep(200 * attempts);
+                        }
+                    }
+                    if (!replaced)
+                    {
+                        // Last resort: try copy with overwrite
+                        File.Copy(remoteDbPath, localDbPath, true);
+                    }
+
+                    // Update local manifest to match remote manifest
+                    try
+                    {
+                        File.Copy(remoteManifestPath, localManifestPath, true);
+                        System.Diagnostics.Debug.WriteLine("Sync: local manifest updated from OneDrive.");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Sync: failed to update local manifest: {ex.Message}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Sync: failed to replace local DB: {ex.Message}");
+                    try { if (File.Exists(temp)) File.Delete(temp); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SyncLocalFromOneDriveIfRemoteIsNewer failed: {ex.Message}");
+            }
+        }
+
+        private async Task UploadDbAndManifestToOneDriveAsync(string currentHash, string localManifestPath, string localDbPath, long version, string oneDriveBase)
+        {
+            try
+            {
+                var destDir = oneDriveBase; // ConfigurationProvider already includes subfolder name
+                Directory.CreateDirectory(destDir);
+
+                // Show a small progress window to inform the user and keep it visible until upload completes
+                Window progressWnd = null;
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    progressWnd = new Window
+                    {
+                        Title = "Senkronizasyon",
+                        Content = new TextBlock { Text = "SQLite bağlantısının kesilmesini ve dosyalarınızın bulut ortamına yüklenmesini bekleyin...", Margin = new Thickness(20), TextWrapping = TextWrapping.Wrap, Width = 400 },
+                        SizeToContent = SizeToContent.WidthAndHeight,
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                        ResizeMode = ResizeMode.NoResize,
+                        Topmost = true
+                    };
+                    progressWnd.Show();
+                });
+
+                // Perform upload on a background thread but ensure file operations use synchronous IO
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        // Create a consistent snapshot using BackupManager
+                        var bm = new BackupManager(localDbPath);
+                        var res = bm.CreateBackup();
+                        if (!res.IsSuccess)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Upload: backup creation failed: {res.Message}");
+                        }
+
+                        string sourceDbForUpload = res.IsSuccess && !string.IsNullOrEmpty(res.BackupPath) ? res.BackupPath : localDbPath;
+
+                        // Determine target paths
+                        var targetDbPath = Path.Combine(destDir, Path.GetFileName(localDbPath)); // e.g., turizm.db
+                        var targetManifestPath = Path.Combine(destDir, Path.GetFileName(localManifestPath));
+
+                        // Copy DB to dest atomically
+                        try
+                        {
+                            var tempDb = Path.Combine(destDir, Path.GetFileName(localDbPath) + ".tmp." + Guid.NewGuid().ToString("N"));
+                            File.Copy(sourceDbForUpload, tempDb, true);
+                            if (File.Exists(targetDbPath))
+                            {
+                                var backupOld = targetDbPath + ".bak";
+                                File.Replace(tempDb, targetDbPath, backupOld);
+                                try { File.Delete(backupOld); } catch { }
+                            }
+                            else
+                            {
+                                File.Move(tempDb, targetDbPath);
+                            }
+                            System.Diagnostics.Debug.WriteLine($"Upload: DB copied to OneDrive: {targetDbPath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Upload: DB copy failed: {ex.Message}");
+                        }
+
+                        // Copy manifest atomically
+                        try
+                        {
+                            var tempMan = Path.Combine(destDir, Path.GetFileName(localManifestPath) + ".tmp." + Guid.NewGuid().ToString("N"));
+                            File.Copy(localManifestPath, tempMan, true);
+                            if (File.Exists(targetManifestPath))
+                            {
+                                var backupOld = targetManifestPath + ".bak";
+                                File.Replace(tempMan, targetManifestPath, backupOld);
+                                try { File.Delete(backupOld); } catch { }
+                            }
+                            else
+                            {
+                                File.Move(tempMan, targetManifestPath);
+                            }
+                            System.Diagnostics.Debug.WriteLine($"Upload: Manifest copied to OneDrive: {targetManifestPath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Upload: Manifest copy failed: {ex.Message}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Upload: unexpected error: {ex.Message}");
+                    }
+                }).ConfigureAwait(false);
+
+                // Close progress window
+                Application.Current?.Dispatcher.Invoke(() => { try { progressWnd?.Close(); } catch { } });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UploadDbAndManifestToOneDriveAsync failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Eğer database dosyası yoksa oluşturur ve basit bir Manifest.json dosyası yazar.
+        /// Manifest formatı (kullanıcının istediği):
+        /// {
+        ///   "MachineId": "A-PC",
+        ///   "Version": 1,
+        ///   "LastModified": "2026-07-05T18:22:00",
+        ///   "Hash": "..."
+        /// }
+        /// </summary>
+        private void EnsureLocalDatabaseAndManifest(string dbPath, string localBase)
+        {
+            try
+            {
+                var dbDir = Path.GetDirectoryName(dbPath) ?? localBase;
+                Directory.CreateDirectory(dbDir);
+
+                bool created = false;
+                if (!File.Exists(dbPath))
+                {
+                    // Create an empty SQLite database by opening a connection
+                    try
+                    {
+                        var cs = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
+                        using var conn = new SqliteConnection(cs);
+                        conn.Open();
+                        conn.Close();
+                        created = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to create sqlite file: {ex.Message}");
+                        // Try to ensure a zero-length file as fallback
+                        try { File.WriteAllBytes(dbPath, Array.Empty<byte>()); created = true; } catch { }
+                    }
+                }
+
+                // Compute hash (SHA256) of the DB file if exists
+                string hash = string.Empty;
+                try
+                {
+                    if (File.Exists(dbPath))
+                    {
+                        using var sha = SHA256.Create();
+                        using var fs = File.OpenRead(dbPath);
+                        var h = sha.ComputeHash(fs);
+                        hash = BitConverter.ToString(h).Replace("-", "").ToLowerInvariant();
+                    }
+                }
+                catch { }
+
+                // Write Manifest.json in local base directory
+                try
+                {
+                    Directory.CreateDirectory(localBase);
+                    var manifestPath = Path.Combine(localBase, "Manifest.json");
+                    var manifestObj = new
+                    {
+                        MachineId = Environment.MachineName,
+                        Version = 1,
+                        LastModified = DateTime.UtcNow.ToString("o"),
+                        Hash = hash
+                    };
+                    var json = JsonSerializer.Serialize(manifestObj, new JsonSerializerOptions { WriteIndented = true });
+                    File.WriteAllText(manifestPath, json);
+                    if (created)
+                        System.Diagnostics.Debug.WriteLine($"Created local DB and manifest: {dbPath}, {manifestPath}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to write Manifest.json: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsureLocalDatabaseAndManifest top-level error: {ex.Message}");
+            }
+            }
 
         private void RegisterGlobalExceptionHandlers()
         {
@@ -164,6 +482,25 @@ namespace TurizmOperasyonSistemi
                 // Initial sync / cloud sync responsibilities are removed; local backups remain.
 
                 string dbPath = config.GetDatabasePath();
+                // Ensure database file and simple Manifest.json exist on first run
+                try
+                {
+                    EnsureLocalDatabaseAndManifest(dbPath, config.GetDefaultBaseDir());
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"EnsureLocalDatabaseAndManifest error: {ex.Message}");
+                }
+
+                // If OneDrive contains a newer DB, replace local DB before proceeding
+                try
+                {
+                    await SyncLocalFromOneDriveIfRemoteIsNewer(config, dbPath, config.GetDefaultBaseDir()).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Sync from OneDrive failed: {ex.Message}");
+                }
 
                 System.Diagnostics.Debug.WriteLine("\n╔══════════════════════════════════════════════════════╗");
                 System.Diagnostics.Debug.WriteLine("║         APPLICATION STARTUP (ENTERPRISE)              ║");
@@ -424,23 +761,184 @@ namespace TurizmOperasyonSistemi
             }
         }
 
-        protected override async void OnExit(ExitEventArgs e)
+        protected override void OnExit(ExitEventArgs e)
         {
+            try
+            {
+                // On exit: only create backup / update manifest if DB changed since last manifest hash
+                var config = Services.ConfigurationProvider.Instance;
+                var dbPath = config.GetDatabasePath();
+                var localBase = config.GetDefaultBaseDir();
+                string manifestPath = Path.Combine(localBase, "Manifest.json");
+
+                // Create a consistent snapshot first and compute hash from it
+                BackupResult res = null;
                 try
                 {
-                    // Ensure we attempt a safe local-only shutdown backup
+                    var backupManager = new BackupManager(dbPath);
+                    try { res = backupManager.CreateBackup(); if (res == null) System.Diagnostics.Debug.WriteLine("OnExit: backup returned null"); }
+                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"OnExit: backup creation failed: {ex.Message}"); }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"OnExit: failed to initialize BackupManager: {ex.Message}");
+                }
+
+                string sourceForHash = res != null && res.IsSuccess && !string.IsNullOrEmpty(res.BackupPath) ? res.BackupPath : dbPath;
+                string currentHash = null;
+                try
+                {
+                    if (File.Exists(sourceForHash))
+                    {
+                        using var fs = File.OpenRead(sourceForHash);
+                        using var sha = SHA256.Create();
+                        var h = sha.ComputeHash(fs);
+                        currentHash = BitConverter.ToString(h).Replace("-", "").ToLowerInvariant();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"OnExit: failed to compute DB hash from snapshot: {ex.Message}");
+                }
+
+                string existingHash = null;
+                long existingVersion = 0;
+                if (File.Exists(manifestPath))
+                {
                     try
                     {
-                        var backupManager = new BackupManager(Services.ConfigurationProvider.Instance.GetDatabasePath());
-                        // CreateBackup is synchronous and robust; run without blocking UI unnecessarily
-                        try { backupManager.CreateBackup(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Shutdown local backup failed: {ex.Message}"); }
+                        var txt = File.ReadAllText(manifestPath);
+                        using var doc = JsonDocument.Parse(txt);
+                        var root = doc.RootElement;
+                        if (root.TryGetProperty("Hash", out var hElem)) existingHash = hElem.GetString();
+                        if (root.TryGetProperty("Version", out var vElem) && vElem.TryGetInt64(out var vv)) existingVersion = vv;
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Shutdown local backup failed: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"OnExit: failed to read existing manifest: {ex.Message}");
                     }
                 }
-                catch { }
+
+                bool changed = !string.Equals(currentHash ?? string.Empty, existingHash ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+                if (!changed)
+                {
+                    System.Diagnostics.Debug.WriteLine("OnExit: database unchanged since last manifest; skipping backup/upload and manifest update.");
+                }
+                else
+                {
+                    try
+                    {
+                        string sourceDbForUpload = sourceForHash;
+
+                        // update simple Manifest.json according to requested format
+                        try
+                        {
+                            Directory.CreateDirectory(localBase);
+                            var newVersion = existingVersion + 1;
+                            var manifestObj = new
+                            {
+                                MachineId = Environment.MachineName,
+                                Version = newVersion,
+                                LastModified = DateTime.UtcNow.ToString("o"),
+                                Hash = currentHash
+                            };
+                            var opts = new JsonSerializerOptions { WriteIndented = true };
+                            var json = JsonSerializer.Serialize(manifestObj, opts);
+                            File.WriteAllText(manifestPath, json);
+                            System.Diagnostics.Debug.WriteLine($"OnExit: manifest updated (v{newVersion})");
+
+                            // If OneDrive configured, copy DB + manifest to OneDrive folder and wait until done
+                            try
+                            {
+                                var oneDriveBase = config.GetOneDriveBaseDir();
+                                if (!string.IsNullOrEmpty(oneDriveBase))
+                                {
+                                    Directory.CreateDirectory(oneDriveBase);
+
+                                    // Create progress window
+                                    Window progressWnd = null;
+                                    Application.Current?.Dispatcher.Invoke(() =>
+                                    {
+                                        progressWnd = new Window
+                                        {
+                                            Title = "Senkronizasyon",
+                                            Content = new TextBlock { Text = "SQLite bağlantısının kesilmesini ve dosyalarınızın bulut ortamına yüklenmesini bekleyin...", Margin = new Thickness(20), TextWrapping = TextWrapping.Wrap, Width = 400 },
+                                            SizeToContent = SizeToContent.WidthAndHeight,
+                                            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                                            ResizeMode = ResizeMode.NoResize,
+                                            Topmost = true
+                                        };
+                                    });
+
+                                    Exception taskEx = null;
+                                    var copyTask = Task.Run(() =>
+                                    {
+                                        try
+                                        {
+                                            var targetDbPath = Path.Combine(oneDriveBase, Path.GetFileName(dbPath));
+                                            var tempDb = Path.Combine(oneDriveBase, Path.GetFileName(dbPath) + ".tmp." + Guid.NewGuid().ToString("N"));
+                                            File.Copy(sourceDbForUpload, tempDb, true);
+                                            if (File.Exists(targetDbPath))
+                                            {
+                                                var backupOld = targetDbPath + ".bak";
+                                                File.Replace(tempDb, targetDbPath, backupOld);
+                                                try { File.Delete(backupOld); } catch { }
+                                            }
+                                            else
+                                            {
+                                                File.Move(tempDb, targetDbPath);
+                                            }
+
+                                            var targetManifestPath = Path.Combine(oneDriveBase, Path.GetFileName(manifestPath));
+                                            var tempMan = Path.Combine(oneDriveBase, Path.GetFileName(manifestPath) + ".tmp." + Guid.NewGuid().ToString("N"));
+                                            File.Copy(manifestPath, tempMan, true);
+                                            if (File.Exists(targetManifestPath))
+                                            {
+                                                var backupOld = targetManifestPath + ".bak";
+                                                File.Replace(tempMan, targetManifestPath, backupOld);
+                                                try { File.Delete(backupOld); } catch { }
+                                            }
+                                            else
+                                            {
+                                                File.Move(tempMan, targetManifestPath);
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            taskEx = ex;
+                                        }
+                                        finally
+                                        {
+                                            try { progressWnd?.Dispatcher.Invoke(() => { try { progressWnd.Close(); } catch { } }); } catch { }
+                                        }
+                                    });
+
+                                    // Show dialog and wait until background copy closes it
+                                    Application.Current?.Dispatcher.Invoke(() =>
+                                    {
+                                        try { progressWnd?.ShowDialog(); } catch { }
+                                    });
+
+                                    if (taskEx != null) System.Diagnostics.Debug.WriteLine($"OnExit: OneDrive copy task failed: {taskEx.Message}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"OnExit: OneDrive upload failed: {ex.Message}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"OnExit: failed to update manifest: {ex.Message}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"OnExit: backup/update failed: {ex.Message}");
+                    }
+                }
+            }
+            catch { }
 
             base.OnExit(e);
         }
