@@ -8,6 +8,7 @@ using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Services;
 using TurizmOperasyonSistemi.Windows;
 using System.Text.Json;
+using System.Linq;
 using TurizmOperasyonSistemi.Models;
 using System.Security.Cryptography;
 using System.Text;
@@ -558,6 +559,76 @@ namespace TurizmOperasyonSistemi
                     context.EnsureRegistrationPassportArrivedColumnExists();
                     context.EnsureRegistrationStatusChoiceColumnsExist();
                     context.NormalizeRegistrationNullValues();
+                    // Seed default AppSettings on first run for many lookup types
+                    try
+                    {
+                        var seeds = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>();
+
+                        seeds["Cinsiyet"] = new System.Collections.Generic.List<string> { "Erkek", "Kadın" };
+                        seeds["Yaş Aralığı"] = new System.Collections.Generic.List<string> { "Bebek", "Çocuk", "Yetişkin" };
+                        seeds["Kan Grubu"] = new System.Collections.Generic.List<string> { "A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-" };
+                        seeds["Pasaport Türü"] = new System.Collections.Generic.List<string> { "Bordo", "Yeşil", "Gri", "Siyah" };
+
+                        // Dönem: aylık seçenekler Temmuz 2026'dan Aralık 2126'ya kadar
+                        var turkishMonths = new[] { "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık" };
+                        var donemList = new System.Collections.Generic.List<string>();
+                        var startYear = 2026; var startMonth = 7; // Temmuz 2026
+                        var endYear = 2126; var endMonth = 12; // Aralık 2126
+                        int year = startYear; int month = startMonth;
+                        while (year < endYear || (year == endYear && month <= endMonth))
+                        {
+                            var name = $"{turkishMonths[month - 1]} {year}";
+                            donemList.Add(name);
+                            month++;
+                            if (month > 12) { month = 1; year++; }
+                        }
+                        seeds["Dönem"] = donemList;
+
+                        seeds["Vize Talebi"] = new System.Collections.Generic.List<string> { "Vize Alacağız", "Vizeyi Kendisi Alacak" };
+                        seeds["Kargo Talebi"] = new System.Collections.Generic.List<string> { "Kargo Gönderilecek", "Kargo Almayacak", "Kargo Gönderildi", "Elden Teslim Alacak", "Elden Teslim Aldı" };
+                        seeds["Bilet Talebi"] = new System.Collections.Generic.List<string> { "Biletini Alacağız", "Bileti Kendisi Alacak" };
+                        seeds["Aktarma Var mı?"] = new System.Collections.Generic.List<string> { "Var", "Yok" };
+                        seeds["Pasaportu Geldi mi ?"] = new System.Collections.Generic.List<string> { "Evet", "Hayır", "Pasaport Vermeyecek" };
+                        seeds["Bilet Durumu"] = new System.Collections.Generic.List<string> { "Bileti geldi", "Bileti gelmedi", "Bileti Alınıyor", "Bileti Kendisi Alacak" };
+                        seeds["Vize Durumu"] = new System.Collections.Generic.List<string> { "Vize Çıktı", "Vize Çıkmadı", "Vizesi Alınıyor", "Vizeyi Kendisi Alacak", "Pasaport Bekleniyor" };
+                        seeds["Uyruk"] = new System.Collections.Generic.List<string> { "TÜRKİYE", "YABANCI" };
+                        seeds["Ödeme Yöntemi"] = new System.Collections.Generic.List<string> { "Havale/EFT", "Nakit/Elden Teslim", "Kredi Kartı /Banka Kartı", "Çek", "Senet", "Mail Order" };
+                        seeds["Para Birimi"] = new System.Collections.Generic.List<string> { "Dolar $", "Euro €", "Pound £ (İngiliz Sterlini)", "Türk Lirası ₺", "Suudi Riyali (SAR)" };
+                        seeds["RoomType"] = new System.Collections.Generic.List<string> { "SINGLE", "DBL", "TWIN", "TRPL", "QUAD", "QUINT" };
+
+                        // Türkiye'nin 81 ili
+                        var provinces = new System.Collections.Generic.List<string>
+                        {
+                            "Adana","Adıyaman","Afyonkarahisar","Ağrı","Amasya","Ankara","Antalya","Artvin","Aydın","Balıkesir","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkari","Hatay","Isparta","Mersin","İstanbul","İzmir","Kars","Kastamonu","Kayseri","Kırklareli","Kırşehir","Kocaeli","Konya","Kütahya","Malatya","Manisa","Kahramanmaraş","Mardin","Muğla","Muş","Nevşehir","Niğde","Ordu","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Tekirdağ","Tokat","Trabzon","Tunceli","Şanlıurfa","Uşak","Van","Yozgat","Zonguldak","Aksaray","Bayburt","Karaman","Kırıkkale","Batman","Şırnak","Bartın","Ardahan","Iğdır","Yalova","Karabük","Kilis","Osmaniye","Düzce"
+                        };
+
+                        seeds["Aktarma Şehri"] = provinces;
+                        seeds["Katılım Yapılacak Şehir"] = provinces;
+
+                        // Apply seeds: for each Type, if no existing entries with that Type, add values with incremental SortOrder
+                        foreach (var kv in seeds)
+                        {
+                            var type = kv.Key;
+                            var values = kv.Value;
+                            bool exists = context.AppSettings.Any(x => x.Type == type);
+                            if (exists) continue;
+
+                            int sort = 1;
+                            foreach (var val in values)
+                            {
+                                context.AppSettings.Add(new AppSetting { Type = type, Value = val, SortOrder = sort, IsActive = true });
+                                sort++;
+                            }
+                        }
+
+                        // Save all added settings
+                        context.SaveChanges();
+                        System.Diagnostics.Debug.WriteLine("Seeded default AppSettings for multiple lookup types.");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"AppSettings multi-seed failed: {ex.Message}");
+                    }
                     System.Diagnostics.Debug.WriteLine("✓ Şema ayarlamaları tamamlandı");
                 }
 
