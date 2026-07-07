@@ -2,7 +2,7 @@
 <!-- Standard application manifest with PerMonitorV2 DPI awareness -->
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <assemblyIdentity
-	version="1.0.0.1"
+	version="1.0.0.2"
 	processorArchitecture="*"
 	name="TurizmOperasyonSistemi"
 	type="win32" />
@@ -34,4 +34,5 @@
 	</windowsSettings>
   </application>
 </assembly>
+
 

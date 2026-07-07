@@ -40,9 +40,9 @@ namespace TurizmOperasyonSistemi.Data
             }
             catch (Exception ex)
             {
-                // Fallback to legacy path if configuration reading fails
+                // Fallback to LocalAppData application directory if configuration reading fails
                 System.Diagnostics.Debug.WriteLine($"OnConfiguring error, falling back to default path: {ex.Message}");
-                string dbDirectory = @"C:\TurizmDB";
+                string dbDirectory = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TurizmOperasyonSistemi");
                 if (!System.IO.Directory.Exists(dbDirectory))
                 {
                     System.IO.Directory.CreateDirectory(dbDirectory);

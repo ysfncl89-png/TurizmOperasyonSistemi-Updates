@@ -697,13 +697,10 @@ namespace TurizmOperasyonSistemi
                     // Sync background service removed (OneDrive sync disabled)
 
                     // Register Update background service
-                    var updateChecker = new UpdateCheckerService();
-                    var updateDownloader = new UpdateDownloadService();
-                    var updateInstaller = new UpdateInstallerService();
-                    var updateBg = new UpdateBackgroundService(updateChecker, updateDownloader, updateInstaller);
-                    _backgroundServiceManager.RegisterService(updateBg);
-
-                    // Start all registered background services
+                    // Update background service intentionally disabled for manual-update mode.
+                    // We do NOT create or register UpdateBackgroundService here so no automatic
+                    // update checks or downloads will run on client machines regardless of
+                    // existing local configuration files.
                     await _backgroundServiceManager.StartAllAsync().ConfigureAwait(false);
                     // Subscribe to update notifications for minimal UI interactions
                     try
@@ -712,13 +709,61 @@ namespace TurizmOperasyonSistemi
                         {
                             try
                             {
-                                if (key == "update.available" || key == "update.migration.required" || key == "update.both.required")
+                        // Ignore any update-related notifications when manual-update mode is enabled.
+                        // This prevents stale/previously persisted update notifications from popping
+                        // up and triggering downloads after we disabled automatic updates.
+                        try
+                        {
+                            var cfgLocal = Services.ConfigurationProvider.Instance;
+                            if (!cfgLocal.IsUpdateEnabled())
+                            {
+                                if (key != null && key.StartsWith("update."))
                                 {
+                                    return;
+                                }
+                            }
+                        }
+                        catch { }
+
+                        if (key.StartsWith("update."))
+                        {
+                                    // Extract possible flags from payload to determine if update should be blocked
+                                    bool migrationRequired = false;
+                                    bool packageContainsMigration = false;
+
+                                    try
+                                    {
+                                        if (payload is Models.Notification dbn && !string.IsNullOrEmpty(dbn.PayloadJson))
+                                        {
+                                            using var doc = JsonDocument.Parse(dbn.PayloadJson);
+                                            var root = doc.RootElement;
+                                            if (root.TryGetProperty("MigrationRequired", out var mr) && mr.ValueKind == JsonValueKind.True) migrationRequired = true;
+                                            if (root.TryGetProperty("PackageContainsMigration", out var pcm) && pcm.ValueKind == JsonValueKind.True) packageContainsMigration = true;
+                                        }
+                                        else
+                                        {
+                                            var t = payload.GetType();
+                                            var mrProp = t.GetProperty("MigrationRequired") ?? t.GetProperty("migrationRequired");
+                                            var pcmProp = t.GetProperty("PackageContainsMigration") ?? t.GetProperty("packageContainsMigration");
+                                            if (mrProp != null)
+                                            {
+                                                var v = mrProp.GetValue(payload);
+                                                if (v is bool b && b) migrationRequired = true;
+                                            }
+                                            if (pcmProp != null)
+                                            {
+                                                var v2 = pcmProp.GetValue(payload);
+                                                if (v2 is bool b2 && b2) packageContainsMigration = true;
+                                            }
+                                        }
+                                    }
+                                    catch { }
+
                                     var info = TryExtractUpdateInfo(payload);
                                     if (info == null) return;
 
-                                    var requiresMigrationFirst = key == "update.migration.required" || key == "update.both.required";
-                                    if (requiresMigrationFirst)
+                                    // If migration required and package does NOT contain migrations, block the app update and notify user
+                                    if (migrationRequired && !packageContainsMigration)
                                     {
                                         Application.Current?.Dispatcher.Invoke(() =>
                                         {
@@ -1077,7 +1122,7 @@ namespace TurizmOperasyonSistemi
             {
                 // Use configured paths for user-friendly messages
                 string cfgDbPath = Services.ConfigurationProvider.Instance.GetDatabasePath();
-                string cfgDbDir = System.IO.Path.GetDirectoryName(cfgDbPath) ?? "C:\\TurizmDB";
+                string cfgDbDir = System.IO.Path.GetDirectoryName(cfgDbPath) ?? Services.ConfigurationProvider.Instance.GetDefaultBaseDir();
 
                 message += "▸ Veritabanı Sorunu Tespit Edildi\n\n";
                 message += "Çözüm girisinde:\n";
@@ -1092,7 +1137,7 @@ namespace TurizmOperasyonSistemi
                 message += "Çözüm önerileri:\n";
                 message += "1. Uygulamayı Administrator olarak çalıştırın\n";
                 string cfgDbPath2 = Services.ConfigurationProvider.Instance.GetDatabasePath();
-                string cfgDbDir2 = System.IO.Path.GetDirectoryName(cfgDbPath2) ?? "C:\\TurizmDB";
+                string cfgDbDir2 = System.IO.Path.GetDirectoryName(cfgDbPath2) ?? Services.ConfigurationProvider.Instance.GetDefaultBaseDir();
                 message += $"2. {cfgDbDir2} klasörüne yazma izni kontrol edin\n";
                 message += "3. Virüs tarama yazılımını geçici olarak devre dışı bırakın\n";
             }

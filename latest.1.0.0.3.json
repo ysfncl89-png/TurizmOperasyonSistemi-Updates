@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0.3",
+  "releaseType": "both",
+  "minimumDatabaseVersion": 16,
+  "minimumClientVersion": "1.0.0.3",
+  "mandatory": false,
+  "releaseDate": "2026-07-07",
+  "channel": "stable",
+  "containsMigrations": true,
+  "checksum": "REPLACE_WITH_SHA256_OF_ZIP",
+  "downloadUrl": "REPLACE_WITH_GITHUB_RELEASE_ASSET_URL",
+  "installerType": "zip",
+  "releaseNotes": "Test release: içerik olarak release_message.txt içerir. Gerçek publish için publish çıktınızı zip'leyin."
+}

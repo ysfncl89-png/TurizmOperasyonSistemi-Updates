@@ -12,6 +12,10 @@ namespace TurizmOperasyonSistemi.Services
         public string ReleaseType { get; set; }
         public bool Mandatory { get; set; }
         public int? MinimumDatabaseVersion { get; set; }
+        // If the release package explicitly contains database migration steps that will be applied
+        // by the installer, set this to true in the manifest. When present this flag is trusted
+        // by the client to allow update even if the local DB version is lower than MinimumDatabaseVersion.
+        public bool? ContainsMigrations { get; set; }
         public string MinimumClientVersion { get; set; }
         public DateTime? ReleaseDate { get; set; }
         public string ReleaseNotes { get; set; }

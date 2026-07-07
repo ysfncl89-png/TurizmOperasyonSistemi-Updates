@@ -16,8 +16,21 @@ namespace TurizmOperasyonSistemi.Services
 
         private ConfigurationProvider(string configPath = null)
         {
-            // Eğer path belirtilmemişse, default path kullan
-            _configPath = configPath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "appsettings.json");
+            // Eğer path belirtilmemişse, LocalAppData altındaki uygulama dizinindeki appsettings.json kullanılır.
+            // Bu sayede kurulum dizinindeki (Program Files) template dosyası uygulama çalıştırıldığında
+            // LocalAppData içine kopyalanır ve gerçek çalışma verileri LocalAppData altında tutulur.
+            try
+            {
+                var defaultLocal = Path.Combine(GetDefaultBaseDir(), "appsettings.json");
+                _configPath = configPath ?? defaultLocal;
+            }
+            catch
+            {
+                // Fallback: eğer GetDefaultBaseDir bir hata verirse, yine uygulama içindeki Data klasöründeki
+                // template'i kullan.
+                _configPath = configPath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "appsettings.json");
+            }
+
             Load();
         }
 
@@ -45,9 +58,37 @@ namespace TurizmOperasyonSistemi.Services
                 if (!File.Exists(_configPath))
                 {
                     System.Diagnostics.Debug.WriteLine($"Config dosyası bulunamadı: {_configPath}");
-                    System.Diagnostics.Debug.WriteLine("Default değerleri kullanılıyor...");
-                    _configRoot = CreateDefaultConfig();
-                    return;
+
+                    // Eğer uygulama dizininde bir template (Data/appsettings.json) varsa, onu LocalAppData'ya kopyala
+                    try
+                    {
+                        var appTemplate = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "appsettings.json");
+                        if (File.Exists(appTemplate))
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(_configPath) ?? GetDefaultBaseDir());
+                            File.Copy(appTemplate, _configPath, overwrite: true);
+                            System.Diagnostics.Debug.WriteLine($"Config template kopyalandı: {appTemplate} -> {_configPath}");
+                        }
+                    }
+                    catch (Exception copyEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Config template kopyalama hatası: {copyEx.Message}");
+                    }
+
+                    // Eğer kopyalama başarısız olduysa ya da template yoksa, oluşturulmuş default config'i kullan ve yaz
+                    if (!File.Exists(_configPath))
+                    {
+                        var def = CreateDefaultConfig();
+                        var defJson = def.GetRawText();
+                        try
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(_configPath) ?? GetDefaultBaseDir());
+                            File.WriteAllText(_configPath, defJson);
+                        }
+                        catch { }
+                        _configRoot = def;
+                        return;
+                    }
                 }
 
                 string json = File.ReadAllText(_configPath);
@@ -479,7 +520,16 @@ namespace TurizmOperasyonSistemi.Services
 
                 // Potansiyel eski kaynaklar: OneDrive veya C:\TurizmDB
                 bool fromOneDrive = !string.IsNullOrEmpty(oneDriveBase) && currentRoot.StartsWith(oneDriveBase, StringComparison.OrdinalIgnoreCase);
-                bool fromLegacyC = currentRoot.StartsWith(@"C:\\TurizmDB", StringComparison.OrdinalIgnoreCase);
+
+                // Detect legacy C:\TurizmDB paths (handle with single backslash and optional trailing separator)
+                bool fromLegacyC = false;
+                try
+                {
+                    var normalized = Path.GetFullPath(currentRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    fromLegacyC = normalized.Equals(Path.GetFullPath(@"C:\TurizmDB").TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.OrdinalIgnoreCase)
+                                  || normalized.StartsWith(Path.GetFullPath(@"C:\TurizmDB") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+                }
+                catch { fromLegacyC = currentRoot.StartsWith(@"C:\\TurizmDB", StringComparison.OrdinalIgnoreCase); }
 
                 if (!fromOneDrive && !fromLegacyC)
                     return; // Bilinmeyen bir konumdan geliyorsa müdahale etmiyoruz
@@ -498,7 +548,9 @@ namespace TurizmOperasyonSistemi.Services
                     try
                     {
                         // Eğer kaynak dosya uygulama kurulumu dizinindeyse (installer tarafından yerleştirilmiş)
-                        // mevcut local DB'yi KESİNLİKLE overwrite etmeyelim. Bunun yerine kaynak dosyayı arşivleyelim.
+                        // bu dosyanın eski bir test/seed veritabanı olma ihtimali yüksek olup, istemci tarafında
+                        // otomatik olarak local DB'yi seed etmek istenmeyebilir. Bu nedenle installer kaynaklı
+                        // DB'ler asla local hedefe kopyalanmayacak; bunun yerine arşivlenecek.
                         var appBaseDir = AppDomain.CurrentDomain.BaseDirectory ?? string.Empty;
                         bool sourceIsAppInstall = false;
                         try
@@ -508,29 +560,29 @@ namespace TurizmOperasyonSistemi.Services
                         }
                         catch { sourceIsAppInstall = false; }
 
-                        if (!File.Exists(targetDbPath))
+                        if (sourceIsAppInstall)
                         {
-                            // Hedef yoksa güvenli şekilde kopyala
-                            File.Copy(currentDb, targetDbPath);
-                            System.Diagnostics.Debug.WriteLine($"Database kopyalandı: {currentDb} -> {targetDbPath}");
+                            // Installer tarafından konulan DB arşivle ve local'e kopyalama (seed) yapma.
+                            try
+                            {
+                                var srcDir = Path.GetDirectoryName(currentDb) ?? appBaseDir;
+                                string stamped = Path.GetFileNameWithoutExtension(currentDb) + "_installer_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(currentDb);
+                                var archived = Path.Combine(srcDir, stamped);
+                                File.Move(currentDb, archived);
+                                System.Diagnostics.Debug.WriteLine($"Installer kaynaklı DB bulundu; arşivlendi: {archived}");
+                            }
+                            catch (Exception mvEx)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Installer DB arşivleme başarısız: {mvEx.Message}");
+                            }
                         }
                         else
                         {
-                            if (sourceIsAppInstall)
+                            if (!File.Exists(targetDbPath))
                             {
-                                // Installer'ın getirdiği DB, zaten var olan local DB'yi değiştirmesin.
-                                try
-                                {
-                                    var srcDir = Path.GetDirectoryName(currentDb) ?? appBaseDir;
-                                    string stamped = Path.GetFileNameWithoutExtension(currentDb) + "_installer_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(currentDb);
-                                    var archived = Path.Combine(srcDir, stamped);
-                                    File.Move(currentDb, archived);
-                                    System.Diagnostics.Debug.WriteLine($"Installer kaynaklı DB bulundu; mevcut local DB korunacak. Installer DB arşivlendi: {archived}");
-                                }
-                                catch (Exception mvEx)
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"Installer DB arşivleme başarısız: {mvEx.Message}");
-                                }
+                                // Hedef yoksa güvenli şekilde kopyala
+                                File.Copy(currentDb, targetDbPath);
+                                System.Diagnostics.Debug.WriteLine($"Database kopyalandı: {currentDb} -> {targetDbPath}");
                             }
                             else
                             {

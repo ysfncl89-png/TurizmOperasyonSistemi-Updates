@@ -93,6 +93,14 @@ namespace TurizmOperasyonSistemi.Services
                 else if (root.TryGetProperty("url", out var u2)) info.DownloadUrl = u2.GetString();
                 if (root.TryGetProperty("installerType", out var it)) info.InstallerType = it.GetString();
                 if (root.TryGetProperty("checksum", out var cs)) info.Checksum = cs.GetString();
+                if (root.TryGetProperty("containsMigrations", out var cm) && cm.ValueKind == JsonValueKind.True)
+                {
+                    info.ContainsMigrations = true;
+                }
+                else if (root.TryGetProperty("containsMigrations", out var cm2) && cm2.ValueKind == JsonValueKind.False)
+                {
+                    info.ContainsMigrations = false;
+                }
 
                 // basic validation
                 if (string.IsNullOrEmpty(info.Version) || string.IsNullOrEmpty(info.DownloadUrl))

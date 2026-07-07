@@ -9,7 +9,7 @@ Aşağıdaki sürüm alanları **aynı olmalı**:
 - `latest.json -> version`
 - `latest.json -> minimumClientVersion`
 
-Önerilen format: `1.0.0.1` ve `v1.0.0.1`
+Önerilen format: `1.0.0.2` ve `v1.0.0.2`
 
 ## Release içinde bulunması gereken dosyalar
 - `latest.json`
@@ -34,8 +34,9 @@ Aşağıdaki sürüm alanları **aynı olmalı**:
 5. Uygulama açıldığında update servisi manifesti okuyacak ve yeni sürüm varsa bildirecek.
 
 ## Örnek
-- Kurulu uygulama: `1.0.0.1`
-- Yeni release: `v1.0.0.1`
-- `latest.json.version`: `1.0.0.1`
-- `downloadUrl`: `.../v1.0.0.1/TurizmOperasyonSistemi-publish.zip`
+- Kurulu uygulama: `1.0.0.2`
+- Yeni release: `v1.0.0.2`
+- `latest.json.version`: `1.0.0.2`
+- `downloadUrl`: `.../v1.0.0.2/TurizmOperasyonSistemi-publish.zip`
+
 

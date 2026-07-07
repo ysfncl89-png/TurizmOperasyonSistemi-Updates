@@ -1,14 +1,15 @@
 ﻿{
-  "version": "1.0.0.1",
+  "version": "1.0.0.2",
   "releaseType": "both",
   "minimumDatabaseVersion": 15,
-  "minimumClientVersion": "1.0.0.1",
+  "minimumClientVersion": "1.0.0.2",
   "mandatory": false,
   "releaseDate": "2026-07-07",
   "channel": "stable",
   "checksum": "<sha256-hex>",
-  "downloadUrl": "https://example.com/downloads/TurizmOperasyonSistemi-1.0.0.1.zip",
+  "downloadUrl": "https://example.com/downloads/TurizmOperasyonSistemi-1.0.0.2.zip",
   "installerType": "zip",
-  "releaseNotes": "İlk güncelleme testi."
+  "releaseNotes": "İkinci güncelleme testi."
 }
+
 

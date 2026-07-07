@@ -113,17 +113,34 @@ namespace TurizmOperasyonSistemi.Services
             var appUpdateAvailable = IsNewerVersion(info.Version, currentAppVersion);
             var migrationRequired = info.MinimumDatabaseVersion.HasValue && currentDbVersion < info.MinimumDatabaseVersion.Value;
 
-            if (!appUpdateAvailable && !migrationRequired)
+            // Determine whether the remote release/package itself contains migrations that can bring the DB
+            // up to the required version. Prefer an explicit containsMigrations flag in the manifest when present;
+            // otherwise fall back to comparing minimumDatabaseVersion.
+            var packageContainsMigration = false;
+            if (info.ContainsMigrations.HasValue)
+            {
+                packageContainsMigration = info.ContainsMigrations.Value;
+            }
+            else
+            {
+                packageContainsMigration = info.MinimumDatabaseVersion.HasValue && info.MinimumDatabaseVersion.Value > currentDbVersion;
+            }
+
+            // If there is neither an app update nor a migration in the package, nothing to do.
+            if (!appUpdateAvailable && !packageContainsMigration)
             {
                 Debug.WriteLine($"UpdateBackgroundService: no update required. currentApp={currentAppVersion}, latestApp={info.Version}, currentDb={currentDbVersion}, minDb={info.MinimumDatabaseVersion?.ToString() ?? "N/A"}");
                 return;
             }
 
-            var notificationKey = appUpdateAvailable && migrationRequired
-                ? "update.both.required"
-                : appUpdateAvailable
-                    ? "update.available"
-                    : "update.migration.required";
+            // Choose notification key depending on app update vs migration-only vs both scenarios.
+            var notificationKey = "update.available";
+            if (appUpdateAvailable && migrationRequired && !packageContainsMigration)
+                notificationKey = "update.both.required"; // app update available but DB is too old and package doesn't contain migrations
+            else if (!appUpdateAvailable && packageContainsMigration)
+                notificationKey = "update.migration.available"; // package contains migrations though app version may be same
+            else if (appUpdateAvailable && packageContainsMigration)
+                notificationKey = "update.both.available"; // app and migration available in package
 
             var payload = new
             {
@@ -133,14 +150,15 @@ namespace TurizmOperasyonSistemi.Services
                 RequiredDatabaseVersion = info.MinimumDatabaseVersion,
                 ReleaseType = info.ReleaseType,
                 AppUpdateAvailable = appUpdateAvailable,
-                MigrationRequired = migrationRequired
+                MigrationRequired = migrationRequired,
+                PackageContainsMigration = packageContainsMigration
             };
 
             NotificationCenter.Publish(notificationKey, payload, persistToDb: true);
 
-            if (migrationRequired)
+            if (migrationRequired && !packageContainsMigration)
             {
-                Debug.WriteLine("UpdateBackgroundService: migration required; app update is blocked until database migration is resolved.");
+                Debug.WriteLine("UpdateBackgroundService: migration required and package does not contain migrations; app update is blocked until database migration is resolved.");
                 return;
             }
 
