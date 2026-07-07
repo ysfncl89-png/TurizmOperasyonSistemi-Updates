@@ -105,7 +105,9 @@
                              MouseMove="EntriesList_MouseMove" 
                              Drop="EntriesList_Drop" 
                              DragOver="EntriesList_DragOver"
-                             HorizontalContentAlignment="Stretch">
+                             HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -129,7 +131,9 @@
                                         <!-- DatePicker (use built-in small calendar button) -->
                                         <DatePicker SelectedDate="{Binding Date}" Grid.Column="0" Height="32" VerticalAlignment="Center" Background="#0B1220" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1" />
                                         <TextBox Text="{Binding Time, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Margin="8,0,0,0" VerticalContentAlignment="Center" Background="#0B1220" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1" Padding="8" />
-                                        <TextBox Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="2" Margin="8,0,0,0" AcceptsReturn="True" TextWrapping="Wrap" Height="80" Background="#0B1220" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1" Padding="8"/>
+                                        <TextBox Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="2" Margin="8,0,0,0" AcceptsReturn="True" TextWrapping="Wrap" Height="80" Background="#0B1220" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1" Padding="8" VerticalContentAlignment="Top"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                                         <Button Grid.Column="3" Click="RemoveEntry_Click" Tag="{Binding}" Padding="6" Background="#2D3748" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="#E2F8FF"/>
