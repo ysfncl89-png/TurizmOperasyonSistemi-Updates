@@ -746,7 +746,8 @@ namespace TurizmOperasyonSistemi.Views
                         }
                         else
                         {
-                            var tb = new TextBlock { Text = "Yeni bildirim yok.", Foreground = (Brush)FindResource("{x:Static SystemColors.ControlLightBrushKey}") };
+                            // Use the SystemColors brush directly instead of passing a literal x:Static string to FindResource
+                            var tb = new TextBlock { Text = "Yeni bildirim yok.", Foreground = SystemColors.ControlLightBrush };
                             tb.Margin = new Thickness(6);
                             stack.Children.Add(tb);
                         }
