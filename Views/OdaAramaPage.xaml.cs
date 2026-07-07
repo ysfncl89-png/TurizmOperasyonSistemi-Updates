@@ -538,6 +538,63 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
+                // Ensure schema has CheckInDate/CheckOutDate columns on older DBs where migrations
+                // may not have been applied. These ALTER statements are safe (wrapped in try/catch)
+                // and will be ignored if the columns already exist.
+                try
+                {
+                    using (var dbAlt = new AppDbContext())
+                    {
+                        dbAlt.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN TourType TEXT NOT NULL DEFAULT ''");
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    using (var dbAlt = new AppDbContext())
+                    {
+                        dbAlt.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN Period TEXT NOT NULL DEFAULT ''");
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    using (var dbAlt = new AppDbContext())
+                    {
+                        dbAlt.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN GroupType TEXT NOT NULL DEFAULT ''");
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    using (var dbAlt = new AppDbContext())
+                    {
+                        dbAlt.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN DaysCount TEXT NOT NULL DEFAULT ''");
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    using (var dbAlt = new AppDbContext())
+                    {
+                        dbAlt.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN CheckInDate TEXT DEFAULT ''");
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    using (var dbAlt = new AppDbContext())
+                    {
+                        dbAlt.Database.ExecuteSqlRaw("ALTER TABLE RoomAllocations ADD COLUMN CheckOutDate TEXT DEFAULT ''");
+                    }
+                }
+                catch { }
+
                 using (var db = new AppDbContext())
                 {
                     var allocations = db.RoomAllocations
