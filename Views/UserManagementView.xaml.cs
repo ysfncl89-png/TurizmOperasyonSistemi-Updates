@@ -96,7 +96,8 @@ namespace TurizmOperasyonSistemi.Views
                 return;
             }
 
-            // Erişim kontrolü: Eğer kullanıcı girişi devre dışıysa admin onayı iste
+            // Erişim kontrolü: Eğer kullanıcı girişi aktifleştirilmişse sadece admin izinli olsun.
+            // Not: Yeni kullanıcı eklerken admin kullanıcı adı/şifresi isteyen dialog artık gösterilmeyecek.
             try
             {
                 using (var db = new AppDbContext())
@@ -104,26 +105,12 @@ namespace TurizmOperasyonSistemi.Views
                     var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
                     bool enableLogin = setting != null && setting.Value.ToString().ToLower() == "true";
 
-                    if (!enableLogin)
+                    if (enableLogin && !CurrentUser.Instance.IsAdmin)
                     {
-                        var owner = Window.GetWindow(this);
-                        var dlg = new AdminAuthDialog();
-                        if (owner != null) dlg.Owner = owner;
-                        var res = dlg.ShowDialog();
-                        if (res != true || dlg.AuthenticatedUser == null)
-                        {
-                            MessageBox.Show("Yeni kullanıcı eklemek için admin onayı gerekli.", "Yetki Gerekli", MessageBoxButton.OK, MessageBoxImage.Warning);
-                            return;
-                        }
+                        MessageBox.Show("Yeni kullanıcı oluşturma yalnızca admin kullanıcılar içindir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
                     }
-                    else
-                    {
-                        if (!CurrentUser.Instance.IsAdmin)
-                        {
-                            MessageBox.Show("Yeni kullanıcı oluşturma yalnızca admin kullanıcılar içindir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                            return;
-                        }
-                    }
+                    // Eğer kullanıcı girişi devre dışıysa, admin onayı istemiyoruz — doğrudan izin ver
                 }
             }
             catch
@@ -396,34 +383,45 @@ namespace TurizmOperasyonSistemi.Views
                 using (var db = new AppDbContext())
                 {
                     var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
-                    if (setting != null)
+                    // Eğer setting yoksa, yeni bir kayıt oluşturacağız (varsayılan false kabul edilir)
+                    bool currentValue = false;
+                    bool created = false;
+                    if (setting == null)
                     {
-                        bool currentValue = setting.Value.ToString().ToLower() == "true";
-
-                        // Eğer şu an kapalı ise (currentValue == false) ve kullanıcı açmak istiyorsa
-                        // admin kimlik doğrulaması iste
-                        if (!currentValue)
-                        {
-                            var owner = Window.GetWindow(this);
-                            var dlg = new AdminAuthDialog();
-                            if (owner != null) dlg.Owner = owner;
-                            var result = dlg.ShowDialog();
-                            if (result != true || dlg.AuthenticatedUser == null)
-                            {
-                                MessageBox.Show("Kullanıcı girişi yalnızca admin onayıyla etkinleştirilebilir.", "Yetki Gerekli", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                return;
-                            }
-                        }
-
-                        // Eğer admin doğrulaması yapıldı veya kapatılıyorsa değişikliği uygula
-                        setting.Value = (!currentValue).ToString().ToLower();
-                        db.SaveChanges();
-
-                        string status = currentValue ? "devre dışı bırakıldı" : "etkinleştirildi";
-                        MessageBox.Show($"Kullanıcı girişi {status}.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                        UpdateLoginButtonAppearance(db);
+                        setting = new global::AppSetting { Type = "EnableUserLogin", Value = "false" };
+                        db.AppSettings.Add(setting);
+                        created = true;
                     }
+                    else
+                    {
+                        currentValue = setting.Value.ToString().ToLower() == "true";
+                    }
+
+                    // Değişiklik öncesi admin kullanıcı adı/şifresi ile doğrulama iste
+                    var owner = Window.GetWindow(this);
+                    var dlg = new AdminAuthDialog();
+                    if (owner != null) dlg.Owner = owner;
+                    var result = dlg.ShowDialog();
+                    if (result != true || dlg.AuthenticatedUser == null || !string.Equals(dlg.AuthenticatedUser.Role, "admin", System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        MessageBox.Show("Kullanıcı girişi yalnızca admin onayıyla değiştirilebilir.", "Yetki Gerekli", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        // Eğer yeni kayıt eklemişsek ve doğrulama başarısızsa değişiklikten önce eklemeyi geri al
+                        if (created)
+                        {
+                            db.AppSettings.Remove(setting);
+                            db.SaveChanges();
+                        }
+                        return;
+                    }
+
+                    // Admin doğrulaması başarılıysa değişikliği uygula
+                    setting.Value = (!currentValue).ToString().ToLower();
+                    db.SaveChanges();
+
+                    string status = currentValue ? "devre dışı bırakıldı" : "etkinleştirildi";
+                    MessageBox.Show($"Kullanıcı girişi {status}.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    UpdateLoginButtonAppearance(db);
                 }
             }
             catch (Exception ex)

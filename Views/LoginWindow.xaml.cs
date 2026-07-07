@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Services;
+using System.Linq;
 
 namespace TurizmOperasyonSistemi.Views
 {
@@ -56,8 +57,9 @@ namespace TurizmOperasyonSistemi.Views
                     var enableLoginSetting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
                     bool enableLogin = enableLoginSetting != null && enableLoginSetting.Value.ToString().ToLower() == "true";
 
-                    // Eğer login disabled ise MainWindow'u aç
-                    if (!enableLogin)
+                    // Eğer EnableUserLogin ayarı mevcutsa ve false ise (no-login modu seçilmişse)
+                    // kayıtlı kullanıcı olmasına bakılmaksızın uygulamayı doğrudan aç
+                    if (enableLoginSetting != null && !enableLogin)
                     {
                         // Otomatik sistem kullanıcıyı admin olarak ayarla ki menüler görünsün
                         CurrentUser.Instance.SetUser(new Models.User { Id = -1, Username = "System", PasswordHash = "", Role = "admin", PermissionsJson = "[\"all\"]", CreatedAt = DateTime.Now });
@@ -66,23 +68,26 @@ namespace TurizmOperasyonSistemi.Views
                         this.Close();
                         return;
                     }
-                }
 
-                var hasUsers = await _authService.HasUsersAsync();
+                    // Önce sistemde kullanıcı var mı kontrol et (ilk kurulumda AppSetting eksikse kayıt ekranı gösterilecek)
+                    var hasUsers = await _authService.HasUsersAsync();
 
-                if (!hasUsers)
-                {
-                    // İlk kullanıcı oluşturma modu
-                    _isFirstUser = true;
-                    ShowRegisterPanel();
-
-                    // Başlık değiştir
-                    var title = (TextBlock)this.FindName("ErrorMessage") ?? new TextBlock();
-                    var loginPanel = (StackPanel)this.FindName("LoginPanel");
-                    var header = loginPanel?.Children[0] as TextBlock;
-                    if (header != null)
+                    if (!hasUsers)
                     {
-                        header.Text = "İlk Kullanıcı Oluştur";
+                        // İlk kullanıcı oluşturma modu
+                        _isFirstUser = true;
+                        ShowRegisterPanel();
+
+                        // Başlık değiştir
+                        var title = (TextBlock)this.FindName("ErrorMessage") ?? new TextBlock();
+                        var loginPanel = (StackPanel)this.FindName("LoginPanel");
+                        var header = loginPanel?.Children[0] as TextBlock;
+                        if (header != null)
+                        {
+                            header.Text = "İlk Kullanıcı Oluştur";
+                        }
+
+                        return;
                     }
                 }
             }
@@ -128,6 +133,35 @@ namespace TurizmOperasyonSistemi.Views
 
         private async void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
+            // Eğer ilk kurulumda ve no-login modu seçildiyse, kullanıcı oluşturmadan doğrudan no-login moda geç
+            if (_isFirstUser && NoLoginModeCheckBox != null && NoLoginModeCheckBox.IsChecked == true)
+            {
+                try
+                {
+                    using (var db = new AppDbContext())
+                    {
+                        var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                        if (setting == null)
+                        {
+                            db.AppSettings.Add(new global::AppSetting { Type = "EnableUserLogin", Value = "false" });
+                        }
+                        else
+                        {
+                            setting.Value = "false";
+                        }
+                        db.SaveChanges();
+                    }
+                }
+                catch { }
+
+                // Kullanıcı oluşturulmadan sistem admin olarak oturum açılıyor (geçici System user)
+                CurrentUser.Instance.SetUser(new Models.User { Id = -1, Username = "System", PasswordHash = "", Role = "admin", PermissionsJson = "[\"all\"]", CreatedAt = DateTime.Now });
+                MainWindow mainWindow = new MainWindow();
+                mainWindow.Show();
+                this.Close();
+                return;
+            }
+
             string username = NewUsernameTextBox.Text;
             string password = NewPasswordBox.Password;
             string confirmPassword = ConfirmPasswordBox.Password;
@@ -146,6 +180,28 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     if (_isFirstUser)
                     {
+                        // Eğer kullanıcı 'no-login' modunu seçtiyse, sistemde EnableUserLogin ayarını false yap
+                        if (NoLoginModeCheckBox != null && NoLoginModeCheckBox.IsChecked == true)
+                        {
+                            try
+                            {
+                                using (var db = new AppDbContext())
+                                {
+                                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                                    if (setting == null)
+                                    {
+                                        db.AppSettings.Add(new global::AppSetting { Type = "EnableUserLogin", Value = "false" });
+                                    }
+                                    else
+                                    {
+                                        setting.Value = "false";
+                                    }
+                                    db.SaveChanges();
+                                }
+                            }
+                            catch { /* Hata loglanabilir, ama kayıt akışını etkilemesin */ }
+                        }
+
                         // İlk kullanıcı oluşturuldu - direkt giriş yap
                         CurrentUser.Instance.SetUser(user);
                         MainWindow mainWindow = new MainWindow();
