@@ -102,15 +102,21 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using (var db = new AppDbContext())
                 {
-                    var setting = db.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
-                    bool enableLogin = setting != null && setting.Value.ToString().ToLower() == "true";
-
-                    if (enableLogin && !CurrentUser.Instance.IsAdmin)
+                    // Eğer sistemde en az bir admin varsa, yeni kullanıcı eklemek için admin onayı (kullanıcı adı+şifre) iste
+                    bool hasAdmin = db.Users.Any(u => u.Role != null && u.Role.ToString().ToLower() == "admin");
+                    if (hasAdmin)
                     {
-                        MessageBox.Show("Yeni kullanıcı oluşturma yalnızca admin kullanıcılar içindir.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
+                        var owner = Window.GetWindow(this);
+                        var dlg = new AdminAuthDialog();
+                        if (owner != null) dlg.Owner = owner;
+                        var res = dlg.ShowDialog();
+                        if (res != true || dlg.AuthenticatedUser == null || !string.Equals(dlg.AuthenticatedUser.Role, "admin", System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            MessageBox.Show("Bu işlemi gerçekleştirmek için admin onayı gerekli.", "Erişim Reddedildi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
                     }
-                    // Eğer kullanıcı girişi devre dışıysa, admin onayı istemiyoruz — doğrudan izin ver
+                    // Eğer sistemde hiç admin yoksa, admin onayı istemiyoruz — doğrudan izin ver
                 }
             }
             catch
