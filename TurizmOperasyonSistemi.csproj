@@ -17,7 +17,8 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <!-- Use custom application manifest to enable PerMonitorV2 DPI awareness -->
     <ApplicationManifest>App.manifest</ApplicationManifest>
-  </PropertyGroup>
+    <ApplicationIcon>Assets\Icons\TurizmOperasyonSistemi.ico</ApplicationIcon>
+</PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="Views\SettingDialogCities.xaml.cs" />

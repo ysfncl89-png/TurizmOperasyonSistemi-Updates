@@ -1,13 +1,14 @@
-{
-  "version": "1.2.0",
+﻿{
+  "version": "1.0.0.1",
   "releaseType": "both",
   "minimumDatabaseVersion": 15,
-  "minimumClientVersion": "1.0.0",
+  "minimumClientVersion": "1.0.0.1",
   "mandatory": false,
-  "releaseDate": "2026-07-01",
+  "releaseDate": "2026-07-07",
   "channel": "stable",
   "checksum": "<sha256-hex>",
-  "downloadUrl": "https://example.com/downloads/TurizmOperasyonSistemi-1.2.0.zip",
+  "downloadUrl": "https://example.com/downloads/TurizmOperasyonSistemi-1.0.0.1.zip",
   "installerType": "zip",
-  "releaseNotes": "Yeni rapor ekranı eklendi."
+  "releaseNotes": "İlk güncelleme testi."
 }
+

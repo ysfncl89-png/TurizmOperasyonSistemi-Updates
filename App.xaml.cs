@@ -1,4 +1,4 @@
-using System.Configuration;
+﻿using System.Configuration;
 using System.Data;
 using System.Windows;
 using System.IO;
@@ -25,6 +25,7 @@ namespace TurizmOperasyonSistemi
         private AppDbContext _context;
         // SyncService removed: OneDrive <-> LocalAppData automatic sync disabled
         private TurizmOperasyonSistemi.Services.BackgroundServiceManager _backgroundServiceManager;
+        private bool _startupMigrationsSucceeded = true;
 
         public App()
         {
@@ -579,6 +580,7 @@ namespace TurizmOperasyonSistemi
 
                     // 2. Migration'ları uygula (eksik olanlar otomatikman çalışacak)
                     bool migrationsSucceeded = migrationService.ApplyMigrations();
+                    _startupMigrationsSucceeded = migrationsSucceeded;
 
                     if (!migrationsSucceeded)
                     {
@@ -714,6 +716,16 @@ namespace TurizmOperasyonSistemi
                                 {
                                     var info = TryExtractUpdateInfo(payload);
                                     if (info == null) return;
+
+                                    var requiresMigrationFirst = key == "update.migration.required" || key == "update.both.required";
+                                    if (requiresMigrationFirst)
+                                    {
+                                        Application.Current?.Dispatcher.Invoke(() =>
+                                        {
+                                            MessageBox.Show("Veritabanı güncellemesi tamamlanmadan uygulama güncellemesi başlatılmadı. Önce migration sorununu çözün, sonra uygulamayı yeniden açın.", "Güncelleme Beklemede", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                        });
+                                        return;
+                                    }
 
                                     // If auto-download disabled, ask user
                                     if (!Services.ConfigurationProvider.Instance.IsAutoDownloadEnabled())

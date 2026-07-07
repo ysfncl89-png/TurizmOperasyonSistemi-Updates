@@ -1,0 +1,14 @@
+﻿{
+  "version": "1.0.0.1",
+  "releaseType": "both",
+  "minimumDatabaseVersion": 15,
+  "minimumClientVersion": "1.0.0.1",
+  "mandatory": false,
+  "releaseDate": "2026-07-07",
+  "channel": "stable",
+  "checksum": "<sha256-hex>",
+  "downloadUrl": "https://example.com/downloads/TurizmOperasyonSistemi-1.0.0.1.zip",
+  "installerType": "zip",
+  "releaseNotes": "İlk güncelleme testi."
+}
+

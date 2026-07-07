@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -137,6 +137,12 @@ namespace TurizmOperasyonSistemi.Services
             };
 
             NotificationCenter.Publish(notificationKey, payload, persistToDb: true);
+
+            if (migrationRequired)
+            {
+                Debug.WriteLine("UpdateBackgroundService: migration required; app update is blocked until database migration is resolved.");
+                return;
+            }
 
             // AutoDownload
             if (_config.IsAutoDownloadEnabled())
