@@ -295,13 +295,36 @@
         <Grid Grid.Column="1"
               Margin="20">
 
-            <Border Background="#1E293B"
-                    CornerRadius="20">
+            <Grid>
+                <Border Background="#1E293B"
+                        CornerRadius="20">
 
-                <Frame x:Name="MainFrame"
-                       NavigationUIVisibility="Hidden"/>
+                    <Frame x:Name="MainFrame"
+                           NavigationUIVisibility="Hidden"/>
 
-            </Border>
+                </Border>
+
+                <!-- Küçük sağ altta Hakkında butonu -->
+                <Button x:Name="AboutButton"
+                        Width="36"
+                        Height="36"
+                        ToolTip="Hakkında"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,20,20"
+                        Click="AboutButton_Click"
+                        Background="#0F172A"
+                        BorderBrush="#334155"
+                        BorderThickness="1"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        FontSize="14">
+                    <Button.Effect>
+                        <DropShadowEffect Color="#8B5CF6" BlurRadius="14" ShadowDepth="0" Opacity="0.6"/>
+                    </Button.Effect>
+                    <TextBlock Text="i" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                </Button>
+            </Grid>
 
         </Grid>
 

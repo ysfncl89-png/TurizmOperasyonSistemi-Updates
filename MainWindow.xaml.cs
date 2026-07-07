@@ -260,6 +260,25 @@ namespace TurizmOperasyonSistemi
             MainFrame.Navigate(new Views.UserManagementView());
         }
 
+        private void AboutButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var about = new Views.AboutWindow();
+                if (this.IsLoaded && this.IsVisible)
+                {
+                    about.Owner = this;
+                    about.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                }
+                else
+                {
+                    about.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                }
+                about.ShowDialog();
+            }
+            catch { }
+        }
+
         // Programatik olarak anasayfaya geçiş yapmak isteyen diğer bileşenler için
         public void NavigateToHome()
         {

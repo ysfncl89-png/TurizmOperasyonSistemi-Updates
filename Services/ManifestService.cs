@@ -26,7 +26,54 @@ namespace TurizmOperasyonSistemi.Services
             {
                 if (!File.Exists(_manifestPath)) return null;
                 var json = File.ReadAllText(_manifestPath);
-                return JsonSerializer.Deserialize<DbManifest>(json);
+                // Try to deserialize into current DbManifest shape
+                try
+                {
+                    var manifest = JsonSerializer.Deserialize<DbManifest>(json);
+                    // Backwards-compat: older code wrote 'Version' property instead of 'DbVersion'.
+                    // If DbVersion is zero but JSON contains 'Version', map it.
+                    if (manifest != null && manifest.DbVersion == 0)
+                    {
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(json);
+                            if (doc.RootElement.TryGetProperty("Version", out var v) && v.ValueKind == JsonValueKind.Number)
+                            {
+                                if (v.TryGetInt64(out var ver)) manifest.DbVersion = ver;
+                            }
+                        }
+                        catch { }
+                    }
+
+                    return manifest;
+                }
+                catch
+                {
+                    // Fallback: try to parse legacy manifest with 'Version' field
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(json);
+                        var root = doc.RootElement;
+                        var legacy = new DbManifest();
+                        if (root.TryGetProperty("Version", out var ver) && ver.ValueKind == JsonValueKind.Number)
+                        {
+                            if (ver.TryGetInt64(out var v)) legacy.DbVersion = v;
+                        }
+
+                        if (root.TryGetProperty("MachineId", out var mid) && mid.ValueKind == JsonValueKind.String)
+                            legacy.MachineId = mid.GetString();
+                        if (root.TryGetProperty("LastModified", out var lm) && lm.ValueKind == JsonValueKind.String && DateTime.TryParse(lm.GetString(), out var dt))
+                            legacy.LastModified = dt;
+                        if (root.TryGetProperty("Hash", out var h) && h.ValueKind == JsonValueKind.String)
+                            legacy.Checksum = h.GetString();
+
+                        return legacy;
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                }
             }
             catch
             {
@@ -146,7 +193,21 @@ namespace TurizmOperasyonSistemi.Services
             try
             {
                 var version = Assembly.GetEntryAssembly()?.GetName().Version ?? Assembly.GetExecutingAssembly().GetName().Version;
-                return version?.ToString() ?? string.Empty;
+                var s = version?.ToString();
+                if (string.IsNullOrEmpty(s) || s == "0.0.0.0") return "1.0.0.0";
+                return s;
+            }
+            catch { return "1.0.0.0"; }
+        }
+
+        // Static helper for callers that don't have an instance
+        public static string GetAppVersionSafe()
+        {
+            try
+            {
+                var version = Assembly.GetEntryAssembly()?.GetName().Version ?? Assembly.GetExecutingAssembly().GetName().Version;
+                var s = version?.ToString();
+                return string.IsNullOrEmpty(s) ? "1.0.0.0" : s;
             }
             catch { return string.Empty; }
         }

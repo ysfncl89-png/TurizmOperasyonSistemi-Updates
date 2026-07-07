@@ -56,41 +56,19 @@ namespace TurizmOperasyonSistemi.Data
         public override int SaveChanges()
         {
             var result = base.SaveChanges();
-            try
-            {
-                // After a successful save, increment manifest DbVersion
-                try
-                {
-                    var manifestService = new TurizmOperasyonSistemi.Services.ManifestService();
-                    manifestService.IncrementDbVersion();
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Manifest increment failed after SaveChanges: {ex.Message}");
-                }
-            }
-            catch { }
+            // NOTE: Removed automatic manifest increment on every SaveChanges.
+            // Manifest.DbVersion should only be incremented when the database schema/version actually changes
+            // (for example after running migrations or creating a backup). Incrementing here caused the
+            // manifest version to increase on every normal save operation (seeding, ensures, etc.) which
+            // produced unexpectedly large manifest versions on first startup.
             return result;
         }
 
         public override System.Threading.Tasks.Task<int> SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default)
         {
             var task = base.SaveChangesAsync(cancellationToken);
-            task.ContinueWith(t =>
-            {
-                if (!t.IsFaulted && !t.IsCanceled)
-                {
-                    try
-                    {
-                        var manifestService = new TurizmOperasyonSistemi.Services.ManifestService();
-                        manifestService.IncrementDbVersion();
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Manifest increment failed after SaveChangesAsync: {ex.Message}");
-                    }
-                }
-            });
+            // Do not increment manifest version on every SaveChangesAsync for the same reason as above.
+            // Increments are performed explicitly by migration/backup code paths when appropriate.
 
             return task;
         }

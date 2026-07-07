@@ -325,19 +325,58 @@ namespace TurizmOperasyonSistemi
                 // Write Manifest.json in local base directory
                 try
                 {
+                    // Write manifest using current DbManifest shape to avoid format mismatch
                     Directory.CreateDirectory(localBase);
-                    var manifestPath = Path.Combine(localBase, "Manifest.json");
-                    var manifestObj = new
+                    var manifestPath = Path.Combine(localBase, "manifest.json");
+                    var manifest = new TurizmOperasyonSistemi.Models.DbManifest
                     {
+                        // Start manifest version at 1 for fresh installations to avoid 0/undefined state
+                        DbVersion = 1,
+                        AppVersion = TurizmOperasyonSistemi.Services.ManifestService.GetAppVersionSafe(),
+                        CreatedAt = DateTime.UtcNow,
+                        LastModified = DateTime.UtcNow,
                         MachineId = Environment.MachineName,
-                        Version = 1,
-                        LastModified = DateTime.UtcNow.ToString("o"),
-                        Hash = hash
+                        Checksum = hash,
+                        DbSize = File.Exists(dbPath) ? new FileInfo(dbPath).Length : 0
                     };
-                    var json = JsonSerializer.Serialize(manifestObj, new JsonSerializerOptions { WriteIndented = true });
+                    var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
                     File.WriteAllText(manifestPath, json);
                     if (created)
+                    {
                         System.Diagnostics.Debug.WriteLine($"Created local DB and manifest: {dbPath}, {manifestPath}");
+                        // Also ensure DatabaseVersions table exists and seed initial 1.0.0.0 entry so DatabaseVersion is not empty
+                        try
+                        {
+                            var cs = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
+                            using var conn = new SqliteConnection(cs);
+                            conn.Open();
+                            using (var cmd = conn.CreateCommand())
+                            {
+                                cmd.CommandText = @"CREATE TABLE IF NOT EXISTS DatabaseVersions (
+                                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    Version TEXT,
+                                    CreatedAt TEXT,
+                                    Description TEXT
+                                );";
+                                cmd.ExecuteNonQuery();
+
+                                cmd.CommandText = "SELECT COUNT(1) FROM DatabaseVersions;";
+                                var count = Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
+                                if (count == 0)
+                                {
+                                    cmd.CommandText = "INSERT INTO DatabaseVersions (Version, CreatedAt, Description) VALUES (@v,@c,@d);";
+                                    cmd.Parameters.AddWithValue("@v", "1.0.0.0");
+                                    cmd.Parameters.AddWithValue("@c", DateTime.UtcNow.ToString("o"));
+                                    cmd.Parameters.AddWithValue("@d", "Initial database version on first run");
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Failed to seed initial DatabaseVersions: {ex.Message}");
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

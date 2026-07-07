@@ -44,7 +44,11 @@ namespace TurizmOperasyonSistemi.Services
             try
             {
                 var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-                return version != null ? version.ToString() : "1.0.0.0";
+                if (version == null) return "1.0.0.0";
+                var s = version.ToString();
+                // Treat 0.0.0.0 as unset and return sensible default
+                if (string.IsNullOrEmpty(s) || s == "0.0.0.0") return "1.0.0.0";
+                return s;
             }
             catch
             {
@@ -226,6 +230,7 @@ namespace TurizmOperasyonSistemi.Services
                     // 6. CHECK PENDING MIGRATIONS
                     System.Diagnostics.Debug.WriteLine("\n► Step 6: Checking Pending Migrations");
                     var pendingMigrations = _context.Database.GetPendingMigrations().ToList();
+                    bool migrationsWereApplied = false;
 
                     if (pendingMigrations.Any())
                     {
@@ -255,6 +260,7 @@ namespace TurizmOperasyonSistemi.Services
                         }
 
                         System.Diagnostics.Debug.WriteLine($"✓ All {pendingMigrations.Count} migrations applied successfully");
+                        migrationsWereApplied = true;
                     }
                     else
                     {
@@ -270,11 +276,19 @@ namespace TurizmOperasyonSistemi.Services
                     System.Diagnostics.Debug.WriteLine("\n► Step 9: Updating Database Version");
                     UpdateDatabaseVersion(CurrentVersionString);
                     // Also increment manifest DbVersion and update checksum/app version
+                    // Only increment when migrations were actually applied or when the DB file was created during this run.
                     try
                     {
-                        var manifestService = new ManifestService();
-                        var manifest = manifestService.IncrementDbVersion(Environment.MachineName);
-                        System.Diagnostics.Debug.WriteLine($"✓ Manifest updated: DbVersion={manifest?.DbVersion}");
+                        if (migrationsWereApplied || !dbFileExists)
+                        {
+                            var manifestService = new ManifestService();
+                            var manifest = manifestService.IncrementDbVersion(Environment.MachineName);
+                            System.Diagnostics.Debug.WriteLine($"✓ Manifest updated: DbVersion={manifest?.DbVersion}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("→ No manifest increment required (no migrations applied and DB existed). ");
+                        }
                     }
                     catch (Exception ex)
                     {
