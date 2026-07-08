@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:TurizmOperasyonSistemi.Views"
         xmlns:local="clr-namespace:TurizmOperasyonSistemi"
+
         Title="Turizm Operasyon Sistemi"
         MinHeight="700"
         MinWidth="1200"
@@ -84,6 +85,7 @@
 
             <local:WidthToVisibilityConverter x:Key="WidthToVisibilityConverter"/>
             <local:InverseWidthToVisibilityConverter x:Key="InverseWidthToVisibilityConverter"/>
+            <local:ContentTypeToVisibilityConverter x:Key="ContentTypeToVisibilityConverter" />
         </Grid.Resources>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -300,11 +302,12 @@
                         CornerRadius="20">
 
                     <Frame x:Name="MainFrame"
-                           NavigationUIVisibility="Hidden"/>
+                           NavigationUIVisibility="Hidden"
+                           Navigated="MainFrame_Navigated"/>
 
                 </Border>
 
-                <!-- Küçük sağ altta Hakkında butonu -->
+                <!-- Küçük sağ altta Hakkında butonu: sadece HomeView aktifken görünür -->
                 <Button x:Name="AboutButton"
                         Width="36"
                         Height="36"
@@ -318,7 +321,8 @@
                         BorderThickness="1"
                         Foreground="White"
                         FontWeight="Bold"
-                        FontSize="14">
+                        FontSize="14"
+                        Visibility="{Binding ElementName=MainFrame, Path=Content, Converter={StaticResource ContentTypeToVisibilityConverter}, ConverterParameter=HomeView}">
                     <Button.Effect>
                         <DropShadowEffect Color="#8B5CF6" BlurRadius="14" ShadowDepth="0" Opacity="0.6"/>
                     </Button.Effect>

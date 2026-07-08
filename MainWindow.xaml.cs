@@ -63,8 +63,32 @@ namespace TurizmOperasyonSistemi
             UserManagementButton.Visibility = (CurrentUser.Instance.IsAdmin || CurrentUser.Instance.HasPermission(PermissionKeys.UserManagement)) ? Visibility.Visible : Visibility.Collapsed;
 
             MainFrame.Navigate(new HomeView());
+            // Update About button visibility based on initial content
+            UpdateAboutButtonVisibility();
             // Varsayılan olarak Anasayfa seçili görünmeli
             HomeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C1A15"));
+        }
+
+        private void MainFrame_Navigated(object sender, System.Windows.Navigation.NavigationEventArgs e)
+        {
+            UpdateAboutButtonVisibility();
+        }
+
+        private void UpdateAboutButtonVisibility()
+        {
+            try
+            {
+                var content = MainFrame.Content;
+                if (content != null && content.GetType().Name.Equals("HomeView", StringComparison.OrdinalIgnoreCase))
+                {
+                    AboutButton.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    AboutButton.Visibility = Visibility.Collapsed;
+                }
+            }
+            catch { }
         }
 
 
