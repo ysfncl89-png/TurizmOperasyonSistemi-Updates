@@ -103,16 +103,7 @@
                             </Style>
                         </DataGridTextColumn.ElementStyle> 
                     </DataGridTextColumn>
-                    <DataGridTextColumn Header="Açıklama" Binding="{Binding Aciklama}" Width="*">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="TextWrapping" Value="Wrap"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                                <Setter Property="Padding" Value="0,2,0,2"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Müsaitlik" Binding="{Binding Musaitlik}" Width="120"/>
+                    <!-- Açıklama ve Müsaitlik sütunları kaldırıldı -->
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

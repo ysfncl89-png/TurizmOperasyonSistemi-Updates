@@ -41,10 +41,6 @@ namespace TurizmOperasyonSistemi.Models
         // Yeni alan: Uyruk (Nationality)
         public string? Nationality { get; set; }
 
-        // Yeni alan: Açıklama (serbest metin açıklama)
-        public string? Aciklama { get; set; }
-
-        // Yeni alan: Müsaitlik (örnek: "Var" / "Yok" veya serbest metin)
-        public string? Musaitlik { get; set; }
+        // (Açıklama ve Müsaitlik sütunları kaldırıldı)
     }
 }
