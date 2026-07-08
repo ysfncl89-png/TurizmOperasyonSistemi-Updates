@@ -27,12 +27,25 @@ namespace TurizmOperasyonSistemi.Views
                         var migrationService = new MigrationService(ctx);
                         var dbVersion = migrationService.GetDatabaseVersion();
                         var applied = migrationService.GetAppliedMigrations()?.ToList() ?? new System.Collections.Generic.List<string>();
+                        var pending = migrationService.GetPendingMigrations()?.ToList() ?? new System.Collections.Generic.List<string>();
 
                         var dbDisplay = string.IsNullOrEmpty(dbVersion) || dbVersion == "0.0.0.0" ? "1.0.0.0" : dbVersion;
                         TxtDatabaseVersion.Text = dbVersion != null ? $"Database Sürümü: {dbDisplay}" : "Database sürümü kaydı yok.";
                         TxtMigrationVersion.Text = applied.Any()
                             ? $"Son uygulanan migration: {applied.Last()} (Toplam: {applied.Count})"
                             : "Uygulanan migration yok.";
+
+                        // Show pending migrations: if any, display first pending and total count; otherwise say none pending
+                        if (pending.Any())
+                        {
+                            TxtPendingMigrations.Text = pending.Count == 1
+                                ? $"Bekleyen migration: {pending.First()}"
+                                : $"Bekleyen migration: {pending.First()} (Toplam: {pending.Count})";
+                        }
+                        else
+                        {
+                            TxtPendingMigrations.Text = "Bekleyen migration yok.";
+                        }
                     }
                 }
                 catch (Exception ex)

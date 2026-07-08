@@ -16,6 +16,7 @@
                 <TextBlock x:Name="TxtProgramVersion" Foreground="#CBD5E1" FontSize="13" Margin="0,4" />
                 <TextBlock x:Name="TxtReleaseTag" Foreground="#CBD5E1" FontSize="13" Margin="0,4" />
                 <TextBlock x:Name="TxtMigrationVersion" Foreground="#CBD5E1" FontSize="13" Margin="0,4" />
+                <TextBlock x:Name="TxtPendingMigrations" Foreground="#CBD5E1" FontSize="13" Margin="0,4" />
                 <TextBlock x:Name="TxtDatabaseVersion" Foreground="#CBD5E1" FontSize="13" Margin="0,4" />
             </StackPanel>
 
