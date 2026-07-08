@@ -53,6 +53,23 @@ namespace TurizmOperasyonSistemi.Data
             }
         }
 
+        // Ensure Aciklama column exists in Persons table (added in v1.0.0.8)
+        public void EnsureAciklamaColumnExists()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                EnsureColumnExists(conn, "Persons", "Aciklama", "TEXT");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsureAciklamaColumnExists hata: {ex.Message}");
+            }
+        }
+
         public override int SaveChanges()
         {
             var result = base.SaveChanges();

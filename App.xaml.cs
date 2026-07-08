@@ -597,6 +597,8 @@ namespace TurizmOperasyonSistemi
                     // 4. Diğer ön başlatma işlemleri
                     System.Diagnostics.Debug.WriteLine("\n► Ek şema ayarlamaları yapılıyor...");
                     context.EnsureNationalityColumnExists();
+                    // Yeni sütun için ensure - Aciklama
+                    context.EnsureAciklamaColumnExists();
                     context.EnsureRegistrationPassportArrivedColumnExists();
                     context.EnsureRegistrationStatusChoiceColumnsExist();
                     context.NormalizeRegistrationNullValues();

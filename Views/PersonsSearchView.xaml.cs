@@ -49,40 +49,37 @@ namespace TurizmOperasyonSistemi.Views
             {
                 dep = VisualTreeHelper.GetParent(dep);
             }
-
             if (dep is DataGridCell cell)
             {
-                var column = cell.Column;
-                if (column != null && column.Header != null && column.Header.ToString() == "Telefon")
-                {
-                    // find owning row
-                    var row = ItemsControl.ContainerFromElement(PersonsDataGrid, cell) as DataGridRow;
-                    if (row == null)
-                    {
-                        // try walking up to find row
-                        var parent = VisualTreeHelper.GetParent(cell);
-                        while (parent != null && !(parent is DataGridRow))
-                        {
-                            parent = VisualTreeHelper.GetParent(parent);
-                        }
-                        row = parent as DataGridRow;
-                    }
+                var header = cell.Column?.Header?.ToString();
 
-                    if (row?.Item is Person person)
+                // find owning row
+                DataGridRow row = ItemsControl.ContainerFromElement(PersonsDataGrid, cell) as DataGridRow;
+                if (row == null)
+                {
+                    var parent = VisualTreeHelper.GetParent(cell);
+                    while (parent != null && !(parent is DataGridRow))
                     {
-                        var dlg = new EditPhoneWindow(person.Id, person.PhoneNumber);
-                        try
-                        {
-                            var main = Application.Current?.MainWindow;
-                            if (main != null && !object.ReferenceEquals(main, dlg)) dlg.Owner = main;
-                        }
-                        catch { }
-                        var res = dlg.ShowDialog();
-                        if (res == true)
-                        {
-                            LoadPersons();
-                        }
+                        parent = VisualTreeHelper.GetParent(parent);
                     }
+                    row = parent as DataGridRow;
+                }
+
+                if (!(row?.Item is Person person)) return;
+
+                if (header == "Telefon")
+                {
+                    var dlg = new EditPhoneWindow(person.Id, person.PhoneNumber);
+                    try { var main = Application.Current?.MainWindow; if (main != null && !object.ReferenceEquals(main, dlg)) dlg.Owner = main; } catch { }
+                    var res = dlg.ShowDialog();
+                    if (res == true) LoadPersons();
+                }
+                else if (header == "Açıklama")
+                {
+                    var dlg = new EditAciklamaWindow(person.Id, person.Aciklama);
+                    try { var main = Application.Current?.MainWindow; if (main != null && !object.ReferenceEquals(main, dlg)) dlg.Owner = main; } catch { }
+                    var res = dlg.ShowDialog();
+                    if (res == true) LoadPersons();
                 }
             }
         }

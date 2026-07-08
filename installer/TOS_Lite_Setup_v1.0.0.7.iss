@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "TOS Lite"
-#define MyAppVersion "1.0.0.7"
+#define MyAppVersion "1.0.0.8"
 #define MyAppPublisher "Turizm Operasyon Sistemi"
 #define MyAppURL "https://github.com/yusufoncel/TurizmOperasyonSistemi"
 #define MyAppExeName "TurizmOperasyonSistemi.exe"

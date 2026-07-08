@@ -96,14 +96,15 @@
                     <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="200"/>
                     <DataGridTextColumn Header="TC Kimlik" Binding="{Binding TcKimlikNo}" Width="150"/>
                     <DataGridTextColumn Header="Cinsiyet" Binding="{Binding Gender}" Width="90"/>
-                    <DataGridTextColumn Header="Telefon" Binding="{Binding PhoneNumber}" Width="150">
+                    <DataGridTextColumn Header="Telefon" Binding="{Binding PhoneNumber}" Width="150" MinWidth="150">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Foreground" Value="#F59E0B"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle> 
                     </DataGridTextColumn>
-                    <!-- Açıklama ve Müsaitlik sütunları kaldırıldı -->
+                    <!-- Açıklama sütunu eklendi - Telefon kolonunun daralmasını önlemek için Telefon MinWidth=150 olarak korundu -->
+                    <DataGridTextColumn Header="Açıklama" Binding="{Binding Aciklama}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

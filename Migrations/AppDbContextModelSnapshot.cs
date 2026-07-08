@@ -162,6 +162,9 @@ namespace TurizmOperasyonSistemi.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Aciklama")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TcKimlikNo")
                         .IsRequired()
                         .HasColumnType("TEXT");

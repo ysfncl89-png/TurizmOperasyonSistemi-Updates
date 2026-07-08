@@ -20,6 +20,9 @@ namespace TurizmOperasyonSistemi.Models
 
         public string Address { get; set; }
 
+        // Yeni alan: Açıklama (kullanıcı notları/ek açıklamalar)
+        public string? Aciklama { get; set; }
+
         public string PassportType { get; set; }
 
         public string PassportNumber { get; set; }
