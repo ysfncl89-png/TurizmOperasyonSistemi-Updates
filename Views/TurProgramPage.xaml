@@ -56,7 +56,7 @@
         <!-- Top toolbar -->
 
         <DockPanel Grid.Row="0" Margin="0,0,0,12">
-            <Button x:Name="BackButton" Content="← Geri" Click="BackButton_Click" Padding="8" Background="#0B1220" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1" Height="32" Width="87"/>
+            <Button x:Name="BackButton" Content="← Geri" Click="BackButton_Click" Padding="8" Height="32" Width="87" Style="{StaticResource NeonButton}"/>
             <TextBlock Text="Tur Programı Hazırla" Foreground="#E2F8FF" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12"/>
         </DockPanel>
 
@@ -67,7 +67,7 @@
                     <!-- Image upload and preview -->
                     <StackPanel Margin="0,0,0,12">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,8">
-                            <Button x:Name="UploadImageButton" Click="UploadImageButton_Click" Padding="8" Background="#2D3748" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1">Görsel Yükle</Button>
+                            <Button x:Name="UploadImageButton" Click="UploadImageButton_Click" Padding="8" Style="{StaticResource NeonButton}">Görsel Yükle</Button>
                             <TextBlock Text="  (Üstte görünecek logo veya fotoğraf)" Foreground="#9CA3AF" VerticalAlignment="Center" Margin="8,0,0,0"/>
                         </StackPanel>
 
@@ -134,7 +134,7 @@
                                         <TextBox Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="2" Margin="8,0,0,0" AcceptsReturn="True" TextWrapping="Wrap" Height="80" Background="#0B1220" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1" Padding="8" VerticalContentAlignment="Top"
                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                                  ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-                                        <Button Grid.Column="3" Click="RemoveEntry_Click" Tag="{Binding}" Padding="6" Background="#2D3748" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1">
+                                        <Button Grid.Column="3" Click="RemoveEntry_Click" Tag="{Binding}" Padding="6" Style="{StaticResource NeonButton}">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="#E2F8FF"/>
                                                 <TextBlock Text="Kaldır" VerticalAlignment="Center"/>
@@ -146,7 +146,7 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <Button x:Name="AddRowButton" Click="AddRowButton_Click" Width="140" HorizontalAlignment="Left" Padding="8" Background="#2D3748" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1">
+                    <Button x:Name="AddRowButton" Click="AddRowButton_Click" Width="140" HorizontalAlignment="Left" Padding="8" Style="{StaticResource NeonButton}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="➕" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Satır Ekle" VerticalAlignment="Center"/>

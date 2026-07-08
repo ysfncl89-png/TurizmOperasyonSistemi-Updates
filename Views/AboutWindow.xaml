@@ -1,8 +1,8 @@
 ﻿<Window x:Class="TurizmOperasyonSistemi.Views.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Hakkında" Height="235" Width="460" WindowStyle="None" ResizeMode="NoResize" Background="Transparent" AllowsTransparency="True">
-    <Border Background="#0F172A" CornerRadius="12" Padding="16" BorderThickness="1" BorderBrush="#22324A">
+        Title="Hakkında" Height="235" Width="500" WindowStyle="None" ResizeMode="NoResize" Background="Transparent" AllowsTransparency="True">
+    <Border Background="#FF4A7B8B" CornerRadius="12" Padding="16" BorderThickness="1" BorderBrush="#22324A">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
