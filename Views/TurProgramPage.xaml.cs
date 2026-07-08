@@ -57,32 +57,75 @@ namespace TurizmOperasyonSistemi.Views
 
         private void UploadImageButton_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new OpenFileDialog();
-            dlg.Filter = "Image files|*.png;*.jpg;*.jpeg;*.bmp|All files|*.*";
-            if (dlg.ShowDialog() == true)
+            try
             {
-                try
+                // Offer choice between local file and QR upload (reuse existing dialogs)
+                var choiceWnd = new UploadChoiceWindow();
+                choiceWnd.Owner = Window.GetWindow(this);
+                var res = choiceWnd.ShowDialog();
+                if (res != true) return;
+
+                if (choiceWnd.Choice == UploadChoiceWindow.UploadChoice.File)
                 {
-                    var orig = File.ReadAllBytes(dlg.FileName);
-                    var resized = TurizmOperasyonSistemi.Services.ExportHelper.ResizeImageBytesIfNeeded(orig, 560) ?? orig;
+                    var dlg = new OpenFileDialog();
+                    dlg.Filter = "Image files|*.png;*.jpg;*.jpeg;*.bmp|All files|*.*";
+                    if (dlg.ShowDialog() == true)
+                    {
+                        try
+                        {
+                            var orig = File.ReadAllBytes(dlg.FileName);
+                            var resized = TurizmOperasyonSistemi.Services.ExportHelper.ResizeImageBytesIfNeeded(orig, 560) ?? orig;
 
-                    var ext = Path.GetExtension(dlg.FileName);
-                    var temp = Path.Combine(Path.GetTempPath(), $"TurProgImg_{Guid.NewGuid():N}{ext}");
-                    File.WriteAllBytes(temp, resized);
-                    ImagePath = temp;
+                            var ext = Path.GetExtension(dlg.FileName);
+                            var temp = Path.Combine(Path.GetTempPath(), $"TurProgImg_{Guid.NewGuid():N}{ext}");
+                            File.WriteAllBytes(temp, resized);
+                            ImagePath = temp;
 
-                    using var ms = new MemoryStream(resized);
-                    var bmp = new BitmapImage();
-                    bmp.BeginInit();
-                    bmp.CacheOption = BitmapCacheOption.OnLoad;
-                    bmp.StreamSource = ms;
-                    bmp.DecodePixelWidth = 560;
-                    bmp.EndInit();
-                    bmp.Freeze();
-                    PreviewImage.Source = bmp;
+                            using var ms = new MemoryStream(resized);
+                            var bmp = new BitmapImage();
+                            bmp.BeginInit();
+                            bmp.CacheOption = BitmapCacheOption.OnLoad;
+                            bmp.StreamSource = ms;
+                            bmp.DecodePixelWidth = 560;
+                            bmp.EndInit();
+                            bmp.Freeze();
+                            PreviewImage.Source = bmp;
+                        }
+                        catch { }
+                    }
                 }
-                catch { }
+                else if (choiceWnd.Choice == UploadChoiceWindow.UploadChoice.Qr)
+                {
+                    var qrWnd = new QRUploadWindow((savedPath, originalName) =>
+                    {
+                        try
+                        {
+                            if (string.IsNullOrEmpty(savedPath) || !File.Exists(savedPath)) return;
+                            // Optionally resize to target width
+                            var bytes = File.ReadAllBytes(savedPath);
+                            var resized = TurizmOperasyonSistemi.Services.ExportHelper.ResizeImageBytesIfNeeded(bytes, 560) ?? bytes;
+                            var ext = Path.GetExtension(savedPath);
+                            var temp = Path.Combine(Path.GetTempPath(), $"TurProgImg_{Guid.NewGuid():N}{ext}");
+                            File.WriteAllBytes(temp, resized);
+                            ImagePath = temp;
+
+                            using var ms = new MemoryStream(resized);
+                            var bmp = new BitmapImage();
+                            bmp.BeginInit();
+                            bmp.CacheOption = BitmapCacheOption.OnLoad;
+                            bmp.StreamSource = ms;
+                            bmp.DecodePixelWidth = 560;
+                            bmp.EndInit();
+                            bmp.Freeze();
+                            Dispatcher.Invoke(() => { PreviewImage.Source = bmp; });
+                        }
+                        catch { }
+                    });
+                    qrWnd.Owner = Window.GetWindow(this);
+                    qrWnd.ShowDialog();
+                }
             }
+            catch { }
         }
 
         private void AddRowButton_Click(object sender, RoutedEventArgs e)
