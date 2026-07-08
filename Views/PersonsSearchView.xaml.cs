@@ -71,7 +71,12 @@ namespace TurizmOperasyonSistemi.Views
                     if (row?.Item is Person person)
                     {
                         var dlg = new EditPhoneWindow(person.Id, person.PhoneNumber);
-                        dlg.Owner = Application.Current?.MainWindow;
+                        try
+                        {
+                            var main = Application.Current?.MainWindow;
+                            if (main != null && !object.ReferenceEquals(main, dlg)) dlg.Owner = main;
+                        }
+                        catch { }
                         var res = dlg.ShowDialog();
                         if (res == true)
                         {
@@ -95,7 +100,12 @@ namespace TurizmOperasyonSistemi.Views
                         if (row?.Item is Person person)
                         {
                             var dlg = new EditAciklamaWindow(person.Id, person.Aciklama);
-                            dlg.Owner = Application.Current?.MainWindow;
+                            try
+                            {
+                                var main = Application.Current?.MainWindow;
+                                if (main != null && !object.ReferenceEquals(main, dlg)) dlg.Owner = main;
+                            }
+                            catch { }
                             var res = dlg.ShowDialog();
                             if (res == true)
                             {
