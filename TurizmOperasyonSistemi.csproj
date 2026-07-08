@@ -18,6 +18,10 @@
     <!-- Use custom application manifest to enable PerMonitorV2 DPI awareness -->
     <ApplicationManifest>App.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Icons\TurizmOperasyonSistemi.ico</ApplicationIcon>
+    <!-- Publish/version metadata -->
+    <Version>1.0.0.3</Version>
+    <FileVersion>1.0.0.3</FileVersion>
+    <InformationalVersion>1.0.0.3</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
