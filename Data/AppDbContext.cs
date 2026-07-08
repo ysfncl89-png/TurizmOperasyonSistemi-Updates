@@ -535,6 +535,67 @@ namespace TurizmOperasyonSistemi.Data
             }
         }
 
+        public void EnsureAciklamaColumnExists()
+        {
+            try
+            {
+                var conn = this.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                    conn.Open();
+
+                List<string> cols = new List<string>();
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "PRAGMA table_info('Persons');";
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            try
+                            {
+                                if (!reader.IsDBNull(1))
+                                {
+                                    var colName = reader.GetString(1);
+                                    if (!string.IsNullOrEmpty(colName)) cols.Add(colName);
+                                }
+                            }
+                            catch
+                            {
+                                // ignore malformed row
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: if PRAGMA did not work, try reading table SQL
+                if (!cols.Any())
+                {
+                    using (var cmd2 = conn.CreateCommand())
+                    {
+                        cmd2.CommandText = "SELECT sql FROM sqlite_master WHERE type='table' AND name='Persons'";
+                        var sql = cmd2.ExecuteScalar() as string;
+                        if (!string.IsNullOrEmpty(sql) && sql.IndexOf("Aciklama", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            cols.Add("Aciklama");
+                        }
+                    }
+                }
+
+                if (!cols.Any(x => string.Equals(x, "Aciklama", StringComparison.OrdinalIgnoreCase)))
+                {
+                    using (var addCmd = conn.CreateCommand())
+                    {
+                        addCmd.CommandText = "ALTER TABLE Persons ADD COLUMN Aciklama TEXT;";
+                        addCmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EnsureAciklamaColumnExists hata: {ex.Message}");
+            }
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

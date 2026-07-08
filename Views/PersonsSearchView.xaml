@@ -96,12 +96,21 @@
                     <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="200"/>
                     <DataGridTextColumn Header="TC Kimlik" Binding="{Binding TcKimlikNo}" Width="150"/>
                     <DataGridTextColumn Header="Cinsiyet" Binding="{Binding Gender}" Width="90"/>
-					<DataGridTextColumn Header="Telefon" Binding="{Binding PhoneNumber}" Width="SizeToCells">
+                    <DataGridTextColumn Header="Telefon" Binding="{Binding PhoneNumber}" Width="150">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Foreground" Value="#F59E0B"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle> 
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Açıklama" Binding="{Binding Aciklama}" Width="*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextWrapping" Value="Wrap"/>
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="0,2,0,2"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>

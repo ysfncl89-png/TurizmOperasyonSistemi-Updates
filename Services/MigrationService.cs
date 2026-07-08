@@ -484,6 +484,9 @@ namespace TurizmOperasyonSistemi.Services
                 _context.EnsurePaymentsTableExists();
                 _context.EnsureNotificationsTableExists();
                 _context.EnsureUsersTableExists();
+                // Ensure Persons table has newly added columns for older DBs
+                try { _context.EnsureNationalityColumnExists(); } catch { }
+                try { _context.EnsureAciklamaColumnExists(); } catch { }
 
                 System.Diagnostics.Debug.WriteLine("All custom tables ensured.");
             }

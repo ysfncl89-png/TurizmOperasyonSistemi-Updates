@@ -40,5 +40,8 @@ namespace TurizmOperasyonSistemi.Models
 
         // Yeni alan: Uyruk (Nationality)
         public string? Nationality { get; set; }
+
+        // Yeni alan: Açıklama (serbest metin açıklama)
+        public string? Aciklama { get; set; }
     }
 }

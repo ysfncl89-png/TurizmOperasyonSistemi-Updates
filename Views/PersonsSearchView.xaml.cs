@@ -79,6 +79,30 @@ namespace TurizmOperasyonSistemi.Views
                         }
                     }
                 }
+                    else if (column != null && column.Header != null && column.Header.ToString() == "Açıklama")
+                    {
+                        var row = ItemsControl.ContainerFromElement(PersonsDataGrid, cell) as DataGridRow;
+                        if (row == null)
+                        {
+                            var parent = VisualTreeHelper.GetParent(cell);
+                            while (parent != null && !(parent is DataGridRow))
+                            {
+                                parent = VisualTreeHelper.GetParent(parent);
+                            }
+                            row = parent as DataGridRow;
+                        }
+
+                        if (row?.Item is Person person)
+                        {
+                            var dlg = new EditAciklamaWindow(person.Id, person.Aciklama);
+                            dlg.Owner = Application.Current?.MainWindow;
+                            var res = dlg.ShowDialog();
+                            if (res == true)
+                            {
+                                LoadPersons();
+                            }
+                        }
+                    }
             }
         }
 
