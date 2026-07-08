@@ -1,14 +1,14 @@
 {
-  "version": "1.0.0.3",
+  "version": "1.0.0.6",
   "releaseType": "both",
   "minimumDatabaseVersion": 16,
-  "minimumClientVersion": "1.0.0.3",
+  "minimumClientVersion": "1.0.0.1",
   "mandatory": false,
   "releaseDate": "2026-07-08",
   "channel": "stable",
-  "containsMigrations": true,
-  "checksum": "CE5F608BE9F63441E6448F087DC404C563096D8DCC410BCAE56FD71729C4E202",
-  "downloadUrl": "https://github.com/yusufncl-png/TurizmOperasyonSistemi-Releases/releases/download/v1.0.0.3/TurizmOperasyonSistemi-publish-1.0.0.3.zip",
+  "containsMigrations": false,
+  "checksum": "9D2575B2A1356EB03B4DAB5310C2F92EFD0BEDC1DE202E93B6A3440B4B63494A",
+  "downloadUrl": "https://github.com/yusufncl-png/TurizmOperasyonSistemi-Releases/releases/download/v1.0.0.6/TurizmOperasyonSistemi-publish-1.0.0.6.zip",
   "installerType": "zip",
-  "releaseNotes": "Test release: v1.0.0.3 - contains a simple test message file."
+  "releaseNotes": "Release v1.0.0.6 - Production release with all modules, design, and settings completed and tested."
 }
