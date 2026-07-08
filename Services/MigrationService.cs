@@ -487,6 +487,7 @@ namespace TurizmOperasyonSistemi.Services
                 // Ensure Persons table has newly added columns for older DBs
                 try { _context.EnsureNationalityColumnExists(); } catch { }
                 try { _context.EnsureAciklamaColumnExists(); } catch { }
+                try { _context.EnsureMusaitlikColumnExists(); } catch { }
 
                 System.Diagnostics.Debug.WriteLine("All custom tables ensured.");
             }

@@ -112,6 +112,7 @@
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
+                    <DataGridTextColumn Header="Müsaitlik" Binding="{Binding Musaitlik}" Width="120"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

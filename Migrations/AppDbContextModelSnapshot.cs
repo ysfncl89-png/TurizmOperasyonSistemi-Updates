@@ -147,6 +147,9 @@ namespace TurizmOperasyonSistemi.Migrations
                     b.Property<string>("Aciklama")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Musaitlik")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("PassportEndDate")
                         .HasColumnType("TEXT");
 

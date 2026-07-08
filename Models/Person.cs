@@ -43,5 +43,8 @@ namespace TurizmOperasyonSistemi.Models
 
         // Yeni alan: Açıklama (serbest metin açıklama)
         public string? Aciklama { get; set; }
+
+        // Yeni alan: Müsaitlik (örnek: "Var" / "Yok" veya serbest metin)
+        public string? Musaitlik { get; set; }
     }
 }
