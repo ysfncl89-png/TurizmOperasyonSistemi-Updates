@@ -696,11 +696,14 @@ namespace TurizmOperasyonSistemi
 
                     // Sync background service removed (OneDrive sync disabled)
 
-                    // Register Update background service
-                    // Update background service intentionally disabled for manual-update mode.
-                    // We do NOT create or register UpdateBackgroundService here so no automatic
-                    // update checks or downloads will run on client machines regardless of
-                    // existing local configuration files.
+                    // Register Update background service so the app can notify the user when a new release is available.
+                    // AutoDownload is disabled in config so user will see a prompt (Şimdi indir / Daha sonra).
+                    try
+                    {
+                        _backgroundServiceManager.RegisterService(new UpdateBackgroundService());
+                    }
+                    catch { }
+
                     await _backgroundServiceManager.StartAllAsync().ConfigureAwait(false);
                     // Subscribe to update notifications for minimal UI interactions
                     try

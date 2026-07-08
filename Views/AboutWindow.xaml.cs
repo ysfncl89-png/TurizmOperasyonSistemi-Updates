@@ -59,6 +59,71 @@ namespace TurizmOperasyonSistemi.Views
             {
                 System.Diagnostics.Debug.WriteLine($"AboutWindow init error: {ex.Message}");
             }
+
+            // Start asynchronous update status check (does not block UI)
+            _ = UpdateStatusAsync();
+        }
+
+        private async System.Threading.Tasks.Task UpdateStatusAsync()
+        {
+            try
+            {
+                var cfg = Services.ConfigurationProvider.Instance;
+                if (!cfg.IsUpdateEnabled())
+                {
+                    TxtUpdateStatus.Text = "Güncelleme kapalı";
+                    UpdateStatusIcon.Text = "";
+                    return;
+                }
+
+                var checker = new UpdateCheckerService();
+                var info = await checker.CheckForUpdateAsync().ConfigureAwait(false);
+
+                // Determine if the manifest reports a newer version than the running app
+                var current = ManifestService.GetAppVersionSafe()?.TrimStart('v', 'V');
+                var candidate = info?.Version?.TrimStart('v', 'V');
+                bool isNewer = false;
+
+                if (!string.IsNullOrEmpty(candidate) && !string.IsNullOrEmpty(current))
+                {
+                    if (Version.TryParse(candidate, out var v1) && Version.TryParse(current, out var v2))
+                    {
+                        isNewer = v1 > v2;
+                    }
+                    else
+                    {
+                        isNewer = !string.Equals(candidate, current, StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+                else if (!string.IsNullOrEmpty(candidate) && string.IsNullOrEmpty(current))
+                {
+                    isNewer = true;
+                }
+
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        if (!isNewer)
+                        {
+                            TxtUpdateStatus.Text = "Programınız güncel";
+                            UpdateStatusIcon.Text = "✔";
+                            UpdateStatusIcon.Foreground = System.Windows.Media.Brushes.LimeGreen;
+                        }
+                        else
+                        {
+                            TxtUpdateStatus.Text = $"Yeni sürüm mevcut: {info.Version}";
+                            UpdateStatusIcon.Text = "⬆";
+                            UpdateStatusIcon.Foreground = System.Windows.Media.Brushes.Orange;
+                        }
+                    }
+                    catch { }
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateStatusAsync failed: {ex.Message}");
+            }
         }
     }
 }

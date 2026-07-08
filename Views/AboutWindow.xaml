@@ -20,9 +20,23 @@
                 <TextBlock x:Name="TxtDatabaseVersion" Foreground="#CBD5E1" FontSize="13" Margin="0,4" />
             </StackPanel>
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="BtnClose" Content="Kapat" MinWidth="90" Margin="0,0,0,0" />
-            </StackPanel>
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Update status on the left -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="0">
+                    <TextBlock x:Name="UpdateStatusIcon" Text="" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="TxtUpdateStatus" Foreground="#FFFFFF" FontSize="13" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Close button on the right -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnClose" Content="Kapat" MinWidth="90" Margin="0,0,0,0" />
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </Window>

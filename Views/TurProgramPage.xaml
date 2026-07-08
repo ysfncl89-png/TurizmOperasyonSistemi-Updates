@@ -155,13 +155,13 @@
 
                     <!-- Bottom actions inside card -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                        <Button x:Name="ExportWordButton" Click="ExportWordButton_Click" Margin="8" Padding="8" Background="#2D3748" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1">
+                        <Button x:Name="ExportWordButton" Click="ExportWordButton_Click" Margin="8" Padding="8" Style="{StaticResource NeonButton}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📄" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Çıktı Al (Word)" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <Button x:Name="ExportPdfButton" Click="ExportPdfButton_Click" Margin="8" Padding="8" Background="#2D3748" Foreground="#E2F8FF" BorderBrush="#334155" BorderThickness="1">
+                        <Button x:Name="ExportPdfButton" Click="ExportPdfButton_Click" Margin="8" Padding="8" Style="{StaticResource NeonButton}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📕" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Çıktı Al (PDF)" VerticalAlignment="Center"/>
