@@ -29,6 +29,71 @@ namespace TurizmOperasyonSistemi.Services
                 : _config.GetBackupDirectory();
         }
 
+        // Move existing backups that live directly under the root backups folder into dated subfolders
+        private void OrganizeExistingBackups()
+        {
+            try
+            {
+                if (!Directory.Exists(_backupDirectory)) return;
+
+                var patterns = new[] { BACKUP_PREFIX + "*" + BACKUP_EXTENSION, BACKUP_PREFIX + "*" + BACKUP_EXTENSION + ".gz", BACKUP_PREFIX + "*" + BACKUP_EXTENSION + ".sha256" };
+                // only consider files directly under root (top directory)
+                var files = new List<string>();
+                foreach (var p in patterns)
+                {
+                    files.AddRange(Directory.GetFiles(_backupDirectory, p, SearchOption.TopDirectoryOnly));
+                }
+
+                foreach (var f in files)
+                {
+                    try
+                    {
+                        var fi = new FileInfo(f);
+                        // try to parse date from filename: turizm_backup_yyyyMMdd_HHmmss_fff
+                        var name = fi.Name;
+                        string datePart = null;
+                        if (name.StartsWith(BACKUP_PREFIX))
+                        {
+                            var rest = name.Substring(BACKUP_PREFIX.Length);
+                            var parts = rest.Split('_');
+                            if (parts.Length >= 1)
+                            {
+                                // parts[0] expected yyyyMMdd
+                                if (parts[0].Length >= 8)
+                                {
+                                    datePart = parts[0].Substring(0, 8);
+                                }
+                            }
+                        }
+
+                        DateTime dt;
+                        if (!string.IsNullOrEmpty(datePart) && DateTime.TryParseExact(datePart, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out dt))
+                        {
+                            // ok
+                        }
+                        else
+                        {
+                            dt = fi.CreationTime;
+                        }
+
+                        string dateFolder = dt.ToString("dd-MM-yyyy");
+                        string destDir = Path.Combine(_backupDirectory, dateFolder);
+                        if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
+                        string destPath = Path.Combine(destDir, fi.Name);
+                        if (!File.Exists(destPath))
+                        {
+                            try { File.Move(f, destPath); System.Diagnostics.Debug.WriteLine($"Organized backup: {fi.Name} -> {destDir}"); } catch { }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"OrganizeExistingBackups error: {ex.Message}");
+            }
+        }
+
         private string CreateZipForBackup(string backupPath)
         {
             try
@@ -36,7 +101,8 @@ namespace TurizmOperasyonSistemi.Services
                 if (!File.Exists(backupPath)) return null;
                 string baseName = Path.GetFileNameWithoutExtension(backupPath);
                 string zipName = baseName + ".zip";
-                string zipPath = Path.Combine(_backupDirectory, zipName);
+                // place the zip next to the backup file (respect dated subfolders)
+                string zipPath = Path.Combine(Path.GetDirectoryName(backupPath) ?? _backupDirectory, zipName);
                 // create a zip containing the backup file at root
                 using (var z = ZipFile.Open(zipPath, ZipArchiveMode.Create))
                 {
@@ -106,6 +172,8 @@ namespace TurizmOperasyonSistemi.Services
                 TryCheckpointWAL();
                 // Attempt to recover recent .tmp backups (move to final if valid)
                 RecoverTempBackups();
+                // Organize any existing top-level backup files into dated subfolders
+                OrganizeExistingBackups();
             try
             {
                 if (!Directory.Exists(_backupDirectory)) Directory.CreateDirectory(_backupDirectory);
@@ -115,10 +183,14 @@ namespace TurizmOperasyonSistemi.Services
                     result.Message = $"Database dosyası bulunamadı: {_dbPath}";
                     return result;
                 }
+                // create dated subfolder under backup directory (gün-ay-yıl)
+                string dateFolder = DateTime.Now.ToString("dd-MM-yyyy");
+                string datedBackupDir = Path.Combine(_backupDirectory, dateFolder);
+                if (!Directory.Exists(datedBackupDir)) Directory.CreateDirectory(datedBackupDir);
 
                 string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff");
                 string backupFileName = $"{BACKUP_PREFIX}{timestamp}{BACKUP_EXTENSION}";
-                string backupPath = Path.Combine(_backupDirectory, backupFileName);
+                string backupPath = Path.Combine(datedBackupDir, backupFileName);
                 // Create temp file in system TEMP to avoid antivirus / explorer locking the backups folder
                 string tempFileName = backupFileName + ".tmp";
                 string tempPath = Path.Combine(Path.GetTempPath(), tempFileName);
@@ -417,7 +489,8 @@ namespace TurizmOperasyonSistemi.Services
                 {
                     if (isCompressed)
                     {
-                        tempDecompressed = Path.Combine(_backupDirectory, $"decompressed_{Guid.NewGuid()}{BACKUP_EXTENSION}");
+                        // decompress to system temp to avoid touching backup directory structure
+                        tempDecompressed = Path.Combine(Path.GetTempPath(), $"decompressed_{Guid.NewGuid()}{BACKUP_EXTENSION}");
                         using (var inFile = File.OpenRead(backupPath))
                         using (var gzip = new GZipStream(inFile, CompressionMode.Decompress))
                         using (var outFile = File.Create(tempDecompressed))
@@ -518,7 +591,7 @@ namespace TurizmOperasyonSistemi.Services
                 if (!Directory.Exists(_backupDirectory)) return new List<FileInfo>();
                 var patterns = new[] { BACKUP_PREFIX + "*" + BACKUP_EXTENSION, BACKUP_PREFIX + "*" + BACKUP_EXTENSION + ".gz" };
                 var files = new List<FileInfo>();
-                foreach (var pattern in patterns) files.AddRange(Directory.GetFiles(_backupDirectory, pattern).Select(p => new FileInfo(p)));
+                foreach (var pattern in patterns) files.AddRange(Directory.GetFiles(_backupDirectory, pattern, SearchOption.AllDirectories).Select(p => new FileInfo(p)));
                 var backupFiles = files.GroupBy(f => f.FullName).Select(g => g.First()).OrderByDescending(f => f.CreationTime).ToList();
                 return backupFiles;
             }
@@ -538,10 +611,14 @@ namespace TurizmOperasyonSistemi.Services
         {
             try
             {
-                string backupPath = Path.Combine(_backupDirectory, backupFileName);
-                if (File.Exists(backupPath))
+                // backup files are stored in dated subfolders; search recursively
+                var matches = Directory.GetFiles(_backupDirectory, backupFileName, SearchOption.AllDirectories);
+                if (matches.Length > 0)
                 {
-                    File.Delete(backupPath);
+                    foreach (var m in matches)
+                    {
+                        try { File.Delete(m); } catch { }
+                    }
                     System.Diagnostics.Debug.WriteLine($"Backup silindi: {backupFileName}");
                     return true;
                 }
@@ -559,7 +636,7 @@ namespace TurizmOperasyonSistemi.Services
             try
             {
                 if (!Directory.Exists(_backupDirectory)) return 0;
-                return Directory.GetFiles(_backupDirectory).Select(p => new FileInfo(p).Length).Sum();
+                return Directory.GetFiles(_backupDirectory, "*", SearchOption.AllDirectories).Select(p => new FileInfo(p).Length).Sum();
             }
             catch { return 0; }
         }
@@ -592,7 +669,7 @@ namespace TurizmOperasyonSistemi.Services
                     {
                         if (!Directory.Exists(_backupDirectory)) return;
                         var pattern = "*" + BACKUP_EXTENSION + ".tmp"; // matches e.g. turizm_backup_... .bak.tmp
-                        var files = Directory.GetFiles(_backupDirectory, pattern);
+                        var files = Directory.GetFiles(_backupDirectory, pattern, SearchOption.AllDirectories);
                         var threshold = DateTime.Now.AddMinutes(-10); // older than 10 minutes considered stale
                         foreach (var f in files)
                         {
@@ -641,7 +718,7 @@ namespace TurizmOperasyonSistemi.Services
             {
                 if (!Directory.Exists(_backupDirectory)) return;
                 var pattern = "*" + BACKUP_EXTENSION + ".tmp";
-                var files = Directory.GetFiles(_backupDirectory, pattern);
+                var files = Directory.GetFiles(_backupDirectory, pattern, SearchOption.AllDirectories);
                 foreach (var f in files)
                 {
                     try
@@ -691,7 +768,7 @@ namespace TurizmOperasyonSistemi.Services
                 long maxSizeBytes = (long)_config.GetMaxBackupSizeMB() * 1024 * 1024;
                 if (maxSizeBytes > 0)
                 {
-                    long dirSize = Directory.GetFiles(_backupDirectory).Select(p => new FileInfo(p).Length).Sum();
+                    long dirSize = Directory.GetFiles(_backupDirectory, "*", SearchOption.AllDirectories).Select(p => new FileInfo(p).Length).Sum();
                     var ordered = GetAllBackups().OrderBy(f => f.CreationTime).ToList();
                     int idx = 0;
                     while (dirSize > maxSizeBytes && idx < ordered.Count)
