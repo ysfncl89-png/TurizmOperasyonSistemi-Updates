@@ -40,6 +40,41 @@ namespace TurizmOperasyonSistemi.Views
             _ = FetchExchangeRatesAsync();
         }
 
+        private void KisiBazliTurFiyat_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var cu = TurizmOperasyonSistemi.Services.CurrentUser.Instance;
+                if (!(cu.IsAdmin || cu.HasPermission(TurizmOperasyonSistemi.Services.PermissionKeys.Payments)))
+                {
+                    MessageBox.Show("Bu modüle erişim izniniz yok.");
+                    return;
+                }
+
+                var view = new KisiBazliTurFiyatiView();
+
+                var mw = System.Windows.Application.Current?.MainWindow as MainWindow;
+                if (mw != null)
+                {
+                    mw.NavigateTo(view);
+                    return;
+                }
+
+                var host = Window.GetWindow(this);
+                if (host is MainWindow hostMw)
+                {
+                    hostMw.NavigateTo(view);
+                    return;
+                }
+
+                MessageBox.Show("Ana pencere bulunamadı. Lütfen uygulamayı yeniden başlatın.");
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private decimal TryParseRate(string txt)
         {
             if (string.IsNullOrWhiteSpace(txt)) return 0m;
