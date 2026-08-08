@@ -268,7 +268,7 @@
             <!-- (previous inline results removed) -->
 
             <!-- Hesaplama sonuçları paneli: Step1Panel dışına alındı, tam genişlikte gösterilecek -->
-            <Border x:Name="ResultsPanel" Background="#071023" CornerRadius="8" Padding="18" Margin="0,294,0,-55" BorderBrush="#21303F" BorderThickness="1" Visibility="Visible" MinHeight="180">
+            <Border x:Name="ResultsPanel" Background="#071023" CornerRadius="8" Padding="18" Margin="0,294,0,-74" BorderBrush="#21303F" BorderThickness="1" Visibility="Visible" MinHeight="180">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -331,50 +331,101 @@
 
             <!-- Step 2: Giderler ve Tur Maliyeti -->
             <Border x:Name="Step2Panel" Visibility="Collapsed">
-                <StackPanel>
-                    <TextBlock Text="Giderler ve Tur Maliyeti" FontWeight="Bold" Foreground="#E2E8F0"/>
-                    <StackPanel Margin="0,8,0,0">
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <TextBlock Width="160" Text="Bilet:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="200" x:Name="TicketTxt" />
-                            <TextBlock Width="12" />
-                            <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <TextBlock Width="160" Text="Vize:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="200" x:Name="VisaTxt" />
-                            <TextBlock Width="12" />
-                            <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <TextBlock Width="160" Text="Çanta ve Zemzem:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="200" x:Name="BagTxt" />
-                            <TextBlock Width="12" />
-                            <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <TextBlock Width="160" Text="Eleman gideri:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="200" x:Name="StaffExpenseTxt" />
-                            <TextBlock Width="12" />
-                            <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="0.9*" />
+                    </Grid.ColumnDefinitions>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <TextBlock Width="160" Text="Ekstra Ziyaretler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="200" x:Name="ExtraVisitsTxt" TextChanged="ExtraVisitsTxt_TextChanged"/>
-                            <TextBlock Width="16" />
-                            <TextBlock Text="SAR" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0"/>
-                            <TextBlock x:Name="ExtraVisitsUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
+                    <!-- Left: Gider girişleri (USD) -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Giderler ve Tur Maliyeti" FontWeight="Bold" Foreground="#E2E8F0"/>
+                        <StackPanel Margin="0,8,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,6">
+                                <TextBlock Width="160" Text="Bilet:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox Width="200" x:Name="TicketTxt" TextChanged="Gider_TextChanged" />
+                                <TextBlock Width="12" />
+                                <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,6">
+                                <TextBlock Width="160" Text="Vize:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox Width="200" x:Name="VisaTxt" TextChanged="Gider_TextChanged" />
+                                <TextBlock Width="12" />
+                                <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,6">
+                                <TextBlock Width="160" Text="Çanta ve Zemzem:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox Width="200" x:Name="BagTxt" TextChanged="Gider_TextChanged" />
+                                <TextBlock Width="12" />
+                                <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,6">
+                                <TextBlock Width="160" Text="Eleman gideri:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox Width="200" x:Name="StaffExpenseTxt" TextChanged="Gider_TextChanged" />
+                                <TextBlock Width="12" />
+                                <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,6">
+                                <TextBlock Width="160" Text="Ekstra Ziyaretler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox Width="200" x:Name="ExtraVisitsTxt" TextChanged="ExtraVisitsTxt_TextChanged"/>
+                                <TextBlock Width="16" />
+                                <TextBlock Text="SAR" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBlock x:Name="ExtraVisitsUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,6">
+                                <TextBlock Width="160" Text="Ekstra Transferler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox Width="200" x:Name="ExtraTransfersTxt" TextChanged="ExtraTransfersTxt_TextChanged" />
+                                <TextBlock Width="16" />
+                                <TextBlock Text="SAR" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBlock x:Name="ExtraTransfersUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
+                            </StackPanel>
+                        <!-- Custom rate option -->
+                        <StackPanel Orientation="Vertical" Margin="0,12,0,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <CheckBox x:Name="UseCustomRateChk" Content="Kendi kuru gir (TCMB yerine)" Checked="UseCustomRateChk_Checked" Unchecked="UseCustomRateChk_Unchecked" Foreground="#E2E8F0" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Width="160" Text="Kur (1 SAR = ?) USD:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox x:Name="CustomSarToUsdTxt" Width="200" Visibility="Collapsed" TextChanged="CustomSarToUsdTxt_TextChanged" />
+                            </StackPanel>
+                            <TextBlock x:Name="CustomRateNote" Text="Kur girildiğinde hesaplamalarda girdiğiniz kur kullanılacaktır." Foreground="#94A3B8" Margin="0,6,0,0" Visibility="Collapsed" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <TextBlock Width="160" Text="Ekstra Transferler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="200" x:Name="ExtraTransfersTxt" TextChanged="ExtraTransfersTxt_TextChanged" />
-                            <TextBlock Width="16" />
-                            <TextBlock Text="SAR" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0"/>
-                            <TextBlock x:Name="ExtraTransfersUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
                         </StackPanel>
                     </StackPanel>
-                </StackPanel>
+
+                    <!-- Right: Hesaplanan sonuçlar (coming from Step1) and Tur maliyeti -->
+                    <Border Grid.Column="2" Background="#071023" CornerRadius="6" Padding="12" BorderBrush="#21303F" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="Hesaplanan Sonuçlar" FontWeight="Bold" Foreground="#E2E8F0"/>
+                            <StackPanel Margin="0,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Width="160" Text="Oteller Toplam (USD):" Foreground="#94A3B8"/>
+                                    <TextBlock x:Name="Step1OverallUsd" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,6">
+                                    <TextBlock Width="160" Text="Giderler (USD):" Foreground="#94A3B8"/>
+                                    <TextBlock x:Name="Step2GiderUsd" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,12">
+                                    <TextBlock Width="160" Text="Tur Maliyeti (USD):" Foreground="#94A3B8" FontWeight="Bold"/>
+                                    <TextBlock x:Name="TurCostUsd" Foreground="#8B5CF6" FontSize="18" FontWeight="Bold">-</TextBlock>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12">
+                                    <TextBlock Width="160" Text="Tur Satış Fiyatı (USD):" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="TurSalesPriceTxt" Width="140" TextChanged="TurSalesPriceTxt_TextChanged" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,8">
+                                    <TextBlock Width="160" Text="Tahmini Kar (USD):" Foreground="#94A3B8"/>
+                                    <TextBlock x:Name="TurProfitTxt" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Border>
 
             <!-- Step 3 removed per user request -->

@@ -201,12 +201,139 @@ namespace TurizmOperasyonSistemi.Views
         {
             // Only update SAR->USD display for extras. Do not include these in hotel totals here.
             UpdateExtraSarToUsdDisplay(ExtraVisitsTxt, ExtraVisitsUsd);
+            // update step2 totals after converting extra visits to USD
+            UpdateStep2GiderUsdAndTotals();
         }
 
         private void ExtraTransfersTxt_TextChanged(object sender, TextChangedEventArgs e)
         {
             // Only update SAR->USD display for extras. Do not include these in hotel totals here.
             UpdateExtraSarToUsdDisplay(ExtraTransfersTxt, ExtraTransfersUsd);
+            // after extra converts update overall step2 USD sum
+            UpdateStep2GiderUsdAndTotals();
+        }
+
+        private void Gider_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // recalc Step2 USD total when any USD denominator input changes
+            UpdateStep2GiderUsdAndTotals();
+        }
+
+        private void TurSalesPriceTxt_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateProfitDisplay();
+        }
+
+        private void UpdateStep2GiderUsdAndTotals()
+        {
+            try
+            {
+                decimal ticket = ParseDecimalFromText(TicketTxt?.Text);
+                decimal visa = ParseDecimalFromText(VisaTxt?.Text);
+                decimal bag = ParseDecimalFromText(BagTxt?.Text);
+                decimal staff = ParseDecimalFromText(StaffExpenseTxt?.Text);
+
+                decimal extrasUsd = 0m;
+                // extras are entered in SAR and converted to USD
+                if (!string.IsNullOrWhiteSpace(ExtraVisitsUsd?.Text) && ExtraVisitsUsd.Text != "-")
+                {
+                    extrasUsd += ParseDecimalFromText(ExtraVisitsUsd.Text.Replace("$", ""));
+                }
+                if (!string.IsNullOrWhiteSpace(ExtraTransfersUsd?.Text) && ExtraTransfersUsd.Text != "-")
+                {
+                    extrasUsd += ParseDecimalFromText(ExtraTransfersUsd.Text.Replace("$", ""));
+                }
+
+                decimal giderUsd = ticket + visa + bag + staff + extrasUsd;
+                Step2GiderUsd.Text = giderUsd > 0 ? giderUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                // Also update Step1 overall USD into Step1OverallUsd
+                // OverallUsd Text already computed in RecalculateTotals; read and copy
+                Step1OverallUsd.Text = OverallUsd.Text;
+                // NO-OP placeholder: keep file up-to-date before adding custom rate logic
+
+                // Tur Maliyeti = Otel (Step1OverallUsd) + Giderler (giderUsd)
+                decimal otelUsd = 0m;
+                if (!string.IsNullOrWhiteSpace(OverallUsd?.Text) && OverallUsd.Text != "-")
+                {
+                    otelUsd = ParseDecimalFromText(OverallUsd.Text.Replace("$", ""));
+                }
+                decimal turCost = otelUsd + giderUsd;
+                TurCostUsd.Text = turCost > 0 ? turCost.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                // update profit if sales price present
+                UpdateProfitDisplay();
+            }
+            catch { }
+        }
+
+        private bool _useCustomRate = false;
+        private decimal _customSarToUsd = 0m;
+
+        private void UseCustomRateChk_Checked(object sender, RoutedEventArgs e)
+        {
+            _useCustomRate = true;
+            CustomSarToUsdTxt.Visibility = Visibility.Visible;
+            CustomRateNote.Visibility = Visibility.Visible;
+        }
+
+        private void UseCustomRateChk_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _useCustomRate = false;
+            CustomSarToUsdTxt.Visibility = Visibility.Collapsed;
+            CustomRateNote.Visibility = Visibility.Collapsed;
+            // reset to fetched rates
+            _customSarToUsd = 0m;
+            // re-run recalculations to use TCMB rates
+            RecalculateTotals();
+            UpdateStep2GiderUsdAndTotals();
+        }
+
+        private void CustomSarToUsdTxt_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                var val = ParseDecimalFromText(CustomSarToUsdTxt?.Text);
+                if (val > 0)
+                {
+                    _customSarToUsd = val;
+                }
+                else
+                {
+                    _customSarToUsd = 0m;
+                }
+
+                // When custom rate is set, ensure conversions use it
+                RecalculateTotals();
+                UpdateStep2GiderUsdAndTotals();
+            }
+            catch { }
+        }
+
+        private void UpdateProfitDisplay()
+        {
+            try
+            {
+                decimal turCost = 0m;
+                if (!string.IsNullOrWhiteSpace(TurCostUsd?.Text) && TurCostUsd.Text != "-")
+                    turCost = ParseDecimalFromText(TurCostUsd.Text.Replace("$", ""));
+
+                decimal sales = ParseDecimalFromText(TurSalesPriceTxt?.Text);
+                if (sales > 0 && turCost > 0)
+                {
+                    var profit = sales - turCost;
+                    TurProfitTxt.Text = profit.ToString("N2", CultureInfo.CurrentCulture) + " $";
+                }
+                else if (sales > 0)
+                {
+                    TurProfitTxt.Text = sales.ToString("N2", CultureInfo.CurrentCulture) + " $";
+                }
+                else
+                {
+                    TurProfitTxt.Text = "-";
+                }
+            }
+            catch { TurProfitTxt.Text = "-"; }
         }
 
         private void UpdateExtraSarToUsdDisplay(TextBox sarBox, TextBlock usdBlock)
@@ -220,7 +347,13 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
-                if (_usdRate > 0m && _sarRate > 0m)
+                // If user provided custom SAR->USD rate, use it; otherwise use TCMB rates
+                if (_useCustomRate && _customSarToUsd > 0m)
+                {
+                    var usd = sar * _customSarToUsd;
+                    usdBlock.Text = usd.ToString("N2", CultureInfo.CurrentCulture) + " $";
+                }
+                else if (_usdRate > 0m && _sarRate > 0m)
                 {
                     var usd = sar * (_sarRate / _usdRate);
                     usdBlock.Text = usd.ToString("N2", CultureInfo.CurrentCulture) + " $";
@@ -257,7 +390,14 @@ namespace TurizmOperasyonSistemi.Views
 
                 if (_usdRate > 0 && _sarRate > 0)
                 {
-                    Func<decimal, string> toUsd = sar => (sar * (_sarRate / _usdRate)).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    Func<decimal, string> toUsd = sar =>
+                    {
+                        if (_useCustomRate && _customSarToUsd > 0m)
+                        {
+                            return (sar * _customSarToUsd).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                        }
+                        return (sar * (_sarRate / _usdRate)).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    };
                     if (econMekke > 0) econMekkeUsd = toUsd(econMekke);
                     if (econMedine > 0) econMedineUsd = toUsd(econMedine);
                     if (walkMekke > 0) walkMekkeUsd = toUsd(walkMekke);
@@ -272,6 +412,9 @@ namespace TurizmOperasyonSistemi.Views
 
                 OverallSar.Text = overallSar > 0 ? overallSar.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
                 OverallUsd.Text = overallUsd;
+
+                // Whenever Step1 totals recalculated, update Step2 displays too
+                UpdateStep2GiderUsdAndTotals();
             }
             catch { }
         }
