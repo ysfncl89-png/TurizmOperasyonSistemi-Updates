@@ -8,165 +8,303 @@
              Background="#0B1220">
 
     <Grid Margin="16">
-        <StackPanel>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Başlık ve step butonları -->
+        <StackPanel Orientation="Vertical" Grid.Row="0">
             <TextBlock Text="Kişi Bazlı Tur Fiyatı Hesapla" FontSize="22" FontWeight="Bold" Foreground="#8B5CF6"/>
-            <Border Background="#071023" CornerRadius="6" Padding="12" Margin="0,12,0,0" BorderBrush="#21303F" BorderThickness="1">
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <Button x:Name="Step1Btn" Click="Step1Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Otel Fiyatı Gir</Button>
+                <Button x:Name="Step2Btn" Click="Step2Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Masraflar</Button>
+                <Button x:Name="Step3Btn" Click="Step3Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Sonuç</Button>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- İçerik panelleri (her adım için bir panel) -->
+        <Grid Grid.Row="1" Margin="0,12,0,12">
+            <Grid.Resources>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="#071023" />
+                    <Setter Property="CornerRadius" Value="6" />
+                    <Setter Property="Padding" Value="12" />
+                    <Setter Property="BorderBrush" Value="#21303F" />
+                    <Setter Property="BorderThickness" Value="1" />
+                </Style>
+            </Grid.Resources>
+
+            <!-- Step 1: Otel Fiyatı Gir (geliştirilmiş görünüm) -->
+            <Border x:Name="Step1Panel" Visibility="Visible">
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="20" />
+                        <ColumnDefinition Width="12" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Sol: Ekonomik tur -->
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Ekonomik Tur" FontSize="16" FontWeight="Bold" Foreground="#E2E8F0" Margin="0,0,0,8"/>
+                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="6">
+                        <!-- Mekke header with days combobox -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="200" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Mekke Otel günlük Fiyatı (EKONOMİK)" Foreground="#E2E8F0" FontWeight="Bold" VerticalAlignment="Center" />
+                            <ComboBox x:Name="MekkeDaysCombo" Grid.Column="1" HorizontalAlignment="Right" Width="180" Margin="6,0,0,0" VerticalAlignment="Center" SelectionChanged="MekkeDaysCombo_SelectionChanged"/>
+                        </Grid>
 
-                        <!-- Mekke Otel -->
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <StackPanel Width="320">
-                                <TextBlock Text="Mekke Otel günlük Fiyatı" Foreground="#94A3B8"/>
-                                <TextBox x:Name="MekkePriceTextBox" TextChanged="MekkePriceOrDays_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="140" Margin="12,0,0,0">
-                                <TextBlock Text="Gün sayısı" Foreground="#94A3B8"/>
-                                <ComboBox x:Name="MekkeDaysComboBox" SelectionChanged="MekkePriceOrDays_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="180" Margin="12,0,0,0">
-                                <TextBlock Text="Toplam Otel" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="MekkeTotalText" Text="0" Foreground="#E2E8F0" FontWeight="Bold"/>
-                            </StackPanel>
-                        </StackPanel>
+                        <!-- Rates grid (larger, aligned) -->
+                        <Grid Margin="0,10,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                            </Grid.ColumnDefinitions>
 
-                        <!-- Medine Otel -->
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <StackPanel Width="320">
-                                <TextBlock Text="Medine Otel günlük Fiyatı" Foreground="#94A3B8"/>
-                                <TextBox x:Name="MedinePriceTextBox" TextChanged="MedinePriceOrDays_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="140" Margin="12,0,0,0">
-                                <TextBlock Text="Gün sayısı" Foreground="#94A3B8"/>
-                                <ComboBox x:Name="MedineDaysComboBox" SelectionChanged="MedinePriceOrDays_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="180" Margin="12,0,0,0">
-                                <TextBlock Text="Toplam Otel" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="MedineTotalText" Text="0" Foreground="#E2E8F0" FontWeight="Bold"/>
-                            </StackPanel>
-                        </StackPanel>
+                            <TextBlock Grid.Column="0" Text="SINGLE" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="1" Text="DBL" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="2" Text="TRPL" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="3" Text="QUAD" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="4" Text="QUINT" Foreground="#94A3B8" FontSize="12" Margin="6"/>
 
-                        <!-- Bilet, Vize, Çanta & Zemzem -->
-                        <StackPanel Orientation="Vertical" Margin="0,12">
-                            <TextBlock Text="Bilet" Foreground="#94A3B8"/>
-                            <TextBox x:Name="TicketTextBox" TextChanged="SimpleValue_Changed"/>
+                            <TextBox x:Name="MekkeSingleTxt" Grid.Column="0" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MekkeDblTxt" Grid.Column="1" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MekkeTrplTxt" Grid.Column="2" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MekkeQuadTxt" Grid.Column="3" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MekkeQuintTxt" Grid.Column="4" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                        </Grid>
 
-                            <TextBlock Text="Vize" Foreground="#94A3B8" Margin="0,8,0,0"/>
-                            <TextBox x:Name="VisaTextBox" TextChanged="SimpleValue_Changed"/>
+                        <!-- Medine header with days combobox -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="200" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Medine Otel günlük Fiyatı (EKONOMİK)" Foreground="#E2E8F0" FontWeight="Bold" VerticalAlignment="Center" />
+                            <ComboBox x:Name="MedineDaysCombo" Grid.Column="1" HorizontalAlignment="Right" Width="180" Margin="6,0,0,0" VerticalAlignment="Center" SelectionChanged="MedineDaysCombo_SelectionChanged"/>
+                        </Grid>
 
-                            <TextBlock Text="Çanta ve Zemzem" Foreground="#94A3B8" Margin="0,8,0,0"/>
-                            <TextBox x:Name="BagTextBox" TextChanged="SimpleValue_Changed"/>
-                        </StackPanel>
+                        <Grid Margin="0,10,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                            </Grid.ColumnDefinitions>
 
-                        <!-- Eleman gideri ve kişi sayısı -->
-                        <StackPanel Orientation="Horizontal" Margin="0,12">
-                            <StackPanel Width="240">
-                                <TextBlock Text="Eleman Gideri" Foreground="#94A3B8"/>
-                                <TextBox x:Name="StaffCostTextBox" TextChanged="StaffOrGroupSize_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="160" Margin="12,0,0,0">
-                                <TextBlock Text="Grup toplam kişi" Foreground="#94A3B8"/>
-                                <TextBox x:Name="GroupSizeTextBox" TextChanged="StaffOrGroupSize_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="180" Margin="12,0,0,0">
-                                <TextBlock Text="Kişi başı Eleman Gideri" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="StaffPerPersonText" Text="0" Foreground="#E2E8F0" FontWeight="Bold"/>
-                            </StackPanel>
-                        </StackPanel>
+                            <TextBlock Grid.Column="0" Text="SINGLE" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="1" Text="DBL" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="2" Text="TRPL" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="3" Text="QUAD" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="4" Text="QUINT" Foreground="#94A3B8" FontSize="12" Margin="6"/>
 
-                        <!-- Ekstra Ziyaretler ve Transferler -->
-                        <StackPanel Orientation="Vertical" Margin="0,12">
-                            <TextBlock Text="Ekstra Ziyaretler" Foreground="#94A3B8"/>
-                            <TextBox x:Name="ExtraVisitsTextBox" TextChanged="SimpleValue_Changed"/>
-
-                            <TextBlock Text="Ekstra Transferler" Foreground="#94A3B8" Margin="0,8,0,0"/>
-                            <TextBox x:Name="ExtraTransfersTextBox" TextChanged="SimpleValue_Changed"/>
-                        </StackPanel>
+                            <TextBox x:Name="MedineSingleTxt" Grid.Column="0" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MedineDblTxt" Grid.Column="1" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MedineTrplTxt" Grid.Column="2" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MedineQuadTxt" Grid.Column="3" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MedineQuintTxt" Grid.Column="4" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                        </Grid>
                     </StackPanel>
 
-                    <!-- Sağ: Yürüme mesafesi (aynı alanlar) -->
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Yürüme Mesafesi" FontSize="16" FontWeight="Bold" Foreground="#E2E8F0" Margin="0,0,0,8"/>
+                    <!-- orta boşluk çizgisi -->
+                    <Border Grid.Row="0" Grid.Column="1" Width="1" Background="#21303F" Margin="6,6" />
 
-                        <!-- Mekke Otel -->
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <StackPanel Width="320">
-                                <TextBlock Text="Mekke Otel günlük Fiyatı" Foreground="#94A3B8"/>
-                                <TextBox x:Name="WMekkePriceTextBox" TextChanged="WMekkePriceOrDays_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="140" Margin="12,0,0,0">
-                                <TextBlock Text="Gün sayısı" Foreground="#94A3B8"/>
-                                <ComboBox x:Name="WMekkeDaysComboBox" SelectionChanged="WMekkePriceOrDays_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="180" Margin="12,0,0,0">
-                                <TextBlock Text="Toplam Otel" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="WMekkeTotalText" Text="0" Foreground="#E2E8F0" FontWeight="Bold"/>
-                            </StackPanel>
-                        </StackPanel>
+                    <!-- Sağ: Yürüme mesafesi (daha düzenli mirror) -->
+                    <StackPanel Grid.Row="0" Grid.Column="2" Margin="6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="200" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Mekke Otel günlük Fiyatı (YÜRÜME MESAFESİ)" Foreground="#E2E8F0" FontWeight="Bold" VerticalAlignment="Center" />
+                            <ComboBox x:Name="MekkeDaysCombo_Walk" Grid.Column="1" HorizontalAlignment="Right" Width="180" Margin="6,0,0,0" VerticalAlignment="Center" SelectionChanged="MekkeDaysCombo_Walk_SelectionChanged"/>
+                        </Grid>
 
-                        <!-- Medine Otel -->
-                        <StackPanel Orientation="Horizontal" Margin="0,6">
-                            <StackPanel Width="320">
-                                <TextBlock Text="Medine Otel günlük Fiyatı" Foreground="#94A3B8"/>
-                                <TextBox x:Name="WMedinePriceTextBox" TextChanged="WMedinePriceOrDays_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="140" Margin="12,0,0,0">
-                                <TextBlock Text="Gün sayısı" Foreground="#94A3B8"/>
-                                <ComboBox x:Name="WMedineDaysComboBox" SelectionChanged="WMedinePriceOrDays_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="180" Margin="12,0,0,0">
-                                <TextBlock Text="Toplam Otel" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="WMedineTotalText" Text="0" Foreground="#E2E8F0" FontWeight="Bold"/>
-                            </StackPanel>
-                        </StackPanel>
+                        <Grid Margin="0,10,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                            </Grid.ColumnDefinitions>
 
-                        <!-- Bilet, Vize, Çanta & Zemzem -->
-                        <StackPanel Orientation="Vertical" Margin="0,12">
-                            <TextBlock Text="Bilet" Foreground="#94A3B8"/>
-                            <TextBox x:Name="WTicketTextBox" TextChanged="SimpleValue_Changed"/>
+                            <TextBlock Grid.Column="0" Text="SINGLE" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="1" Text="DBL" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="2" Text="TRPL" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="3" Text="QUAD" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="4" Text="QUINT" Foreground="#94A3B8" FontSize="12" Margin="6"/>
 
-                            <TextBlock Text="Vize" Foreground="#94A3B8" Margin="0,8,0,0"/>
-                            <TextBox x:Name="WVisaTextBox" TextChanged="SimpleValue_Changed"/>
+                            <TextBox x:Name="MekkeSingleTxt_Walk" Grid.Column="0" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MekkeDblTxt_Walk" Grid.Column="1" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MekkeTrplTxt_Walk" Grid.Column="2" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MekkeQuadTxt_Walk" Grid.Column="3" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MekkeQuintTxt_Walk" Grid.Column="4" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                        </Grid>
 
-                            <TextBlock Text="Çanta ve Zemzem" Foreground="#94A3B8" Margin="0,8,0,0"/>
-                            <TextBox x:Name="WBagTextBox" TextChanged="SimpleValue_Changed"/>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="200" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Medine Otel günlük Fiyatı (YÜRÜME MESAFESİ)" Foreground="#E2E8F0" FontWeight="Bold" VerticalAlignment="Center" />
+                            <ComboBox x:Name="MedineDaysCombo_Walk" Grid.Column="1" HorizontalAlignment="Right" Width="180" Margin="6,0,0,0" VerticalAlignment="Center" SelectionChanged="MedineDaysCombo_Walk_SelectionChanged"/>
+                        </Grid>
 
-                        <!-- Eleman gideri ve kişi sayısı -->
-                        <StackPanel Orientation="Horizontal" Margin="0,12">
-                            <StackPanel Width="240">
-                                <TextBlock Text="Eleman Gideri" Foreground="#94A3B8"/>
-                                <TextBox x:Name="WStaffCostTextBox" TextChanged="StaffOrGroupSize_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="160" Margin="12,0,0,0">
-                                <TextBlock Text="Grup toplam kişi" Foreground="#94A3B8"/>
-                                <TextBox x:Name="WGroupSizeTextBox" TextChanged="StaffOrGroupSize_Changed"/>
-                            </StackPanel>
-                            <StackPanel Width="180" Margin="12,0,0,0">
-                                <TextBlock Text="Kişi başı Eleman Gideri" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="WStaffPerPersonText" Text="0" Foreground="#E2E8F0" FontWeight="Bold"/>
-                            </StackPanel>
-                        </StackPanel>
+                        <Grid Margin="0,10,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.2*" />
+                            </Grid.ColumnDefinitions>
 
-                        <!-- Ekstra Ziyaretler ve Transferler -->
-                        <StackPanel Orientation="Vertical" Margin="0,12">
-                            <TextBlock Text="Ekstra Ziyaretler" Foreground="#94A3B8"/>
-                            <TextBox x:Name="WExtraVisitsTextBox" TextChanged="SimpleValue_Changed"/>
+                            <TextBlock Grid.Column="0" Text="SINGLE" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="1" Text="DBL" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="2" Text="TRPL" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="3" Text="QUAD" Foreground="#94A3B8" FontSize="12" Margin="6"/>
+                            <TextBlock Grid.Column="4" Text="QUINT" Foreground="#94A3B8" FontSize="12" Margin="6"/>
 
-                            <TextBlock Text="Ekstra Transferler" Foreground="#94A3B8" Margin="0,8,0,0"/>
-                            <TextBox x:Name="WExtraTransfersTextBox" TextChanged="SimpleValue_Changed"/>
-                        </StackPanel>
+                            <TextBox x:Name="MedineSingleTxt_Walk" Grid.Column="0" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MedineDblTxt_Walk" Grid.Column="1" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MedineTrplTxt_Walk" Grid.Column="2" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MedineQuadTxt_Walk" Grid.Column="3" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                            <TextBox x:Name="MedineQuintTxt_Walk" Grid.Column="4" Height="40" Margin="6,32,6,6" FontSize="14" Padding="8" TextChanged="PriceInput_TextChanged" />
+                        </Grid>
+
+                        <!-- Removed inline results panel; will be placed below Step1Panel so it spans full width -->
                     </StackPanel>
                 </Grid>
             </Border>
+            <!-- (previous inline results removed) -->
+
+            <!-- Hesaplama sonuçları paneli: Step1Panel dışına alındı, tam genişlikte gösterilecek -->
+            <Border x:Name="ResultsPanel" Background="#071023" CornerRadius="8" Padding="18" Margin="0,294,0,-55" BorderBrush="#21303F" BorderThickness="1" Visibility="Visible" MinHeight="180">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Hesaplanan Tutarlar (Ekonomik)" Foreground="#E2E8F0" FontWeight="Bold"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,8">
+                            <TextBlock Width="220" Text="Mekke (SAR):" Foreground="#94A3B8"/>
+                            <TextBlock x:Name="EconMekkeSar" Foreground="#E2E8F0"/>
+                            <TextBlock Width="24"/>
+                            <TextBlock Width="220" Text="Mekke (USD):" Foreground="#94A3B8"/>
+                            <TextBlock x:Name="EconMekkeUsd" Foreground="#E2E8F0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <TextBlock Width="220" Text="Medine (SAR):" Foreground="#94A3B8"/>
+                            <TextBlock x:Name="EconMedineSar" Foreground="#E2E8F0"/>
+                            <TextBlock Width="24"/>
+                            <TextBlock Width="220" Text="Medine (USD):" Foreground="#94A3B8"/>
+                            <TextBlock x:Name="EconMedineUsd" Foreground="#E2E8F0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Hesaplanan Tutarlar (Yürüme Mesafesi)" Foreground="#E2E8F0" FontWeight="Bold"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,8">
+                            <TextBlock Width="220" Text="Mekke (SAR):" Foreground="#94A3B8"/>
+                            <TextBlock x:Name="WalkMekkeSar" Foreground="#E2E8F0"/>
+                            <TextBlock Width="24"/>
+                            <TextBlock Width="220" Text="Mekke (USD):" Foreground="#94A3B8"/>
+                            <TextBlock x:Name="WalkMekkeUsd" Foreground="#E2E8F0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <TextBlock Width="220" Text="Medine (SAR):" Foreground="#94A3B8"/>
+                            <TextBlock x:Name="WalkMedineSar" Foreground="#E2E8F0"/>
+                            <TextBlock Width="24"/>
+                            <TextBlock Width="220" Text="Medine (USD):" Foreground="#94A3B8"/>
+                            <TextBlock x:Name="WalkMedineUsd" Foreground="#E2E8F0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,32,0,0">
+                        <TextBlock Width="160" Text="Toplam (SAR):" Foreground="#94A3B8" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="OverallSar" Foreground="#8B5CF6" Width="180" FontSize="20" FontWeight="Bold" VerticalAlignment="Center">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="#8B5CF6" BlurRadius="18" ShadowDepth="0" Opacity="0.9"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <TextBlock Width="36"/>
+                        <TextBlock Width="160" Text="Toplam (USD):" Foreground="#94A3B8" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="OverallUsd" Foreground="#7EE787" Width="180" FontSize="20" FontWeight="Bold" VerticalAlignment="Center">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="#7EE787" BlurRadius="18" ShadowDepth="0" Opacity="0.95"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Step 2: Masraflar -->
+            <Border x:Name="Step2Panel" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="Masraflar" FontWeight="Bold" Foreground="#E2E8F0"/>
+                    <StackPanel Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,6">
+                            <TextBlock Width="160" Text="Bilet:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <TextBox Width="200" x:Name="TicketTxt" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,6">
+                            <TextBlock Width="160" Text="Vize:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <TextBox Width="200" x:Name="VisaTxt" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,6">
+                            <TextBlock Width="160" Text="Çanta ve Zemzem:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <TextBox Width="200" x:Name="BagTxt" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,6">
+                            <TextBlock Width="160" Text="Eleman gideri:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <TextBox Width="120" x:Name="StaffExpenseTxt" TextChanged="StaffExpenseTxt_TextChanged" />
+                            <TextBlock Width="12" />
+                            <TextBlock Width="140" Text="Gruptaki toplam kişi:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <TextBox Width="80" x:Name="GroupCountTxt" TextChanged="StaffExpenseTxt_TextChanged" />
+                            <TextBlock Width="12" />
+                            <TextBlock Width="140" Text="Kişi başı eleman gideri:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <TextBlock Width="120" x:Name="PerPersonStaffExpense" Foreground="#E2E8F0" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,6">
+                            <TextBlock Width="160" Text="Ekstra Ziyaretler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <TextBox Width="200" x:Name="ExtraVisitsTxt" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,6">
+                            <TextBlock Width="160" Text="Ekstra Transferler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <TextBox Width="200" x:Name="ExtraTransfersTxt" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Step 3: Sonuç (placeholder) -->
+            <Border x:Name="Step3Panel" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="Sonuç" FontWeight="Bold" Foreground="#E2E8F0"/>
+                    <TextBlock Margin="0,8,0,0" Text="Hesaplama sonuçları burada gösterilecek (placeholder)." Foreground="#94A3B8"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Alt navigasyon: Prev / Next -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button x:Name="PrevBtn" Click="PrevBtn_Click" Margin="6" Padding="8,6" Content="Geri" />
+            <Button x:Name="NextBtn" Click="NextBtn_Click" Margin="6" Padding="8,6" Content="İleri" />
         </StackPanel>
     </Grid>
 </UserControl>
