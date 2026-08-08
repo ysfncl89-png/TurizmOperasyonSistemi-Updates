@@ -147,11 +147,10 @@ namespace TurizmOperasyonSistemi.Views
 
         private void SetStep(int step)
         {
-            _currentStep = Math.Max(1, Math.Min(3, step));
+            _currentStep = Math.Max(1, Math.Min(2, step));
 
             Step1Panel.Visibility = _currentStep == 1 ? Visibility.Visible : Visibility.Collapsed;
             Step2Panel.Visibility = _currentStep == 2 ? Visibility.Visible : Visibility.Collapsed;
-            Step3Panel.Visibility = _currentStep == 3 ? Visibility.Visible : Visibility.Collapsed;
             ResultsPanel.Visibility = _currentStep == 1 ? Visibility.Visible : Visibility.Collapsed;
 
             // Update header button visuals
@@ -161,7 +160,6 @@ namespace TurizmOperasyonSistemi.Views
 
             Step1Btn.Background = inactiveBg; Step1Btn.Foreground = inactiveFg;
             Step2Btn.Background = inactiveBg; Step2Btn.Foreground = inactiveFg;
-            Step3Btn.Background = inactiveBg; Step3Btn.Foreground = inactiveFg;
 
             switch (_currentStep)
             {
@@ -170,9 +168,6 @@ namespace TurizmOperasyonSistemi.Views
                     break;
                 case 2:
                     Step2Btn.Background = activeBrush; Step2Btn.Foreground = Brushes.White;
-                    break;
-                case 3:
-                    Step3Btn.Background = activeBrush; Step3Btn.Foreground = Brushes.White;
                     break;
             }
 
@@ -183,7 +178,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private void Step1Btn_Click(object sender, RoutedEventArgs e) => SetStep(1);
         private void Step2Btn_Click(object sender, RoutedEventArgs e) => SetStep(2);
-        private void Step3Btn_Click(object sender, RoutedEventArgs e) => SetStep(3);
+        // Step3 removed — no handler needed
 
         private void PrevBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -195,29 +190,47 @@ namespace TurizmOperasyonSistemi.Views
             SetStep(_currentStep + 1);
         }
 
-        private void StaffExpenseTxt_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            // Calculate per person staff expense
-            try
-            {
-                if (decimal.TryParse(StaffExpenseTxt.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var staff) || decimal.TryParse(StaffExpenseTxt.Text, NumberStyles.Any, new CultureInfo("tr-TR"), out staff))
-                {
-                    if (int.TryParse(GroupCountTxt.Text, out var cnt) && cnt > 0)
-                    {
-                        var per = staff / cnt;
-                        PerPersonStaffExpense.Text = per.ToString("N2", CultureInfo.CurrentCulture);
-                        return;
-                    }
-                }
-            }
-            catch { }
-
-            PerPersonStaffExpense.Text = "-";
-        }
+        // Staff expense is entered directly by user; no per-person calculation needed now.
 
         private void PriceInput_TextChanged(object sender, TextChangedEventArgs e)
         {
             RecalculateTotals();
+        }
+
+        private void ExtraVisitsTxt_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Only update SAR->USD display for extras. Do not include these in hotel totals here.
+            UpdateExtraSarToUsdDisplay(ExtraVisitsTxt, ExtraVisitsUsd);
+        }
+
+        private void ExtraTransfersTxt_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Only update SAR->USD display for extras. Do not include these in hotel totals here.
+            UpdateExtraSarToUsdDisplay(ExtraTransfersTxt, ExtraTransfersUsd);
+        }
+
+        private void UpdateExtraSarToUsdDisplay(TextBox sarBox, TextBlock usdBlock)
+        {
+            try
+            {
+                var sar = ParseDecimalFromText(sarBox?.Text);
+                if (sar <= 0m)
+                {
+                    usdBlock.Text = "-";
+                    return;
+                }
+
+                if (_usdRate > 0m && _sarRate > 0m)
+                {
+                    var usd = sar * (_sarRate / _usdRate);
+                    usdBlock.Text = usd.ToString("N2", CultureInfo.CurrentCulture) + " $";
+                }
+                else
+                {
+                    usdBlock.Text = "-";
+                }
+            }
+            catch { usdBlock.Text = "-"; }
         }
 
         private void RecalculateTotals()
@@ -237,6 +250,8 @@ namespace TurizmOperasyonSistemi.Views
 
                 // Convert SAR to USD using TCMB rates (USD = SAR * (SAR_try / USD_try))
                 string econMekkeUsd = "-", econMedineUsd = "-", walkMekkeUsd = "-", walkMedineUsd = "-";
+                // Note: extras (ExtraVisits/ExtraTransfers) are SAR inputs shown in Masraflar step
+                // They are not included here in hotel price totals – user requested these not affect Step1 calculations.
                 decimal overallSar = econMekke + econMedine + walkMekke + walkMedine;
                 string overallUsd = "-";
 

@@ -7,6 +7,46 @@
              d:DesignHeight="600" d:DesignWidth="1000"
              Background="#0B1220">
 
+    <UserControl.Resources>
+        <!-- Shared resources for the whole view -->
+        <Style x:Key="WizardNavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0E2230" />
+            <Setter Property="Foreground" Value="#E6EEF6" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="MinWidth" Value="110" />
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6" BorderThickness="1" BorderBrush="#263745" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#8B5CF6" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#6B3BD6" />
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="1" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -19,8 +59,7 @@
             <TextBlock Text="Kişi Bazlı Tur Fiyatı Hesapla" FontSize="22" FontWeight="Bold" Foreground="#8B5CF6"/>
             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                 <Button x:Name="Step1Btn" Click="Step1Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Otel Fiyatı Gir</Button>
-                <Button x:Name="Step2Btn" Click="Step2Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Masraflar</Button>
-                <Button x:Name="Step3Btn" Click="Step3Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Sonuç</Button>
+                <Button x:Name="Step2Btn" Click="Step2Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Giderler ve Tur Maliyeti</Button>
             </StackPanel>
         </StackPanel>
 
@@ -33,6 +72,44 @@
                     <Setter Property="Padding" Value="12" />
                     <Setter Property="BorderBrush" Value="#21303F" />
                     <Setter Property="BorderThickness" Value="1" />
+                </Style>
+
+                <!-- Wizard navigation button style (Prev / Next) -->
+                <Style x:Key="WizardNavButtonStyle" TargetType="Button">
+                    <Setter Property="Background" Value="#0E2230" />
+                    <Setter Property="Foreground" Value="#E6EEF6" />
+                    <Setter Property="Padding" Value="12,8" />
+                    <Setter Property="Margin" Value="8" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                    <Setter Property="FontSize" Value="14" />
+                    <Setter Property="MinWidth" Value="110" />
+                    <Setter Property="MinHeight" Value="36" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6" BorderThickness="1" BorderBrush="#263745" SnapsToDevicePixels="True">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bd" Property="Background" Value="#8B5CF6" />
+                                        <Setter Property="Foreground" Value="White" />
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="bd" Property="Background" Value="#6B3BD6" />
+                                        <Setter Property="RenderTransform">
+                                            <Setter.Value>
+                                                <TranslateTransform Y="1" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="bd" Property="Opacity" Value="0.5" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </Grid.Resources>
 
@@ -252,59 +329,61 @@
                 </Grid>
             </Border>
 
-            <!-- Step 2: Masraflar -->
+            <!-- Step 2: Giderler ve Tur Maliyeti -->
             <Border x:Name="Step2Panel" Visibility="Collapsed">
                 <StackPanel>
-                    <TextBlock Text="Masraflar" FontWeight="Bold" Foreground="#E2E8F0"/>
+                    <TextBlock Text="Giderler ve Tur Maliyeti" FontWeight="Bold" Foreground="#E2E8F0"/>
                     <StackPanel Margin="0,8,0,0">
                         <StackPanel Orientation="Horizontal" Margin="0,6">
                             <TextBlock Width="160" Text="Bilet:" Foreground="#94A3B8" VerticalAlignment="Center"/>
                             <TextBox Width="200" x:Name="TicketTxt" />
+                            <TextBlock Width="12" />
+                            <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,6">
                             <TextBlock Width="160" Text="Vize:" Foreground="#94A3B8" VerticalAlignment="Center"/>
                             <TextBox Width="200" x:Name="VisaTxt" />
+                            <TextBlock Width="12" />
+                            <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,6">
                             <TextBlock Width="160" Text="Çanta ve Zemzem:" Foreground="#94A3B8" VerticalAlignment="Center"/>
                             <TextBox Width="200" x:Name="BagTxt" />
+                            <TextBlock Width="12" />
+                            <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,6">
                             <TextBlock Width="160" Text="Eleman gideri:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="120" x:Name="StaffExpenseTxt" TextChanged="StaffExpenseTxt_TextChanged" />
+                            <TextBox Width="200" x:Name="StaffExpenseTxt" />
                             <TextBlock Width="12" />
-                            <TextBlock Width="140" Text="Gruptaki toplam kişi:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="80" x:Name="GroupCountTxt" TextChanged="StaffExpenseTxt_TextChanged" />
-                            <TextBlock Width="12" />
-                            <TextBlock Width="140" Text="Kişi başı eleman gideri:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBlock Width="120" x:Name="PerPersonStaffExpense" Foreground="#E2E8F0" />
+                            <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,6">
                             <TextBlock Width="160" Text="Ekstra Ziyaretler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="200" x:Name="ExtraVisitsTxt" />
+                            <TextBox Width="200" x:Name="ExtraVisitsTxt" TextChanged="ExtraVisitsTxt_TextChanged"/>
+                            <TextBlock Width="16" />
+                            <TextBlock Text="SAR" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0"/>
+                            <TextBlock x:Name="ExtraVisitsUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,6">
                             <TextBlock Width="160" Text="Ekstra Transferler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                            <TextBox Width="200" x:Name="ExtraTransfersTxt" />
+                            <TextBox Width="200" x:Name="ExtraTransfersTxt" TextChanged="ExtraTransfersTxt_TextChanged" />
+                            <TextBlock Width="16" />
+                            <TextBlock Text="SAR" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0"/>
+                            <TextBlock x:Name="ExtraTransfersUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </Border>
 
-            <!-- Step 3: Sonuç (placeholder) -->
-            <Border x:Name="Step3Panel" Visibility="Collapsed">
-                <StackPanel>
-                    <TextBlock Text="Sonuç" FontWeight="Bold" Foreground="#E2E8F0"/>
-                    <TextBlock Margin="0,8,0,0" Text="Hesaplama sonuçları burada gösterilecek (placeholder)." Foreground="#94A3B8"/>
-                </StackPanel>
-            </Border>
+            <!-- Step 3 removed per user request -->
         </Grid>
 
         <!-- Alt navigasyon: Prev / Next -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button x:Name="PrevBtn" Click="PrevBtn_Click" Margin="6" Padding="8,6" Content="Geri" />
-            <Button x:Name="NextBtn" Click="NextBtn_Click" Margin="6" Padding="8,6" Content="İleri" />
+            <Button x:Name="PrevBtn" Click="PrevBtn_Click" Style="{StaticResource WizardNavButtonStyle}" Content="Geri" />
+            <Button x:Name="NextBtn" Click="NextBtn_Click" Style="{StaticResource WizardNavButtonStyle}" Content="İleri" />
         </StackPanel>
     </Grid>
 </UserControl>
