@@ -212,17 +212,26 @@ namespace TurizmOperasyonSistemi.Views
                     var selCode = MapToCode(selectedCurrency);
                     var regCode = MapToCode(regCurrency);
 
-                    // If user entered TL, keep previous behaviour: require TbRate (user-provided rate)
+                    // If user entered TL, only convert when the registration currency is different
                     if (!string.IsNullOrEmpty(selCode) && selCode == "TRY")
                     {
-                        if (!decimal.TryParse(TbRate.Text, out var rate) || rate <= 0)
+                        if (!string.IsNullOrEmpty(regCode) && regCode != "TRY")
                         {
-                            MessageBox.Show("Lütfen geçerli bir kur değeri girin.");
-                            return;
+                            if (!decimal.TryParse(TbRate.Text, out var rate) || rate <= 0)
+                            {
+                                MessageBox.Show("Lütfen geçerli bir kur değeri girin.");
+                                return;
+                            }
+                            // convert TL to registration currency by dividing by user-provided rate
+                            added = amount / rate;
+                            rateUsed = rate;
                         }
-                        // convert TL to registration currency by dividing by user-provided rate (existing behaviour)
-                        added = amount / rate;
-                        rateUsed = rate;
+                        else
+                        {
+                            // registration currency is also TRY (or unknown) -> no conversion
+                            added = amount;
+                            rateUsed = 1m;
+                        }
                     }
                     else if (!string.IsNullOrEmpty(selCode) && !string.IsNullOrEmpty(regCode) && selCode != regCode)
                     {
