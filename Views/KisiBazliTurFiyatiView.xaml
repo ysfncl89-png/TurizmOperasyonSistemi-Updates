@@ -51,7 +51,7 @@
                     <Setter Property="Background" Value="#071026" />
                     <Setter Property="CornerRadius" Value="6" />
                     <Setter Property="Padding" Value="10" />
-                    <Setter Property="BorderBrush" Value="#8B5CF6" />
+            <Setter Property="BorderBrush" Value="#FFFBBF24" />
                     <Setter Property="BorderThickness" Value="1.5" />
                     <Setter Property="Margin" Value="4" />
                 </Style>
@@ -155,8 +155,11 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="200" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Mekke Otel günlük Fiyatı (EKONOMİK)" Foreground="#8B5CF6" FontWeight="Bold" VerticalAlignment="Center" />
-                            <ComboBox x:Name="MekkeDaysCombo" Grid.Column="1" HorizontalAlignment="Right" Width="180" Margin="6,0,0,0" VerticalAlignment="Center" SelectionChanged="MekkeDaysCombo_SelectionChanged" BorderBrush="#8B5CF6" BorderThickness="1.2" />
+                            <TextBlock Text="Mekke Otel günlük Fiyatı (EKONOMİK)" Foreground="#FFFBBF24" FontWeight="Bold" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <ComboBox x:Name="MekkeDaysCombo" Width="114" Margin="0,0,6,0" SelectionChanged="MekkeDaysCombo_SelectionChanged" BorderBrush="#FFFBBF24" BorderThickness="1.2" />
+                                <TextBlock Text="Kaç günlük?" Foreground="#94A3B8" VerticalAlignment="Center" FontSize="12" />
+                            </StackPanel>
                         </Grid>
 
                         <!-- Rates grid (larger, aligned) -->
@@ -188,8 +191,11 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="200" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Medine Otel günlük Fiyatı (EKONOMİK)" Foreground="#8B5CF6" FontWeight="Bold" VerticalAlignment="Center" />
-                            <ComboBox x:Name="MedineDaysCombo" Grid.Column="1" HorizontalAlignment="Right" Width="180" Margin="6,0,0,0" VerticalAlignment="Center" SelectionChanged="MedineDaysCombo_SelectionChanged" BorderBrush="#8B5CF6" BorderThickness="1.2" />
+                                <TextBlock Text="Medine Otel günlük Fiyatı (EKONOMİK)" Foreground="#FFFBBF24" FontWeight="Bold" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <ComboBox x:Name="MedineDaysCombo" Width="115" Margin="0,0,6,0" SelectionChanged="MedineDaysCombo_SelectionChanged" BorderBrush="#FFFBBF24" BorderThickness="1.2" />
+                                <TextBlock Text="Kaç günlük?" Foreground="#94A3B8" VerticalAlignment="Center" FontSize="12" />
+                            </StackPanel>
                         </Grid>
 
                         <Grid Margin="0,10,0,6">
@@ -228,7 +234,10 @@
                                 <ColumnDefinition Width="200" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Mekke Otel günlük Fiyatı (YÜRÜME MESAFESİ)" Foreground="#17B890" FontWeight="Bold" VerticalAlignment="Center" />
-                            <ComboBox x:Name="MekkeDaysCombo_Walk" Grid.Column="1" HorizontalAlignment="Right" Width="180" Margin="6,0,0,0" VerticalAlignment="Center" SelectionChanged="MekkeDaysCombo_Walk_SelectionChanged" BorderBrush="#17B890" BorderThickness="1.2" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <ComboBox x:Name="MekkeDaysCombo_Walk" Width="115" Margin="0,0,6,0" SelectionChanged="MekkeDaysCombo_Walk_SelectionChanged" BorderBrush="#17B890" BorderThickness="1.2" />
+                                <TextBlock Text="Kaç günlük?" Foreground="#94A3B8" VerticalAlignment="Center" FontSize="12" />
+                            </StackPanel>
                         </Grid>
 
                         <Grid Margin="0,10,0,18">
@@ -259,7 +268,10 @@
                                 <ColumnDefinition Width="200" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Medine Otel günlük Fiyatı (YÜRÜME MESAFESİ)" Foreground="#17B890" FontWeight="Bold" VerticalAlignment="Center" />
-                            <ComboBox x:Name="MedineDaysCombo_Walk" Grid.Column="1" HorizontalAlignment="Right" Width="180" Margin="6,0,0,0" VerticalAlignment="Center" SelectionChanged="MedineDaysCombo_Walk_SelectionChanged" BorderBrush="#17B890" BorderThickness="1.2" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <ComboBox x:Name="MedineDaysCombo_Walk" Width="115" Margin="0,0,6,0" SelectionChanged="MedineDaysCombo_Walk_SelectionChanged" BorderBrush="#17B890" BorderThickness="1.2" />
+                                <TextBlock Text="Kaç günlük?" Foreground="#94A3B8" VerticalAlignment="Center" FontSize="12" />
+                            </StackPanel>
                         </Grid>
 
                         <Grid Margin="0,10,0,6">
