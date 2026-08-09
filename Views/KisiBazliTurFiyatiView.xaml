@@ -361,6 +361,15 @@
                                 <DropShadowEffect Color="#7EE787" BlurRadius="18" ShadowDepth="0" Opacity="0.95"/>
                             </TextBlock.Effect>
                         </TextBlock>
+                        <!-- Custom rate option moved here from Step2: Otel Fiyatı Gir ekranı, sağda Toplam (USD) yanında -->
+                        <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="12,0,0,0">
+                            <CheckBox x:Name="UseCustomRateChk" Content="Kendi Döviz Kurunu Gir (TCMB kuru yerine)" Checked="UseCustomRateChk_Checked" Unchecked="UseCustomRateChk_Unchecked" Foreground="#E2E8F0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <TextBlock Width="120" Text="Kur (1 USD = ?) SAR:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox x:Name="CustomSarToUsdTxt" Width="120" Visibility="Collapsed" TextChanged="CustomSarToUsdTxt_TextChanged" />
+                            </StackPanel>
+                            <TextBlock x:Name="CustomRateNote" Text="1 USD = X SAR şeklinde kur giriniz; girilen kur hesaplamalarda kullanılacaktır." Foreground="#94A3B8" Margin="0,6,0,0" Visibility="Collapsed" />
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -369,9 +378,10 @@
             <Border x:Name="Step2Panel" Visibility="Collapsed">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="12" />
+                        <!-- Sol tarafı biraz daraltıp, hesaplanan sonuçlar sütununu genişlettim -->
                         <ColumnDefinition Width="0.9*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="1.2*" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Gider girişleri (USD) -->
@@ -416,17 +426,7 @@
                                 <TextBlock Width="12" />
                                 <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
                             </StackPanel>
-                        <!-- Custom rate option -->
-                        <StackPanel Orientation="Vertical" Margin="0,12,0,0">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <CheckBox x:Name="UseCustomRateChk" Content="Kendi kuru gir (TCMB yerine)" Checked="UseCustomRateChk_Checked" Unchecked="UseCustomRateChk_Unchecked" Foreground="#E2E8F0" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                <TextBlock Width="160" Text="Kur (1 USD = ?) SAR:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                                <TextBox x:Name="CustomSarToUsdTxt" Width="200" Visibility="Collapsed" TextChanged="CustomSarToUsdTxt_TextChanged" />
-                            </StackPanel>
-                            <TextBlock x:Name="CustomRateNote" Text="1 USD = X SAR şeklinde kur giriniz; girilen kur hesaplamalarda kullanılacaktır." Foreground="#94A3B8" Margin="0,6,0,0" Visibility="Collapsed" />
-                        </StackPanel>
+                        <!-- Custom rate option moved to Step1 (Otel Fiyatı Gir) -->
                         </StackPanel>
                     </StackPanel>
 
@@ -443,9 +443,70 @@
                                     <TextBlock Width="160" Text="Giderler (USD):" Foreground="#94A3B8"/>
                                     <TextBlock x:Name="Step2GiderUsd" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,12">
-                                    <TextBlock Width="160" Text="Tur Maliyeti (USD):" Foreground="#94A3B8" FontWeight="Bold"/>
-                                    <TextBlock x:Name="TurCostUsd" Foreground="#8B5CF6" FontSize="18" FontWeight="Bold">-</TextBlock>
+                                <!-- Oda Maliyetleri: EKONOMIK ve LÜKS (Yürüme Mesafesi) ayrı gösterilecek -->
+                                <StackPanel Margin="0,12">
+                                    <TextBlock Text=" 1 Kişi için Tur Maliyeti" FontWeight="Bold" Foreground="#94A3B8"/>
+                                    <Grid Margin="0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="1*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Ekonomik -->
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="EKONOMİK" Foreground="#94A3B8" FontWeight="SemiBold" Margin="0,0,0,6" />
+                                            <StackPanel Orientation="Vertical">
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="SINGLE:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="EconRoomSingle" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="DBL:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="EconRoomDbl" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="TRPL:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="EconRoomTrpl" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="QUAD:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="EconRoomQuad" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="QUINT:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="EconRoomQuint" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Lüks / Yürüme Mesafesi -->
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="LÜKS (Yürüme Mesafesi)" Foreground="#94A3B8" FontWeight="SemiBold" Margin="0,0,0,6" />
+                                            <StackPanel Orientation="Vertical">
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="SINGLE:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="WalkRoomSingle" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="DBL:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="WalkRoomDbl" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="TRPL:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="WalkRoomTrpl" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="QUAD:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="WalkRoomQuad" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Width="80" Text="QUINT:" Foreground="#94A3B8"/>
+                                                    <TextBlock x:Name="WalkRoomQuint" Foreground="#7EE787" FontWeight="Bold">-</TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,12">

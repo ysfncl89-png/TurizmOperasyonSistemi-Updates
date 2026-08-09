@@ -14,6 +14,27 @@ namespace TurizmOperasyonSistemi.Views
         private decimal _usdRate = 0m; // TRY per USD
         private decimal _sarRate = 0m; // TRY per SAR
         private System.Windows.Threading.DispatcherTimer _ratesTimer;
+        // last computed tour cost (used for profit calculation after Tur Maliyeti UI removed)
+        private decimal _lastTurCost = 0m;
+        // total OTEL USD (stored for Step2 calculations)
+        private decimal _otelUsdTotal = 0m;
+        // per-person base room USD values (without shared gider split)
+        private decimal _perPersonSingleBaseUsd = 0m;
+        private decimal _perPersonDblBaseUsd = 0m;
+        private decimal _perPersonTrplBaseUsd = 0m;
+        private decimal _perPersonQuadBaseUsd = 0m;
+        private decimal _perPersonQuintBaseUsd = 0m;
+        // store per-category per-person USD values from RecalculateTotals so UpdateStep2 can use them without parsing UI
+        private decimal _econSingleUsd = 0m;
+        private decimal _econDblUsd = 0m;
+        private decimal _econTrplUsd = 0m;
+        private decimal _econQuadUsd = 0m;
+        private decimal _econQuintUsd = 0m;
+        private decimal _walkSingleUsd = 0m;
+        private decimal _walkDblUsd = 0m;
+        private decimal _walkTrplUsd = 0m;
+        private decimal _walkQuadUsd = 0m;
+        private decimal _walkQuintUsd = 0m;
 
         public KisiBazliTurFiyatiView()
         {
@@ -245,19 +266,103 @@ namespace TurizmOperasyonSistemi.Views
                 decimal giderUsd = ticket + visa + bag + staff + extrasUsd + mealUsd;
                 Step2GiderUsd.Text = giderUsd > 0 ? giderUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
 
-                // Also update Step1 overall USD into Step1OverallUsd
-                // OverallUsd Text already computed in RecalculateTotals; read and copy
+                // Also update Step1 overall USD into Step1OverallUsd (show per-person overall USD as displayed in Step1)
                 Step1OverallUsd.Text = OverallUsd.Text;
-                // NO-OP placeholder: keep file up-to-date before adding custom rate logic
 
-                // Tur Maliyeti = Otel (Step1OverallUsd) + Giderler (giderUsd)
-                decimal otelUsd = 0m;
-                if (!string.IsNullOrWhiteSpace(OverallUsd?.Text) && OverallUsd.Text != "-")
-                {
-                    otelUsd = ParseDecimalFromText(OverallUsd.Text.Replace("$", ""));
-                }
+                // Tur Maliyeti = Otel (total OTEL USD) + Giderler (giderUsd)
+                decimal otelUsd = _otelUsdTotal;
                 decimal turCost = otelUsd + giderUsd;
-                TurCostUsd.Text = turCost > 0 ? turCost.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                // store last calculated tour cost for profit calculations (UI "Tur Maliyeti" removed)
+                _lastTurCost = turCost;
+
+                // Determine which combined room categories have base values and distribute giderUsd among them
+                var nonEmptyCategories = new System.Collections.Generic.List<string>();
+                if (_perPersonSingleBaseUsd > 0m) nonEmptyCategories.Add("single");
+                if (_perPersonDblBaseUsd > 0m) nonEmptyCategories.Add("dbl");
+                if (_perPersonTrplBaseUsd > 0m) nonEmptyCategories.Add("trpl");
+                if (_perPersonQuadBaseUsd > 0m) nonEmptyCategories.Add("quad");
+                if (_perPersonQuintBaseUsd > 0m) nonEmptyCategories.Add("quint");
+
+                // perShare: per-category addition. Per user's request, add full giderUsd to each category (do not divide).
+                decimal perShare = giderUsd;
+
+                try
+                {
+                    var rcSingle = FindName("RoomCostSingle") as TextBlock;
+                    if (rcSingle != null)
+                    {
+                        if (_perPersonSingleBaseUsd > 0m)
+                            rcSingle.Text = (_perPersonSingleBaseUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                        else
+                            rcSingle.Text = "-";
+                    }
+
+                    var rcDbl = FindName("RoomCostDbl") as TextBlock;
+                    if (rcDbl != null)
+                    {
+                        if (_perPersonDblBaseUsd > 0m)
+                            rcDbl.Text = (_perPersonDblBaseUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                        else
+                            rcDbl.Text = "-";
+                    }
+
+                    var rcTrpl = FindName("RoomCostTrpl") as TextBlock;
+                    if (rcTrpl != null)
+                    {
+                        if (_perPersonTrplBaseUsd > 0m)
+                            rcTrpl.Text = (_perPersonTrplBaseUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                        else
+                            rcTrpl.Text = "-";
+                    }
+
+                    var rcQuad = FindName("RoomCostQuad") as TextBlock;
+                    if (rcQuad != null)
+                    {
+                        if (_perPersonQuadBaseUsd > 0m)
+                            rcQuad.Text = (_perPersonQuadBaseUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                        else
+                            rcQuad.Text = "-";
+                    }
+
+                    var rcQuint = FindName("RoomCostQuint") as TextBlock;
+                    if (rcQuint != null)
+                    {
+                        if (_perPersonQuintBaseUsd > 0m)
+                            rcQuint.Text = (_perPersonQuintBaseUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                        else
+                            rcQuint.Text = "-";
+                    }
+                }
+                catch { }
+
+                // Additionally add full giderUsd to each category that has a computed base per-person USD
+                try
+                {
+                    var eSingle = FindName("EconRoomSingle") as TextBlock;
+                    var eDbl = FindName("EconRoomDbl") as TextBlock;
+                    var eTrpl = FindName("EconRoomTrpl") as TextBlock;
+                    var eQuad = FindName("EconRoomQuad") as TextBlock;
+                    var eQuint = FindName("EconRoomQuint") as TextBlock;
+
+                    var wSingle = FindName("WalkRoomSingle") as TextBlock;
+                    var wDbl = FindName("WalkRoomDbl") as TextBlock;
+                    var wTrpl = FindName("WalkRoomTrpl") as TextBlock;
+                    var wQuad = FindName("WalkRoomQuad") as TextBlock;
+                    var wQuint = FindName("WalkRoomQuint") as TextBlock;
+
+                    if (eSingle != null && _econSingleUsd > 0m) eSingle.Text = (_econSingleUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    if (eDbl != null && _econDblUsd > 0m) eDbl.Text = (_econDblUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    if (eTrpl != null && _econTrplUsd > 0m) eTrpl.Text = (_econTrplUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    if (eQuad != null && _econQuadUsd > 0m) eQuad.Text = (_econQuadUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    if (eQuint != null && _econQuintUsd > 0m) eQuint.Text = (_econQuintUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+
+                    if (wSingle != null && _walkSingleUsd > 0m) wSingle.Text = (_walkSingleUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    if (wDbl != null && _walkDblUsd > 0m) wDbl.Text = (_walkDblUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    if (wTrpl != null && _walkTrplUsd > 0m) wTrpl.Text = (_walkTrplUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    if (wQuad != null && _walkQuadUsd > 0m) wQuad.Text = (_walkQuadUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    if (wQuint != null && _walkQuintUsd > 0m) wQuint.Text = (_walkQuintUsd + perShare).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                }
+                catch { }
 
                 // update profit if sales price present
                 UpdateProfitDisplay();
@@ -273,6 +378,8 @@ namespace TurizmOperasyonSistemi.Views
             _useCustomRate = true;
             CustomSarToUsdTxt.Visibility = Visibility.Visible;
             CustomRateNote.Visibility = Visibility.Visible;
+            // refresh any SAR->USD displays when enabling custom rate
+            try { UpdateExtraSarToUsdDisplay(ExtraVisitsTxt, ExtraVisitsUsd); } catch { }
         }
 
         private void UseCustomRateChk_Unchecked(object sender, RoutedEventArgs e)
@@ -284,6 +391,8 @@ namespace TurizmOperasyonSistemi.Views
             _customSarToUsd = 0m;
             // re-run recalculations to use TCMB rates
             RecalculateTotals();
+            // refresh SAR->USD displays and step2 totals
+            try { UpdateExtraSarToUsdDisplay(ExtraVisitsTxt, ExtraVisitsUsd); } catch { }
             UpdateStep2GiderUsdAndTotals();
         }
 
@@ -303,6 +412,8 @@ namespace TurizmOperasyonSistemi.Views
 
                 // When custom rate is set, ensure conversions use it
                 RecalculateTotals();
+                // update SAR->USD displays that depend on the custom rate
+                try { UpdateExtraSarToUsdDisplay(ExtraVisitsTxt, ExtraVisitsUsd); } catch { }
                 UpdateStep2GiderUsdAndTotals();
             }
             catch { }
@@ -312,9 +423,8 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                decimal turCost = 0m;
-                if (!string.IsNullOrWhiteSpace(TurCostUsd?.Text) && TurCostUsd.Text != "-")
-                    turCost = ParseDecimalFromText(TurCostUsd.Text.Replace("$", ""));
+                // read last computed tour cost instead of UI text
+                decimal turCost = _lastTurCost;
 
                 decimal sales = ParseDecimalFromText(TurSalesPriceTxt?.Text);
                 if (sales > 0 && turCost > 0)
@@ -369,50 +479,257 @@ namespace TurizmOperasyonSistemi.Views
         {
             try
             {
-                // For each of four groups compute SAR totals
+                // For each of four groups compute SAR totals (room totals)
                 decimal econMekke = SumPricesForGroup(new[] { MekkeSingleTxt, MekkeDblTxt, MekkeTrplTxt, MekkeQuadTxt, MekkeQuintTxt }, MekkeDaysCombo);
                 decimal econMedine = SumPricesForGroup(new[] { MedineSingleTxt, MedineDblTxt, MedineTrplTxt, MedineQuadTxt, MedineQuintTxt }, MedineDaysCombo);
                 decimal walkMekke = SumPricesForGroup(new[] { MekkeSingleTxt_Walk, MekkeDblTxt_Walk, MekkeTrplTxt_Walk, MekkeQuadTxt_Walk, MekkeQuintTxt_Walk }, MekkeDaysCombo_Walk);
                 decimal walkMedine = SumPricesForGroup(new[] { MedineSingleTxt_Walk, MedineDblTxt_Walk, MedineTrplTxt_Walk, MedineQuadTxt_Walk, MedineQuintTxt_Walk }, MedineDaysCombo_Walk);
 
-                EconMekkeSar.Text = econMekke > 0 ? econMekke.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
-                EconMedineSar.Text = econMedine > 0 ? econMedine.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
-                WalkMekkeSar.Text = walkMekke > 0 ? walkMekke.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
-                WalkMedineSar.Text = walkMedine > 0 ? walkMedine.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                // Total SAR across all groups (room totals)
+                decimal overallSarTotal = econMekke + econMedine + walkMekke + walkMedine;
 
-                // Convert SAR to USD using TCMB rates (USD = SAR * (SAR_try / USD_try))
-                string econMekkeUsd = "-", econMedineUsd = "-", walkMekkeUsd = "-", walkMedineUsd = "-";
-                // Note: extras (ExtraVisits) are SAR inputs shown in Masraflar step
-                // They are not included here in hotel price totals – user requested these not affect Step1 calculations.
-                decimal overallSar = econMekke + econMedine + walkMekke + walkMedine;
-                string overallUsd = "-";
-
-                if (_usdRate > 0 && _sarRate > 0)
+                // helper decimal converter SAR -> USD
+                decimal SarToUsdDecimal(decimal sar)
                 {
-                    Func<decimal, string> toUsd = sar =>
-                    {
-                        if (_useCustomRate && _customSarToUsd > 0m)
-                        {
-                            // _customSarToUsd is SAR per 1 USD (user inputs 1 USD = X SAR)
-                            var usd = sar / _customSarToUsd;
-                            return usd.ToString("N2", CultureInfo.CurrentCulture) + " $";
-                        }
-                        return (sar * (_sarRate / _usdRate)).ToString("N2", CultureInfo.CurrentCulture) + " $";
-                    };
-                    if (econMekke > 0) econMekkeUsd = toUsd(econMekke);
-                    if (econMedine > 0) econMedineUsd = toUsd(econMedine);
-                    if (walkMekke > 0) walkMekkeUsd = toUsd(walkMekke);
-                    if (walkMedine > 0) walkMedineUsd = toUsd(walkMedine);
-                    overallUsd = toUsd(overallSar);
+                    if (sar <= 0m) return 0m;
+                    if (_useCustomRate && _customSarToUsd > 0m) return sar / _customSarToUsd;
+                    if (_usdRate > 0m && _sarRate > 0m) return sar * (_sarRate / _usdRate);
+                    return 0m;
                 }
 
-                EconMekkeUsd.Text = econMekkeUsd;
-                EconMedineUsd.Text = econMedineUsd;
-                WalkMekkeUsd.Text = walkMekkeUsd;
-                WalkMedineUsd.Text = walkMedineUsd;
+                // store total OTEL USD for Step2 calculations (unchanged total)
+                _otelUsdTotal = SarToUsdDecimal(overallSarTotal);
 
-                OverallSar.Text = overallSar > 0 ? overallSar.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
-                OverallUsd.Text = overallUsd;
+                // helper to compute per-person SAR for a single textbox
+                decimal PerPersonSarFor(TextBox tb, ComboBox daysCombo, int occupancy)
+                {
+                    if (tb == null) return 0m;
+                    var price = ParseDecimalFromText(tb.Text);
+                    var days = ParseDaysCount(daysCombo?.SelectedItem?.ToString());
+                    if (price <= 0m || days <= 0 || occupancy <= 0) return 0m;
+                    var totalSarForRoom = price * days;
+                    return totalSarForRoom / occupancy;
+                }
+
+                // compute per-person SAR totals for each group
+                decimal econMekkePer = PerPersonSarFor(MekkeSingleTxt, MekkeDaysCombo, 1)
+                                      + PerPersonSarFor(MekkeDblTxt, MekkeDaysCombo, 2)
+                                      + PerPersonSarFor(MekkeTrplTxt, MekkeDaysCombo, 3)
+                                      + PerPersonSarFor(MekkeQuadTxt, MekkeDaysCombo, 4)
+                                      + PerPersonSarFor(MekkeQuintTxt, MekkeDaysCombo, 5);
+
+                decimal econMedinePer = PerPersonSarFor(MedineSingleTxt, MedineDaysCombo, 1)
+                                      + PerPersonSarFor(MedineDblTxt, MedineDaysCombo, 2)
+                                      + PerPersonSarFor(MedineTrplTxt, MedineDaysCombo, 3)
+                                      + PerPersonSarFor(MedineQuadTxt, MedineDaysCombo, 4)
+                                      + PerPersonSarFor(MedineQuintTxt, MedineDaysCombo, 5);
+
+                decimal walkMekkePer = PerPersonSarFor(MekkeSingleTxt_Walk, MekkeDaysCombo_Walk, 1)
+                                      + PerPersonSarFor(MekkeDblTxt_Walk, MekkeDaysCombo_Walk, 2)
+                                      + PerPersonSarFor(MekkeTrplTxt_Walk, MekkeDaysCombo_Walk, 3)
+                                      + PerPersonSarFor(MekkeQuadTxt_Walk, MekkeDaysCombo_Walk, 4)
+                                      + PerPersonSarFor(MekkeQuintTxt_Walk, MekkeDaysCombo_Walk, 5);
+
+                decimal walkMedinePer = PerPersonSarFor(MedineSingleTxt_Walk, MedineDaysCombo_Walk, 1)
+                                      + PerPersonSarFor(MedineDblTxt_Walk, MedineDaysCombo_Walk, 2)
+                                      + PerPersonSarFor(MedineTrplTxt_Walk, MedineDaysCombo_Walk, 3)
+                                      + PerPersonSarFor(MedineQuadTxt_Walk, MedineDaysCombo_Walk, 4)
+                                      + PerPersonSarFor(MedineQuintTxt_Walk, MedineDaysCombo_Walk, 5);
+
+                // convert per-person SAR to USD for display
+                var econMekkePerUsd = SarToUsdDecimal(econMekkePer);
+                var econMedinePerUsd = SarToUsdDecimal(econMedinePer);
+                var walkMekkePerUsd = SarToUsdDecimal(walkMekkePer);
+                var walkMedinePerUsd = SarToUsdDecimal(walkMedinePer);
+
+                // display per-person values in Step1
+                EconMekkeSar.Text = econMekkePer > 0 ? econMekkePer.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                EconMekkeUsd.Text = econMekkePerUsd > 0m ? econMekkePerUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                EconMedineSar.Text = econMedinePer > 0 ? econMedinePer.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                EconMedineUsd.Text = econMedinePerUsd > 0m ? econMedinePerUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                WalkMekkeSar.Text = walkMekkePer > 0 ? walkMekkePer.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                WalkMekkeUsd.Text = walkMekkePerUsd > 0m ? walkMekkePerUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                WalkMedineSar.Text = walkMedinePer > 0 ? walkMedinePer.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                WalkMedineUsd.Text = walkMedinePerUsd > 0m ? walkMedinePerUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                var overallPerPersonSar = econMekkePer + econMedinePer + walkMekkePer + walkMedinePer;
+                var overallPerPersonUsd = SarToUsdDecimal(overallPerPersonSar);
+                OverallSar.Text = overallPerPersonSar > 0 ? overallPerPersonSar.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                OverallUsd.Text = overallPerPersonUsd > 0m ? overallPerPersonUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                // Also compute per-room base per-person USD values for RoomCost* fields
+                var singlePerPersonSar = PerPersonSarFor(MekkeSingleTxt, MekkeDaysCombo, 1)
+                                      + PerPersonSarFor(MedineSingleTxt, MedineDaysCombo, 1)
+                                      + PerPersonSarFor(MekkeSingleTxt_Walk, MekkeDaysCombo_Walk, 1)
+                                      + PerPersonSarFor(MedineSingleTxt_Walk, MedineDaysCombo_Walk, 1);
+
+                var dblPerPersonSar = PerPersonSarFor(MekkeDblTxt, MekkeDaysCombo, 2)
+                                      + PerPersonSarFor(MedineDblTxt, MedineDaysCombo, 2)
+                                      + PerPersonSarFor(MekkeDblTxt_Walk, MekkeDaysCombo_Walk, 2)
+                                      + PerPersonSarFor(MedineDblTxt_Walk, MedineDaysCombo_Walk, 2);
+
+                var trplPerPersonSar = PerPersonSarFor(MekkeTrplTxt, MekkeDaysCombo, 3)
+                                       + PerPersonSarFor(MedineTrplTxt, MedineDaysCombo, 3)
+                                       + PerPersonSarFor(MekkeTrplTxt_Walk, MekkeDaysCombo_Walk, 3)
+                                       + PerPersonSarFor(MedineTrplTxt_Walk, MedineDaysCombo_Walk, 3);
+
+                var quadPerPersonSar = PerPersonSarFor(MekkeQuadTxt, MekkeDaysCombo, 4)
+                                       + PerPersonSarFor(MedineQuadTxt, MedineDaysCombo, 4)
+                                       + PerPersonSarFor(MekkeQuadTxt_Walk, MekkeDaysCombo_Walk, 4)
+                                       + PerPersonSarFor(MedineQuadTxt_Walk, MedineDaysCombo_Walk, 4);
+
+                var quintPerPersonSar = PerPersonSarFor(MekkeQuintTxt, MekkeDaysCombo, 5)
+                                        + PerPersonSarFor(MedineQuintTxt, MedineDaysCombo, 5)
+                                        + PerPersonSarFor(MekkeQuintTxt_Walk, MekkeDaysCombo_Walk, 5)
+                                        + PerPersonSarFor(MedineQuintTxt_Walk, MedineDaysCombo_Walk, 5);
+
+                // combined base (econ + walk) used internally for Step2 calculations
+                _perPersonSingleBaseUsd = SarToUsdDecimal(singlePerPersonSar);
+                _perPersonDblBaseUsd = SarToUsdDecimal(dblPerPersonSar);
+                _perPersonTrplBaseUsd = SarToUsdDecimal(trplPerPersonSar);
+                _perPersonQuadBaseUsd = SarToUsdDecimal(quadPerPersonSar);
+                _perPersonQuintBaseUsd = SarToUsdDecimal(quintPerPersonSar);
+
+                // also compute per-category (Ekonomik vs Walk) per-room values for UI
+                var econSinglePerPersonSar = PerPersonSarFor(MekkeSingleTxt, MekkeDaysCombo, 1) + PerPersonSarFor(MedineSingleTxt, MedineDaysCombo, 1);
+                var econDblPerPersonSar = PerPersonSarFor(MekkeDblTxt, MekkeDaysCombo, 2) + PerPersonSarFor(MedineDblTxt, MedineDaysCombo, 2);
+                var econTrplPerPersonSar = PerPersonSarFor(MekkeTrplTxt, MekkeDaysCombo, 3) + PerPersonSarFor(MedineTrplTxt, MedineDaysCombo, 3);
+                var econQuadPerPersonSar = PerPersonSarFor(MekkeQuadTxt, MekkeDaysCombo, 4) + PerPersonSarFor(MedineQuadTxt, MedineDaysCombo, 4);
+                var econQuintPerPersonSar = PerPersonSarFor(MekkeQuintTxt, MekkeDaysCombo, 5) + PerPersonSarFor(MedineQuintTxt, MedineDaysCombo, 5);
+
+                var walkSinglePerPersonSar = PerPersonSarFor(MekkeSingleTxt_Walk, MekkeDaysCombo_Walk, 1) + PerPersonSarFor(MedineSingleTxt_Walk, MedineDaysCombo_Walk, 1);
+                var walkDblPerPersonSar = PerPersonSarFor(MekkeDblTxt_Walk, MekkeDaysCombo_Walk, 2) + PerPersonSarFor(MedineDblTxt_Walk, MedineDaysCombo_Walk, 2);
+                var walkTrplPerPersonSar = PerPersonSarFor(MekkeTrplTxt_Walk, MekkeDaysCombo_Walk, 3) + PerPersonSarFor(MedineTrplTxt_Walk, MedineDaysCombo_Walk, 3);
+                var walkQuadPerPersonSar = PerPersonSarFor(MekkeQuadTxt_Walk, MekkeDaysCombo_Walk, 4) + PerPersonSarFor(MedineQuadTxt_Walk, MedineDaysCombo_Walk, 4);
+                var walkQuintPerPersonSar = PerPersonSarFor(MekkeQuintTxt_Walk, MekkeDaysCombo_Walk, 5) + PerPersonSarFor(MedineQuintTxt_Walk, MedineDaysCombo_Walk, 5);
+
+                // convert to USD
+                var econSingleUsd = SarToUsdDecimal(econSinglePerPersonSar);
+                var econDblUsd = SarToUsdDecimal(econDblPerPersonSar);
+                var econTrplUsd = SarToUsdDecimal(econTrplPerPersonSar);
+                var econQuadUsd = SarToUsdDecimal(econQuadPerPersonSar);
+                var econQuintUsd = SarToUsdDecimal(econQuintPerPersonSar);
+
+                var walkSingleUsd = SarToUsdDecimal(walkSinglePerPersonSar);
+                var walkDblUsd = SarToUsdDecimal(walkDblPerPersonSar);
+                var walkTrplUsd = SarToUsdDecimal(walkTrplPerPersonSar);
+                var walkQuadUsd = SarToUsdDecimal(walkQuadPerPersonSar);
+                var walkQuintUsd = SarToUsdDecimal(walkQuintPerPersonSar);
+
+                // persist these computed per-category USD values so UpdateStep2 can use them reliably
+                _econSingleUsd = econSingleUsd;
+                _econDblUsd = econDblUsd;
+                _econTrplUsd = econTrplUsd;
+                _econQuadUsd = econQuadUsd;
+                _econQuintUsd = econQuintUsd;
+                _walkSingleUsd = walkSingleUsd;
+                _walkDblUsd = walkDblUsd;
+                _walkTrplUsd = walkTrplUsd;
+                _walkQuadUsd = walkQuadUsd;
+                _walkQuintUsd = walkQuintUsd;
+
+                // update combined base UI (kept for backward compat)
+                var rcSingle2 = FindName("RoomCostSingle") as TextBlock;
+                if (rcSingle2 != null) rcSingle2.Text = _perPersonSingleBaseUsd > 0m ? _perPersonSingleBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                var rcDbl2 = FindName("RoomCostDbl") as TextBlock;
+                if (rcDbl2 != null) rcDbl2.Text = _perPersonDblBaseUsd > 0m ? _perPersonDblBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                var rcTrpl2 = FindName("RoomCostTrpl") as TextBlock;
+                if (rcTrpl2 != null) rcTrpl2.Text = _perPersonTrplBaseUsd > 0m ? _perPersonTrplBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                var rcQuad2 = FindName("RoomCostQuad") as TextBlock;
+                if (rcQuad2 != null) rcQuad2.Text = _perPersonQuadBaseUsd > 0m ? _perPersonQuadBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                var rcQuint2 = FindName("RoomCostQuint") as TextBlock;
+                if (rcQuint2 != null) rcQuint2.Text = _perPersonQuintBaseUsd > 0m ? _perPersonQuintBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                // update EKONOMİK / LÜKS displays (use FindName to avoid generated field dependency)
+                try
+                {
+                    var eSingle = FindName("EconRoomSingle") as TextBlock;
+                    var eDbl = FindName("EconRoomDbl") as TextBlock;
+                    var eTrpl = FindName("EconRoomTrpl") as TextBlock;
+                    var eQuad = FindName("EconRoomQuad") as TextBlock;
+                    var eQuint = FindName("EconRoomQuint") as TextBlock;
+
+                    var wSingle = FindName("WalkRoomSingle") as TextBlock;
+                    var wDbl = FindName("WalkRoomDbl") as TextBlock;
+                    var wTrpl = FindName("WalkRoomTrpl") as TextBlock;
+                    var wQuad = FindName("WalkRoomQuad") as TextBlock;
+                    var wQuint = FindName("WalkRoomQuint") as TextBlock;
+
+                    if (eSingle != null)
+                    {
+                        eSingle.Text = econSingleUsd > 0m ? econSingleUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                    if (eDbl != null)
+                    {
+                        eDbl.Text = econDblUsd > 0m ? econDblUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                    if (eTrpl != null)
+                    {
+                        eTrpl.Text = econTrplUsd > 0m ? econTrplUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                    if (eQuad != null)
+                    {
+                        eQuad.Text = econQuadUsd > 0m ? econQuadUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                    if (eQuint != null)
+                    {
+                        eQuint.Text = econQuintUsd > 0m ? econQuintUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+
+                    if (wSingle != null)
+                    {
+                        wSingle.Text = walkSingleUsd > 0m ? walkSingleUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                    if (wDbl != null)
+                    {
+                        wDbl.Text = walkDblUsd > 0m ? walkDblUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                    if (wTrpl != null)
+                    {
+                        wTrpl.Text = walkTrplUsd > 0m ? walkTrplUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                    if (wQuad != null)
+                    {
+                        wQuad.Text = walkQuadUsd > 0m ? walkQuadUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                    if (wQuint != null)
+                    {
+                        wQuint.Text = walkQuintUsd > 0m ? walkQuintUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                    }
+                }
+                catch { }
+
+                // per-room base USD values already computed above and assigned to _perPerson*BaseUsd
+                // ensure RoomCost fields reflect base per-person USD (if present in XAML)
+                var rcSingle3 = FindName("RoomCostSingle") as TextBlock;
+                if (rcSingle3 != null) rcSingle3.Text = _perPersonSingleBaseUsd > 0m ? _perPersonSingleBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                var rcDbl3 = FindName("RoomCostDbl") as TextBlock;
+                if (rcDbl3 != null) rcDbl3.Text = _perPersonDblBaseUsd > 0m ? _perPersonDblBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                var rcTrpl3 = FindName("RoomCostTrpl") as TextBlock;
+                if (rcTrpl3 != null) rcTrpl3.Text = _perPersonTrplBaseUsd > 0m ? _perPersonTrplBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                var rcQuad3 = FindName("RoomCostQuad") as TextBlock;
+                if (rcQuad3 != null) rcQuad3.Text = _perPersonQuadBaseUsd > 0m ? _perPersonQuadBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+                var rcQuint3 = FindName("RoomCostQuint") as TextBlock;
+                if (rcQuint3 != null) rcQuint3.Text = _perPersonQuintBaseUsd > 0m ? _perPersonQuintBaseUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                // Show per-person SAR and USD in Step1
+                EconMekkeSar.Text = econMekkePer > 0 ? econMekkePer.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                EconMekkeUsd.Text = econMekkePerUsd > 0m ? econMekkePerUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                EconMedineSar.Text = econMedinePer > 0 ? econMedinePer.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                EconMedineUsd.Text = econMedinePerUsd > 0m ? econMedinePerUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                WalkMekkeSar.Text = walkMekkePer > 0 ? walkMekkePer.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                WalkMekkeUsd.Text = walkMekkePerUsd > 0m ? walkMekkePerUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                WalkMedineSar.Text = walkMedinePer > 0 ? walkMedinePer.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                WalkMedineUsd.Text = walkMedinePerUsd > 0m ? walkMedinePerUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
+
+                OverallSar.Text = overallPerPersonSar > 0 ? overallPerPersonSar.ToString("N2", CultureInfo.CurrentCulture) + " SAR" : "-";
+                OverallUsd.Text = overallPerPersonUsd > 0m ? overallPerPersonUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
 
                 // Whenever Step1 totals recalculated, update Step2 displays too
                 UpdateStep2GiderUsdAndTotals();
