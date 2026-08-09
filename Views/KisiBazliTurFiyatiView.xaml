@@ -411,11 +411,10 @@
                                 <TextBlock x:Name="ExtraVisitsUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,6">
-                                <TextBlock Width="160" Text="Ekstra Transferler:" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                                <TextBox Width="200" x:Name="ExtraTransfersTxt" TextChanged="ExtraTransfersTxt_TextChanged" />
-                                <TextBlock Width="16" />
-                                <TextBlock Text="SAR" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0"/>
-                                <TextBlock x:Name="ExtraTransfersUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
+                                <TextBlock Width="160" Text="Yemek Masrafı:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBox Width="200" x:Name="MealExpenseTxt" TextChanged="MealExpenseTxt_TextChanged" />
+                                <TextBlock Width="12" />
+                                <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
                             </StackPanel>
                         <!-- Custom rate option -->
                         <StackPanel Orientation="Vertical" Margin="0,12,0,0">
@@ -423,10 +422,10 @@
                                 <CheckBox x:Name="UseCustomRateChk" Content="Kendi kuru gir (TCMB yerine)" Checked="UseCustomRateChk_Checked" Unchecked="UseCustomRateChk_Unchecked" Foreground="#E2E8F0" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                <TextBlock Width="160" Text="Kur (1 SAR = ?) USD:" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                <TextBlock Width="160" Text="Kur (1 USD = ?) SAR:" Foreground="#94A3B8" VerticalAlignment="Center"/>
                                 <TextBox x:Name="CustomSarToUsdTxt" Width="200" Visibility="Collapsed" TextChanged="CustomSarToUsdTxt_TextChanged" />
                             </StackPanel>
-                            <TextBlock x:Name="CustomRateNote" Text="Suudi Arabistan Riyali/Dolar kuru girildiğinde hesaplamalarda girdiğiniz kur kullanılacaktır." Foreground="#94A3B8" Margin="0,6,0,0" Visibility="Collapsed" />
+                            <TextBlock x:Name="CustomRateNote" Text="1 USD = X SAR şeklinde kur giriniz; girilen kur hesaplamalarda kullanılacaktır." Foreground="#94A3B8" Margin="0,6,0,0" Visibility="Collapsed" />
                         </StackPanel>
                         </StackPanel>
                     </StackPanel>

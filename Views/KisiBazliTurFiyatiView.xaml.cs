@@ -205,11 +205,9 @@ namespace TurizmOperasyonSistemi.Views
             UpdateStep2GiderUsdAndTotals();
         }
 
-        private void ExtraTransfersTxt_TextChanged(object sender, TextChangedEventArgs e)
+        private void MealExpenseTxt_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // Only update SAR->USD display for extras. Do not include these in hotel totals here.
-            UpdateExtraSarToUsdDisplay(ExtraTransfersTxt, ExtraTransfersUsd);
-            // after extra converts update overall step2 USD sum
+            // Meal expense is entered in USD by the user
             UpdateStep2GiderUsdAndTotals();
         }
 
@@ -234,17 +232,17 @@ namespace TurizmOperasyonSistemi.Views
                 decimal staff = ParseDecimalFromText(StaffExpenseTxt?.Text);
 
                 decimal extrasUsd = 0m;
-                // extras are entered in SAR and converted to USD
+                // extras entered in SAR are converted to USD (ExtraVisits)
                 if (!string.IsNullOrWhiteSpace(ExtraVisitsUsd?.Text) && ExtraVisitsUsd.Text != "-")
                 {
                     extrasUsd += ParseDecimalFromText(ExtraVisitsUsd.Text.Replace("$", ""));
                 }
-                if (!string.IsNullOrWhiteSpace(ExtraTransfersUsd?.Text) && ExtraTransfersUsd.Text != "-")
-                {
-                    extrasUsd += ParseDecimalFromText(ExtraTransfersUsd.Text.Replace("$", ""));
-                }
 
-                decimal giderUsd = ticket + visa + bag + staff + extrasUsd;
+                // Meal expense is entered directly in USD by user
+                var mealBox = FindName("MealExpenseTxt") as TextBox;
+                decimal mealUsd = ParseDecimalFromText(mealBox?.Text);
+
+                decimal giderUsd = ticket + visa + bag + staff + extrasUsd + mealUsd;
                 Step2GiderUsd.Text = giderUsd > 0 ? giderUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
 
                 // Also update Step1 overall USD into Step1OverallUsd
@@ -347,10 +345,11 @@ namespace TurizmOperasyonSistemi.Views
                     return;
                 }
 
-                // If user provided custom SAR->USD rate, use it; otherwise use TCMB rates
+                // If user provided custom rate (entered as 1 USD = X SAR), use it; otherwise use TCMB rates
                 if (_useCustomRate && _customSarToUsd > 0m)
                 {
-                    var usd = sar * _customSarToUsd;
+                    // _customSarToUsd now represents SAR per 1 USD. To convert SAR -> USD divide.
+                    var usd = sar / _customSarToUsd;
                     usdBlock.Text = usd.ToString("N2", CultureInfo.CurrentCulture) + " $";
                 }
                 else if (_usdRate > 0m && _sarRate > 0m)
@@ -383,7 +382,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 // Convert SAR to USD using TCMB rates (USD = SAR * (SAR_try / USD_try))
                 string econMekkeUsd = "-", econMedineUsd = "-", walkMekkeUsd = "-", walkMedineUsd = "-";
-                // Note: extras (ExtraVisits/ExtraTransfers) are SAR inputs shown in Masraflar step
+                // Note: extras (ExtraVisits) are SAR inputs shown in Masraflar step
                 // They are not included here in hotel price totals – user requested these not affect Step1 calculations.
                 decimal overallSar = econMekke + econMedine + walkMekke + walkMedine;
                 string overallUsd = "-";
@@ -394,7 +393,9 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         if (_useCustomRate && _customSarToUsd > 0m)
                         {
-                            return (sar * _customSarToUsd).ToString("N2", CultureInfo.CurrentCulture) + " $";
+                            // _customSarToUsd is SAR per 1 USD (user inputs 1 USD = X SAR)
+                            var usd = sar / _customSarToUsd;
+                            return usd.ToString("N2", CultureInfo.CurrentCulture) + " $";
                         }
                         return (sar * (_sarRate / _usdRate)).ToString("N2", CultureInfo.CurrentCulture) + " $";
                     };
