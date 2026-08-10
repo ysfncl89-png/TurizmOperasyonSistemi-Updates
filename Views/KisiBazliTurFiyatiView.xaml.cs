@@ -16,6 +16,8 @@ namespace TurizmOperasyonSistemi.Views
         private System.Windows.Threading.DispatcherTimer _ratesTimer;
         // last computed tour cost (used for profit calculation after Tur Maliyeti UI removed)
         private decimal _lastTurCost = 0m;
+        // last gider share added to each category (we add full giderUsd to each per user's request)
+        private decimal _lastGiderShare = 0m;
         // total OTEL USD (stored for Step2 calculations)
         private decimal _otelUsdTotal = 0m;
         // per-person base room USD values (without shared gider split)
@@ -240,7 +242,54 @@ namespace TurizmOperasyonSistemi.Views
 
         private void TurSalesPriceTxt_TextChanged(object sender, TextChangedEventArgs e)
         {
-            UpdateProfitDisplay();
+            // no-op: global sales box removed; per-occupancy sales inputs drive profit updates
+        }
+
+        private void PerOccupancySales_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                // When any per-occupancy sales value changes, recalc profits using the corresponding sales value
+                UpdateProfitDisplayPerInputs();
+            }
+            catch { }
+        }
+
+        private void UpdateProfitDisplayPerInputs()
+        {
+            try
+            {
+                // For each occupancy, read its Sales textbox; if present and >0, compute profit = sales - (perPersonCost + giderShare)
+                decimal v;
+
+                if (TryParseTextBoxValue("SalesEconSingle", out v) && _econSingleUsd > 0m) SetProfitText("ProfitEconSingle", v - (_econSingleUsd + _lastGiderShare)); else ClearProfitText("ProfitEconSingle");
+                if (TryParseTextBoxValue("SalesEconDbl", out v) && _econDblUsd > 0m) SetProfitText("ProfitEconDbl", v - (_econDblUsd + _lastGiderShare)); else ClearProfitText("ProfitEconDbl");
+                if (TryParseTextBoxValue("SalesEconTrpl", out v) && _econTrplUsd > 0m) SetProfitText("ProfitEconTrpl", v - (_econTrplUsd + _lastGiderShare)); else ClearProfitText("ProfitEconTrpl");
+                if (TryParseTextBoxValue("SalesEconQuad", out v) && _econQuadUsd > 0m) SetProfitText("ProfitEconQuad", v - (_econQuadUsd + _lastGiderShare)); else ClearProfitText("ProfitEconQuad");
+                if (TryParseTextBoxValue("SalesEconQuint", out v) && _econQuintUsd > 0m) SetProfitText("ProfitEconQuint", v - (_econQuintUsd + _lastGiderShare)); else ClearProfitText("ProfitEconQuint");
+
+                if (TryParseTextBoxValue("SalesWalkSingle", out v) && _walkSingleUsd > 0m) SetProfitText("ProfitWalkSingle", v - (_walkSingleUsd + _lastGiderShare)); else ClearProfitText("ProfitWalkSingle");
+                if (TryParseTextBoxValue("SalesWalkDbl", out v) && _walkDblUsd > 0m) SetProfitText("ProfitWalkDbl", v - (_walkDblUsd + _lastGiderShare)); else ClearProfitText("ProfitWalkDbl");
+                if (TryParseTextBoxValue("SalesWalkTrpl", out v) && _walkTrplUsd > 0m) SetProfitText("ProfitWalkTrpl", v - (_walkTrplUsd + _lastGiderShare)); else ClearProfitText("ProfitWalkTrpl");
+                if (TryParseTextBoxValue("SalesWalkQuad", out v) && _walkQuadUsd > 0m) SetProfitText("ProfitWalkQuad", v - (_walkQuadUsd + _lastGiderShare)); else ClearProfitText("ProfitWalkQuad");
+                if (TryParseTextBoxValue("SalesWalkQuint", out v) && _walkQuintUsd > 0m) SetProfitText("ProfitWalkQuint", v - (_walkQuintUsd + _lastGiderShare)); else ClearProfitText("ProfitWalkQuint");
+            }
+            catch { }
+        }
+
+        private bool TryParseTextBoxValue(string name, out decimal value)
+        {
+            value = 0m;
+            try
+            {
+                var tb = FindName(name) as TextBox;
+                if (tb == null) return false;
+                var v = ParseDecimalFromText(tb.Text);
+                if (v <= 0m) return false;
+                value = v;
+                return true;
+            }
+            catch { return false; }
         }
 
         private void UpdateStep2GiderUsdAndTotals()
@@ -285,6 +334,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 // perShare: per-category addition. Per user's request, add full giderUsd to each category (do not divide).
                 decimal perShare = giderUsd;
+                _lastGiderShare = perShare;
 
                 try
                 {
@@ -335,6 +385,9 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 catch { }
 
+                // After updating room costs, refresh profit breakdown from per-occupancy sales inputs
+                UpdateProfitDisplayPerInputs();
+
                 // Additionally add full giderUsd to each category that has a computed base per-person USD
                 try
                 {
@@ -364,8 +417,8 @@ namespace TurizmOperasyonSistemi.Views
                 }
                 catch { }
 
-                // update profit if sales price present
-                UpdateProfitDisplay();
+                // update profit if sales price present (per-occupancy inputs)
+                UpdateProfitDisplayPerInputs();
             }
             catch { }
         }
@@ -421,27 +474,34 @@ namespace TurizmOperasyonSistemi.Views
 
         private void UpdateProfitDisplay()
         {
+            // deprecated: global sales field removed. Use UpdateProfitDisplayPerInputs instead.
+            UpdateProfitDisplayPerInputs();
+        }
+
+        private void SetProfitText(string name, decimal value)
+        {
             try
             {
-                // read last computed tour cost instead of UI text
-                decimal turCost = _lastTurCost;
-
-                decimal sales = ParseDecimalFromText(TurSalesPriceTxt?.Text);
-                if (sales > 0 && turCost > 0)
+                var tb = FindName(name) as TextBlock;
+                if (tb == null) return;
+                if (value == 0m)
                 {
-                    var profit = sales - turCost;
-                    TurProfitTxt.Text = profit.ToString("N2", CultureInfo.CurrentCulture) + " $";
+                    tb.Text = "-";
+                    return;
                 }
-                else if (sales > 0)
-                {
-                    TurProfitTxt.Text = sales.ToString("N2", CultureInfo.CurrentCulture) + " $";
-                }
-                else
-                {
-                    TurProfitTxt.Text = "-";
-                }
+                tb.Text = value.ToString("N2", CultureInfo.CurrentCulture) + " $";
             }
-            catch { TurProfitTxt.Text = "-"; }
+            catch { }
+        }
+
+        private void ClearProfitText(string name)
+        {
+            try
+            {
+                var tb = FindName(name) as TextBlock;
+                if (tb != null) tb.Text = "-";
+            }
+            catch { }
         }
 
         private void UpdateExtraSarToUsdDisplay(TextBox sarBox, TextBlock usdBlock)
@@ -732,6 +792,7 @@ namespace TurizmOperasyonSistemi.Views
                 OverallUsd.Text = overallPerPersonUsd > 0m ? overallPerPersonUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
 
                 // Whenever Step1 totals recalculated, update Step2 displays too
+                try { UpdateProfitDisplayPerInputs(); } catch { }
                 UpdateStep2GiderUsdAndTotals();
             }
             catch { }
