@@ -27,6 +27,44 @@ namespace TurizmOperasyonSistemi.Views
             TurizmOperasyonSistemi.Services.NotificationCenter.Subscribe(OnNotification);
         }
 
+        private void DetailGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var item = DetailGrid.SelectedItem as RegistrationDetail;
+            if (item == null) return;
+
+            var cur = item.Currency ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(cur) && cur != "Seçilmedi") return; // only allow when not selected
+
+            var wnd = new CurrencySelectWindow();
+            wnd.Owner = this;
+            var res = wnd.ShowDialog();
+            if (res == true)
+            {
+                var sel = wnd.SelectedCurrency;
+                if (string.IsNullOrWhiteSpace(sel)) return;
+
+                try
+                {
+                    using (var db = new AppDbContext())
+                    {
+                        var reg = db.Registrations.FirstOrDefault(r => r.Id == item.Id);
+                        if (reg != null)
+                        {
+                            reg.Currency = sel;
+                            db.Entry(reg).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                            db.SaveChanges();
+                        }
+                    }
+                    // refresh UI
+                    LoadPerson(_personId);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Para birimi kaydedilirken hata oluştu: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         private void LoadPerson(int personId)
         {
             using (var db = new AppDbContext())

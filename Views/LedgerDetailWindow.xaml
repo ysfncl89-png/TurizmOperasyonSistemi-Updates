@@ -84,7 +84,7 @@
                 </StackPanel>
 
                 <TextBlock Text="Dönem Bazlı Detaylar" Foreground="#9CAFC0" FontWeight="SemiBold" Margin="0,8,0,6"/>
-                <DataGrid x:Name="DetailGrid" AutoGenerateColumns="False" RowHeight="34" Background="#152234" Foreground="#E2F8FF">
+                <DataGrid x:Name="DetailGrid" AutoGenerateColumns="False" RowHeight="34" Background="#152234" Foreground="#E2F8FF" MouseDoubleClick="DetailGrid_MouseDoubleClick">
                 <DataGrid.Columns>
                         <DataGridTextColumn Header="Tur" Binding="{Binding TourType}" Width="*"/>
                         <DataGridTextColumn Header="Dönem" Binding="{Binding Period}" Width="140"/>
