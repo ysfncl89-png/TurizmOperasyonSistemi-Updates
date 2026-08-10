@@ -80,6 +80,8 @@
             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                 <Button x:Name="Step1Btn" Click="Step1Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Otel Fiyatı Gir</Button>
                 <Button x:Name="Step2Btn" Click="Step2Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Giderler ve Tur Maliyeti</Button>
+                <!-- Hesap Makinesi butonu: üst alana taşındı ve sarı renkte -->
+                <Button x:Name="CalcBtnTop" Click="CalcBtn_Click" Margin="12,0,0,0" Padding="10,6" Background="#FFFBBF24" Foreground="#071023" FontWeight="SemiBold" MinWidth="130">Hesap Makinesi</Button>
             </StackPanel>
         </StackPanel>
 
@@ -434,8 +436,9 @@
                             <StackPanel Orientation="Horizontal" Margin="0,6">
                                 <TextBlock Width="160" Text="Yemek Masrafı:" Foreground="#94A3B8" VerticalAlignment="Center"/>
                                 <TextBox Width="200" x:Name="MealExpenseTxt" TextChanged="MealExpenseTxt_TextChanged" />
-                                <TextBlock Width="12" />
-                                <TextBlock Text="$" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock Width="16" />
+                                <TextBlock Text="SAR" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBlock x:Name="MealExpenseUsd" Foreground="#7EE787" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0" />
                             </StackPanel>
                         <!-- Custom rate option moved to Step1 (Otel Fiyatı Gir) -->
                         </StackPanel>
@@ -645,6 +648,7 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
             <Button x:Name="PrevBtn" Click="PrevBtn_Click" Style="{StaticResource WizardNavButtonStyle}" Content="Geri" />
             <Button x:Name="NextBtn" Click="NextBtn_Click" Style="{StaticResource WizardNavButtonStyle}" Content="İleri" />
+            <!-- Calculator button moved to top; bottom instance removed -->
         </StackPanel>
     </Grid>
 </UserControl>

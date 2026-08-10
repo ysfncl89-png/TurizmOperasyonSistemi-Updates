@@ -1,0 +1,61 @@
+<Window x:Class="TurizmOperasyonSistemi.Views.CalculatorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Hesap Makinesi" Height="620" Width="360"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        WindowStyle="SingleBorderWindow"
+        ShowInTaskbar="True">
+    <Grid Background="#FFF" Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBox x:Name="Display" Grid.Row="0" Height="64" FontSize="36" IsReadOnly="True" TextAlignment="Right" VerticalContentAlignment="Center" Margin="0,0,0,8" />
+
+        <UniformGrid Grid.Row="1" Rows="7" Columns="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0">
+            <!-- Row 1 -->
+            <Button Content="MC" Click="MemoryClear_Click" />
+            <Button Content="MR" Click="MemoryRecall_Click" />
+            <Button Content="M+" Click="MemoryAdd_Click" />
+            <Button Content="M-" Click="MemorySub_Click" />
+
+            <!-- Row 2 -->
+            <Button Content="%" Click="Percent_Click" />
+            <Button Content="CE" Click="ClearEntry_Click" />
+            <Button Content="C" Click="Clear_Click" />
+            <Button Content="⌫" Click="Backspace_Click" />
+
+            <!-- Row 3 -->
+            <Button Content="1/x" Click="Inverse_Click" />
+            <Button Content="x²" Click="Square_Click" />
+            <Button Content="√x" Click="Sqrt_Click" />
+            <Button Content="÷" Click="Op_Click" Tag="/" />
+
+            <!-- Row 4 -->
+            <Button Content="7" Click="Digit_Click" />
+            <Button Content="8" Click="Digit_Click" />
+            <Button Content="9" Click="Digit_Click" />
+            <Button Content="×" Click="Op_Click" Tag="*" />
+
+            <!-- Row 5 -->
+            <Button Content="4" Click="Digit_Click" />
+            <Button Content="5" Click="Digit_Click" />
+            <Button Content="6" Click="Digit_Click" />
+            <Button Content="-" Click="Op_Click" Tag="-" />
+
+            <!-- Row 6 -->
+            <Button Content="1" Click="Digit_Click" />
+            <Button Content="2" Click="Digit_Click" />
+            <Button Content="3" Click="Digit_Click" />
+            <Button Content="+" Click="Op_Click" Tag="+" />
+
+            <!-- Row 7 (span) -->
+            <Button Content="±" Click="Negate_Click" />
+            <Button Content="0" Click="Digit_Click" />
+            <Button Content="," Click="Decimal_Click" />
+            <Button Content="=" Click="Equals_Click" Background="#1976D2" Foreground="White" />
+        </UniformGrid>
+    </Grid>
+</Window>

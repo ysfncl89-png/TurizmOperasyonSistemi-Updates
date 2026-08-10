@@ -213,6 +213,19 @@ namespace TurizmOperasyonSistemi.Views
             SetStep(_currentStep + 1);
         }
 
+        private void CalcBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var w = new CalculatorWindow();
+                // set owner if window is hosted in a Window
+                var wnd = Window.GetWindow(this);
+                if (wnd != null) w.Owner = wnd;
+                w.Show();
+            }
+            catch { }
+        }
+
         // Staff expense is entered directly by user; no per-person calculation needed now.
 
         private void PriceInput_TextChanged(object sender, TextChangedEventArgs e)
@@ -224,13 +237,16 @@ namespace TurizmOperasyonSistemi.Views
         {
             // Only update SAR->USD display for extras. Do not include these in hotel totals here.
             UpdateExtraSarToUsdDisplay(ExtraVisitsTxt, ExtraVisitsUsd);
+            // also update meal expense SAR->USD display if present
+            try { UpdateExtraSarToUsdDisplay(MealExpenseTxt, MealExpenseUsd); } catch { }
             // update step2 totals after converting extra visits to USD
             UpdateStep2GiderUsdAndTotals();
         }
 
         private void MealExpenseTxt_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // Meal expense is entered in USD by the user
+            // Meal expense is entered in SAR by the user; update SAR->USD display and totals
+            try { UpdateExtraSarToUsdDisplay(MealExpenseTxt, MealExpenseUsd); } catch { }
             UpdateStep2GiderUsdAndTotals();
         }
 
@@ -308,9 +324,12 @@ namespace TurizmOperasyonSistemi.Views
                     extrasUsd += ParseDecimalFromText(ExtraVisitsUsd.Text.Replace("$", ""));
                 }
 
-                // Meal expense is entered directly in USD by user
-                var mealBox = FindName("MealExpenseTxt") as TextBox;
-                decimal mealUsd = ParseDecimalFromText(mealBox?.Text);
+                // Meal expense is entered in SAR; converted display stored in MealExpenseUsd
+                decimal mealUsd = 0m;
+                if (!string.IsNullOrWhiteSpace(MealExpenseUsd?.Text) && MealExpenseUsd.Text != "-")
+                {
+                    mealUsd = ParseDecimalFromText(MealExpenseUsd.Text.Replace("$", ""));
+                }
 
                 decimal giderUsd = ticket + visa + bag + staff + extrasUsd + mealUsd;
                 Step2GiderUsd.Text = giderUsd > 0 ? giderUsd.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
