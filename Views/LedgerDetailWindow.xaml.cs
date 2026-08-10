@@ -33,9 +33,9 @@ namespace TurizmOperasyonSistemi.Views
             if (item == null) return;
 
             var cur = item.Currency ?? string.Empty;
-            if (!string.IsNullOrWhiteSpace(cur) && cur != "Seçilmedi") return; // only allow when not selected
 
-            var wnd = new CurrencySelectWindow();
+            // Always allow changing currency on double-click. Preselect current value in the dialog.
+            var wnd = new CurrencySelectWindow(cur);
             wnd.Owner = this;
             var res = wnd.ShowDialog();
             if (res == true)

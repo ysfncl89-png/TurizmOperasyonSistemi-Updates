@@ -12,10 +12,16 @@ namespace TurizmOperasyonSistemi.Views
         public CurrencySelectWindow()
         {
             InitializeComponent();
-            LoadCurrencies();
+            LoadCurrencies(null);
         }
 
-        private void LoadCurrencies()
+        public CurrencySelectWindow(string initialSelection)
+        {
+            InitializeComponent();
+            LoadCurrencies(initialSelection);
+        }
+
+        private void LoadCurrencies(string initialSelection)
         {
             try
             {
@@ -23,7 +29,14 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     var list = db.AppSettings.Where(x => x.Type == "Para Birimi").Select(x => x.Value).ToList();
                     CbCurrency.ItemsSource = list;
-                    if (list.Any()) CbCurrency.SelectedIndex = 0;
+                    if (!string.IsNullOrEmpty(initialSelection) && list.Contains(initialSelection))
+                    {
+                        CbCurrency.SelectedItem = initialSelection;
+                    }
+                    else if (list.Any())
+                    {
+                        CbCurrency.SelectedIndex = 0;
+                    }
                 }
             }
             catch { }
