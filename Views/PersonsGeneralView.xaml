@@ -681,7 +681,7 @@
 
                         <DataGridTextColumn Header="Adres"
                                             Binding="{Binding Address}"
-                                            Width="200"/>
+                                            Width="620"/>
 
                         <DataGridTemplateColumn Header="Pasaport tipi" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
