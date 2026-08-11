@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Windows.Data;
+using System.Globalization;
 using TurizmOperasyonSistemi.Data;
 using TurizmOperasyonSistemi.Models;
 using TurizmOperasyonSistemi.Services;
@@ -534,7 +535,7 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
         {
             try
             {
-                var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Toplam Fiyat", "Ödenen", "Kalan", "Para Birimi" };
+            var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Toplam Fiyat", "Ödenen", "Kalan", "Açıklama", "Para Birimi" };
                 int idx = 0;
                 foreach (var col in ResultsDataGrid.Columns)
                 {
@@ -2660,8 +2661,42 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                         PaidAmount = reg.PaidAmount.ToString("0.##"),
                         RemainingDebt = reg.RemainingDebt.ToString("0.##"),
                         ReferenceRaw = reg.Reference ?? string.Empty,
-                        Reference = reg.Reference ?? string.Empty
+                        Reference = reg.Reference ?? string.Empty,
+                        Aciklama = string.Empty
                     };
+                    try
+                    {
+                        // build payment history summary lines for this registration
+                        var payments = db.Payments.Where(pay => pay.RegistrationId == reg.Id).OrderBy(pay => pay.CreatedAt).ToList();
+                        if (payments != null && payments.Count > 0)
+                        {
+                            var lines = new List<string>();
+                            foreach (var pay in payments)
+                            {
+                                var date = pay.CreatedAt.ToString("dd.MM.yyyy");
+                                string amountStr;
+                                if (pay.OriginalAmount != 0 && !string.IsNullOrWhiteSpace(pay.OriginalCurrency))
+                                {
+                                    amountStr = string.Format(new CultureInfo("tr-TR"), "{0:N2}", pay.OriginalAmount) + " " + pay.OriginalCurrency;
+                                }
+                                else
+                                {
+                                    amountStr = string.Format(new CultureInfo("tr-TR"), "{0:N2}", pay.AmountInRegistrationCurrency) + " " + (reg.Currency ?? string.Empty);
+                                }
+
+                                var method = string.IsNullOrWhiteSpace(pay.PaymentMethod) ? "-" : pay.PaymentMethod.Trim();
+                                var note = string.IsNullOrWhiteSpace(pay.Note) ? string.Empty : " Not: " + pay.Note.Trim();
+
+                                lines.Add($"{date} tarihinde {amountStr} ödeme yapıldı (Yöntem: {method}).{note}");
+                            }
+                            r.Aciklama = string.Join("\n", lines);
+                        }
+                        else
+                        {
+                            r.Aciklama = p?.Aciklama ?? string.Empty;
+                        }
+                    }
+                    catch { r.Aciklama = p?.Aciklama ?? string.Empty; }
                     // populate PassportArrived from registration if there's a field; support AppSetting-backed values
                     try
                     {
@@ -4320,6 +4355,7 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             }
             public string Reference { get; set; }
             public string ReferenceRaw { get; set; }
+            public string Aciklama { get; set; }
             // Pasaport moduna özel: pasaport geldi mi?
             private bool _passportArrived;
             public bool PassportArrived

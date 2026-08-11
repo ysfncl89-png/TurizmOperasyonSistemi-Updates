@@ -610,16 +610,24 @@
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
                           SelectionMode="Single"
-                          RowHeight="36"
                           CanUserReorderColumns="True"
                           ColumnWidth="Auto"
                           EnableColumnVirtualization="False"
                           CanUserResizeColumns="True"
                           FrozenColumnCount="3">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Height" Value="Auto" />
+                            <Setter Property="MinHeight" Value="44" />
+                            <Setter Property="Margin" Value="0,4,0,4" />
+                            <Setter Property="VerticalContentAlignment" Value="Top" />
+                        </Style>
+                    </DataGrid.RowStyle>
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="Background" Value="Transparent" />
                             <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="8,6,8,6" />
                             <Style.Triggers>
                                 <Trigger Property="IsSelected" Value="True">
                                     <!-- keep selection subtle so cell templates (badges) remain visible -->
@@ -1070,6 +1078,16 @@
                         <DataGridTextColumn Header="Kalan"
                                             Binding="{Binding RemainingDebt}"
                                             Width="90"/>
+
+                        <DataGridTextColumn Header="Açıklama"
+                                            Binding="{Binding Aciklama}"
+                                            Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="Wrap" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
 
                         <DataGridTextColumn Header="Referans"
                                             Binding="{Binding Reference}"
