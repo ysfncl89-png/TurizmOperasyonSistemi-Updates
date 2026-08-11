@@ -305,6 +305,8 @@ namespace TurizmOperasyonSistemi.Views
             {
                 var settings = db.AppSettings
                     .Where(x => x.Type == SettingType)
+                    .OrderBy(x => x.SortOrder)
+                    .ThenBy(x => x.Id)
                     .ToList();
 
                 SettingsDataGrid.ItemsSource = settings;
