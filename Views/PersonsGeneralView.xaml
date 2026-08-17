@@ -871,9 +871,10 @@
                                                     Margin="0,0,8,0"
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
+                                                    MinWidth="140"
                                                     Click="SendToCargoPool_Click">
                                                 <Button.Content>
-                                                    <TextBlock x:Name="BtnText" Style="{StaticResource SendBtnTextStyle}" />
+                                                    <TextBlock Style="{StaticResource SendBtnTextStyle}" TextAlignment="Center" TextWrapping="Wrap" />
                                                 </Button.Content>
                                                 <Button.Style>
                                                     <Style TargetType="Button">
@@ -908,7 +909,8 @@
                                                         <Style.Triggers>
                                                             <MultiDataTrigger>
                                                                 <MultiDataTrigger.Conditions>
-                                                                    <Condition Binding="{Binding IsCargoDocsMode, RelativeSource={RelativeSource AncestorType=Page}}" Value="True" />
+                                                                    <!-- Only show this counter in Detay column when page is NOT in CargoDocsMode to avoid duplicate counters -->
+                                                                    <Condition Binding="{Binding IsCargoDocsMode, RelativeSource={RelativeSource AncestorType=Page}}" Value="False" />
                                                                     <Condition Binding="{Binding IsCargoInspected}" Value="True" />
                                                                     <Condition Binding="{Binding IsSentToCargo}" Value="False" />
                                                                 </MultiDataTrigger.Conditions>
@@ -942,9 +944,10 @@
                                                     Margin="0,0,8,0"
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
+                                                    MinWidth="140"
                                                     Click="SendToCargoPool_Click">
                                                 <Button.Content>
-                                                    <TextBlock x:Name="BtnText2" Style="{StaticResource SendBtnTextStyle}" />
+                                                    <TextBlock Style="{StaticResource SendBtnTextStyle}" TextAlignment="Center" TextWrapping="Wrap" />
                                                 </Button.Content>
                                                 <Button.Style>
                                                     <Style TargetType="Button">
@@ -953,9 +956,14 @@
                                                         <Setter Property="Background" Value="#059669" />
                                                         <Setter Property="Foreground" Value="White" />
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsCargoInspected}" Value="True">
+                                                            <!-- Show this Detay-column send button only when the row is inspected AND the page is NOT in CargoDocsMode -->
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsCargoInspected}" Value="True" />
+                                                                    <Condition Binding="{Binding IsCargoDocsMode, RelativeSource={RelativeSource AncestorType=Page}}" Value="False" />
+                                                                </MultiDataTrigger.Conditions>
                                                                 <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
+                                                            </MultiDataTrigger>
                                                             <DataTrigger Binding="{Binding IsCargoDocsMode, RelativeSource={RelativeSource AncestorType=Page}}" Value="True">
                                                                 <Setter Property="Background" Value="#FBBF24" />
                                                                 <Setter Property="Foreground" Value="Black" />

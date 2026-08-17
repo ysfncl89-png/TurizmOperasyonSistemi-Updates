@@ -102,6 +102,36 @@ namespace TurizmOperasyonSistemi.Views
                 using var db = new AppDbContext();
                 var regs = db.Registrations.AsNoTracking().Where(r => r.IsActive).ToList();
 
+                // If "Tümü" selected but there are no active groups detected, show zeros (avoid stale numbers)
+                if (string.IsNullOrWhiteSpace(selected) || selected == "Tümü")
+                {
+                    if (_tourCountsMap == null || _tourCountsMap.Count == 0)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            try
+                            {
+                                var a = this.FindName("TicketWillGetText") as TextBlock;
+                                var b = this.FindName("TicketSelfGetText") as TextBlock;
+                                var c = this.FindName("TicketArrivedText") as TextBlock;
+                                var d = this.FindName("TicketNotArrivedText") as TextBlock;
+                                var e = this.FindName("TicketInProgressText") as TextBlock;
+                                var ttc = this.FindName("TicketTransferCountText") as TextBlock;
+                                var hint = this.FindName("TicketHintText") as TextBlock;
+                                if (a != null) a.Text = "0";
+                                if (b != null) b.Text = "0";
+                                if (c != null) c.Text = "0";
+                                if (d != null) d.Text = "0";
+                                if (e != null) e.Text = "0";
+                                if (ttc != null) ttc.Text = "0";
+                                if (hint != null) hint.Text = "Son güncelleme: -";
+                            }
+                            catch { }
+                        });
+                        return;
+                    }
+                }
+
                 if (!string.IsNullOrWhiteSpace(selected) && selected != "Tümü")
                 {
                     var parts = selected.Split(new[] { " + " }, StringSplitOptions.None);
@@ -271,6 +301,34 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using var db = new AppDbContext();
                 var regs = db.Registrations.AsNoTracking().Where(r => r.IsActive).ToList();
+
+                // If "Tümü" selected but there are no active groups detected, show zeros (avoid stale numbers)
+                if (string.IsNullOrWhiteSpace(selected) || selected == "Tümü")
+                {
+                    if (_tourCountsMap == null || _tourCountsMap.Count == 0)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            try
+                            {
+                                var a = this.FindName("CargoWillSendText") as TextBlock;
+                                var b = this.FindName("CargoSentText") as TextBlock;
+                                var c = this.FindName("CargoNoSendText") as TextBlock;
+                                var d = this.FindName("CargoPickupWillText") as TextBlock;
+                                var e = this.FindName("CargoPickedText") as TextBlock;
+                                var hint = this.FindName("CargoHintText") as TextBlock;
+                                if (a != null) a.Text = "0";
+                                if (b != null) b.Text = "0";
+                                if (c != null) c.Text = "0";
+                                if (d != null) d.Text = "0";
+                                if (e != null) e.Text = "0";
+                                if (hint != null) hint.Text = "Son güncelleme: -";
+                            }
+                            catch { }
+                        });
+                        return;
+                    }
+                }
 
                 if (!string.IsNullOrWhiteSpace(selected) && selected != "Tümü")
                 {
@@ -1123,6 +1181,8 @@ namespace TurizmOperasyonSistemi.Views
                 // map to hold latest CreatedDate for each display group (used to pick most-recently-saved tour)
                 var latestMap = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
                 _tourKeyMap.Clear();
+                // Clear previous counts map so stale data isn't shown when there are no active groups
+                _tourCountsMap.Clear();
 
                 using (var db = new AppDbContext())
                 {
@@ -1309,6 +1369,30 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 using var db = new AppDbContext();
+
+                    // If "Tümü" selected but there are no active groups detected, show zeros (avoid stale numbers)
+                    if (string.IsNullOrWhiteSpace(selected) || selected == "Tümü")
+                    {
+                        if (_tourCountsMap == null || _tourCountsMap.Count == 0)
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                try
+                                {
+                                    var reserved = this.FindName("RoomAllocReservedText") as TextBlock;
+                                    var avail = this.FindName("RoomAllocAvailableText") as TextBlock;
+                                    var perHotel = this.FindName("RoomAllocPerHotelPanel") as StackPanel;
+                                    var hint = this.FindName("RoomAllocHintText") as TextBlock;
+                                    if (reserved != null) reserved.Text = "0";
+                                    if (avail != null) avail.Text = "0";
+                                    if (perHotel != null) perHotel.Children.Clear();
+                                    if (hint != null) hint.Text = "Son güncelleme: -";
+                                }
+                                catch { }
+                            });
+                            return;
+                        }
+                    }
 
                     var regsQuery = db.Registrations.AsNoTracking().Where(r => r.IsActive).AsQueryable();
 
@@ -1500,6 +1584,40 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 using var db = new AppDbContext();
+                // If "Tümü" selected but there are no active groups detected, show zeros (avoid stale numbers)
+                if (string.IsNullOrWhiteSpace(selected) || selected == "Tümü")
+                {
+                    if (_tourCountsMap == null || _tourCountsMap.Count == 0)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            try
+                            {
+                                var a = this.FindName("VisaWillGetText") as TextBlock;
+                                var b = this.FindName("VisaSelfGetText") as TextBlock;
+                                var c = this.FindName("VisaIssuedText") as TextBlock;
+                                var d = this.FindName("VisaNotIssuedText") as TextBlock;
+                                var e = this.FindName("VisaInProgressText") as TextBlock;
+                                var f = this.FindName("PassportPendingText") as TextBlock;
+                                var py = this.FindName("PassportArrivedYesText") as TextBlock;
+                                var pn = this.FindName("PassportArrivedNoText") as TextBlock;
+                                var hint = this.FindName("VisaHintText") as TextBlock;
+                                if (a != null) a.Text = "0";
+                                if (b != null) b.Text = "0";
+                                if (c != null) c.Text = "0";
+                                if (d != null) d.Text = "0";
+                                if (e != null) e.Text = "0";
+                                if (f != null) f.Text = "0";
+                                if (py != null) py.Text = "0";
+                                if (pn != null) pn.Text = "0";
+                                if (hint != null) hint.Text = "Son güncelleme: -";
+                            }
+                            catch { }
+                        });
+                        return;
+                    }
+                }
+
                 // Load active registrations into memory and apply the same string-normalized filtering
                 var regs = db.Registrations.AsNoTracking().Where(r => r.IsActive).ToList();
 
@@ -1693,7 +1811,7 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     if (string.IsNullOrWhiteSpace(selected) || selected == "Tümü")
                     {
-                        // Eğer map'te toplamlar saklandıysa kullan, yoksa DB'den al
+                        // Eğer map'te toplamlar saklandıysa kullan
                         if (_tourCountsMap != null && _tourCountsMap.Count > 0)
                         {
                             var total = _tourCountsMap.Values.Sum(v => v.Total);
@@ -1705,12 +1823,10 @@ namespace TurizmOperasyonSistemi.Views
                             return;
                         }
 
-                        var totalDb = db.Registrations.AsNoTracking().Count();
-                        var activeDb = db.Registrations.AsNoTracking().Count(r => r.IsActive || string.Equals(r.Status, "Aktif", StringComparison.OrdinalIgnoreCase));
-                        var inactiveDb = Math.Max(0, totalDb - activeDb);
-
-                        activeTb.Text = $"Aktif Kişi: {activeDb}";
-                        inactiveTb.Text = $"Pasif Kişi: {inactiveDb}";
+                        // Eğer hiçbir aktif grup yoksa (map boş) ekranda önceki değerleri göstermemek
+                        // için değerleri sıfırlıyoruz. (Kullanıcının istediği davranış)
+                        activeTb.Text = "Aktif Kişi: 0";
+                        inactiveTb.Text = "Pasif Kişi: 0";
                         return;
                     }
 
