@@ -921,89 +921,56 @@ namespace TurizmOperasyonSistemi.Views
                     if (payments.Any())
                     {
                         rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } });
-                        // Build a separate payments table with detailed columns (Sıra, Ad, Soyad, TC Kimlik, Pasaport numarası, Toplam Fiyat, Para Birimi, Ödenen, Kalan, Açıklama)
-                        var paymentHeaders = new[] { "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Toplam Fiyat", "Para Birimi", "Ödenen", "Kalan", "Açıklama" };
+                        // Her kişi yalnızca bir kez listelenir. Birden fazla ödeme varsa,
+                        // ödeme alanları aynı hücrede satır satır gösterilir; böylece kişiye
+                        // ait sabit bilgiler tekrar etmezken her ödemenin kendi para birimi korunur.
+                        var paymentHeaders = new[] { "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Ödeme Tarihi", "Ödeme Tutarı", "Para Birimi", "Ödeme Yöntemi", "Açıklama" };
                         // Insert marker that ExportHelper recognizes to start a new table with these headers
                         rows.Add(new Dictionary<string, string> { { "__TABLE_HEADERS", string.Join(",", paymentHeaders) } });
 
-                        // Group payments by person (or registration id) so payments for the same person appear together
-                        var grouped = payments.GroupBy(p =>
-                            p.Registration?.Person != null
-                                ? $"{(p.Registration.Person.FirstName ?? string.Empty).Trim()} {(p.Registration.Person.LastName ?? string.Empty).Trim()}".Trim().ToUpperInvariant()
-                                : $"Kayıt #{p.RegistrationId}")
-                            .OrderBy(g => g.Key);
-
-                        // Also load registrations with person info to compute per-person totals
-                        var regsWithPerson = db.Registrations
-                            .AsNoTracking()
-                            .Where(r => regIds.Contains(r.Id))
-                            .Include(r => r.Person)
-                            .ToList();
+                        var paymentGroups = payments
+                            .GroupBy(payment => payment.Registration?.Person != null
+                                ? $"person:{payment.Registration.Person.Id}"
+                                : $"registration:{payment.RegistrationId}")
+                            .OrderBy(group => group.Min(payment => payment.CreatedAt));
 
                         var idx = 1;
-                        foreach (var grp in grouped)
+                        foreach (var paymentGroup in paymentGroups)
                         {
-                            var personKey = grp.Key;
+                            var person = paymentGroup.First().Registration?.Person;
+                            var paymentDates = new List<string>();
+                            var paymentAmounts = new List<string>();
+                            var paymentCurrencies = new List<string>();
+                            var paymentMethods = new List<string>();
+                            var paymentNotes = new List<string>();
 
-                            // Find registrations that belong to this person (match by person name or registration id fallback)
-                            var regsForPerson = regsWithPerson.Where(r =>
+                            foreach (var payment in paymentGroup.OrderBy(payment => payment.CreatedAt))
                             {
-                                if (r.Person != null)
-                                {
-                                    var nameKey = $"{(r.Person.FirstName ?? string.Empty).Trim()} {(r.Person.LastName ?? string.Empty).Trim()}".Trim().ToUpperInvariant();
-                                    return string.Equals(nameKey, personKey, StringComparison.OrdinalIgnoreCase);
-                                }
-                                return ($"Kayıt #{r.Id}") == personKey;
-                            }).ToList();
+                                // OriginalCurrency ödeme esnasında girilen gerçek para birimidir.
+                                // Eski/verisi eksik kayıtlar için kayıt para birimine geri düşülür.
+                                var paymentCurrency = string.IsNullOrWhiteSpace(payment.OriginalCurrency)
+                                    ? payment.Registration?.Currency ?? string.Empty
+                                    : payment.OriginalCurrency.Trim();
 
-                            decimal regTotalPrice = regsForPerson.Any() ? regsForPerson.Sum(r => r.TotalPrice) : 0m;
-                            decimal regPaid = regsForPerson.Any() ? regsForPerson.Sum(r => r.PaidAmount) : 0m;
-                            decimal regRemaining = regsForPerson.Any() ? regsForPerson.Sum(r => r.RemainingDebt) : 0m;
-
-                            // Determine person details from registration if available
-                            string firstName = string.Empty, lastName = string.Empty, tc = string.Empty, passport = string.Empty;
-                            if (regsForPerson.Any() && regsForPerson.First().Person != null)
-                            {
-                                var p = regsForPerson.First().Person;
-                                firstName = (p.FirstName ?? string.Empty).Trim();
-                                lastName = (p.LastName ?? string.Empty).Trim();
-                                tc = (p.TcKimlikNo ?? string.Empty).Trim();
-                                passport = (p.PassportNumber ?? string.Empty).Trim();
+                                paymentDates.Add(payment.CreatedAt.ToString("yyyy-MM-dd"));
+                                paymentAmounts.Add(FormatAmount(payment.OriginalAmount, paymentCurrency));
+                                paymentCurrencies.Add(paymentCurrency);
+                                paymentMethods.Add(payment.PaymentMethod?.Trim() ?? string.Empty);
+                                paymentNotes.Add(payment.Note?.Trim() ?? string.Empty);
                             }
-                            else
-                            {
-                                // try to split the personKey into first/last
-                                var parts = personKey.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                                if (parts.Length > 0) firstName = parts[0];
-                                if (parts.Length > 1) lastName = string.Join(' ', parts.Skip(1));
-                            }
-
-                            var entries = grp.OrderBy(p => p.CreatedAt).Select(p =>
-                            {
-                                var date = p.CreatedAt.ToString("yyyy-MM-dd");
-                                var amountStr = FormatAmount(p.OriginalAmount, p.OriginalCurrency ?? string.Empty);
-                                var method = string.IsNullOrWhiteSpace(p.PaymentMethod) ? string.Empty : p.PaymentMethod;
-                                var note = string.IsNullOrWhiteSpace(p.Note) ? string.Empty : p.Note;
-                                var parts = new List<string> { $"{date}", amountStr };
-                                if (!string.IsNullOrEmpty(method)) parts.Add(method);
-                                if (!string.IsNullOrEmpty(note)) parts.Add(note);
-                                return string.Join(" - ", parts);
-                            });
-
-                            var paymentsJoined = string.Join("\n", entries);
 
                             var row = new Dictionary<string, string>
                             {
                                 { "Sıra", idx.ToString() },
-                                { "Ad", firstName },
-                                { "Soyad", lastName },
-                                { "TC Kimlik", tc },
-                                { "Pasaport numarası", passport },
-                                { "Toplam Fiyat", FormatAmount(regTotalPrice, _currentPrimaryCurrency) },
-                                { "Para Birimi", _currentPrimaryCurrency },
-                                { "Ödenen", FormatAmount(regPaid, _currentPrimaryCurrency) },
-                                { "Kalan", FormatAmount(regRemaining, _currentPrimaryCurrency) },
-                                { "Açıklama", paymentsJoined }
+                                { "Ad", (person?.FirstName ?? string.Empty).Trim() },
+                                { "Soyad", (person?.LastName ?? string.Empty).Trim() },
+                                { "TC Kimlik", (person?.TcKimlikNo ?? string.Empty).Trim() },
+                                { "Pasaport numarası", (person?.PassportNumber ?? string.Empty).Trim() },
+                                { "Ödeme Tarihi", string.Join(Environment.NewLine, paymentDates) },
+                                { "Ödeme Tutarı", string.Join(Environment.NewLine, paymentAmounts) },
+                                { "Para Birimi", string.Join(Environment.NewLine, paymentCurrencies) },
+                                { "Ödeme Yöntemi", string.Join(Environment.NewLine, paymentMethods) },
+                                { "Açıklama", string.Join(Environment.NewLine, paymentNotes) }
                             };
 
                             rows.Add(row);
