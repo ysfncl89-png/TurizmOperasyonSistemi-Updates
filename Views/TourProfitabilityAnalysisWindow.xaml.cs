@@ -339,6 +339,7 @@ namespace TurizmOperasyonSistemi.Views
 
             // TextBox'ları temizle
             HotelExpenseTextBox.Text = "";
+            HotelMedineExpenseTextBox.Text = "";
             TicketExpenseTextBox.Text = "";
             VisaExpenseTextBox.Text = "";
             BagExpenseTextBox.Text = "";
@@ -368,13 +369,14 @@ namespace TurizmOperasyonSistemi.Views
                 }
 
                 var hotelExpense = ReadAmount(HotelExpenseTextBox);
+                var hotelMedineExpense = ReadAmount(HotelMedineExpenseTextBox);
                 var ticketExpense = ReadAmount(TicketExpenseTextBox);
                 var visaExpense = ReadAmount(VisaExpenseTextBox);
                 var bagExpense = ReadAmount(BagExpenseTextBox);
                 var staffExpense = ReadAmount(StaffExpenseTextBox);
                 var otherExpense = ReadAmount(OtherExpenseTextBox);
 
-                var totalExpense = hotelExpense + ticketExpense + visaExpense + bagExpense + staffExpense + otherExpense;
+                var totalExpense = hotelExpense + hotelMedineExpense + ticketExpense + visaExpense + bagExpense + staffExpense + otherExpense;
 
                 var tourProfitLoss = _currentTourTotal - totalExpense;
                 var instantProfitLoss = _currentPaidTotal - totalExpense;
@@ -715,7 +717,8 @@ namespace TurizmOperasyonSistemi.Views
 
             // GİDERLER
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } }); // Boş satır
-            rows.Add(new Dictionary<string, string> { { "Bölüm", "GİDERLER" }, { "Açıklama", "Otel ve Yemek" }, { "Değer", HotelExpenseTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "GİDERLER" }, { "Açıklama", "Otel ve Yemek Mekke" }, { "Değer", HotelExpenseTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Otel ve Yemek Medine" }, { "Değer", HotelMedineExpenseTextBox.Text ?? "" } });
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Uçak Bileti" }, { "Değer", TicketExpenseTextBox.Text ?? "" } });
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Vize Masrafı" }, { "Değer", VisaExpenseTextBox.Text ?? "" } });
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Çanta / Kitapçık" }, { "Değer", BagExpenseTextBox.Text ?? "" } });
