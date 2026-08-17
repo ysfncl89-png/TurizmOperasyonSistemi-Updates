@@ -41,6 +41,7 @@ namespace TurizmOperasyonSistemi.Views
         public KisiBazliTurFiyatiView()
         {
             InitializeComponent();
+            PopulateResultQuantityComboBoxes();
             SetStep(1);
 
             // Attach handlers so ComboBox opens when clicking the box area
@@ -210,6 +211,9 @@ namespace TurizmOperasyonSistemi.Views
             // Prev/Next enable
             PrevBtn.IsEnabled = _currentStep > 1;
             NextBtn.IsEnabled = _currentStep < 3;
+
+            if (_currentStep == 3)
+                UpdateResultSummary();
         }
 
         private void Step1Btn_Click(object sender, RoutedEventArgs e) => SetStep(1);
@@ -280,8 +284,95 @@ namespace TurizmOperasyonSistemi.Views
             {
                 // When any per-occupancy sales value changes, recalc profits using the corresponding sales value
                 UpdateProfitDisplayPerInputs();
+                UpdateResultSummary();
             }
             catch { }
+        }
+
+        private void PopulateResultQuantityComboBoxes()
+        {
+            var comboNames = new[]
+            {
+                "ResultEconQtySingle", "ResultEconQtyDbl", "ResultEconQtyTrpl", "ResultEconQtyQuad", "ResultEconQtyQuint",
+                "ResultWalkQtySingle", "ResultWalkQtyDbl", "ResultWalkQtyTrpl", "ResultWalkQtyQuad", "ResultWalkQtyQuint"
+            };
+
+            foreach (var name in comboNames)
+            {
+                if (FindName(name) is not ComboBox combo) continue;
+                combo.Items.Clear();
+                for (var quantity = 1; quantity <= 100; quantity++)
+                    combo.Items.Add(quantity);
+                combo.SelectedIndex = 0;
+            }
+        }
+
+        private void ResultQuantity_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateResultSummary();
+        }
+
+        private int GetResultQuantity(string comboName)
+        {
+            if (FindName(comboName) is ComboBox { SelectedItem: not null } combo &&
+                int.TryParse(combo.SelectedItem.ToString(), out var quantity))
+                return quantity;
+            return 0;
+        }
+
+        private decimal GetSalesPrice(string salesTextBoxName)
+        {
+            return FindName(salesTextBoxName) is TextBox textBox ? ParseDecimalFromText(textBox.Text) : 0m;
+        }
+
+        private void UpdateResultSummary()
+        {
+            try
+            {
+                UpdateResultSection(
+                    "ResultEcon", new[] { "Single", "Dbl", "Trpl", "Quad", "Quint" },
+                    new[] { _econSingleUsd, _econDblUsd, _econTrplUsd, _econQuadUsd, _econQuintUsd },
+                    new[] { "SalesEconSingle", "SalesEconDbl", "SalesEconTrpl", "SalesEconQuad", "SalesEconQuint" });
+
+                UpdateResultSection(
+                    "ResultWalk", new[] { "Single", "Dbl", "Trpl", "Quad", "Quint" },
+                    new[] { _walkSingleUsd, _walkDblUsd, _walkTrplUsd, _walkQuadUsd, _walkQuintUsd },
+                    new[] { "SalesWalkSingle", "SalesWalkDbl", "SalesWalkTrpl", "SalesWalkQuad", "SalesWalkQuint" });
+            }
+            catch { }
+        }
+
+        private void UpdateResultSection(string resultPrefix, string[] occupancies, decimal[] hotelCosts, string[] salesTextBoxNames)
+        {
+            decimal totalCost = 0m;
+            decimal totalSales = 0m;
+
+            for (var i = 0; i < occupancies.Length; i++)
+            {
+                var occupancy = occupancies[i];
+                var unitCost = hotelCosts[i] > 0m ? hotelCosts[i] + _lastGiderShare : 0m;
+                var unitSales = GetSalesPrice(salesTextBoxNames[i]);
+                var quantity = GetResultQuantity($"{resultPrefix}Qty{occupancy}");
+
+                SetResultText($"{resultPrefix}Cost{occupancy}", unitCost);
+                SetResultText($"{resultPrefix}Sales{occupancy}", unitSales);
+
+                totalCost += unitCost * quantity;
+                totalSales += unitSales * quantity;
+            }
+
+            if (FindName($"{resultPrefix}TotalCost") is TextBlock costTotal)
+                costTotal.Text = $"Toplam Tur Maliyeti: {totalCost.ToString("N2", CultureInfo.CurrentCulture)} $";
+            if (FindName($"{resultPrefix}TotalSales") is TextBlock salesTotal)
+                salesTotal.Text = $"Toplam Satış Fiyatı: {totalSales.ToString("N2", CultureInfo.CurrentCulture)} $";
+            if (FindName($"{resultPrefix}TotalProfit") is TextBlock profitTotal)
+                profitTotal.Text = $"Elde Edilebilecek Kâr: {(totalSales - totalCost).ToString("N2", CultureInfo.CurrentCulture)} $";
+        }
+
+        private void SetResultText(string name, decimal value)
+        {
+            if (FindName(name) is TextBlock textBlock)
+                textBlock.Text = value > 0m ? value.ToString("N2", CultureInfo.CurrentCulture) + " $" : "-";
         }
 
         private void UpdateProfitDisplayPerInputs()
@@ -451,6 +542,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 // update profit if sales price present (per-occupancy inputs)
                 UpdateProfitDisplayPerInputs();
+                UpdateResultSummary();
             }
             catch { }
         }
