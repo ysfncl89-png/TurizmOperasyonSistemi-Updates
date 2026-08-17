@@ -20,6 +20,12 @@ namespace TurizmOperasyonSistemi.Views
         private decimal _currentTourTotal;
         private decimal _currentPaidTotal;
         private decimal _currentRemainingTotal;
+        private bool _useCustomRates;
+        private bool _suppressCustomRatesCheckChanged;
+        private decimal _customUsdRate;
+        private decimal _customEurRate;
+        private decimal _customGbpRate;
+        private decimal _customSarRate;
 
         public TourProfitabilityAnalysisWindow()
         {
@@ -109,7 +115,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        private async System.Threading.Tasks.Task UpdateSummaryAsync(IEnumerable<Models.Registration> regs)
+        private async System.Threading.Tasks.Task UpdateSummaryAsync(IEnumerable<Models.Registration> regs, bool resetExpenses = true)
         {
             _currentRegistrations = regs.ToList();
 
@@ -163,14 +169,24 @@ namespace TurizmOperasyonSistemi.Views
                 decimal usdRate = 0m, eurRate = 0m, gbpRate = 0m, sarRate = 0m;
                 try
                 {
-                    var svc = new ExchangeRateService();
-                    var rates = await svc.GetLatestRatesAsync();
-                    if (rates != null)
+                    if (_useCustomRates)
                     {
-                        decimal.TryParse(rates.UsdBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out usdRate);
-                        decimal.TryParse(rates.EurBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out eurRate);
-                        decimal.TryParse(rates.GbpBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out gbpRate);
-                        decimal.TryParse(rates.SarBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out sarRate);
+                        usdRate = _customUsdRate;
+                        eurRate = _customEurRate;
+                        gbpRate = _customGbpRate;
+                        sarRate = _customSarRate;
+                    }
+                    else
+                    {
+                        var svc = new ExchangeRateService();
+                        var rates = await svc.GetLatestRatesAsync();
+                        if (rates != null)
+                        {
+                            decimal.TryParse(rates.UsdBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out usdRate);
+                            decimal.TryParse(rates.EurBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out eurRate);
+                            decimal.TryParse(rates.GbpBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out gbpRate);
+                            decimal.TryParse(rates.SarBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out sarRate);
+                        }
                     }
                 }
                 catch { }
@@ -337,14 +353,164 @@ namespace TurizmOperasyonSistemi.Views
             InstantProfitMarginTextBlock.Text = "-";
             InstantProfitRateTextBlock.Text = "-";
 
-            // TextBox'ları temizle
-            HotelExpenseTextBox.Text = "";
-            HotelMedineExpenseTextBox.Text = "";
-            TicketExpenseTextBox.Text = "";
-            VisaExpenseTextBox.Text = "";
-            BagExpenseTextBox.Text = "";
-            StaffExpenseTextBox.Text = "";
-            OtherExpenseTextBox.Text = "";
+            if (resetExpenses)
+            {
+                // Yeni tur seçildiğinde önceki turun giderlerini temizle.
+                HotelExpenseTextBox.Text = "";
+                HotelMedineExpenseTextBox.Text = "";
+                TicketExpenseTextBox.Text = "";
+                VisaExpenseTextBox.Text = "";
+                BagExpenseTextBox.Text = "";
+                StaffExpenseTextBox.Text = "";
+                OtherExpenseTextBox.Text = "";
+            }
+        }
+
+        private async void CustomRatesCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressCustomRatesCheckChanged)
+            {
+                return;
+            }
+
+            if (!TryShowCustomRatesDialog(out var usdRate, out var eurRate, out var gbpRate, out var sarRate))
+            {
+                _suppressCustomRatesCheckChanged = true;
+                CustomRatesCheckBox.IsChecked = false;
+                _suppressCustomRatesCheckChanged = false;
+                return;
+            }
+
+            _customUsdRate = usdRate;
+            _customEurRate = eurRate;
+            _customGbpRate = gbpRate;
+            _customSarRate = sarRate;
+            _useCustomRates = true;
+
+            if (_currentRegistrations.Any())
+            {
+                await UpdateSummaryAsync(_currentRegistrations, resetExpenses: false);
+                CalculateResults();
+            }
+
+            HintTextBlock.Text = "Özel kurlar kullanılıyor. İşareti kaldırarak TCMB kurlarına dönebilirsiniz.";
+        }
+
+        private async void CustomRatesCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressCustomRatesCheckChanged || !_useCustomRates)
+            {
+                return;
+            }
+
+            _useCustomRates = false;
+            if (_currentRegistrations.Any())
+            {
+                await UpdateSummaryAsync(_currentRegistrations, resetExpenses: false);
+                CalculateResults();
+            }
+
+            HintTextBlock.Text = "TCMB kurları kullanılıyor.";
+        }
+
+        private bool TryShowCustomRatesDialog(out decimal usdRate, out decimal eurRate, out decimal gbpRate, out decimal sarRate)
+        {
+            usdRate = eurRate = gbpRate = sarRate = 0m;
+            decimal parsedUsdRate = 0m, parsedEurRate = 0m, parsedGbpRate = 0m, parsedSarRate = 0m;
+            var culture = CultureInfo.GetCultureInfo("tr-TR");
+            var dialogBackground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(17, 24, 39));
+            var dialogForeground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(226, 232, 240));
+            var dialog = new Window
+            {
+                Title = "Özel Döviz Kurları",
+                Width = 360,
+                Height = 390,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = dialogBackground,
+                Foreground = dialogForeground
+            };
+
+            var owner = Window.GetWindow(this);
+            if (owner != null)
+            {
+                dialog.Owner = owner;
+            }
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+            panel.Children.Add(new TextBlock
+            {
+                Text = "TCMB yerine kullanılacak 1 birim karşılığı TL kurlarını girin.",
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 14)
+            });
+
+            TextBox CreateRateTextBox(decimal value) => new()
+            {
+                Text = value > 0 ? value.ToString("N4", culture) : string.Empty,
+                Height = 30,
+                Margin = new Thickness(0, 3, 0, 9),
+                Padding = new Thickness(7, 4, 7, 4),
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(31, 41, 55)),
+                Foreground = dialogForeground,
+                BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(51, 65, 85))
+            };
+
+            panel.Children.Add(new TextBlock { Text = "USD / TL" });
+            var usdTextBox = CreateRateTextBox(_customUsdRate);
+            panel.Children.Add(usdTextBox);
+            panel.Children.Add(new TextBlock { Text = "EUR / TL" });
+            var eurTextBox = CreateRateTextBox(_customEurRate);
+            panel.Children.Add(eurTextBox);
+            panel.Children.Add(new TextBlock { Text = "GBP / TL" });
+            var gbpTextBox = CreateRateTextBox(_customGbpRate);
+            panel.Children.Add(gbpTextBox);
+            panel.Children.Add(new TextBlock { Text = "SAR / TL" });
+            var sarTextBox = CreateRateTextBox(_customSarRate);
+            panel.Children.Add(sarTextBox);
+
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
+            var cancelButton = new Button { Content = "Vazgeç", MinWidth = 80, Margin = new Thickness(0, 0, 8, 0), IsCancel = true };
+            var applyButton = new Button { Content = "Uygula", MinWidth = 80, IsDefault = true };
+            buttons.Children.Add(cancelButton);
+            buttons.Children.Add(applyButton);
+            panel.Children.Add(buttons);
+            dialog.Content = panel;
+
+            applyButton.Click += (_, _) =>
+            {
+                if (!TryReadCustomRate(usdTextBox.Text, out var parsedUsd)
+                    || !TryReadCustomRate(eurTextBox.Text, out var parsedEur)
+                    || !TryReadCustomRate(gbpTextBox.Text, out var parsedGbp)
+                    || !TryReadCustomRate(sarTextBox.Text, out var parsedSar))
+                {
+                    MessageBox.Show(dialog, "USD, EUR, GBP ve SAR için sıfırdan büyük geçerli bir kur girin.", "Geçersiz kur", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                parsedUsdRate = parsedUsd;
+                parsedEurRate = parsedEur;
+                parsedGbpRate = parsedGbp;
+                parsedSarRate = parsedSar;
+                dialog.DialogResult = true;
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return false;
+            }
+
+            usdRate = parsedUsdRate;
+            eurRate = parsedEurRate;
+            gbpRate = parsedGbpRate;
+            sarRate = parsedSarRate;
+            return true;
+        }
+
+        private static bool TryReadCustomRate(string text, out decimal value)
+        {
+            return decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out value) && value > 0m
+                   || decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out value) && value > 0m;
         }
 
         private void ExpenseTextBox_TextChanged(object sender, TextChangedEventArgs e)

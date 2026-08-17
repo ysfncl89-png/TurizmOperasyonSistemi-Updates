@@ -256,17 +256,27 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Çıktı Al Butonu -->
-                        <Button x:Name="ExportButton" Grid.Row="0" Height="36" Background="#1F2937" Foreground="#E2E8F0" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12" Click="ExportButton_Click" BorderBrush="#8B5CF6" BorderThickness="1">
-                            <Button.ContextMenu>
-                                <ContextMenu Foreground="#E2E8F0" Background="#1F2937">
-                                    <MenuItem Header="Word'e İndir" Click="ExportWord_Click"/>
-                                    <MenuItem Header="Excel'e İndir" Click="ExportExcel_Click"/>
-                                    <MenuItem Header="PDF'ye İndir" Click="ExportPdf_Click"/>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                            📥 Çıktı Al
-                        </Button>
+                        <StackPanel Grid.Row="0">
+                            <CheckBox x:Name="CustomRatesCheckBox"
+                                      Content="Kendi kurunu gir (TCMB yerine)"
+                                      Foreground="#CBD5E1"
+                                      FontSize="11"
+                                      Margin="0,0,0,8"
+                                      Checked="CustomRatesCheckBox_Checked"
+                                      Unchecked="CustomRatesCheckBox_Unchecked"/>
+
+                            <!-- Çıktı Al Butonu -->
+                            <Button x:Name="ExportButton" Height="36" Background="#1F2937" Foreground="#E2E8F0" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12" Click="ExportButton_Click" BorderBrush="#8B5CF6" BorderThickness="1">
+                                <Button.ContextMenu>
+                                    <ContextMenu Foreground="#E2E8F0" Background="#1F2937">
+                                        <MenuItem Header="Word'e İndir" Click="ExportWord_Click"/>
+                                        <MenuItem Header="Excel'e İndir" Click="ExportExcel_Click"/>
+                                        <MenuItem Header="PDF'ye İndir" Click="ExportPdf_Click"/>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                                📥 Çıktı Al
+                            </Button>
+                        </StackPanel>
 
                         <!-- Popup with large icon buttons (similar to PersonsGeneralView) -->
                         <Popup x:Name="ExportPopup"
