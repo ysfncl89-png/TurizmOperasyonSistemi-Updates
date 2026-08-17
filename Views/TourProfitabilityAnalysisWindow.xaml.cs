@@ -735,6 +735,85 @@ namespace TurizmOperasyonSistemi.Views
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Marjı (Tahsil.Göre)" }, { "Değer", InstantProfitMarginTextBlock.Text } });
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Oranı (Tahsil.Göre)" }, { "Değer", InstantProfitRateTextBlock.Text } });
 
+            // ÖDEMELER bölümü: seçili tura ait ödemeleri ekle
+            try
+            {
+                var selected = TourComboBox.SelectedItem as TourOption;
+                if (selected != null && _currentRegistrations != null && _currentRegistrations.Any())
+                {
+                    // Query payments for current registrations
+                    using var db = new AppDbContext();
+                    var regIds = _currentRegistrations.Select(r => r.Id).ToList();
+                    var payments = db.Payments
+                        .AsNoTracking()
+                        .Where(p => regIds.Contains(p.RegistrationId))
+                        .Include(p => p.Registration)
+                        .ThenInclude(r => r.Person)
+                        .OrderBy(p => p.CreatedAt)
+                        .ToList();
+
+                    if (payments.Any())
+                    {
+                        rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } });
+                        rows.Add(new Dictionary<string, string> { { "Bölüm", "ÖDEMELER" }, { "Açıklama", "Tarih / Kişi" }, { "Değer", "Tutar (Orj. Para) - Yöntem - Not" } });
+
+                        // Group payments by person (or registration id) so payments for the same person appear together
+                        var grouped = payments.GroupBy(p =>
+                            p.Registration?.Person != null
+                                ? $"{(p.Registration.Person.FirstName ?? string.Empty).Trim()} {(p.Registration.Person.LastName ?? string.Empty).Trim()}".Trim().ToUpperInvariant()
+                                : $"Kayıt #{p.RegistrationId}")
+                            .OrderBy(g => g.Key);
+
+                        // Also load registrations with person info to compute per-person totals
+                        var regsWithPerson = db.Registrations
+                            .AsNoTracking()
+                            .Where(r => regIds.Contains(r.Id))
+                            .Include(r => r.Person)
+                            .ToList();
+
+                        foreach (var grp in grouped)
+                        {
+                            var personKey = grp.Key;
+
+                            // Find registrations that belong to this person (match by person name or registration id fallback)
+                            var regsForPerson = regsWithPerson.Where(r =>
+                            {
+                                if (r.Person != null)
+                                {
+                                    var nameKey = $"{(r.Person.FirstName ?? string.Empty).Trim()} {(r.Person.LastName ?? string.Empty).Trim()}".Trim().ToUpperInvariant();
+                                    return string.Equals(nameKey, personKey, StringComparison.OrdinalIgnoreCase);
+                                }
+                                return ($"Kayıt #{r.Id}") == personKey;
+                            }).ToList();
+
+                            decimal regTotalPrice = regsForPerson.Any() ? regsForPerson.Sum(r => r.TotalPrice) : 0m;
+                            decimal regPaid = regsForPerson.Any() ? regsForPerson.Sum(r => r.PaidAmount) : 0m;
+                            decimal regRemaining = regsForPerson.Any() ? regsForPerson.Sum(r => r.RemainingDebt) : 0m;
+
+                            var totalsStr = $"Toplam: {FormatAmount(regTotalPrice, _currentPrimaryCurrency)} ; Ödenen: {FormatAmount(regPaid, _currentPrimaryCurrency)} ; Kalan: {FormatAmount(regRemaining, _currentPrimaryCurrency)}";
+
+                            var entries = grp.OrderBy(p => p.CreatedAt).Select(p =>
+                            {
+                                var date = p.CreatedAt.ToString("yyyy-MM-dd");
+                                var amountStr = FormatAmount(p.OriginalAmount, p.OriginalCurrency ?? string.Empty);
+                                var method = string.IsNullOrWhiteSpace(p.PaymentMethod) ? string.Empty : p.PaymentMethod;
+                                var note = string.IsNullOrWhiteSpace(p.Note) ? string.Empty : p.Note;
+                                var parts = new List<string> { $"{date}", amountStr };
+                                if (!string.IsNullOrEmpty(method)) parts.Add(method);
+                                if (!string.IsNullOrEmpty(note)) parts.Add(note);
+                                return string.Join(" - ", parts);
+                            });
+
+                            var paymentsJoined = string.Join(" ; ", entries);
+                            var value = string.IsNullOrWhiteSpace(paymentsJoined) ? totalsStr : totalsStr + " | " + paymentsJoined;
+
+                            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", personKey }, { "Değer", value } });
+                        }
+                    }
+                }
+            }
+            catch { /* don't break export on payment fetch errors */ }
+
             return rows;
         }
 
