@@ -80,6 +80,8 @@
             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                 <Button x:Name="Step1Btn" Click="Step1Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Otel Fiyatı Gir</Button>
                 <Button x:Name="Step2Btn" Click="Step2Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Giderler ve Tur Maliyeti</Button>
+                <!-- Yeni üçüncü adım: Sonuç -->
+                <Button x:Name="Step3Btn" Click="Step3Btn_Click" Margin="0,0,8,0" Padding="10,6" Background="#072235" Foreground="#94A3B8">Sonuç</Button>
                 <!-- Hesap Makinesi butonu: üst alana taşındı ve sarı renkte -->
                 <Button x:Name="CalcBtnTop" Click="CalcBtn_Click" Margin="12,0,0,0" Padding="10,6" Background="#FFFBBF24" Foreground="#071023" FontWeight="SemiBold" MinWidth="130">Hesap Makinesi</Button>
             </StackPanel>
@@ -641,7 +643,13 @@
                 </Grid>
             </Border>
 
-            <!-- Step 3 removed per user request -->
+            <!-- Step 3: Sonuç paneli (placeholder). İçerik kullanıcı tanımına göre doldurulacak) -->
+            <Border x:Name="Step3Panel" Visibility="Collapsed" Background="#071023" CornerRadius="8" Padding="18" Margin="0,12,0,12" BorderBrush="#21303F" BorderThickness="1" MinHeight="240">
+                <StackPanel>
+                    <TextBlock Text="Sonuç" Foreground="#FFFBBF24" FontWeight="Bold" FontSize="14" />
+                    <TextBlock Text="Buraya Sonuç ekranı bileşenleri eklenecek. Lütfen hangi alanların görünmesi gerektiğini belirtin." Foreground="#E2E8F0" Margin="0,8,0,0" />
+                </StackPanel>
+            </Border>
         </Grid>
 
         <!-- Alt navigasyon: Prev / Next -->

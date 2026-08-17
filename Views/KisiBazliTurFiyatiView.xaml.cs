@@ -170,11 +170,19 @@ namespace TurizmOperasyonSistemi.Views
 
         private void SetStep(int step)
         {
-            _currentStep = Math.Max(1, Math.Min(2, step));
+            // allow 3 steps now
+            _currentStep = Math.Max(1, Math.Min(3, step));
 
             Step1Panel.Visibility = _currentStep == 1 ? Visibility.Visible : Visibility.Collapsed;
             Step2Panel.Visibility = _currentStep == 2 ? Visibility.Visible : Visibility.Collapsed;
             ResultsPanel.Visibility = _currentStep == 1 ? Visibility.Visible : Visibility.Collapsed;
+            // Step3 content panel (Sonuç) - use FindName to avoid referencing a field that may not be generated
+            try
+            {
+                var s3 = FindName("Step3Panel") as Border;
+                if (s3 != null) s3.Visibility = _currentStep == 3 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch { }
 
             // Update header button visuals
             var activeBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
@@ -183,6 +191,8 @@ namespace TurizmOperasyonSistemi.Views
 
             Step1Btn.Background = inactiveBg; Step1Btn.Foreground = inactiveFg;
             Step2Btn.Background = inactiveBg; Step2Btn.Foreground = inactiveFg;
+            // ensure Step3 button exists before modifying
+            try { Step3Btn.Background = inactiveBg; Step3Btn.Foreground = inactiveFg; } catch { }
 
             switch (_currentStep)
             {
@@ -191,6 +201,9 @@ namespace TurizmOperasyonSistemi.Views
                     break;
                 case 2:
                     Step2Btn.Background = activeBrush; Step2Btn.Foreground = Brushes.White;
+                    break;
+                case 3:
+                    try { Step3Btn.Background = activeBrush; Step3Btn.Foreground = Brushes.White; } catch { }
                     break;
             }
 
@@ -201,7 +214,7 @@ namespace TurizmOperasyonSistemi.Views
 
         private void Step1Btn_Click(object sender, RoutedEventArgs e) => SetStep(1);
         private void Step2Btn_Click(object sender, RoutedEventArgs e) => SetStep(2);
-        // Step3 removed — no handler needed
+        private void Step3Btn_Click(object sender, RoutedEventArgs e) => SetStep(3);
 
         private void PrevBtn_Click(object sender, RoutedEventArgs e)
         {
