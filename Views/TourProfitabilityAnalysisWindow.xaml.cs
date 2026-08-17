@@ -755,7 +755,10 @@ namespace TurizmOperasyonSistemi.Views
                     if (payments.Any())
                     {
                         rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } });
-                        rows.Add(new Dictionary<string, string> { { "Bölüm", "ÖDEMELER" }, { "Açıklama", "Tarih / Kişi" }, { "Değer", "Tutar (Orj. Para) - Yöntem - Not" } });
+                        // Build a separate payments table with detailed columns (Sıra, Ad, Soyad, TC Kimlik, Pasaport numarası, Toplam Fiyat, Para Birimi, Ödenen, Kalan, Açıklama)
+                        var paymentHeaders = new[] { "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Toplam Fiyat", "Para Birimi", "Ödenen", "Kalan", "Açıklama" };
+                        // Insert marker that ExportHelper recognizes to start a new table with these headers
+                        rows.Add(new Dictionary<string, string> { { "__TABLE_HEADERS", string.Join(",", paymentHeaders) } });
 
                         // Group payments by person (or registration id) so payments for the same person appear together
                         var grouped = payments.GroupBy(p =>
@@ -771,6 +774,7 @@ namespace TurizmOperasyonSistemi.Views
                             .Include(r => r.Person)
                             .ToList();
 
+                        var idx = 1;
                         foreach (var grp in grouped)
                         {
                             var personKey = grp.Key;
@@ -790,7 +794,23 @@ namespace TurizmOperasyonSistemi.Views
                             decimal regPaid = regsForPerson.Any() ? regsForPerson.Sum(r => r.PaidAmount) : 0m;
                             decimal regRemaining = regsForPerson.Any() ? regsForPerson.Sum(r => r.RemainingDebt) : 0m;
 
-                            var totalsStr = $"Toplam: {FormatAmount(regTotalPrice, _currentPrimaryCurrency)} ; Ödenen: {FormatAmount(regPaid, _currentPrimaryCurrency)} ; Kalan: {FormatAmount(regRemaining, _currentPrimaryCurrency)}";
+                            // Determine person details from registration if available
+                            string firstName = string.Empty, lastName = string.Empty, tc = string.Empty, passport = string.Empty;
+                            if (regsForPerson.Any() && regsForPerson.First().Person != null)
+                            {
+                                var p = regsForPerson.First().Person;
+                                firstName = (p.FirstName ?? string.Empty).Trim();
+                                lastName = (p.LastName ?? string.Empty).Trim();
+                                tc = (p.TcKimlikNo ?? string.Empty).Trim();
+                                passport = (p.PassportNumber ?? string.Empty).Trim();
+                            }
+                            else
+                            {
+                                // try to split the personKey into first/last
+                                var parts = personKey.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                if (parts.Length > 0) firstName = parts[0];
+                                if (parts.Length > 1) lastName = string.Join(' ', parts.Skip(1));
+                            }
 
                             var entries = grp.OrderBy(p => p.CreatedAt).Select(p =>
                             {
@@ -804,10 +824,24 @@ namespace TurizmOperasyonSistemi.Views
                                 return string.Join(" - ", parts);
                             });
 
-                            var paymentsJoined = string.Join(" ; ", entries);
-                            var value = string.IsNullOrWhiteSpace(paymentsJoined) ? totalsStr : totalsStr + " | " + paymentsJoined;
+                            var paymentsJoined = string.Join("\n", entries);
 
-                            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", personKey }, { "Değer", value } });
+                            var row = new Dictionary<string, string>
+                            {
+                                { "Sıra", idx.ToString() },
+                                { "Ad", firstName },
+                                { "Soyad", lastName },
+                                { "TC Kimlik", tc },
+                                { "Pasaport numarası", passport },
+                                { "Toplam Fiyat", FormatAmount(regTotalPrice, _currentPrimaryCurrency) },
+                                { "Para Birimi", _currentPrimaryCurrency },
+                                { "Ödenen", FormatAmount(regPaid, _currentPrimaryCurrency) },
+                                { "Kalan", FormatAmount(regRemaining, _currentPrimaryCurrency) },
+                                { "Açıklama", paymentsJoined }
+                            };
+
+                            rows.Add(row);
+                            idx++;
                         }
                     }
                 }

@@ -44,15 +44,56 @@ namespace TurizmOperasyonSistemi.Services
         // Generic docx document builder for non-room-allocation exports
         private static void AddDocxDocumentXml_Generic(ZipArchive archive, List<Dictionary<string, string>> rows, List<string> headers, string title, List<string> footers)
         {
-            var colCount = Math.Max(1, headers?.Count ?? 0);
-            var defaultWidths = Enumerable.Repeat(1500, colCount).ToArray();
-            var tableRows = new List<string> { BuildWordTableRow(headers, true, defaultWidths) };
-            tableRows.AddRange(rows.Select(r => BuildWordTableRow(headers.Select(h => r.ContainsKey(h) ? r[h] : string.Empty).ToList(), false, defaultWidths)));
             var titleXml = string.Empty;
             if (!string.IsNullOrWhiteSpace(title)) titleXml = $"    <w:p><w:r><w:t>{EscapeXml(title)}</w:t></w:r></w:p>\n";
             var footerXml = string.Empty;
             if (footers != null && footers.Count > 0) footerXml = string.Join("\n", footers.Select(f => $"    <w:p><w:r><w:t>{EscapeXml(f)}</w:t></w:r></w:p>"));
-            var document = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n  <w:body>\n{titleXml}    <w:tbl>\n      <w:tblPr>\n        <w:tblStyle w:val=\"TableGrid\"/>\n        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n      </w:tblPr>\n      <w:tblGrid>\n      </w:tblGrid>\n      {string.Join(Environment.NewLine, tableRows)}\n    </w:tbl>\n{footerXml}\n    <w:sectPr>\n      <w:pgSz w:w=\"16838\" w:h=\"11906\"/>\n      <w:pgMar w:top=\"720\" w:right=\"720\" w:bottom=\"720\" w:left=\"720\" w:header=\"450\" w:footer=\"450\" w:gutter=\"0\"/>\n    </w:sectPr>\n  </w:body>\n</w:document>";
+
+            // Split rows into one or more tables based on marker rows containing __TABLE_HEADERS key.
+            var tables = new List<(List<string> Headers, List<Dictionary<string, string>> Rows)>();
+
+            if (rows.Any(r => r.ContainsKey("__TABLE_HEADERS")))
+            {
+                var currentHeaders = headers?.ToList() ?? new List<string> { string.Empty };
+                var currentRows = new List<Dictionary<string, string>>();
+
+                foreach (var r in rows)
+                {
+                    if (r.ContainsKey("__TABLE_HEADERS"))
+                    {
+                        if (currentRows.Any()) tables.Add((currentHeaders, currentRows));
+                        var headerVal = r["__TABLE_HEADERS"] ?? string.Empty;
+                        var parts = headerVal.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
+                        currentHeaders = parts.Any() ? parts : new List<string> { string.Empty };
+                        currentRows = new List<Dictionary<string, string>>();
+                        continue;
+                    }
+                    currentRows.Add(r);
+                }
+
+                if (currentRows.Any()) tables.Add((currentHeaders, currentRows));
+            }
+            else
+            {
+                tables.Add((headers?.ToList() ?? new List<string> { string.Empty }, rows));
+            }
+
+            // Build XML with potentially multiple <w:tbl> blocks
+            var tableXmlBlocks = new List<string>();
+            foreach (var tbl in tables)
+            {
+                var tblHeaders = tbl.Headers;
+                var colCount = Math.Max(1, tblHeaders.Count);
+                var defaultWidths = Enumerable.Repeat(1500, colCount).ToArray();
+                var tableRows = new List<string> { BuildWordTableRow(tblHeaders, true, defaultWidths) };
+                tableRows.AddRange(tbl.Rows.Select(r => BuildWordTableRow(tblHeaders.Select(h => r.ContainsKey(h) ? r[h] : string.Empty).ToList(), false, defaultWidths)));
+
+                var tblGrid = string.Join(string.Empty, defaultWidths.Select(w => $"<w:gridCol w:w=\"{w}\"/>"));
+                var tblXml = $"    <w:tbl>\n      <w:tblPr>\n        <w:tblStyle w:val=\"TableGrid\"/>\n        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n      </w:tblPr>\n      <w:tblGrid>\n        {tblGrid}\n      </w:tblGrid>\n      {string.Join(Environment.NewLine, tableRows)}\n    </w:tbl>";
+                tableXmlBlocks.Add(tblXml);
+            }
+
+            var document = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n  <w:body>\n{titleXml}{string.Join("\n", tableXmlBlocks)}\n{footerXml}\n    <w:sectPr>\n      <w:pgSz w:w=\"16838\" w:h=\"11906\"/>\n      <w:pgMar w:top=\"720\" w:right=\"720\" w:bottom=\"720\" w:left=\"720\" w:header=\"450\" w:footer=\"450\" w:gutter=\"0\"/>\n    </w:sectPr>\n  </w:body>\n</w:document>";
             AddZipEntry(archive, "word/document.xml", document);
         }
 
@@ -332,33 +373,80 @@ namespace TurizmOperasyonSistemi.Services
                             }
                         });
 
-                        page.Content().PaddingVertical(4).Table(table =>
+                // Support multiple tables within the same document when caller inserts special marker rows.
+                // Marker row format: a dictionary that contains key "__TABLE_HEADERS" with comma separated header names as value.
+                // Example: new Dictionary<string,string>{{"__TABLE_HEADERS","Sıra,Ad,Soyad,TC Kimlik,..."}}
+                var tables = new List<(List<string> Headers, List<Dictionary<string, string>> Rows)>();
+
+                // Parse rows into one or more tables. If no marker is present, create a single table using provided headers.
+                if (rows.Any(r => r.ContainsKey("__TABLE_HEADERS")))
+                {
+                    var currentHeaders = headers.ToList();
+                    var currentRows = new List<Dictionary<string, string>>();
+
+                    foreach (var r in rows)
+                    {
+                        if (r.ContainsKey("__TABLE_HEADERS"))
                         {
-                            // define columns
+                            // push previous table if any
+                            if (currentRows.Any()) tables.Add((currentHeaders, currentRows));
+
+                            // start new table with headers from marker
+                            var headerVal = r["__TABLE_HEADERS"] ?? string.Empty;
+                            var parts = headerVal.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
+                            currentHeaders = parts.Any() ? parts : new List<string> { "" };
+                            currentRows = new List<Dictionary<string, string>>();
+                            continue;
+                        }
+
+                        currentRows.Add(r);
+                    }
+
+                    if (currentRows.Any()) tables.Add((currentHeaders, currentRows));
+                }
+                else
+                {
+                    tables.Add((headers.ToList(), rows));
+                }
+
+                page.Content().PaddingVertical(4).Column(col =>
+                {
+                    foreach (var tbl in tables)
+                    {
+                        var tblHeaders = tbl.Headers;
+                        var tblRows = tbl.Rows;
+
+                        col.Item().Table(table =>
+                        {
                             table.ColumnsDefinition(columns =>
                             {
-                                foreach (var _ in headers) columns.RelativeColumn();
+                                foreach (var _ in tblHeaders) columns.RelativeColumn();
                             });
 
                             // header
                             table.Header(header =>
                             {
-                                foreach (var h in headers)
+                                foreach (var h in tblHeaders)
                                 {
                                     header.Cell().Background(QuestPDF.Helpers.Colors.Blue.Medium).Padding(6).Text(h).FontColor(QuestPDF.Helpers.Colors.White).FontSize(9).Bold();
                                 }
                             });
 
                             // rows
-                            foreach (var row in rows)
+                            foreach (var row in tblRows)
                             {
-                                var values = headers.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList();
+                                var values = tblHeaders.Select(h => row.ContainsKey(h) ? row[h] : string.Empty).ToList();
                                 foreach (var v in values)
                                 {
                                     table.Cell().Padding(6).Text(v ?? string.Empty).FontSize(9);
                                 }
                             }
                         });
+
+                        // minor spacing between tables
+                        col.Item().PaddingTop(6).Text(string.Empty);
+                    }
+                });
 
                         page.Footer().AlignCenter().Text(txt =>
                         {
@@ -1077,40 +1165,73 @@ namespace TurizmOperasyonSistemi.Services
             var rowXml = new List<string>();
             var currentRow = 1;
 
-            // ensure we have at least one column
-            var colCount = Math.Max(1, headers?.Count ?? 0);
+            // If rows contain table markers, split into multiple tables
+            var tables = new List<(List<string> Headers, List<Dictionary<string, string>> Rows)>();
+            if (rows.Any(r => r.ContainsKey("__TABLE_HEADERS")))
+            {
+                var currentHeaders = headers?.ToList() ?? new List<string> { string.Empty };
+                var currentRows = new List<Dictionary<string, string>>();
+                foreach (var r in rows)
+                {
+                    if (r.ContainsKey("__TABLE_HEADERS"))
+                    {
+                        if (currentRows.Any()) tables.Add((currentHeaders, currentRows));
+                        var headerVal = r["__TABLE_HEADERS"] ?? string.Empty;
+                        var parts = headerVal.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
+                        currentHeaders = parts.Any() ? parts : new List<string> { string.Empty };
+                        currentRows = new List<Dictionary<string, string>>();
+                        continue;
+                    }
+                    currentRows.Add(r);
+                }
+                if (currentRows.Any()) tables.Add((currentHeaders, currentRows));
+            }
+            else
+            {
+                tables.Add((headers?.ToList() ?? new List<string> { string.Empty }, rows));
+            }
 
+            // Title at top
             if (!string.IsNullOrWhiteSpace(title))
             {
-                var titleRow = Enumerable.Range(0, colCount).Select(i => i == 0 ? title : string.Empty).ToList();
+                var firstTable = tables.FirstOrDefault();
+                var colCountFirst = Math.Max(1, firstTable.Headers.Count);
+                var titleRow = Enumerable.Range(0, colCountFirst).Select(i => i == 0 ? title : string.Empty).ToList();
                 rowXml.Add(BuildXlsxRow(currentRow++, titleRow, false));
-                // blank row after title
+                rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, colCountFirst).ToList(), false));
+            }
+
+            // Render each table sequentially
+            foreach (var tbl in tables)
+            {
+                var headerList = tbl.Headers.ToList();
+                var colCount = Math.Max(1, headerList.Count);
+                // header row
+                rowXml.Add(BuildXlsxRow(currentRow++, headerList, true));
+
+                foreach (var r in tbl.Rows)
+                {
+                    var data = headerList.Select(h => r.ContainsKey(h) ? r[h] : string.Empty).ToList();
+                    rowXml.Add(BuildXlsxRow(currentRow++, data, false));
+                }
+
+                // blank row between tables
                 rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, colCount).ToList(), false));
             }
 
-            // header row
-            var headerList = headers?.ToList() ?? Enumerable.Repeat(string.Empty, colCount).ToList();
-            rowXml.Add(BuildXlsxRow(currentRow++, headerList, true));
-
-            // data rows
-            for (var i = 0; i < rows.Count; i++)
-            {
-                var data = headerList.Select(h => rows[i].ContainsKey(h) ? rows[i][h] : string.Empty).ToList();
-                rowXml.Add(BuildXlsxRow(currentRow++, data, false));
-            }
-
-            // footers if any
+            // footers if any (place after all tables)
             if (footers != null && footers.Count > 0)
             {
-                rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, colCount).ToList(), false));
+                var maxCols = tables.Max(t => Math.Max(1, t.Headers.Count));
+                rowXml.Add(BuildXlsxRow(currentRow++, Enumerable.Repeat(string.Empty, maxCols).ToList(), false));
                 foreach (var f in footers)
                 {
-                    var frow = Enumerable.Range(0, colCount).Select(i => i == 0 ? f : string.Empty).ToList();
+                    var frow = Enumerable.Range(0, maxCols).Select(i => i == 0 ? f : string.Empty).ToList();
                     rowXml.Add(BuildXlsxRow(currentRow++, frow, false));
                 }
             }
 
-            var lastColumn = ColumnName(colCount);
+            var lastColumn = ColumnName(tables.Max(t => Math.Max(1, t.Headers.Count)));
             var lastRow = Math.Max(1, currentRow - 1);
             var sheet = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <dimension ref=\"A1:{lastColumn}{lastRow}\"/>\n  <sheetData>\n    {string.Join(Environment.NewLine, rowXml)}\n  </sheetData>\n</worksheet>";
             AddZipEntry(archive, "xl/worksheets/sheet1.xml", sheet);
