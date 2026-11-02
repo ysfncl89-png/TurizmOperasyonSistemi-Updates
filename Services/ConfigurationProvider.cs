@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -12,10 +13,12 @@ namespace TurizmOperasyonSistemi.Services
     {
         private static ConfigurationProvider _instance;
         private readonly string _configPath;
+        private readonly bool _usesDefaultConfigPath;
         private JsonElement _configRoot;
 
         private ConfigurationProvider(string configPath = null)
         {
+            _usesDefaultConfigPath = configPath == null;
             // Eğer path belirtilmemişse, LocalAppData altındaki uygulama dizinindeki appsettings.json kullanılır.
             // Bu sayede kurulum dizinindeki (Program Files) template dosyası uygulama çalıştırıldığında
             // LocalAppData içine kopyalanır ve gerçek çalışma verileri LocalAppData altında tutulur.
@@ -55,6 +58,16 @@ namespace TurizmOperasyonSistemi.Services
         {
             try
             {
+                if (!File.Exists(_configPath) && _usesDefaultConfigPath)
+                {
+                    var legacyConfigPath = Path.Combine(GetLegacyLocalDataDir(), "appsettings.json");
+                    if (File.Exists(legacyConfigPath))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(_configPath) ?? GetDefaultBaseDir());
+                        File.Copy(legacyConfigPath, _configPath, overwrite: false);
+                    }
+                }
+
                 if (!File.Exists(_configPath))
                 {
                     System.Diagnostics.Debug.WriteLine($"Config dosyası bulunamadı: {_configPath}");
@@ -134,8 +147,14 @@ namespace TurizmOperasyonSistemi.Services
         public string GetDefaultBaseDir()
         {
             string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            // Uygulamaya özel klasör
-            return Path.Combine(localAppData, "TurizmOperasyonSistemi");
+            return Path.Combine(localAppData, "TurizmOperasyonSistemiData");
+        }
+
+        private static string GetLegacyLocalDataDir()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "TurizmOperasyonSistemi");
         }
 
         /// <summary>
@@ -478,89 +497,52 @@ namespace TurizmOperasyonSistemi.Services
             {
                 string oneDriveBase = GetOneDriveBaseDir();
                 string localBase = GetDefaultBaseDir();
+                string legacyLocalBase = GetLegacyLocalDataDir();
 
                 string currentDb = GetDatabasePath();
                 if (string.IsNullOrEmpty(currentDb))
                     return;
 
                 string currentRoot = Path.GetDirectoryName(currentDb) ?? string.Empty;
+                string databaseFileName = Path.GetFileName(currentDb);
+                string targetDbPath = Path.Combine(localBase, databaseFileName);
 
-                // Eğer zaten LocalAppData içindeyse hiçbir işlem yok
-                if (currentRoot.StartsWith(localBase, StringComparison.OrdinalIgnoreCase))
-                    return;
-
-                // Potansiyel eski kaynaklar: OneDrive veya C:\TurizmDB
-                bool fromOneDrive = !string.IsNullOrEmpty(oneDriveBase) && currentRoot.StartsWith(oneDriveBase, StringComparison.OrdinalIgnoreCase);
-
-                // Detect legacy C:\TurizmDB paths (handle with single backslash and optional trailing separator)
-                bool fromLegacyC = false;
-                try
+                if (IsSamePath(currentRoot, localBase))
                 {
-                    var normalized = Path.GetFullPath(currentRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                    fromLegacyC = normalized.Equals(Path.GetFullPath(@"C:\TurizmDB").TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.OrdinalIgnoreCase)
-                                  || normalized.StartsWith(Path.GetFullPath(@"C:\TurizmDB") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
-                }
-                catch { fromLegacyC = currentRoot.StartsWith(@"C:\\TurizmDB", StringComparison.OrdinalIgnoreCase); }
+                    if (File.Exists(currentDb) && new FileInfo(currentDb).Length > 0)
+                        return;
 
-                if (!fromOneDrive && !fromLegacyC)
+                    var legacyRoots = new[] { legacyLocalBase, @"C:\TurizmDB", oneDriveBase }
+                        .Where(root => !string.IsNullOrWhiteSpace(root));
+                    currentRoot = legacyRoots.FirstOrDefault(root =>
+                        File.Exists(Path.Combine(root, databaseFileName))
+                        || Directory.Exists(Path.Combine(root, "backups")));
+
+                    if (currentRoot == null)
+                        return;
+
+                    currentDb = Path.Combine(currentRoot, databaseFileName);
+                }
+
+                bool fromOneDrive = IsWithinPath(currentRoot, oneDriveBase);
+                bool fromLegacyC = IsWithinPath(currentRoot, @"C:\TurizmDB");
+                bool fromLegacyLocal = IsWithinPath(currentRoot, legacyLocalBase);
+                bool fromCurrentInstall = IsWithinPath(currentRoot, AppDomain.CurrentDomain.BaseDirectory);
+
+                if (!fromOneDrive && !fromLegacyC && !fromLegacyLocal && !fromCurrentInstall)
                     return; // Bilinmeyen bir konumdan geliyorsa müdahale etmiyoruz
 
                 // Hedef lokasyonları oluştur
                 Directory.CreateDirectory(localBase);
-                string targetDbPath = Path.Combine(localBase, Path.GetFileName(currentDb));
-                string currentBackup = GetBackupDirectory();
                 string targetBackup = Path.Combine(localBase, "backups");
-                string currentLog = GetLogDirectory();
                 string targetLog = Path.Combine(localBase, "logs");
 
-                // Veritabanını güvenli şekilde kopyala (varsa karşılaştırma yap)
-                if (File.Exists(currentDb))
+                if (File.Exists(currentDb) && !IsSamePath(currentDb, targetDbPath))
                 {
                     try
                     {
-                        // Eğer kaynak dosya uygulama kurulumu dizinindeyse (installer tarafından yerleştirilmiş)
-                        // bu dosyanın eski bir test/seed veritabanı olma ihtimali yüksek olup, istemci tarafında
-                        // otomatik olarak local DB'yi seed etmek istenmeyebilir. Bu nedenle installer kaynaklı
-                        // DB'ler asla local hedefe kopyalanmayacak; bunun yerine arşivlenecek.
-                        var appBaseDir = AppDomain.CurrentDomain.BaseDirectory ?? string.Empty;
-                        bool sourceIsAppInstall = false;
-                        try
-                        {
-                            sourceIsAppInstall = currentDb.StartsWith(appBaseDir, StringComparison.OrdinalIgnoreCase)
-                                               || Path.GetDirectoryName(currentDb)?.StartsWith(appBaseDir, StringComparison.OrdinalIgnoreCase) == true;
-                        }
-                        catch { sourceIsAppInstall = false; }
-
-                        if (sourceIsAppInstall)
-                        {
-                            // Installer tarafından konulan DB arşivle ve local'e kopyalama (seed) yapma.
-                            try
-                            {
-                                var srcDir = Path.GetDirectoryName(currentDb) ?? appBaseDir;
-                                string stamped = Path.GetFileNameWithoutExtension(currentDb) + "_installer_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(currentDb);
-                                var archived = Path.Combine(srcDir, stamped);
-                                File.Move(currentDb, archived);
-                                System.Diagnostics.Debug.WriteLine($"Installer kaynaklı DB bulundu; arşivlendi: {archived}");
-                            }
-                            catch (Exception mvEx)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"Installer DB arşivleme başarısız: {mvEx.Message}");
-                            }
-                        }
-                        else
-                        {
-                            if (!File.Exists(targetDbPath))
-                            {
-                                // Hedef yoksa güvenli şekilde kopyala
-                                File.Copy(currentDb, targetDbPath);
-                                System.Diagnostics.Debug.WriteLine($"Database kopyalandı: {currentDb} -> {targetDbPath}");
-                            }
-                            else
-                            {
-                                System.Diagnostics.Debug.WriteLine(
-                                    $"Local DB zaten mevcut; farklı kaynaktan otomatik üzerine yazma atlandı. Kaynak korunuyor: {currentDb}");
-                            }
-                        }
+                        CopyDatabasePreservingTarget(currentDb, targetDbPath);
+                        System.Diagnostics.Debug.WriteLine($"Database güvenli şekilde kopyalandı: {currentDb} -> {targetDbPath}");
                     }
                     catch (Exception ex)
                     {
@@ -571,14 +553,28 @@ namespace TurizmOperasyonSistemi.Services
                 // Yedek ve log dizinlerini kopyala (kaynak korunur)
                 try
                 {
-                    if (Directory.Exists(currentBackup))
+                    var backupSources = new[]
                     {
-                        CopyDirectoryContents(currentBackup, targetBackup);
+                        GetBackupDirectory(),
+                        Path.Combine(currentRoot, "backups"),
+                        Path.Combine(legacyLocalBase, "backups")
+                    };
+                    foreach (var source in backupSources.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase))
+                    {
+                        if (!IsSamePath(source, targetBackup))
+                            CopyDirectoryContents(source, targetBackup);
                     }
 
-                    if (Directory.Exists(currentLog))
+                    var logSources = new[]
                     {
-                        CopyDirectoryContents(currentLog, targetLog);
+                        GetLogDirectory(),
+                        Path.Combine(currentRoot, "logs"),
+                        Path.Combine(legacyLocalBase, "logs")
+                    };
+                    foreach (var source in logSources.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase))
+                    {
+                        if (!IsSamePath(source, targetLog))
+                            CopyDirectoryContents(source, targetLog);
                     }
                 }
                 catch (Exception ex)
@@ -622,6 +618,81 @@ namespace TurizmOperasyonSistemi.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"MigrateToOneDriveIfNeeded hata: {ex.Message}");
+            }
+        }
+
+        private static bool IsSamePath(string firstPath, string secondPath)
+        {
+            if (string.IsNullOrWhiteSpace(firstPath) || string.IsNullOrWhiteSpace(secondPath))
+                return false;
+
+            try
+            {
+                return string.Equals(
+                    Path.GetFullPath(firstPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    Path.GetFullPath(secondPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return string.Equals(firstPath, secondPath, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private static bool IsWithinPath(string path, string basePath)
+        {
+            if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(basePath))
+                return false;
+
+            try
+            {
+                var normalizedPath = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var normalizedBase = Path.GetFullPath(basePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                return string.Equals(normalizedPath, normalizedBase, StringComparison.OrdinalIgnoreCase)
+                    || normalizedPath.StartsWith(normalizedBase + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return string.Equals(path, basePath, StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith(basePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private static void CopyDatabasePreservingTarget(string sourcePath, string targetPath)
+        {
+            if (IsSamePath(sourcePath, targetPath))
+                return;
+
+            var targetDirectory = Path.GetDirectoryName(targetPath);
+            if (!string.IsNullOrEmpty(targetDirectory))
+                Directory.CreateDirectory(targetDirectory);
+
+            var tempPath = targetPath + ".migration-" + Guid.NewGuid().ToString("N");
+            string previousTargetPath = null;
+            try
+            {
+                File.Copy(sourcePath, tempPath, overwrite: false);
+                if (File.Exists(targetPath))
+                {
+                    previousTargetPath = targetPath + ".previous-" + DateTime.UtcNow.ToString("yyyyMMddHHmmssfff") + "-" + Guid.NewGuid().ToString("N");
+                    File.Move(targetPath, previousTargetPath);
+                }
+
+                try
+                {
+                    File.Move(tempPath, targetPath);
+                }
+                catch
+                {
+                    if (previousTargetPath != null && File.Exists(previousTargetPath) && !File.Exists(targetPath))
+                        File.Move(previousTargetPath, targetPath);
+                    throw;
+                }
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
             }
         }
 
