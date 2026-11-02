@@ -687,7 +687,7 @@ namespace TurizmOperasyonSistemi
 
                     // Sync background service removed (OneDrive sync disabled)
 
-                    await _backgroundServiceManager.StartAllAsync().ConfigureAwait(false);
+                    await _backgroundServiceManager.StartAllAsync();
                     // Velopack performs the only application update check during startup.
                     // The former manifest/zip/INNO Setup notification path is intentionally not registered.
                 }
