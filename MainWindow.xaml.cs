@@ -171,6 +171,22 @@ namespace TurizmOperasyonSistemi
             MainFrame.Navigate(new ListsView());
         }
 
+        public bool NavigateToDashboardList(PersonsGeneralView view)
+        {
+            if (view == null) return false;
+            if (!CurrentUser.Instance.IsAdmin && !CurrentUser.Instance.HasPermission(PermissionKeys.ListsView))
+            {
+                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return false;
+            }
+
+            ResetMenuColors();
+            ListsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+            MainFrame.Navigate(view);
+            return true;
+        }
+
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
             // Kontrol: ayarlara erişim izni var mı? (sadece admin)

@@ -30,11 +30,18 @@ namespace TurizmOperasyonSistemi.Views
             BtnSecondary.Click += (s, e) => { this.DialogResult = false; this.Close(); };
         }
 
-        public static bool? Show(string message, string title = "Uyarı", bool showCancel = false)
+        public static bool? Show(
+            string message,
+            string title = "Uyarı",
+            bool showCancel = false,
+            string primaryButtonText = "Tamam",
+            string secondaryButtonText = "İptal")
         {
             var win = new NeonMessageBoxWindow();
             win.TitleText.Text = title;
             win.MessageText.Text = message;
+            win.BtnPrimary.Content = primaryButtonText;
+            win.BtnSecondary.Content = secondaryButtonText;
             win.BtnSecondary.Visibility = showCancel ? Visibility.Visible : Visibility.Collapsed;
             // Safely set owner: only when there is a shown/loaded main window. Setting Owner to a
             // Window that has not been shown throws InvalidOperationException on some systems.

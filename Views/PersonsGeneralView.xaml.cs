@@ -52,6 +52,29 @@ namespace TurizmOperasyonSistemi.Views
             Referans
         }
 
+        public enum DashboardListFilter
+        {
+            VisaWillGet,
+            VisaSelfGet,
+            VisaIssued,
+            VisaNotIssued,
+            VisaInProgress,
+            PassportPending,
+            PassportArrivedYes,
+            PassportArrivedNo,
+            TicketWillGet,
+            TicketSelfGet,
+            TicketArrived,
+            TicketNotArrived,
+            TicketInProgress,
+            TicketTransfer,
+            CargoWillSend,
+            CargoSent,
+            CargoNoSend,
+            CargoPickupWill,
+            CargoPicked
+        }
+
         // Helper: return a human-readable string for a ComboBox's current selection.
         // Handles SelectedValue, SelectedItem, ComboBoxItem content and falls back to Text.
         private string GetComboSelectionString(ComboBox cb)
@@ -1136,9 +1159,9 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             var modeVisibleHeaders = new Dictionary<ViewMode, HashSet<string>>()
             {
                 [ViewMode.Genel] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Cinsiyet","Doğum Tarihi","Telefon numarası","Adres","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Kan Grubu","Aşı durumu","hastalık durumu","Yaş aralığı","Vize Talebi","Bilet Talebi","Kargo Talebi","Oda tipi","Katılım yapılacak şehir","Aktarma var mı ?","Aktarma şehri","İlçe","Toplam Fiyat","Para Birimi","Ödenen","Kalan","Referans" },
-                [ViewMode.Vize] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Vize Talebi","Telefon numarası","Adres" },
+                [ViewMode.Vize] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Vize Talebi","Vize Durumu","Pasaportu Geldi mi ?","Telefon numarası","Adres" },
                 [ViewMode.Pasaport] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Pasaport tipi","Pasaport numarası","Pasaport Başlangıç tarihi","Pasaport bitiş tarihi","Telefon numarası","Adres" },
-                [ViewMode.Bilet] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Bilet Talebi","Telefon numarası","Adres","Katılım yapılacak şehir" },
+                [ViewMode.Bilet] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Bilet Talebi","Bilet Durumu","Telefon numarası","Adres","Katılım yapılacak şehir" },
                 [ViewMode.Aktarma] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Aktarma var mı ?","Aktarma şehri","Telefon numarası","Adres","Katılım yapılacak şehir" },
                 [ViewMode.Havayolu] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Katılım yapılacak şehir","Bilet Talebi","Telefon numarası","Adres" },
                 [ViewMode.Referans] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Sıra","Ad","Soyad","TC Kimlik","Referans","Telefon numarası","Adres" },
@@ -1368,6 +1391,50 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
         }
 
         private ViewMode _currentMode = ViewMode.Genel;
+        private DashboardListFilter? _dashboardListFilter;
+        private (string Tour, string Period, string GroupType, string Days)? _dashboardTourScope;
+        private string _dashboardTourDisplay = string.Empty;
+
+        public void ConfigureDashboardList(
+            DashboardListFilter filter,
+            (string Tour, string Period, string GroupType, string Days)? tourScope,
+            string tourDisplay)
+        {
+            _dashboardListFilter = filter;
+            _dashboardTourScope = tourScope;
+            _dashboardTourDisplay = tourDisplay ?? string.Empty;
+            EnsureDashboardFilterColumnVisible();
+        }
+
+        private void EnsureDashboardFilterColumnVisible()
+        {
+            if (!_dashboardListFilter.HasValue) return;
+            var property = _dashboardListFilter.Value switch
+            {
+                DashboardListFilter.VisaWillGet or DashboardListFilter.VisaSelfGet => "VisaRequest",
+                DashboardListFilter.VisaIssued or DashboardListFilter.VisaNotIssued or DashboardListFilter.VisaInProgress or DashboardListFilter.PassportPending => "VisaStatusChoice",
+                DashboardListFilter.PassportArrivedYes or DashboardListFilter.PassportArrivedNo => "PassportArrivedText",
+                DashboardListFilter.TicketWillGet or DashboardListFilter.TicketSelfGet => "TicketRequest",
+                DashboardListFilter.TicketArrived or DashboardListFilter.TicketNotArrived or DashboardListFilter.TicketInProgress => "TicketStatusChoice",
+                DashboardListFilter.TicketTransfer => "HasTransfer",
+                _ => "CargoRequest"
+            };
+
+            foreach (var column in ResultsDataGrid.Columns)
+            {
+                try
+                {
+                    var header = (column.Header as TextBlock)?.Text ?? column.Header?.ToString() ?? string.Empty;
+                    var columnProperty = GetColumnPropertyName(column) ?? MapHeaderToProperty(header);
+                    if (string.Equals(columnProperty, property, StringComparison.OrdinalIgnoreCase))
+                    {
+                        column.Visibility = Visibility.Visible;
+                        break;
+                    }
+                }
+                catch { }
+            }
+        }
 
         private string GetModeTitle()
         {
@@ -1453,7 +1520,11 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             // ensure CargoDocs theme default off
             ApplyCargoDocsTheme(false);
             // ensure default column projection is applied after InitializeComponent
-            Loaded += (s, e) => ConfigureMode(_currentMode);
+            Loaded += (s, e) =>
+            {
+                ConfigureMode(_currentMode);
+                EnsureDashboardFilterColumnVisible();
+            };
             Unloaded += PersonsGeneralView_Unloaded;
             ResultsDataGrid.MouseDoubleClick += ResultsDataGrid_MouseDoubleClick;
             ResultsDataGrid.CellEditEnding += ResultsDataGrid_CellEditEnding;
@@ -1842,6 +1913,24 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             catch { }
             // ensure initial filter UI state reflects current selections
             try { Filter_Changed(null, null); } catch { }
+            if (_dashboardListFilter.HasValue)
+            {
+                try
+                {
+                    LoadResults();
+                    FiltersPanel.Visibility = Visibility.Collapsed;
+                    TopBar.Visibility = Visibility.Visible;
+                    ResultsBorder.Visibility = Visibility.Visible;
+                    var filterLabel = this.FindName("CurrentFilterLabel") as TextBlock;
+                    if (filterLabel != null)
+                    {
+                        var parts = new[] { _dashboardTourDisplay, GetDashboardFilterLabel(_dashboardListFilter.Value) }
+                            .Where(part => !string.IsNullOrWhiteSpace(part));
+                        filterLabel.Text = string.Join(" • ", parts);
+                    }
+                }
+                catch { }
+            }
             try
             {
                 Services.CargoPrintQueue.Instance.ItemRemoved += (it) =>
@@ -1878,6 +1967,12 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
         {
             try
             {
+                if (_dashboardListFilter.HasValue && this.NavigationService != null && this.NavigationService.CanGoBack)
+                {
+                    this.NavigationService.GoBack();
+                    return;
+                }
+
                 // If we're currently showing results, treat Back as "go back to filters" instead of navigating the app back stack
                 if (ResultsBorder != null && ResultsBorder.Visibility == Visibility.Visible)
                 {
@@ -2201,7 +2296,7 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             if (!headers.Any())
             {
                 // fallback based on cargo-only mode or general
-                if (CargoOnlyMode)
+                if (CargoOnlyMode && !_dashboardListFilter.HasValue)
                 {
                     headers = new List<string> { "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi" };
                 }
@@ -2500,6 +2595,121 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
             return columnName;
         }
 
+        private static string NormalizeDashboardValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+            return value.Trim().ToLowerInvariant()
+                .Replace('ı', 'i').Replace('ğ', 'g').Replace('ü', 'u').Replace('ş', 's').Replace('ö', 'o').Replace('ç', 'c');
+        }
+
+        private bool MatchesDashboardTourScope(Registration registration)
+        {
+            if (!_dashboardTourScope.HasValue) return true;
+            var scope = _dashboardTourScope.Value;
+
+            bool Matches(string value, string expected, bool isDays = false)
+            {
+                if (string.IsNullOrWhiteSpace(expected)) return true;
+                var normalized = NormalizeDashboardValue(expected);
+                if (normalized == "(belirtilmemis)" || (isDays && normalized == "-"))
+                    return string.IsNullOrWhiteSpace(value);
+                return NormalizeDashboardValue(value) == normalized;
+            }
+
+            return Matches(registration.TourType, scope.Tour) &&
+                   Matches(registration.Period, scope.Period) &&
+                   Matches(registration.GroupType, scope.GroupType) &&
+                   Matches(registration.DaysCount, scope.Days, true);
+        }
+
+        private static bool MatchesDashboardFilter(Registration registration, DashboardListFilter filter, IReadOnlyDictionary<int, string> passportSettings)
+        {
+            var visaRequest = NormalizeDashboardValue(registration.VisaRequest);
+            var visaStatus = NormalizeDashboardValue(registration.VisaStatusChoice);
+            var ticketRequest = NormalizeDashboardValue(registration.TicketRequest);
+            var ticketStatus = NormalizeDashboardValue(registration.TicketStatusChoice);
+            var cargoRequest = NormalizeDashboardValue(registration.CargoRequest);
+
+            bool visaSelf = visaRequest.Contains("kendisi") || visaRequest.Contains("kendi");
+            bool visaNotIssued = visaStatus.Contains("cikmad") || visaStatus.Contains("cikmadi") || visaStatus.Contains("cikm");
+            bool visaIssued = visaStatus.Contains("cikti") || visaStatus.Contains("cikt") || visaStatus.Contains("vizecikti");
+            bool visaInProgress = visaStatus.Contains("alin") || visaStatus.Contains("aliniyor");
+            bool visaPassportPending = visaStatus.Contains("pasaport") || visaStatus.Contains("pasaportbeklen") || visaStatus.Contains("beklen");
+
+            bool ticketSelf = ticketRequest.Contains("kendisi") || ticketRequest.Contains("kendi");
+            bool ticketNotArrived = ticketStatus.Contains("gelmedi");
+            bool ticketArrived = ticketStatus.Contains("geldi") || ticketStatus.Contains("bileti geldi");
+            bool ticketInProgress = ticketStatus.Contains("alin") || ticketStatus.Contains("aliniyor");
+
+            bool cargoNoSend = cargoRequest.Contains("almayacak");
+            bool cargoSent = cargoRequest.Contains("gonderildi");
+            bool cargoWillSend = cargoRequest.Contains("gonder") || cargoRequest.Contains("gonderilecek");
+            bool cargoPicked = cargoRequest.Contains("elden teslim aldi") || cargoRequest.Contains("elden teslimaldi");
+            bool cargoPickupWill = cargoRequest.Contains("elden teslim") || cargoRequest.Contains("elden teslim alacak") || cargoRequest.Contains("elden teslim alac");
+
+            switch (filter)
+            {
+                case DashboardListFilter.VisaWillGet: return !visaSelf && visaRequest.Contains("alac") && visaRequest.Contains("vize");
+                case DashboardListFilter.VisaSelfGet: return visaSelf;
+                case DashboardListFilter.VisaIssued: return !visaNotIssued && visaIssued;
+                case DashboardListFilter.VisaNotIssued: return visaNotIssued;
+                case DashboardListFilter.VisaInProgress: return !visaNotIssued && !visaIssued && visaInProgress;
+                case DashboardListFilter.PassportPending: return !visaNotIssued && !visaIssued && !visaInProgress && visaPassportPending;
+                case DashboardListFilter.PassportArrivedYes:
+                case DashboardListFilter.PassportArrivedNo:
+                    if (!registration.PassportArrived.HasValue || registration.PassportArrived.Value < 0) return false;
+                    var passportValue = passportSettings.TryGetValue(registration.PassportArrived.Value, out var settingValue)
+                        ? settingValue
+                        : registration.PassportArrived.Value != 0 ? "1" : "0";
+                    var normalizedPassportValue = NormalizeDashboardValue(passportValue);
+                    if (normalizedPassportValue.Contains("verme") || normalizedPassportValue.Contains("belirtilme")) return false;
+                    var arrivedYes = normalizedPassportValue == "evet" || normalizedPassportValue == "var" || normalizedPassportValue == "yes" || normalizedPassportValue == "1";
+                    var arrivedNo = normalizedPassportValue == "hayir" || normalizedPassportValue == "hay" || normalizedPassportValue == "0" || normalizedPassportValue.Contains("hay");
+                    return filter == DashboardListFilter.PassportArrivedYes ? arrivedYes : arrivedNo;
+                case DashboardListFilter.TicketWillGet: return !ticketSelf && ticketRequest.Contains("alac") && ticketRequest.Contains("bilet");
+                case DashboardListFilter.TicketSelfGet: return ticketSelf;
+                case DashboardListFilter.TicketArrived: return !ticketNotArrived && ticketArrived;
+                case DashboardListFilter.TicketNotArrived: return ticketNotArrived;
+                case DashboardListFilter.TicketInProgress: return !ticketNotArrived && !ticketArrived && ticketInProgress;
+                case DashboardListFilter.TicketTransfer:
+                    var transfer = NormalizeDashboardValue(registration.HasTransfer);
+                    return !string.IsNullOrWhiteSpace(transfer) && (transfer.Contains("var") || transfer.Contains("evet") || transfer.Contains("yes") || transfer == "1");
+                case DashboardListFilter.CargoNoSend: return cargoNoSend;
+                case DashboardListFilter.CargoSent: return !cargoNoSend && cargoSent;
+                case DashboardListFilter.CargoWillSend: return !cargoNoSend && !cargoSent && cargoWillSend;
+                case DashboardListFilter.CargoPicked: return !cargoNoSend && !cargoSent && !cargoWillSend && cargoPicked;
+                case DashboardListFilter.CargoPickupWill: return !cargoNoSend && !cargoSent && !cargoWillSend && !cargoPicked && cargoPickupWill;
+                default: return false;
+            }
+        }
+
+        private static string GetDashboardFilterLabel(DashboardListFilter filter)
+        {
+            return filter switch
+            {
+                DashboardListFilter.VisaWillGet => "Vize Alacağız",
+                DashboardListFilter.VisaSelfGet => "Vizeyi Kendisi Alacak",
+                DashboardListFilter.VisaIssued => "Vize Çıktı",
+                DashboardListFilter.VisaNotIssued => "Vize Çıkmadı",
+                DashboardListFilter.VisaInProgress => "Vizesi Alınıyor",
+                DashboardListFilter.PassportPending => "Pasaport Bekleniyor",
+                DashboardListFilter.PassportArrivedYes => "Pasaport Geldi (Evet)",
+                DashboardListFilter.PassportArrivedNo => "Pasaport Geldi (Hayır)",
+                DashboardListFilter.TicketWillGet => "Biletini Alacağız",
+                DashboardListFilter.TicketSelfGet => "Bileti Kendisi Alacak",
+                DashboardListFilter.TicketArrived => "Bileti Geldi",
+                DashboardListFilter.TicketNotArrived => "Bileti Gelmedi",
+                DashboardListFilter.TicketInProgress => "Bileti Alınıyor",
+                DashboardListFilter.TicketTransfer => "Bağlantı uçuşu olan kişi",
+                DashboardListFilter.CargoWillSend => "Kargo Gönderilecek",
+                DashboardListFilter.CargoSent => "Kargo Gönderildi",
+                DashboardListFilter.CargoNoSend => "Kargo Almayacak",
+                DashboardListFilter.CargoPickupWill => "Elden Teslim Alacak",
+                DashboardListFilter.CargoPicked => "Elden Teslim Aldı",
+                _ => filter.ToString()
+            };
+        }
+
         private void LoadResults()
         {
             try
@@ -2598,6 +2808,24 @@ public static IEnumerable<T> FindVisualChildren<T>(System.Windows.DependencyObje
                 }
 
                 var list = query.OrderBy(r => r.Id).ToList();
+                if (_dashboardTourScope.HasValue)
+                    list = list.Where(MatchesDashboardTourScope).ToList();
+                if (_dashboardListFilter.HasValue)
+                {
+                    IReadOnlyDictionary<int, string> passportSettings = new Dictionary<int, string>();
+                    if (_dashboardListFilter == DashboardListFilter.PassportArrivedYes || _dashboardListFilter == DashboardListFilter.PassportArrivedNo)
+                    {
+                        try
+                        {
+                            passportSettings = db.AppSettings
+                                .Where(setting => setting.Type == "Pasaportu Geldi mi ?" || setting.Type == "Pasaport Geldi mi" || setting.Type == "PassportArrived")
+                                .AsNoTracking()
+                                .ToDictionary(setting => setting.Id, setting => setting.Value ?? string.Empty);
+                        }
+                        catch { }
+                    }
+                    list = list.Where(registration => MatchesDashboardFilter(registration, _dashboardListFilter.Value, passportSettings)).ToList();
+                }
 
                 var rows = new List<GeneralRow>();
                 var seq = 1;

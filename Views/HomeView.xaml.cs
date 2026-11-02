@@ -989,7 +989,7 @@ namespace TurizmOperasyonSistemi.Views
                                                   Currency = g.FirstOrDefault()?.Currency ?? string.Empty
                                               }).ToList();
 
-                    var totalsByCurrency = ledgerPerPerson.GroupBy(p => string.IsNullOrWhiteSpace(p.Currency) ? "" : p.Currency)
+                    var totalsByCurrency = ledgerPerPerson.GroupBy(p => string.IsNullOrWhiteSpace(p.Currency) ? "" : p.Currency.Trim().ToUpperInvariant())
                                                           .Select(g => new
                                                           {
                                                               Currency = g.Key,
@@ -997,86 +997,192 @@ namespace TurizmOperasyonSistemi.Views
                                                               Remaining = g.Sum(x => x.Remaining)
                                                           }).ToList();
 
-                    string FormatAmount(decimal amount, string currency)
+                    Brush[] chartPalette =
                     {
-                        if (string.IsNullOrWhiteSpace(currency))
-                            return amount.ToString("N0");
-                        var c = currency.Trim().ToUpperInvariant();
-                        if (c == "TRY" || c == "TL" || c == "₺")
-                            return $"₺{amount:N0}";
-                        if (c == "USD" || c == "$")
-                            return $"${amount:N0}";
-                        if (c == "EUR" || c == "€")
-                            return $"€{amount:N0}";
-                        return $"{amount:N0} {currency}";
-                    }
+                        new SolidColorBrush(Color.FromRgb(126, 231, 135)),
+                        new SolidColorBrush(Color.FromRgb(96, 165, 250)),
+                        new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+                        new SolidColorBrush(Color.FromRgb(167, 139, 250)),
+                        new SolidColorBrush(Color.FromRgb(45, 212, 191))
+                    };
+                    var currencyColors = totalsByCurrency
+                        .Select((total, index) => new { total.Currency, Color = chartPalette[index % chartPalette.Length] })
+                        .ToDictionary(item => item.Currency, item => item.Color);
 
-                    var collectedParts = totalsByCurrency.Select(t => FormatAmount(t.Collected, t.Currency)).ToList();
-                    var remainingParts = totalsByCurrency.Select(t => FormatAmount(t.Remaining, t.Currency)).ToList();
+                    var collectedCanvas = this.FindName("CollectedDonutCanvas") as Canvas;
+                    var collectedLegend = this.FindName("CollectedLegendPanel") as StackPanel;
+                    var remainingCanvas = this.FindName("RemainingDonutCanvas") as Canvas;
+                    var remainingLegend = this.FindName("RemainingLegendPanel") as StackPanel;
 
-                    var collectedDisplay = collectedParts.Any() ? string.Join(" — ", collectedParts) : FormatAmount(0, string.Empty);
-                    var remainingDisplay = remainingParts.Any() ? string.Join(" — ", remainingParts) : FormatAmount(0, string.Empty);
-
-                    var collectedTb = this.FindName("TotalCollectedText") as TextBlock;
-                    var remainingTb = this.FindName("TotalRemainingText") as TextBlock;
-                    var collectedPb = this.FindName("CollectedProgressBar") as ProgressBar;
-                    var remainingPb = this.FindName("RemainingProgressBar") as ProgressBar;
-                    var collectedPercent = this.FindName("CollectedPercentageText") as TextBlock;
-                    var remainingPercent = this.FindName("RemainingPercentageText") as TextBlock;
-
-                    if (collectedTb != null) collectedTb.Text = collectedDisplay;
-                    if (remainingTb != null) remainingTb.Text = remainingDisplay;
-
-                    // Progress Bar Güncelleme
-                    try
-                    {
-                        decimal totalCollected = ledgerPerPerson.Sum(p => p.Paid);
-                        decimal totalRemaining = ledgerPerPerson.Sum(p => p.Remaining);
-                        decimal grandTotal = totalCollected + totalRemaining;
-
-                        if (grandTotal > 0 && collectedPb != null && remainingPb != null)
-                        {
-                            double collectedPercent_Value = (double)((totalCollected / grandTotal) * 100);
-                            double remainingPercent_Value = (double)((totalRemaining / grandTotal) * 100);
-
-                            collectedPb.Value = collectedPercent_Value;
-                            remainingPb.Value = remainingPercent_Value;
-
-                            if (collectedPercent != null)
-                                collectedPercent.Text = $"{Math.Round(collectedPercent_Value, 1)}%";
-                            if (remainingPercent != null)
-                                remainingPercent.Text = $"{Math.Round(remainingPercent_Value, 1)}%";
-                        }
-                        else if (collectedPb != null && remainingPb != null)
-                        {
-                            collectedPb.Value = 0;
-                            remainingPb.Value = 0;
-                            if (collectedPercent != null) collectedPercent.Text = "0%";
-                            if (remainingPercent != null) remainingPercent.Text = "0%";
-                        }
-                    }
-                    catch { }
+                    if (collectedCanvas != null && collectedLegend != null)
+                        RenderCurrencyDonut(collectedCanvas, collectedLegend, totalsByCurrency.Select(total => (total.Currency, total.Collected)), currencyColors, FormatCurrencyAmount);
+                    if (remainingCanvas != null && remainingLegend != null)
+                        RenderCurrencyDonut(remainingCanvas, remainingLegend, totalsByCurrency.Select(total => (total.Currency, total.Remaining)), currencyColors, FormatCurrencyAmount);
                 }
             }
             catch
             {
                 try
                 {
-                    var collectedTb = this.FindName("TotalCollectedText") as TextBlock;
-                    var remainingTb = this.FindName("TotalRemainingText") as TextBlock;
-                    var collectedPb = this.FindName("CollectedProgressBar") as ProgressBar;
-                    var remainingPb = this.FindName("RemainingProgressBar") as ProgressBar;
-                    var collectedPercent = this.FindName("CollectedPercentageText") as TextBlock;
-                    var remainingPercent = this.FindName("RemainingPercentageText") as TextBlock;
-
-                    if (collectedTb != null) collectedTb.Text = "-";
-                    if (remainingTb != null) remainingTb.Text = "-";
-                    if (collectedPb != null) collectedPb.Value = 0;
-                    if (remainingPb != null) remainingPb.Value = 0;
-                    if (collectedPercent != null) collectedPercent.Text = "0%";
-                    if (remainingPercent != null) remainingPercent.Text = "0%";
+                    var collectedCanvas = this.FindName("CollectedDonutCanvas") as Canvas;
+                    var collectedLegend = this.FindName("CollectedLegendPanel") as StackPanel;
+                    var remainingCanvas = this.FindName("RemainingDonutCanvas") as Canvas;
+                    var remainingLegend = this.FindName("RemainingLegendPanel") as StackPanel;
+                    if (collectedCanvas != null && collectedLegend != null)
+                        RenderCurrencyDonut(collectedCanvas, collectedLegend, Array.Empty<(string Currency, decimal Amount)>(), new Dictionary<string, Brush>(), FormatCurrencyAmount);
+                    if (remainingCanvas != null && remainingLegend != null)
+                        RenderCurrencyDonut(remainingCanvas, remainingLegend, Array.Empty<(string Currency, decimal Amount)>(), new Dictionary<string, Brush>(), FormatCurrencyAmount);
                 }
                 catch { }
+            }
+        }
+
+        private static string FormatCurrencyAmount(decimal amount, string currency)
+        {
+            if (string.IsNullOrWhiteSpace(currency))
+                return amount.ToString("N0");
+            var normalizedCurrency = currency.Trim().ToUpperInvariant();
+            if (normalizedCurrency == "TRY" || normalizedCurrency == "TL" || normalizedCurrency == "₺")
+                return $"₺{amount:N0}";
+            if (normalizedCurrency == "USD" || normalizedCurrency == "$")
+                return $"${amount:N0}";
+            if (normalizedCurrency == "EUR" || normalizedCurrency == "€")
+                return $"€{amount:N0}";
+            return $"{amount:N0} {currency}";
+        }
+
+        private void RenderCurrencyDonut(
+            Canvas canvas,
+            StackPanel legendPanel,
+            IEnumerable<(string Currency, decimal Amount)> currencyAmounts,
+            IReadOnlyDictionary<string, Brush> currencyColors,
+            Func<decimal, string, string> formatAmount)
+        {
+            canvas.Children.Clear();
+            legendPanel.Children.Clear();
+
+            var amounts = currencyAmounts.ToList();
+            var positiveAmounts = amounts
+                .Where(item => item.Amount > 0)
+                .Select(item => (item.Currency, item.Amount, ChartValue: ConvertToUsd(item.Amount, item.Currency)))
+                .ToList();
+            if (positiveAmounts.Any(item => item.ChartValue <= 0))
+            {
+                positiveAmounts = positiveAmounts
+                    .Select(item => (item.Currency, item.Amount, ChartValue: item.Amount))
+                    .ToList();
+            }
+            const double center = 36;
+            const double outerRadius = 34;
+            const double innerRadius = 23;
+
+            if (positiveAmounts.Count == 0)
+            {
+                canvas.Children.Add(new Ellipse
+                {
+                    Width = outerRadius * 2,
+                    Height = outerRadius * 2,
+                    Margin = new Thickness(center - outerRadius),
+                    Stroke = new SolidColorBrush(Color.FromRgb(51, 65, 85)),
+                    StrokeThickness = outerRadius - innerRadius,
+                    Fill = Brushes.Transparent
+                });
+            }
+            else if (positiveAmounts.Count == 1)
+            {
+                var item = positiveAmounts[0];
+                canvas.Children.Add(new Ellipse
+                {
+                    Width = outerRadius * 2,
+                    Height = outerRadius * 2,
+                    Margin = new Thickness(center - outerRadius),
+                    Stroke = currencyColors[item.Currency],
+                    StrokeThickness = outerRadius - innerRadius,
+                    Fill = Brushes.Transparent
+                });
+            }
+            else
+            {
+                var totalAmount = positiveAmounts.Sum(item => item.ChartValue);
+                double startAngle = -90;
+
+                foreach (var item in positiveAmounts)
+                {
+                    double sweepAngle = (double)(item.ChartValue / totalAmount) * 360;
+                    double endAngle = startAngle + sweepAngle;
+                    Point OuterPoint(double angle) => new(
+                        center + outerRadius * Math.Cos(angle * Math.PI / 180),
+                        center + outerRadius * Math.Sin(angle * Math.PI / 180));
+                    Point InnerPoint(double angle) => new(
+                        center + innerRadius * Math.Cos(angle * Math.PI / 180),
+                        center + innerRadius * Math.Sin(angle * Math.PI / 180));
+
+                    var figure = new PathFigure { StartPoint = OuterPoint(startAngle), IsClosed = true };
+                    figure.Segments.Add(new ArcSegment
+                    {
+                        Point = OuterPoint(endAngle),
+                        Size = new Size(outerRadius, outerRadius),
+                        IsLargeArc = sweepAngle > 180,
+                        SweepDirection = SweepDirection.Clockwise
+                    });
+                    figure.Segments.Add(new LineSegment { Point = InnerPoint(endAngle) });
+                    figure.Segments.Add(new ArcSegment
+                    {
+                        Point = InnerPoint(startAngle),
+                        Size = new Size(innerRadius, innerRadius),
+                        IsLargeArc = sweepAngle > 180,
+                        SweepDirection = SweepDirection.Counterclockwise
+                    });
+
+                    canvas.Children.Add(new System.Windows.Shapes.Path
+                    {
+                        Data = new PathGeometry(new[] { figure }),
+                        Fill = currencyColors[item.Currency],
+                        Stroke = new SolidColorBrush(Color.FromRgb(11, 18, 32)),
+                        StrokeThickness = 1
+                    });
+                    startAngle = endAngle;
+                }
+            }
+
+            foreach (var item in amounts)
+            {
+                currencyColors.TryGetValue(item.Currency, out var color);
+                var row = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Height = 14,
+                    ToolTip = $"{item.Currency} {formatAmount(item.Amount, item.Currency)}"
+                };
+                row.Children.Add(new Ellipse
+                {
+                    Width = 7,
+                    Height = 7,
+                    Fill = color ?? new SolidColorBrush(Color.FromRgb(51, 65, 85)),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 5, 0)
+                });
+                row.Children.Add(new TextBlock
+                {
+                    Text = $"{item.Currency} {formatAmount(item.Amount, item.Currency)}",
+                    Foreground = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
+                    FontSize = 10,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    MaxWidth = 160
+                });
+                legendPanel.Children.Add(row);
+            }
+
+            if (amounts.Count == 0)
+            {
+                legendPanel.Children.Add(new TextBlock
+                {
+                    Text = "Veri yok",
+                    Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)),
+                    FontSize = 10,
+                    VerticalAlignment = VerticalAlignment.Center
+                });
             }
         }
 
@@ -1362,6 +1468,67 @@ namespace TurizmOperasyonSistemi.Views
             {
                 // ignore
             }
+        }
+
+        private (string Tour, string Period, string GroupType, string Days)? GetSelectedTourScope(string selected)
+        {
+            if (string.IsNullOrWhiteSpace(selected) || selected == "Tümü") return null;
+            var parts = selected.Split(new[] { " + " }, StringSplitOptions.None);
+            if (parts.Length >= 4)
+            {
+                return (
+                    parts[0]?.Trim() ?? string.Empty,
+                    parts[1]?.Trim() ?? string.Empty,
+                    parts[2]?.Trim() ?? string.Empty,
+                    parts[3]?.Replace(" gün", "").Trim() ?? string.Empty);
+            }
+            if (_tourKeyMap.TryGetValue(selected, out var key)) return key;
+            return null;
+        }
+
+        private void ShowDashboardList_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is Button button) || !(button.Tag is string filterName) ||
+                    !Enum.TryParse(filterName, out PersonsGeneralView.DashboardListFilter filter))
+                    return;
+
+                var mode = filter switch
+                {
+                    PersonsGeneralView.DashboardListFilter.TicketTransfer => PersonsGeneralView.ViewMode.Aktarma,
+                    PersonsGeneralView.DashboardListFilter.TicketWillGet or
+                    PersonsGeneralView.DashboardListFilter.TicketSelfGet or
+                    PersonsGeneralView.DashboardListFilter.TicketArrived or
+                    PersonsGeneralView.DashboardListFilter.TicketNotArrived or
+                    PersonsGeneralView.DashboardListFilter.TicketInProgress => PersonsGeneralView.ViewMode.Bilet,
+                    PersonsGeneralView.DashboardListFilter.CargoWillSend or
+                    PersonsGeneralView.DashboardListFilter.CargoSent or
+                    PersonsGeneralView.DashboardListFilter.CargoNoSend or
+                    PersonsGeneralView.DashboardListFilter.CargoPickupWill or
+                    PersonsGeneralView.DashboardListFilter.CargoPicked => PersonsGeneralView.ViewMode.Genel,
+                    _ => PersonsGeneralView.ViewMode.Vize
+                };
+
+                var personsView = new PersonsGeneralView
+                {
+                    OpenedFromListsTurKayitlari = true
+                };
+                if (filterName.StartsWith("Cargo", StringComparison.Ordinal))
+                {
+                    personsView.CargoListCardMode = true;
+                    personsView.CargoOnlyMode = true;
+                }
+                personsView.ConfigureMode(mode);
+                var selectedTour = ActiveToursCombo.SelectedItem as string;
+                personsView.ConfigureDashboardList(filter, GetSelectedTourScope(selectedTour), selectedTour ?? "Tümü");
+
+                if (Application.Current?.MainWindow is MainWindow mainWindow)
+                    mainWindow.NavigateToDashboardList(personsView);
+                else
+                    NavigationService?.Navigate(personsView);
+            }
+            catch { }
         }
 
         private void UpdateRoomAllocationSummaryForSelectedTour(string selected)

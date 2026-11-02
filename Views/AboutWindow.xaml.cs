@@ -13,6 +13,7 @@ namespace TurizmOperasyonSistemi.Views
             InitializeComponent();
 
             BtnClose.Click += (s, e) => { Close(); };
+            BtnGetLatest.Click += BtnGetLatest_Click;
 
             try
             {
@@ -65,23 +66,56 @@ namespace TurizmOperasyonSistemi.Views
 
         private void UpdateStatus()
         {
+            var state = VelopackUpdateService.CurrentState;
+            switch (state)
+            {
+                case UpdateState.UpToDate:
+                    SetUpdateStatus("Program Güncel", "✓", System.Windows.Media.Brushes.LightGreen, false);
+                    break;
+                case UpdateState.Checking:
+                    SetUpdateStatus("GitHub Releases üzerinden kontrol ediliyor", "↻", System.Windows.Media.Brushes.DeepSkyBlue, false);
+                    break;
+                case UpdateState.Applying:
+                    SetUpdateStatus("Güncelleme uygulanıyor...", "↻", System.Windows.Media.Brushes.DeepSkyBlue, false);
+                    break;
+                case UpdateState.Disabled:
+                    SetUpdateStatus("Güncelleme kapalı", "", System.Windows.Media.Brushes.LightGray, false);
+                    break;
+                case UpdateState.NotChecked:
+                case UpdateState.UpdateAvailable:
+                case UpdateState.Deferred:
+                case UpdateState.Failed:
+                default:
+                    SetUpdateStatus("Program güncel değil", "!", System.Windows.Media.Brushes.Salmon, true);
+                    break;
+            }
+        }
+
+        private void SetUpdateStatus(string text, string icon, System.Windows.Media.Brush color, bool showGetLatest)
+        {
+            TxtUpdateStatus.Text = text;
+            TxtUpdateStatus.Foreground = color;
+            UpdateStatusIcon.Text = icon;
+            UpdateStatusIcon.Foreground = color;
+            BtnGetLatest.Visibility = showGetLatest ? Visibility.Visible : Visibility.Collapsed;
+            BtnGetLatest.IsEnabled = showGetLatest;
+        }
+
+        private async void BtnGetLatest_Click(object sender, RoutedEventArgs e)
+        {
             try
             {
-                var cfg = Services.ConfigurationProvider.Instance;
-                if (!cfg.IsVelopackUpdatesEnabled() || string.IsNullOrWhiteSpace(cfg.GetVelopackRepositoryUrl()))
-                {
-                    TxtUpdateStatus.Text = "Güncelleme kapalı";
-                    UpdateStatusIcon.Text = "";
-                    return;
-                }
-
-                TxtUpdateStatus.Text = "GitHub Releases üzerinden başlangıçta kontrol ediliyor";
-                UpdateStatusIcon.Text = "↻";
-                UpdateStatusIcon.Foreground = System.Windows.Media.Brushes.DeepSkyBlue;
+                var updateTask = new VelopackUpdateService().CheckAndApplyAsync(forceCheck: true);
+                UpdateStatus();
+                await updateTask;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"UpdateStatus failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Manual update check failed: {ex.Message}");
+            }
+            finally
+            {
+                UpdateStatus();
             }
         }
     }

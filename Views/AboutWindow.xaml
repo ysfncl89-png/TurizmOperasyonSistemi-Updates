@@ -1,7 +1,7 @@
 ﻿<Window x:Class="TurizmOperasyonSistemi.Views.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Hakkında" Height="235" Width="500" WindowStyle="None" ResizeMode="NoResize" Background="Transparent" AllowsTransparency="True">
+        Title="Hakkında" Height="235" Width="620" WindowStyle="None" ResizeMode="NoResize" Background="Transparent" AllowsTransparency="True">
     <Border Background="#FF4A7B8B" CornerRadius="12" Padding="16" BorderThickness="1" BorderBrush="#22324A">
         <Grid>
             <Grid.RowDefinitions>
@@ -32,8 +32,9 @@
                     <TextBlock x:Name="TxtUpdateStatus" Foreground="#FFFFFF" FontSize="13" VerticalAlignment="Center" />
                 </StackPanel>
 
-                <!-- Close button on the right -->
+                <!-- Update and close buttons on the right -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnGetLatest" Content="Son güncellemeyi al" MinWidth="145" Margin="0,0,8,0" Background="#16A34A" Foreground="White" BorderThickness="0" Visibility="Collapsed" />
                     <Button x:Name="BtnClose" Content="Kapat" MinWidth="90" Margin="0,0,0,0" />
                 </StackPanel>
             </Grid>

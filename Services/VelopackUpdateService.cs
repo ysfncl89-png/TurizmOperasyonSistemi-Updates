@@ -7,9 +7,22 @@ using System.Threading.Tasks;
 using System.Windows;
 using Velopack;
 using Velopack.Sources;
+using TurizmOperasyonSistemi.Views;
 
 namespace TurizmOperasyonSistemi.Services
 {
+    public enum UpdateState
+    {
+        NotChecked,
+        Checking,
+        UpToDate,
+        UpdateAvailable,
+        Deferred,
+        Applying,
+        Failed,
+        Disabled
+    }
+
     /// <summary>
     /// Checks and applies application updates from a public GitHub Releases repository.
     /// Database and LocalAppData update manifests are deliberately outside this flow.
@@ -17,30 +30,59 @@ namespace TurizmOperasyonSistemi.Services
     public sealed class VelopackUpdateService
     {
         private readonly ConfigurationProvider _configuration = ConfigurationProvider.Instance;
+        public static UpdateState CurrentState { get; private set; } = UpdateState.NotChecked;
 
-        public async Task<bool> CheckAndApplyAsync(CancellationToken cancellationToken = default)
+        public async Task<bool> CheckAndApplyAsync(CancellationToken cancellationToken = default, bool forceCheck = false)
         {
 #if DEBUG
+            SetState(UpdateState.Disabled);
             return false;
 #else
-            if (!_configuration.IsVelopackUpdatesEnabled())
+            SetState(UpdateState.Checking);
+            string repositoryUrl;
+            try
+            {
+                if (!_configuration.IsVelopackUpdatesEnabled())
+                {
+                    SetState(UpdateState.Disabled);
+                    return false;
+                }
+                repositoryUrl = _configuration.GetVelopackRepositoryUrl();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Velopack configuration could not be read: {ex.Message}");
+                SetState(UpdateState.Failed);
                 return false;
+            }
 
-            var repositoryUrl = _configuration.GetVelopackRepositoryUrl();
             if (!Uri.TryCreate(repositoryUrl, UriKind.Absolute, out var repositoryUri)
                 || repositoryUri.Scheme != Uri.UriSchemeHttps
                 || !IsGitHubRepository(repositoryUri))
             {
+                SetState(UpdateState.Failed);
                 return false;
             }
 
-            if (ShouldSkipCheck())
+            try
+            {
+                if (!forceCheck && ShouldSkipCheck())
+                {
+                    SetState(UpdateState.NotChecked);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Velopack check schedule could not be read: {ex.Message}");
+                SetState(UpdateState.Failed);
+                ClearCheckTime();
                 return false;
-
-            cancellationToken.ThrowIfCancellationRequested();
+            }
 
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var source = new GithubSource(
                     repositoryUri.AbsoluteUri.TrimEnd('/'),
                     accessToken: null,
@@ -50,23 +92,32 @@ namespace TurizmOperasyonSistemi.Services
                 SaveCheckTime();
 
                 if (release is null)
+                {
+                    SetState(UpdateState.UpToDate);
                     return false;
+                }
 
+                SetState(UpdateState.UpdateAvailable);
                 var version = release.TargetFullRelease.Version.ToString();
                 var notes = release.TargetFullRelease.NotesMarkdown;
                 var message = string.IsNullOrWhiteSpace(notes)
                     ? $"TOS Lite için yeni bir sürüm bulundu: {version}. Güncelleme indirilsin ve uygulama yeniden başlatılsın mı?"
                     : $"TOS Lite için yeni bir sürüm bulundu: {version}.\n\n{notes}\n\nGüncelleme indirilsin ve uygulama yeniden başlatılsın mı?";
 
-                var answer = MessageBox.Show(
+                var answer = NeonMessageBoxWindow.Show(
                     message,
                     "TOS Lite güncellemesi",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information);
-                if (answer != MessageBoxResult.Yes)
+                    showCancel: true,
+                    primaryButtonText: "Evet",
+                    secondaryButtonText: "Daha sonra");
+                if (answer != true)
+                {
+                    SetState(UpdateState.Deferred);
                     return false;
+                }
 
                 cancellationToken.ThrowIfCancellationRequested();
+                SetState(UpdateState.Applying);
                 await manager.DownloadUpdatesAsync(release).ConfigureAwait(true);
                 manager.ApplyUpdatesAndRestart(release);
                 return true;
@@ -74,12 +125,14 @@ namespace TurizmOperasyonSistemi.Services
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
             {
                 Debug.WriteLine($"Velopack update check skipped: {ex.Message}");
+                SetState(UpdateState.Failed);
                 ClearCheckTime();
                 return false;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Velopack update failed: {ex.Message}");
+                SetState(UpdateState.Failed);
                 ClearCheckTime();
                 MessageBox.Show(
                     $"Güncelleme uygulanamadı. Mevcut sürümle devam edilecek.\n\n{ex.Message}",
@@ -89,6 +142,11 @@ namespace TurizmOperasyonSistemi.Services
                 return false;
             }
 #endif
+        }
+
+        private static void SetState(UpdateState state)
+        {
+            CurrentState = state;
         }
 
         private bool ShouldSkipCheck()

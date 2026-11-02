@@ -43,6 +43,19 @@
                 <Setter Property="HorizontalAlignment" Value="Right" />
             </Style>
 
+            <Style x:Key="DashboardShowButtonStyle" TargetType="Button">
+                <Setter Property="Content" Value="Göster" />
+                <Setter Property="MinWidth" Value="48" />
+                <Setter Property="Padding" Value="5,2" />
+                <Setter Property="Margin" Value="8,0,0,0" />
+                <Setter Property="FontSize" Value="10" />
+                <Setter Property="Foreground" Value="#C4B5FD" />
+                <Setter Property="Background" Value="#111B2E" />
+                <Setter Property="BorderBrush" Value="#8B5CF6" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Cursor" Value="Hand" />
+            </Style>
+
             <!-- Card header style: subtle top band to separate header from content -->
             <Style x:Key="CardHeaderStyle" TargetType="Border">
                 <Setter Property="Background" Value="#071426" />
@@ -107,51 +120,28 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Sağ: Toplam tahsilat / kalan -->
-                <Border Grid.Column="2" x:Name="TotalsPanel" Background="#0B1220" CornerRadius="6" Padding="12" Margin="18,0,0,0" VerticalAlignment="Top" Width="520" Height="134">
-                    <StackPanel Orientation="Vertical">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <Grid Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center">
-                                <Ellipse Stroke="#F59E0B" StrokeThickness="0">
-                                    <Ellipse.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#F6C85F" Offset="0" />
-                                            <GradientStop Color="#F59E0B" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Ellipse.Fill>
-                                </Ellipse>
-                                <TextBlock Text="$" Foreground="#0B6623" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
-                            </Grid>
-                            <TextBlock Text="Toplam Tahsilat:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
-                            <TextBlock x:Name="TotalCollectedText" Text="USD -" Foreground="#7EE787" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
+                <!-- Sağ: Para birimi bazında tahsilat ve kalan donut grafikleri -->
+                <Border Grid.Column="2" x:Name="TotalsPanel" Background="#1E293B" CornerRadius="6" Padding="10" Margin="18,0,0,0" VerticalAlignment="Top" Width="520" Height="134">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="Toplam Tahsilat" Foreground="#7EE787" FontSize="12" FontWeight="Bold" Margin="0,0,0,4" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Canvas x:Name="CollectedDonutCanvas" Width="72" Height="72" Margin="0,0,8,0" />
+                                <StackPanel x:Name="CollectedLegendPanel" VerticalAlignment="Center" />
+                            </StackPanel>
                         </StackPanel>
-                        <!-- Tahsilat Progress Bar -->
-                        <StackPanel Orientation="Vertical" Margin="28,4,0,0">
-                            <Border Height="18" Background="#1A1F3A" CornerRadius="6" Margin="0,0,0,2" Padding="0" ClipToBounds="True">
-                                <Grid>
-                                    <ProgressBar x:Name="CollectedProgressBar" Value="0" Maximum="100" Height="18" Background="Transparent" Foreground="#7EE787" BorderThickness="0" />
-                                    <TextBlock x:Name="CollectedPercentageText" Text="0%" Foreground="#E6EEF8" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Text="Toplam Kalan" Foreground="#FCA5A5" FontSize="12" FontWeight="Bold" Margin="0,0,0,4" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Canvas x:Name="RemainingDonutCanvas" Width="72" Height="72" Margin="0,0,8,0" />
+                                <StackPanel x:Name="RemainingLegendPanel" VerticalAlignment="Center" />
+                            </StackPanel>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0">
-                            <Grid Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center">
-                                <Ellipse Fill="#FCA5A5" Stroke="#F97316" StrokeThickness="0" />
-                                <TextBlock Text="$" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
-                            </Grid>
-                            <TextBlock Text="Toplam Kalan:" Foreground="#CBD5E1" FontSize="12" VerticalAlignment="Center" />
-                            <TextBlock x:Name="TotalRemainingText" Text="USD -" Foreground="#FCA5A5" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <!-- Kalan Progress Bar -->
-                        <StackPanel Orientation="Vertical" Margin="28,4,0,0">
-                            <Border Height="18" Background="#1A1F3A" CornerRadius="6" Margin="0,0,0,2" Padding="0" ClipToBounds="True">
-                                <Grid>
-                                    <ProgressBar x:Name="RemainingProgressBar" Value="0" Maximum="100" Height="18" Background="Transparent" Foreground="#FCA5A5" BorderThickness="0" />
-                                    <TextBlock x:Name="RemainingPercentageText" Text="0%" Foreground="#E6EEF8" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
 
@@ -279,10 +269,12 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Vize Alacağız" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="VisaWillGetText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="VisaWillGet" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -290,10 +282,12 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Vizeyi Kendisi Alacak" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="VisaSelfGetText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="VisaSelfGet" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -301,10 +295,12 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Vize Çıktı" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="VisaIssuedText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="VisaIssued" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -312,10 +308,12 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Vize Çıkmadı" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="VisaNotIssuedText" Text="0" Foreground="#FCA5A5" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="VisaNotIssued" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -323,10 +321,12 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Vizesi Alınıyor" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="VisaInProgressText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="VisaInProgress" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -334,10 +334,12 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Pasaport Bekleniyor" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="PassportPendingText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="PassportPending" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -345,10 +347,12 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Pasaport Geldi (Evet)" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="PassportArrivedYesText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="PassportArrivedYes" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -356,10 +360,12 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Pasaport Geldi (Hayır)" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="PassportArrivedNoText" Text="0" Foreground="#FCA5A5" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="PassportArrivedNo" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
                             </StackPanel>
@@ -398,9 +404,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Biletini Alacağız" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="TicketWillGetText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="TicketWillGet" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -409,9 +417,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Bileti Kendisi Alacak" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="TicketSelfGetText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="TicketSelfGet" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -420,9 +430,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Bileti Geldi" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="TicketArrivedText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="TicketArrived" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -431,9 +443,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Bileti Gelmedi" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="TicketNotArrivedText" Text="0" Foreground="#FCA5A5" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="TicketNotArrived" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -442,9 +456,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Bileti Alınıyor" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="TicketInProgressText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="TicketInProgress" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -453,9 +469,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Bağlantı uçuşu olan kişi" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="TicketTransferCountText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="TicketTransfer" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -494,9 +512,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Kargo Gönderilecek" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="CargoWillSendText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="CargoWillSend" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -505,9 +525,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Kargo Gönderildi" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="CargoSentText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="CargoSent" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -516,9 +538,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Kargo Almayacak" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="CargoNoSendText" Text="0" Foreground="#FCA5A5" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="CargoNoSend" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -527,9 +551,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Elden Teslim Alacak" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="CargoPickupWillText" Text="0" Foreground="#F59E0B" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="CargoPickupWill" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
 
@@ -538,9 +564,11 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
                                             <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Elden Teslim Aldı" Foreground="#CBD5E1" Style="{StaticResource DashboardCardRowText}" />
                                         <TextBlock x:Name="CargoPickedText" Text="0" Foreground="#7EE787" Style="{StaticResource DashboardCardRowNumber}" Grid.Column="1" />
+                                    <Button Tag="CargoPicked" Style="{StaticResource DashboardShowButtonStyle}" Click="ShowDashboardList_Click" Grid.Column="2" />
                                     </Grid>
                                 </Border>
                             </StackPanel>
