@@ -1,26 +1,29 @@
 ﻿# Sürümleme Rehberi
 
-Bu projede tek sürüm kaynağı `Properties/AssemblyInfo.cs` dosyasındaki sürüm değeridir.
+TOS Lite sürümleri `TurizmOperasyonSistemi.csproj` içindeki `<Version>` alanından alınır. GitHub Actions bu değeri doğrular ve Velopack paket sürümü olarak kullanır.
 
 ## Kullanılacak format
-- Her yerde aynı formatı kullan: `1.0.0.2`
-- GitHub Release etiketi: `v1.0.0.2`
-- `latest.json` içindeki `version`: `1.0.0.2`
-- `latest.json` içindeki `minimumClientVersion`: `1.0.0.2`
 
-## Hızlı kural
-- Visual Studio’da sürümü artıracaksan önce `Properties/AssemblyInfo.cs` dosyasını değiştir.
-- Sonra aynı sayıyı GitHub Release tag olarak kullan.
-- Son olarak `latest.json` içindeki `version` alanını aynı değerle güncelle.
+- Proje sürümü: `1.0.0.10`
+- GitHub Release etiketi: `v1.0.0.10`
+- Velopack paket sürümü: `1.0.0.10`
 
-## Örnek
-- Uygulama sürümü: `1.0.0.2`
-- Release tag: `v1.0.0.2`
-- Sonraki sürüm: `1.0.0.2`
-- Sonraki release tag: `v1.0.0.2`
+Tag ile proje sürümü aynı olmalıdır. Workflow, eşleşmiyorsa release yayınlamayı durdurur.
 
-## Not
-- 3 parçalı (`1.0.0`) ve 4 parçalı (`1.0.0.2`) formatı karıştırma.
-- Bu proje için tek format: **4 parçalı**.
+## Yeni sürüm yayınlama
+
+1. `TurizmOperasyonSistemi.csproj` içindeki `<Version>` değerini artırın.
+2. GitHub Actions variable `UPDATE_REPOSITORY` değerinin public updates deposunu gösterdiğini doğrulayın.
+3. `UPDATE_REPO_TOKEN` secret'ının release yazma yetkisi olduğunu doğrulayın.
+4. İsteğe bağlı olarak workflow'u `workflow_dispatch` ile çalıştırıp artifact paketini kontrol edin.
+5. Proje sürümüyle aynı `vMAJOR.MINOR.PATCH` tag'ini gönderin.
+6. Workflow .NET 8 self-contained `win-x64` publish çıktısını Velopack ile paketler ve GitHub Releases'e yükler.
+
+## İlk kurulum ve sonraki güncellemeler
+
+İlk kurulum Velopack `Setup.exe` ile yapılır. Kurulu kullanıcılar yeni tag yayınlandığında uygulama başlangıcında GitHub Releases'i kontrol eder ve kullanıcı onayından sonra Velopack ile yeniden başlatılarak güncellenir.
+
+
+
 
 

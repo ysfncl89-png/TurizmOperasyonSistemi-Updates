@@ -1,28 +1,34 @@
-Manual update procedure for TurizmOperasyonSistemi
+# TOS Lite Velopack Güncelleme Akışı
 
-Goal: Provide a simple, safe manual update flow so users can download a zip and update the program without risking database corruption.
+TOS Lite güncellemeleri yalnızca Velopack ve GitHub Releases üzerinden dağıtılır. INNO Setup, zip üzerine elle kopyalama ve `latest.json` manifesti kullanılmaz.
 
-1) Prepare release (developer)
-- Publish the application via Visual Studio (Release) or dotnet publish.
-- Zip the publish folder contents (do NOT include the user's turizm.db). Name the zip like TurizmOperasyonSistemi-publish-1.0.0.3.zip.
-- Include a short README.txt in the zip containing the version number and install steps.
-- Upload the zip to GitHub Releases (or share via secure file share).
+## İlk kurulum
 
-2) Distribute to users
-- Give the user the ZIP and the README (or link to the GitHub Release).
+1. GitHub Releases içindeki Velopack tarafından üretilen `Setup.exe` dosyasını indirin.
+2. `Setup.exe` dosyasını çalıştırın.
+3. Uygulama dosyaları Velopack tarafından yönetilen kurulum dizinine yüklenir.
+4. Kullanıcı veritabanı `%LOCALAPPDATA%\TurizmOperasyonSistemi\turizm.db` altında tutulur; kurulum paketi bu dosyayı içermez.
 
-3) User manual install steps (very short)
-- Close the application on the machine.
-- Backup database: copy %LOCALAPPDATA%\TurizmOperasyonSistemi\turizm.db to a safe location (e.g., Desktop).
-- Extract the ZIP into the application installation folder (e.g., C:\Program Files\TurizmOperasyonSistemi). When prompted, overwrite files.
-- Do NOT overwrite any existing turizm.db unless instructed.
-- Start the application. If migration is required and the published exe runs migrations at startup, it will apply them automatically.
-- Verify About -> Kurulu Uygulama Sürümü shows the new version.
+## Otomatik güncelleme
 
-4) Rollback plan
-- If something goes wrong, close the app and restore the turizm.db from the backup.
+1. Uygulama başlangıçta `Updates:RepositoryUrl` adresindeki GitHub Releases deposunu kontrol eder.
+2. Yeni bir release bulunursa sürüm notlarıyla birlikte kullanıcı onayı istenir.
+3. Onaydan sonra Velopack güncellemeyi indirir ve `ApplyUpdatesAndRestart` ile uygulamayı yeniden başlatır.
+4. GitHub'a erişilemiyorsa uygulama mevcut sürümle normal şekilde açılır.
+5. Kontrol sıklığı `Updates:CheckIntervalMinutes` ile belirlenir; önsürüm kullanımı `Updates:AllowPrerelease` ile açılır.
 
-5) Notes for developers
-- Keep containsMigrations flag in latest.json up-to-date when publishing releases used with automatic update in the future.
-- Keep Data\appsettings.json defaults (Update:Enabled=false) to prevent accidental auto-updates.
+## Yayınlama öncesi kontrol
+
+- `TurizmOperasyonSistemi.csproj` içindeki `<Version>` değerini üç parçalı sürüm olarak artırın; örnek: `1.0.0.10` → `1.0.0.11`.
+- GitHub Actions variable `UPDATE_REPOSITORY` değerini `owner/repository` biçiminde ayarlayın.
+- GitHub Actions secret `UPDATE_REPO_TOKEN` değerini yalnızca gerekli release yazma yetkileriyle ekleyin.
+- Önce Actions ekranından **workflow_dispatch** ile kuru paketleme çalıştırmasını doğrulayın.
+- Daha sonra `v1.0.0.11` gibi proje sürümüyle aynı bir tag gönderin.
+
+## Veritabanı güvenliği
+
+- Güncelleme paketi kullanıcı veritabanını içermez.
+- Uygulama başlangıç migration'larını mevcut akışla çalıştırır.
+- LocalAppData manifesti basit JSON biçiminde kalır: `MachineId`, `Version`, `LastModified`, `Hash`.
+- Sorun halinde uygulamayı kapatıp LocalAppData veritabanı yedeğini geri yükleyin.
 

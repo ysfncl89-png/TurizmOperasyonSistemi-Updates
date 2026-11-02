@@ -462,53 +462,6 @@ namespace TurizmOperasyonSistemi
             catch { }
         }
 
-        private UpdateInfo TryExtractUpdateInfo(object payload)
-        {
-            try
-            {
-                if (payload == null) return null;
-                if (payload is UpdateInfo ui) return ui;
-
-                if (payload is Models.Notification dbn)
-                {
-                    if (!string.IsNullOrEmpty(dbn.PayloadJson))
-                    {
-                        try
-                        {
-                            var info = JsonSerializer.Deserialize<UpdateInfo>(dbn.PayloadJson);
-                            return info;
-                        }
-                        catch { }
-                    }
-                    return null;
-                }
-
-                // anonymous object case: try to read properties
-                var t = payload.GetType();
-                var verProp = t.GetProperty("Info") ?? t.GetProperty("info");
-                if (verProp != null)
-                {
-                    var inner = verProp.GetValue(payload);
-                    if (inner is UpdateInfo u2) return u2;
-                    if (inner != null)
-                    {
-                        try { return JsonSerializer.Deserialize<UpdateInfo>(JsonSerializer.Serialize(inner)); } catch { }
-                    }
-                }
-
-                // try direct mapping
-                try
-                {
-                    var ser = JsonSerializer.Serialize(payload);
-                    return JsonSerializer.Deserialize<UpdateInfo>(ser);
-                }
-                catch { }
-
-                return null;
-            }
-            catch { return null; }
-        }
-
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -518,6 +471,23 @@ namespace TurizmOperasyonSistemi
             {
                 var config = Services.ConfigurationProvider.Instance;
                 config.LogConfiguration();
+
+                // Velopack is the sole application update path. It is intentionally checked
+                // before database startup so a successful update can restart the old process
+                // without opening the main window. Network failures are non-blocking.
+                try
+                {
+                    var updateApplied = await new VelopackUpdateService().CheckAndApplyAsync().ConfigureAwait(true);
+                    if (updateApplied)
+                    {
+                        Shutdown();
+                        return;
+                    }
+                }
+                catch (Exception updateEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Velopack startup check failed: {updateEx.Message}");
+                }
 
                 // Note: OneDrive <-> LocalAppData automatic sync has been disabled.
                 // Initial sync / cloud sync responsibilities are removed; local backups remain.
@@ -698,203 +668,9 @@ namespace TurizmOperasyonSistemi
 
                     // Sync background service removed (OneDrive sync disabled)
 
-                    // Register Update background service so the app can notify the user when a new release is available.
-                    // AutoDownload is disabled in config so user will see a prompt (Şimdi indir / Daha sonra).
-                    try
-                    {
-                        _backgroundServiceManager.RegisterService(new UpdateBackgroundService());
-                    }
-                    catch { }
-
                     await _backgroundServiceManager.StartAllAsync().ConfigureAwait(false);
-                    // Subscribe to update notifications for minimal UI interactions
-                    try
-                    {
-                        NotificationCenter.Subscribe((key, payload) =>
-                        {
-                            try
-                            {
-                        // Ignore any update-related notifications when manual-update mode is enabled.
-                        // This prevents stale/previously persisted update notifications from popping
-                        // up and triggering downloads after we disabled automatic updates.
-                        try
-                        {
-                            var cfgLocal = Services.ConfigurationProvider.Instance;
-                            if (!cfgLocal.IsUpdateEnabled())
-                            {
-                                if (key != null && key.StartsWith("update."))
-                                {
-                                    return;
-                                }
-                            }
-                        }
-                        catch { }
-
-                        if (key.StartsWith("update."))
-                        {
-                                    // Extract possible flags from payload to determine if update should be blocked
-                                    bool migrationRequired = false;
-                                    bool packageContainsMigration = false;
-
-                                    try
-                                    {
-                                        if (payload is Models.Notification dbn && !string.IsNullOrEmpty(dbn.PayloadJson))
-                                        {
-                                            using var doc = JsonDocument.Parse(dbn.PayloadJson);
-                                            var root = doc.RootElement;
-                                            if (root.TryGetProperty("MigrationRequired", out var mr) && mr.ValueKind == JsonValueKind.True) migrationRequired = true;
-                                            if (root.TryGetProperty("PackageContainsMigration", out var pcm) && pcm.ValueKind == JsonValueKind.True) packageContainsMigration = true;
-                                        }
-                                        else
-                                        {
-                                            var t = payload.GetType();
-                                            var mrProp = t.GetProperty("MigrationRequired") ?? t.GetProperty("migrationRequired");
-                                            var pcmProp = t.GetProperty("PackageContainsMigration") ?? t.GetProperty("packageContainsMigration");
-                                            if (mrProp != null)
-                                            {
-                                                var v = mrProp.GetValue(payload);
-                                                if (v is bool b && b) migrationRequired = true;
-                                            }
-                                            if (pcmProp != null)
-                                            {
-                                                var v2 = pcmProp.GetValue(payload);
-                                                if (v2 is bool b2 && b2) packageContainsMigration = true;
-                                            }
-                                        }
-                                    }
-                                    catch { }
-
-                                    var info = TryExtractUpdateInfo(payload);
-                                    if (info == null) return;
-
-                                    // If migration required and package does NOT contain migrations, block the app update and notify user
-                                    if (migrationRequired && !packageContainsMigration)
-                                    {
-                                        Application.Current?.Dispatcher.Invoke(() =>
-                                        {
-                                            MessageBox.Show("Veritabanı güncellemesi tamamlanmadan uygulama güncellemesi başlatılmadı. Önce migration sorununu çözün, sonra uygulamayı yeniden açın.", "Güncelleme Beklemede", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                        });
-                                        return;
-                                    }
-
-                                    // If auto-download disabled, ask user
-                                    if (!Services.ConfigurationProvider.Instance.IsAutoDownloadEnabled())
-                                    {
-                                        Application.Current?.Dispatcher.Invoke(async () =>
-                                        {
-                                            try
-                                            {
-                                                var msg = key == "update.migration.required"
-                                                    ? $"Veritabanı güncellemesi bulundu.\n\nSürüm: {info.Version}\nHedef DB versiyonu: {info.MinimumDatabaseVersion?.ToString() ?? "N/A"}\n\nNotlar: {info.ReleaseNotes}\n\nİndirilsin mi?"
-                                                    : key == "update.both.required"
-                                                        ? $"Uygulama ve veritabanı güncellemesi bulundu.\n\nSürüm: {info.Version}\nHedef DB versiyonu: {info.MinimumDatabaseVersion?.ToString() ?? "N/A"}\n\nNotlar: {info.ReleaseNotes}\n\nİndirilsin mi?"
-                                                        : $"Yeni sürüm {info.Version} bulundu.\n\nNotlar: {info.ReleaseNotes}\n\nİndirilsin mi?";
-                                                var res = MessageBox.Show(msg, "Güncelleme Bulundu", MessageBoxButton.YesNo, MessageBoxImage.Information);
-                                                if (res == MessageBoxResult.Yes)
-                                                {
-                                                    var downloader = new UpdateDownloadService();
-                                                    var dl = await downloader.DownloadAsync(info).ConfigureAwait(false);
-                                                    if (dl != null && dl.Success)
-                                                    {
-                                                        NotificationCenter.Publish("update.downloaded", new { Info = info, Path = dl.FilePath }, persistToDb: true);
-                                                        // Prompt to install
-                                                        var installRes = MessageBox.Show("İndirme tamamlandı. Şimdi kurulumu başlatmak ister misiniz?", "Güncelleme İndirildi", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                                                        if (installRes == MessageBoxResult.Yes)
-                                                        {
-                                                            var installer = new UpdateInstallerService();
-                                                            var started = await installer.LaunchInstallerAsync(dl.FilePath).ConfigureAwait(false);
-                                                            if (started)
-                                                            {
-                                                                try { Application.Current.Shutdown(); } catch { }
-                                                            }
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        MessageBox.Show($"Güncelleme indirilemedi: {dl?.ErrorMessage}", "İndirme Hatası", MessageBoxButton.OK, MessageBoxImage.Error);
-                                                    }
-                                                }
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                System.Diagnostics.Debug.WriteLine($"Update UI handler error: {ex.Message}");
-                                            }
-                                        });
-                                    }
-                                    else
-                                    {
-                                        // AutoDownload enabled: optionally notify user that download will proceed in background
-                                        Application.Current?.Dispatcher.Invoke(() =>
-                                        {
-                                            try
-                                            {
-                                                MessageBox.Show(key == "update.migration.required"
-                                                    ? "Veritabanı güncellemesi bulundu. İndiriliyor arka planda."
-                                                    : key == "update.both.required"
-                                                        ? "Uygulama ve veritabanı güncellemesi bulundu. İndiriliyor arka planda."
-                                                        : $"Yeni sürüm {info.Version} bulundu. İndiriliyor arka planda.", "Güncelleme", MessageBoxButton.OK, MessageBoxImage.Information);
-                                            }
-                                            catch { }
-                                        });
-                                    }
-                                }
-                                else if (key == "update.downloaded")
-                                {
-                                    // payload may be anonymous object or Notification model
-                                    string path = null;
-                                    try
-                                    {
-                                        if (payload is Models.Notification dbn)
-                                        {
-                                            if (!string.IsNullOrEmpty(dbn.PayloadJson))
-                                            {
-                                                using var doc = JsonDocument.Parse(dbn.PayloadJson);
-                                                var root = doc.RootElement;
-                                                if (root.TryGetProperty("Path", out var p)) path = p.GetString();
-                                                else if (root.TryGetProperty("FilePath", out var fp)) path = fp.GetString();
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // anonymous object with Path property
-                                            var pt = payload?.GetType().GetProperty("Path");
-                                            if (pt != null) path = pt.GetValue(payload)?.ToString();
-                                        }
-                                    }
-                                    catch { }
-
-                                    if (!string.IsNullOrEmpty(path))
-                                    {
-                                        Application.Current?.Dispatcher.Invoke(async () =>
-                                        {
-                                            try
-                                            {
-                                                var ask = MessageBox.Show("Güncelleme indirildi. Şimdi kurulumu başlatmak ister misiniz?", "Güncelleme Hazır", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                                                if (ask == MessageBoxResult.Yes)
-                                                {
-                                                    var installer = new UpdateInstallerService();
-                                                    var started = await installer.LaunchInstallerAsync(path).ConfigureAwait(false);
-                                                    if (started)
-                                                    {
-                                                        try { Application.Current.Shutdown(); } catch { }
-                                                    }
-                                                }
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                System.Diagnostics.Debug.WriteLine($"Update downloaded UI error: {ex.Message}");
-                                            }
-                                        });
-                                    }
-                                }
-                            }
-                            catch { }
-                        });
-                    }
-                    catch (Exception subEx)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Failed to subscribe to notifications: {subEx.Message}");
-                    }
+                    // Velopack performs the only application update check during startup.
+                    // The former manifest/zip/INNO Setup notification path is intentionally not registered.
                 }
                 catch (Exception bgEx)
                 {

@@ -423,11 +423,12 @@ namespace TurizmOperasyonSistemi.Services
                     RetryDelayMs = 1000,
                     AllowRollback = true
                 },
-                Update = new
+                Updates = new
                 {
                     Enabled = true,
-                    ManifestUrl = "",
-                    CheckIntervalSeconds = 86400
+                    RepositoryUrl = "",
+                    CheckIntervalMinutes = 60,
+                    AllowPrerelease = false
                 },
                 Logging = new
                 {
@@ -443,54 +444,24 @@ namespace TurizmOperasyonSistemi.Services
             return System.Text.Json.JsonDocument.Parse(json).RootElement;
         }
 
-        /// <summary>
-        /// Update mekanizmasının aktif olup olmadığını döndürür
-        /// </summary>
-        public bool IsUpdateEnabled()
+        public bool IsVelopackUpdatesEnabled()
         {
-            return GetBool("Update:Enabled", true);
+            return GetBool("Updates:Enabled", true);
         }
 
-        /// <summary>
-        /// Update manifest (latest.json) URL'si
-        /// </summary>
-        public string GetUpdateManifestUrl()
+        public string GetVelopackRepositoryUrl()
         {
-            return GetString("Update:ManifestUrl", string.Empty);
+            return GetString("Updates:RepositoryUrl", string.Empty);
         }
 
-        /// <summary>
-        /// Update kontrol sıklığı (saniye)
-        /// </summary>
-        public int GetUpdateCheckIntervalSeconds()
+        public int GetVelopackCheckIntervalMinutes()
         {
-            return GetInt("Update:CheckIntervalSeconds", 86400);
+            return Math.Clamp(GetInt("Updates:CheckIntervalMinutes", 60), 15, 1440);
         }
 
-        // Additional update-related configuration
-        public string GetUpdateChannel()
+        public bool AllowVelopackPrerelease()
         {
-            return GetString("Update:Channel", "stable");
-        }
-
-        public bool IsAutoDownloadEnabled()
-        {
-            return GetBool("Update:AutoDownload", true);
-        }
-
-        public bool IsAutoInstallEnabled()
-        {
-            return GetBool("Update:AutoInstall", false);
-        }
-
-        public int GetUpdateRetryCount()
-        {
-            return GetInt("Update:RetryCount", 3);
-        }
-
-        public int GetUpdateCheckIntervalHours()
-        {
-            return GetInt("Update:CheckIntervalHours", 24);
+            return GetBool("Updates:AllowPrerelease", false);
         }
 
         /// <summary>

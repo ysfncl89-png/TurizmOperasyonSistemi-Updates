@@ -57,6 +57,12 @@
 
   <ItemGroup>
     <None Include=".github\copilot-instructions.md" />
+    <None Include=".github\upgrades\scenarios\nuget-package-upgrade\plan.md" />
+    <None Include=".github\upgrades\scenarios\nuget-package-upgrade\scenario-instructions.md" />
+    <None Include=".github\upgrades\scenarios\nuget-package-upgrade\tasks\01-velopack-client\progress-details.md" />
+    <None Include=".github\upgrades\scenarios\nuget-package-upgrade\tasks\02-github-release-pipeline\progress-details.md" />
+    <None Include=".github\upgrades\scenarios\nuget-package-upgrade\tasks\03-validation-documentation\progress-details.md" />
+    <None Include=".github\workflows\release.yml" />
     <None Include="tools\IntegrationTester\IntegrationTester.csproj" />
     <None Include="tools\SmokeTester\SmokeTester.csproj" />
     <None Include="tools\Updater\Updater.csproj" />
@@ -81,7 +87,7 @@
     <PackageReference Include="QRCoder" Version="1.7.4" />
     <PackageReference Include="QuestPDF" Version="2026.7.0" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
-    <PackageReference Include="QuestPDF" Version="2026.7.0" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
   <ItemGroup>
