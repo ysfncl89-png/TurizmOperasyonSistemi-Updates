@@ -17,9 +17,9 @@
     <ApplicationManifest>App.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Icons\TurizmOperasyonSistemi.ico</ApplicationIcon>
     <!-- Publish/version metadata -->
-    <Version>1.0.17</Version>
-    <FileVersion>1.0.17.0</FileVersion>
-    <InformationalVersion>1.0.17</InformationalVersion>
+    <Version>1.0.18</Version>
+    <FileVersion>1.0.18.0</FileVersion>
+    <InformationalVersion>1.0.18</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

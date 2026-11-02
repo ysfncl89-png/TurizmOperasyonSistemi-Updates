@@ -696,7 +696,19 @@ namespace TurizmOperasyonSistemi
                     System.Diagnostics.Debug.WriteLine($"Failed to start background services: {bgEx.Message}");
                 }
 
-                new Views.LoginWindow().Show();
+                CurrentUser.Instance.SetUser(new User
+                {
+                    Id = -1,
+                    Username = "System",
+                    PasswordHash = string.Empty,
+                    Role = "admin",
+                    PermissionsJson = "[\"all\"]",
+                    CreatedAt = DateTime.Now
+                });
+
+                var mainWindow = new MainWindow();
+                MainWindow = mainWindow;
+                mainWindow.Show();
             }
             catch (Exception ex)
             {

@@ -59,9 +59,6 @@ namespace TurizmOperasyonSistemi
                 CurrentUser.Instance.HasPermission(PermissionKeys.ListsView)) 
                 ? Visibility.Visible : Visibility.Collapsed;
 
-            // Kullanıcı yönetimi: sadece admin görebilir
-            UserManagementButton.Visibility = (CurrentUser.Instance.IsAdmin || CurrentUser.Instance.HasPermission(PermissionKeys.UserManagement)) ? Visibility.Visible : Visibility.Collapsed;
-
             MainFrame.Navigate(new HomeView());
             // Update About button visibility based on initial content
             UpdateAboutButtonVisibility();
@@ -133,8 +130,6 @@ namespace TurizmOperasyonSistemi
             // Yeni eklediğimiz kayıt butonunun rengini de burada sıfırlıyoruz
             RegistrationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
 
-            // Kullanıcı Yönetimi butonunun rengini de sıfırlıyoruz
-            UserManagementButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
         }
 
         private void HomeButton_Click(object sender, RoutedEventArgs e)
@@ -267,21 +262,6 @@ namespace TurizmOperasyonSistemi
 
             // Kargo sayfasına git
             MainFrame.Navigate(new Views.CargoView());
-        }
-
-        private void UserManagementButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Kontrol: kullanıcı yönetimine erişim izni var mı? (sadece admin)
-            if (!CurrentUser.Instance.IsAdmin)
-            {
-                System.Windows.MessageBox.Show("Bu modüle erişim izniniz yok.", "Erişim Reddedildi", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-                return;
-            }
-
-            ResetMenuColors();
-            UserManagementButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8B5CF6"));
-            MainFrame.Navigate(new Views.UserManagementView());
         }
 
         private void AboutButton_Click(object sender, RoutedEventArgs e)
