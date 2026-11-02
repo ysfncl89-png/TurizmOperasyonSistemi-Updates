@@ -557,21 +557,8 @@ namespace TurizmOperasyonSistemi.Services
                             }
                             else
                             {
-                                var srcInfo = new FileInfo(currentDb);
-                                var dstInfo = new FileInfo(targetDbPath);
-                                if (srcInfo.LastWriteTimeUtc > dstInfo.LastWriteTimeUtc)
-                                {
-                                    // Önce mevcut local dosyayı arşivle
-                                    string stamped = Path.GetFileNameWithoutExtension(targetDbPath) + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(targetDbPath);
-                                    var archived = Path.Combine(Path.GetDirectoryName(targetDbPath) ?? string.Empty, stamped);
-                                    File.Move(targetDbPath, archived);
-                                    File.Copy(currentDb, targetDbPath);
-                                    System.Diagnostics.Debug.WriteLine($"Local DB güncellendi: kaynak daha yeni, arşivlendi -> {archived}");
-                                }
-                                else
-                                {
-                                    System.Diagnostics.Debug.WriteLine("Local DB zaten daha yeni veya aynı; kopyalama atlandı.");
-                                }
+                                System.Diagnostics.Debug.WriteLine(
+                                    $"Local DB zaten mevcut; farklı kaynaktan otomatik üzerine yazma atlandı. Kaynak korunuyor: {currentDb}");
                             }
                         }
                     }

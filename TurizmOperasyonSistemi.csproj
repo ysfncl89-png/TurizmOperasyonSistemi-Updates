@@ -20,9 +20,9 @@
     <ApplicationManifest>App.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Icons\TurizmOperasyonSistemi.ico</ApplicationIcon>
     <!-- Publish/version metadata -->
-    <Version>1.0.10</Version>
-    <FileVersion>1.0.10.0</FileVersion>
-    <InformationalVersion>1.0.10</InformationalVersion>
+    <Version>1.0.11</Version>
+    <FileVersion>1.0.11.0</FileVersion>
+    <InformationalVersion>1.0.11</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

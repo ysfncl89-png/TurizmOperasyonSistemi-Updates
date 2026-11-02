@@ -489,8 +489,7 @@ namespace TurizmOperasyonSistemi
                     System.Diagnostics.Debug.WriteLine($"Velopack startup check failed: {updateEx.Message}");
                 }
 
-                // Note: OneDrive <-> LocalAppData automatic sync has been disabled.
-                // Initial sync / cloud sync responsibilities are removed; local backups remain.
+                // Database synchronization is disabled; the local database remains authoritative.
 
                 string dbPath = config.GetDatabasePath();
                 // Ensure database file and simple Manifest.json exist on first run
@@ -501,16 +500,6 @@ namespace TurizmOperasyonSistemi
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"EnsureLocalDatabaseAndManifest error: {ex.Message}");
-                }
-
-                // If OneDrive contains a newer DB, replace local DB before proceeding
-                try
-                {
-                    await SyncLocalFromOneDriveIfRemoteIsNewer(config, dbPath, config.GetDefaultBaseDir()).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Sync from OneDrive failed: {ex.Message}");
                 }
 
                 System.Diagnostics.Debug.WriteLine("\n╔══════════════════════════════════════════════════════╗");
@@ -557,6 +546,13 @@ namespace TurizmOperasyonSistemi
                         System.Diagnostics.Debug.WriteLine("\n⚠ UYARI: Migration işlemi sırasında hata oluştu.");
                         System.Diagnostics.Debug.WriteLine("⚠ Bazı özellikler doğru çalışmayabilir.");
                         System.Diagnostics.Debug.WriteLine($"⚠ Lütfen log dosyalarını inceleyiniz: {config.GetLogDirectory()}");
+                        MessageBox.Show(
+                            "Veritabanı güncellemesi tamamlanamadı. Veri güvenliği için uygulama açılmadı. Veritabanı ve yedek dosyalarını silmeyin.",
+                            "Veritabanı güncelleme hatası",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                        Shutdown(1);
+                        return;
                     }
 
                     // 3. Tüm custom tablolar için ensure metodlarını çalıştır
@@ -576,6 +572,13 @@ namespace TurizmOperasyonSistemi
                     try
                     {
                         var seeds = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>();
+
+                        var loginSetting = context.AppSettings.FirstOrDefault(x => x.Type == "EnableUserLogin");
+                        if (loginSetting == null)
+                        {
+                            context.AppSettings.Add(new AppSetting { Type = "EnableUserLogin", Value = "false", SortOrder = 0, IsActive = true });
+                            context.SaveChanges();
+                        }
 
                         seeds["Cinsiyet"] = new System.Collections.Generic.List<string> { "Erkek", "Kadın" };
                         seeds["Yaş Aralığı"] = new System.Collections.Generic.List<string> { "Bebek", "Çocuk", "Yetişkin" };
@@ -676,6 +679,8 @@ namespace TurizmOperasyonSistemi
                 {
                     System.Diagnostics.Debug.WriteLine($"Failed to start background services: {bgEx.Message}");
                 }
+
+                new Views.LoginWindow().Show();
             }
             catch (Exception ex)
             {
