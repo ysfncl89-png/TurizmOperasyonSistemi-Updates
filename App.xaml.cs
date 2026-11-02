@@ -290,6 +290,22 @@ namespace TurizmOperasyonSistemi
                 Directory.CreateDirectory(dbDir);
 
                 bool created = false;
+                if (!File.Exists(dbPath) || new FileInfo(dbPath).Length == 0)
+                {
+                    try
+                    {
+                        var recovery = new BackupManager(dbPath).RestoreFromLastBackup();
+                        if (recovery.IsSuccess)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Recovered database from backup before creating a new database: {recovery.RestoredFromBackup}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Database backup recovery skipped: {ex.Message}");
+                    }
+                }
+
                 if (!File.Exists(dbPath))
                 {
                     // Create an empty SQLite database by opening a connection
