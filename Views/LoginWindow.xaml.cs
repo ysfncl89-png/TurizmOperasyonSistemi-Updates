@@ -15,7 +15,13 @@ namespace TurizmOperasyonSistemi.Views
         {
             InitializeComponent();
             _authService = new AuthenticationService(new AppDbContext());
-            InitializeLogin();
+            Loaded += LoginWindow_Loaded;
+        }
+
+        private async void LoginWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= LoginWindow_Loaded;
+            await InitializeLoginAsync();
         }
 
         private void ForgotPasswordLink_Click(object sender, RoutedEventArgs e)
@@ -47,7 +53,7 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
-        private async void InitializeLogin()
+        private async Task InitializeLoginAsync()
         {
             try
             {
@@ -63,9 +69,7 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         // Otomatik sistem kullanıcıyı admin olarak ayarla ki menüler görünsün
                         CurrentUser.Instance.SetUser(new Models.User { Id = -1, Username = "System", PasswordHash = "", Role = "admin", PermissionsJson = "[\"all\"]", CreatedAt = DateTime.Now });
-                        MainWindow mainWindow = new MainWindow();
-                        mainWindow.Show();
-                        this.Close();
+                        OpenMainWindow();
                         return;
                     }
 
@@ -97,6 +101,14 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        private void OpenMainWindow()
+        {
+            var mainWindow = new MainWindow();
+            Application.Current.MainWindow = mainWindow;
+            mainWindow.Show();
+            Close();
+        }
+
         private async void LoginButton_Click(object sender, RoutedEventArgs e)
         {
             string username = UsernameTextBox.Text;
@@ -116,9 +128,7 @@ namespace TurizmOperasyonSistemi.Views
                 {
                     // Giriş başarılı - MainWindow'u aç
                     CurrentUser.Instance.SetUser(user);
-                    MainWindow mainWindow = new MainWindow();
-                    mainWindow.Show();
-                    this.Close();
+                    OpenMainWindow();
                 }
                 else
                 {
@@ -156,9 +166,7 @@ namespace TurizmOperasyonSistemi.Views
 
                 // Kullanıcı oluşturulmadan sistem admin olarak oturum açılıyor (geçici System user)
                 CurrentUser.Instance.SetUser(new Models.User { Id = -1, Username = "System", PasswordHash = "", Role = "admin", PermissionsJson = "[\"all\"]", CreatedAt = DateTime.Now });
-                MainWindow mainWindow = new MainWindow();
-                mainWindow.Show();
-                this.Close();
+                OpenMainWindow();
                 return;
             }
 
@@ -204,9 +212,7 @@ namespace TurizmOperasyonSistemi.Views
 
                         // İlk kullanıcı oluşturuldu - direkt giriş yap
                         CurrentUser.Instance.SetUser(user);
-                        MainWindow mainWindow = new MainWindow();
-                        mainWindow.Show();
-                        this.Close();
+                        OpenMainWindow();
                     }
                     else
                     {
