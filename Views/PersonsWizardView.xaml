@@ -982,7 +982,8 @@
                                        FontSize="13"/>
                             <DatePicker x:Name="PassportStartPicker"
                                         Height="36"
-                                        SelectedDateFormat="Short"/>
+                                        SelectedDateFormat="Short"
+                                        SelectedDateChanged="PassportDatePicker_SelectedDateChanged"/>
 
                             <TextBlock Text="Pasaport Bitiş"
                                        Foreground="#F8FAFC"
@@ -990,7 +991,23 @@
                                        FontSize="13"/>
                             <DatePicker x:Name="PassportEndPicker"
                                         Height="36"
-                                        SelectedDateFormat="Short"/>
+                                        SelectedDateFormat="Short"
+                                        SelectedDateChanged="PassportDatePicker_SelectedDateChanged"/>
+
+                            <Border x:Name="PassportValidityBorder"
+                                    Background="#1E293B"
+                                    BorderBrush="#06B6D4"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="12,8"
+                                    Margin="0,12,0,0"
+                                    Visibility="Collapsed">
+                                <TextBlock x:Name="PassportValidityTextBlock"
+                                           Foreground="#67E8F9"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
 

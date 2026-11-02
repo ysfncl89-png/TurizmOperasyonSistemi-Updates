@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -581,6 +581,69 @@ namespace TurizmOperasyonSistemi.Views
             }
         }
 
+        private void PassportDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdatePassportValidityText();
+        }
+
+        private void UpdatePassportValidityText()
+        {
+            if (PassportValidityBorder == null || PassportValidityTextBlock == null)
+            {
+                return;
+            }
+
+            var startDate = PassportStartPicker.SelectedDate?.Date;
+            var endDate = PassportEndPicker.SelectedDate?.Date;
+
+            if (!startDate.HasValue || !endDate.HasValue)
+            {
+                PassportValidityBorder.Visibility = Visibility.Collapsed;
+                PassportValidityTextBlock.Text = string.Empty;
+                return;
+            }
+
+            PassportValidityBorder.Visibility = Visibility.Visible;
+
+            if (startDate.Value > endDate.Value)
+            {
+                PassportValidityBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(248, 113, 113));
+                PassportValidityTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(254, 202, 202));
+                PassportValidityTextBlock.Text = "Pasaport başlangıç tarihi, bitiş tarihinden sonra olamaz.";
+                return;
+            }
+
+            var today = DateTime.Today;
+            if (endDate.Value < today)
+            {
+                PassportValidityBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(248, 113, 113));
+                PassportValidityTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(254, 202, 202));
+                PassportValidityTextBlock.Text = "Pasaportun geçerlilik süresi dolmuştur.";
+                return;
+            }
+
+            var cursor = today;
+            int years = 0;
+            int months = 0;
+
+            while (cursor.AddYears(1) <= endDate.Value)
+            {
+                cursor = cursor.AddYears(1);
+                years++;
+            }
+
+            while (cursor.AddMonths(1) <= endDate.Value)
+            {
+                cursor = cursor.AddMonths(1);
+                months++;
+            }
+
+            int days = (endDate.Value - cursor).Days;
+            PassportValidityBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(6, 182, 212));
+            PassportValidityTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(103, 232, 249));
+            PassportValidityTextBlock.Text = $"Pasaport geçerlilik süresi: {years} yıl, {months} ay, {days} gün kaldı.";
+        }
+
         private void LoadPersons()
         {
             using (var db = new AppDbContext())
@@ -1088,6 +1151,7 @@ namespace TurizmOperasyonSistemi.Views
             BirthDatePicker.SelectedDate = person.BirthDate;
             PassportStartPicker.SelectedDate = person.PassportStartDate;
             PassportEndPicker.SelectedDate = person.PassportEndDate;
+            UpdatePassportValidityText();
 
             GenderComboBox.Text = string.IsNullOrWhiteSpace(person.Gender) ? "Seçiniz" : person.Gender;
             AgeRangeComboBox.Text = string.IsNullOrWhiteSpace(person.AgeRange) ? "Seçiniz" : person.AgeRange;
