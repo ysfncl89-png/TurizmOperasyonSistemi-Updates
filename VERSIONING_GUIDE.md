@@ -4,9 +4,10 @@ TOS Lite sürümleri `TurizmOperasyonSistemi.csproj` içindeki `<Version>` alan�
 
 ## Kullanılacak format
 
-- Proje sürümü: `1.0.0.10`
-- GitHub Release etiketi: `v1.0.0.10`
-- Velopack paket sürümü: `1.0.0.10`
+- Proje sürümü: `1.0.10`
+- GitHub Release etiketi: `v1.0.10`
+- Velopack paket sürümü: `1.0.10`
+- .NET assembly/file version: `1.0.10.0`
 
 Tag ile proje sürümü aynı olmalıdır. Workflow, eşleşmiyorsa release yayınlamayı durdurur.
 
@@ -16,7 +17,7 @@ Tag ile proje sürümü aynı olmalıdır. Workflow, eşleşmiyorsa release yay�
 2. GitHub Actions variable `UPDATE_REPOSITORY` değerinin public updates deposunu gösterdiğini doğrulayın.
 3. `UPDATE_REPO_TOKEN` secret'ının release yazma yetkisi olduğunu doğrulayın.
 4. İsteğe bağlı olarak workflow'u `workflow_dispatch` ile çalıştırıp artifact paketini kontrol edin.
-5. Proje sürümüyle aynı `vMAJOR.MINOR.PATCH` tag'ini gönderin.
+5. Proje sürümüyle aynı üç parçalı `vMAJOR.MINOR.PATCH` tag'ini gönderin; örneğin `v1.0.11`.
 6. Workflow .NET 8 self-contained `win-x64` publish çıktısını Velopack ile paketler ve GitHub Releases'e yükler.
 
 ## İlk kurulum ve sonraki güncellemeler

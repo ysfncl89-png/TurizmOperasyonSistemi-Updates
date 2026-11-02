@@ -3,6 +3,7 @@
 ## General Guidelines
 - Preference: Use neon violet glow color #FF8B5CF6 for ComboBox styles in PersonsGeneralView (user corrected earlier pink to violet).
 - Kullanıcı GitHub/Velopack kurulumunu adım adım yapmak istiyor; her aşamada tek bir işlem verilecek ve sonraki adıma kullanıcı hazır olduğunda geçilecek.
+- Kullanıcı GitHub hesabı `ysfncl89-png`; yerel Git commit yazarı `Yusuf Öncel <ysfncl89@gmail.com>`. Bu commit author bilgisi push için kullanılan kimlik doğrulama hesabını kanıtlamaz. Push hata ayıklarken depoda yaklaşık 535 giden commit göründüğünden, doğrulamadan tekrar push yaptırma.
 
 ## Project-Specific Rules
 - Vize talebi combobox yalnızca Vize modunda görünmeli; diğer modlarda görünmemeli. Vize modunda comboboxtan seçim yapılırsa DataGrid Vize talebi seçimine göre filtrelenecek.

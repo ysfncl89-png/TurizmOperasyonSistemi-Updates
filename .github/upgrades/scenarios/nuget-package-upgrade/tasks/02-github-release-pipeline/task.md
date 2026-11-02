@@ -9,7 +9,7 @@ TOS Lite release parametreleri:
 - Paket kimliği: `TurizmOperasyonSistemi`
 - Ana executable: `TurizmOperasyonSistemi.exe`
 - Setup ikonu: `Assets/Icons/TurizmOperasyonSistemi.ico`
-- Mevcut proje sürümü: `1.0.0.10`; tag doğrulaması `vMAJOR.MINOR.PATCH` ile yapılacak.
+- Proje sürümü/tag biçimi: üç parçalı SemVer (`1.0.10` / `v1.0.10`).
 - Workflow yerel kullanıcı yolları kullanmayacak; release deposu `UPDATE_REPOSITORY` variable üzerinden gelecek.
 
 ## Scope Inventory

@@ -2,8 +2,8 @@ name: Build and publish TOS Lite release
 
 on:
   push:
-	tags:
-	  - "v*"
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -15,100 +15,100 @@ env:
 
 jobs:
   release:
-	runs-on: windows-latest
-	steps:
-	  - name: Check out source
-		uses: actions/checkout@v4
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
 
-	  - name: Install .NET 8 SDK
-		uses: actions/setup-dotnet@v4
-		with:
-		  dotnet-version: 8.0.x
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-	  - name: Publish and package with Velopack
-		id: build
-		shell: pwsh
-		run: |
-		  [xml]$projectFile = Get-Content -LiteralPath 'TurizmOperasyonSistemi.csproj' -Raw
-		  $projectVersion = [string]$projectFile.Project.PropertyGroup.Version
-		  if ([string]::IsNullOrWhiteSpace($projectVersion)) { throw 'TurizmOperasyonSistemi.csproj must define Version.' }
+      - name: Publish and package with Velopack
+        id: build
+        shell: pwsh
+        run: |
+          [xml]$projectFile = Get-Content -LiteralPath 'TurizmOperasyonSistemi.csproj' -Raw
+          $projectVersion = [string]$projectFile.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($projectVersion)) { throw 'TurizmOperasyonSistemi.csproj must define Version.' }
 
-		  if ($env:GITHUB_EVENT_NAME -eq 'push') {
-			$tag = $env:GITHUB_REF_NAME
-			if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+)$') { throw "Tag '$tag' must look like v1.2.3." }
-			$version = $Matches.version
-			if ($projectVersion -ne $version) { throw "Project Version '$projectVersion' must match release tag '$version'." }
-		  }
-		  else {
-			$version = $projectVersion
-			$tag = "v$version"
-		  }
+          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+            $tag = $env:GITHUB_REF_NAME
+            if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+)$') { throw "Tag '$tag' must look like v1.2.3." }
+            $version = $Matches.version
+            if ($projectVersion -ne $version) { throw "Project Version '$projectVersion' must match release tag '$version'." }
+          }
+          else {
+            $version = $projectVersion
+            $tag = "v$version"
+          }
 
-		  $repo = $env:UPDATE_REPOSITORY
-		  if ($repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
-			throw 'Set the repository Actions variable UPDATE_REPOSITORY to owner/repository for the public Velopack updates repository.'
-		  }
+          $repo = $env:UPDATE_REPOSITORY
+          if ($repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+            throw 'Set the repository Actions variable UPDATE_REPOSITORY to owner/repository for the public Velopack updates repository.'
+          }
 
-		  $releaseDir = Join-Path $env:RUNNER_TEMP 'tos-lite-release'
-		  $publishDir = Join-Path $releaseDir 'publish'
-		  $velopackDir = Join-Path $releaseDir 'velopack'
-		  New-Item -ItemType Directory -Force -Path $publishDir, $velopackDir | Out-Null
+          $releaseDir = Join-Path $env:RUNNER_TEMP 'tos-lite-release'
+          $publishDir = Join-Path $releaseDir 'publish'
+          $velopackDir = Join-Path $releaseDir 'velopack'
+          New-Item -ItemType Directory -Force -Path $publishDir, $velopackDir | Out-Null
 
-		  dotnet publish TurizmOperasyonSistemi.csproj --configuration Release --runtime win-x64 --self-contained true -p:Version=$version -p:AssemblyVersion="$version.0" -p:FileVersion="$version.0" -p:InformationalVersion=$version --output $publishDir
-		  if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
+          dotnet publish TurizmOperasyonSistemi.csproj --configuration Release --runtime win-x64 --self-contained true -p:Version=$version -p:AssemblyVersion="$version.0" -p:FileVersion="$version.0" -p:InformationalVersion=$version --output $publishDir
+          if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
 
-		  dotnet tool install --global vpk --version $env:VELOPACK_VERSION
-		  if ($LASTEXITCODE -ne 0) { throw 'Could not install the pinned Velopack CLI.' }
-		  $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
+          dotnet tool install --global vpk --version $env:VELOPACK_VERSION
+          if ($LASTEXITCODE -ne 0) { throw 'Could not install the pinned Velopack CLI.' }
+          $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
 
-		  $iconPath = Join-Path $env:GITHUB_WORKSPACE 'Assets\Icons\TurizmOperasyonSistemi.ico'
-		  if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) { throw "Installer icon not found: $iconPath" }
+          $iconPath = Join-Path $env:GITHUB_WORKSPACE 'Assets\Icons\TurizmOperasyonSistemi.ico'
+          if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) { throw "Installer icon not found: $iconPath" }
 
-		  Push-Location $velopackDir
-		  try {
-			vpk download github --repoUrl "https://github.com/$repo"
-			if ($LASTEXITCODE -ne 0) { Write-Host 'No previous Velopack release found; creating the initial release.' }
-		  }
-		  catch {
-			Write-Host 'No previous Velopack release found; creating the initial release.'
-		  }
+          Push-Location $velopackDir
+          try {
+            vpk download github --repoUrl "https://github.com/$repo"
+            if ($LASTEXITCODE -ne 0) { Write-Host 'No previous Velopack release found; creating the initial release.' }
+          }
+          catch {
+            Write-Host 'No previous Velopack release found; creating the initial release.'
+          }
 
-		  vpk pack --packId TurizmOperasyonSistemi --packTitle 'TOS Lite' --packVersion $version --packDir $publishDir --mainExe TurizmOperasyonSistemi.exe --icon $iconPath
-		  if ($LASTEXITCODE -ne 0) { throw 'Velopack package creation failed.' }
-		  Pop-Location
+          vpk pack --packId TurizmOperasyonSistemi --packTitle 'TOS Lite' --packVersion $version --packDir $publishDir --mainExe TurizmOperasyonSistemi.exe --icon $iconPath
+          if ($LASTEXITCODE -ne 0) { throw 'Velopack package creation failed.' }
+          Pop-Location
 
-		  "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-		  "TAG=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-		  "OUTPUT_DIR=$velopackDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "TAG=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "OUTPUT_DIR=$velopackDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
-	  - name: Save package check artifact
-		if: github.event_name == 'workflow_dispatch'
-		uses: actions/upload-artifact@v4
-		with:
-		  name: tos-lite-velopack-dry-run-${{ github.run_number }}
-		  path: ${{ steps.build.outputs.OUTPUT_DIR }}
-		  if-no-files-found: error
+      - name: Save package check artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tos-lite-velopack-dry-run-${{ github.run_number }}
+          path: ${{ steps.build.outputs.OUTPUT_DIR }}
+          if-no-files-found: error
 
-	  - name: Publish Velopack release to GitHub
-		if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-		shell: pwsh
-		env:
-		  UPDATE_REPO_TOKEN: ${{ secrets.UPDATE_REPO_TOKEN }}
-		  GH_TOKEN: ${{ secrets.UPDATE_REPO_TOKEN }}
-		run: |
-		  if ([string]::IsNullOrWhiteSpace($env:UPDATE_REPO_TOKEN)) { throw 'Configure the UPDATE_REPO_TOKEN Actions secret.' }
-		  $repo = $env:UPDATE_REPOSITORY
-		  $tag = '${{ steps.build.outputs.TAG }}'
-		  $outputDir = '${{ steps.build.outputs.OUTPUT_DIR }}'
+      - name: Publish Velopack release to GitHub
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          UPDATE_REPO_TOKEN: ${{ secrets.UPDATE_REPO_TOKEN }}
+          GH_TOKEN: ${{ secrets.UPDATE_REPO_TOKEN }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:UPDATE_REPO_TOKEN)) { throw 'Configure the UPDATE_REPO_TOKEN Actions secret.' }
+          $repo = $env:UPDATE_REPOSITORY
+          $tag = '${{ steps.build.outputs.TAG }}'
+          $outputDir = '${{ steps.build.outputs.OUTPUT_DIR }}'
 
-		  Push-Location $outputDir
-		  try {
-			vpk upload github --repoUrl "https://github.com/$repo" --token $env:UPDATE_REPO_TOKEN --merge --releaseName "TOS Lite ${{ steps.build.outputs.VERSION }}" --tag $tag
-			if ($LASTEXITCODE -ne 0) { throw 'Velopack release upload failed.' }
-		  }
-		  finally {
-			Pop-Location
-		  }
+          Push-Location $outputDir
+          try {
+            vpk upload github --repoUrl "https://github.com/$repo" --token $env:UPDATE_REPO_TOKEN --merge --releaseName "TOS Lite ${{ steps.build.outputs.VERSION }}" --tag $tag
+            if ($LASTEXITCODE -ne 0) { throw 'Velopack release upload failed.' }
+          }
+          finally {
+            Pop-Location
+          }
 
-		  gh release edit $tag --repo $repo --draft=false --latest
-		  if ($LASTEXITCODE -ne 0) { throw 'The Velopack assets were uploaded, but publishing the GitHub release failed.' }
+          gh release edit $tag --repo $repo --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'The Velopack assets were uploaded, but publishing the GitHub release failed.' }

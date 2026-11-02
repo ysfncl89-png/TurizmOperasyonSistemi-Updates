@@ -19,11 +19,11 @@ TOS Lite güncellemeleri yalnızca Velopack ve GitHub Releases üzerinden dağı
 
 ## Yayınlama öncesi kontrol
 
-- `TurizmOperasyonSistemi.csproj` içindeki `<Version>` değerini üç parçalı sürüm olarak artırın; örnek: `1.0.0.10` → `1.0.0.11`.
+- `TurizmOperasyonSistemi.csproj` içindeki `<Version>` değerini üç parçalı SemVer olarak artırın; örnek: `1.0.10` → `1.0.11`.
 - GitHub Actions variable `UPDATE_REPOSITORY` değerini `owner/repository` biçiminde ayarlayın.
 - GitHub Actions secret `UPDATE_REPO_TOKEN` değerini yalnızca gerekli release yazma yetkileriyle ekleyin.
 - Önce Actions ekranından **workflow_dispatch** ile kuru paketleme çalıştırmasını doğrulayın.
-- Daha sonra `v1.0.0.11` gibi proje sürümüyle aynı bir tag gönderin.
+- Daha sonra `v1.0.11` gibi proje sürümüyle aynı bir tag gönderin.
 
 ## Veritabanı güvenliği
 
