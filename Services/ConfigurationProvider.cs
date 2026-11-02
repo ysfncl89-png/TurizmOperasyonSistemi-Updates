@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Data.Sqlite;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -509,7 +511,8 @@ namespace TurizmOperasyonSistemi.Services
 
                 if (IsSamePath(currentRoot, localBase))
                 {
-                    if (File.Exists(currentDb) && new FileInfo(currentDb).Length > 0)
+                    if (File.Exists(currentDb) && new FileInfo(currentDb).Length > 0
+                        && !HasMoreUserData(Path.Combine(legacyLocalBase, databaseFileName), currentDb))
                         return;
 
                     var legacyRoots = new[] { legacyLocalBase, @"C:\TurizmDB", oneDriveBase }
@@ -694,6 +697,49 @@ namespace TurizmOperasyonSistemi.Services
                 if (File.Exists(tempPath))
                     File.Delete(tempPath);
             }
+        }
+
+        private static bool HasMoreUserData(string candidatePath, string currentPath)
+        {
+            if (!File.Exists(candidatePath) || !File.Exists(currentPath))
+                return false;
+
+            try
+            {
+                return GetUserDataRowCount(candidatePath) > GetUserDataRowCount(currentPath);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Veritabanı kayıtları karşılaştırılamadı: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static long GetUserDataRowCount(string databasePath)
+        {
+            using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+            {
+                DataSource = databasePath,
+                Mode = SqliteOpenMode.ReadOnly
+            }.ToString());
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != '__EFMigrationsHistory'";
+            using var reader = command.ExecuteReader();
+            var tables = new List<string>();
+            while (reader.Read())
+                tables.Add(reader.GetString(0));
+            reader.Close();
+
+            long totalRows = 0;
+            foreach (var table in tables)
+            {
+                command.CommandText = $"SELECT COUNT(*) FROM [{table.Replace("]", "]]", StringComparison.Ordinal)}]";
+                totalRows += Convert.ToInt64(command.ExecuteScalar());
+            }
+
+            return totalRows;
         }
 
         private void CopyDirectoryContents(string sourceDir, string targetDir)
