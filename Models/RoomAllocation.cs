@@ -23,6 +23,9 @@ namespace TurizmOperasyonSistemi.Models
         public string CheckOutDate { get; set; }
         public bool IsConnection { get; set; } // Connection oda mı?
         public string ConnectionGroupId { get; set; } // Bağlantı grubu ID'si
+        public string SyncId { get; set; } = Guid.NewGuid().ToString("N");
+        public DateTime LastModifiedUtc { get; set; }
+        public bool IsDeleted { get; set; }
 
         // Bir odada birden fazla yolcu olabilir (Bire-Çok ilişki)
         public virtual ICollection<RoomOccupant> Occupants { get; set; } = new List<RoomOccupant>();

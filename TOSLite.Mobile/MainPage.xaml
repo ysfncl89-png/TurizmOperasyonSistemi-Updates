@@ -3,43 +3,56 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="TOSLite.Mobile.MainPage">
 
-    <ScrollView BackgroundColor="#0F172A">
-        <VerticalStackLayout Padding="24,40" Spacing="18">
+    <ScrollView BackgroundColor="#F6F7FB">
+        <VerticalStackLayout Padding="22,30" Spacing="16">
             <Label Text="TOS LITE"
-                   FontSize="30"
+                   FontSize="32"
                    FontAttributes="Bold"
-                   TextColor="White" />
+                   TextColor="#24213A" />
             <Label Text="Mobil operasyon kayıtları"
                    FontSize="16"
-                   TextColor="#CBD5E1" />
+                   TextColor="#687083" />
 
-            <Border Stroke="#334155"
-                    StrokeShape="RoundRectangle 18"
-                    BackgroundColor="#172033"
-                    Padding="18"
-                    Margin="0,14,0,0">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="Kişiler"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           TextColor="White" />
-                    <Label Text="Kişi kayıtlarını çevrimdışı oluşturun ve yönetin."
-                           TextColor="#CBD5E1" />
-                    <Button Text="Kişiler Modülünü Aç"
-                            BackgroundColor="#512BD4"
-                            TextColor="White"
-                            Clicked="OnPersonsClicked" />
+            <Border Stroke="#E7E4F0" StrokeShape="RoundRectangle 20" BackgroundColor="White" Padding="18" Margin="0,12,0,0">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Kişiler" FontSize="20" FontAttributes="Bold" TextColor="#24213A" />
+                    <Label Text="Kişi kayıtlarını çevrimdışı oluşturun ve yönetin." TextColor="#687083" />
+                    <Button Text="Kişiler Modülünü Aç" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnPersonsClicked" />
                 </VerticalStackLayout>
             </Border>
 
-            <Button Text="Tur Kayıtları — Yakında"
-                    IsEnabled="False"
-                    BackgroundColor="#1E293B"
-                    TextColor="#94A3B8" />
-            <Button Text="Odalama — Yakında"
-                    IsEnabled="False"
-                    BackgroundColor="#1E293B"
-                    TextColor="#94A3B8" />
+            <Border Stroke="#E7E4F0" StrokeShape="RoundRectangle 20" BackgroundColor="White" Padding="18">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Tur Kayıtları" FontSize="20" FontAttributes="Bold" TextColor="#24213A" />
+                    <Label Text="Tur kayıtlarını çevrimdışı oluşturun ve yönetin." TextColor="#687083" />
+                    <Button Text="Tur Kayıtları Modülünü Aç" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnRegistrationsClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Stroke="#E7E4F0" StrokeShape="RoundRectangle 20" BackgroundColor="White" Padding="18">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Odalama Motoru" FontSize="20" FontAttributes="Bold" TextColor="#24213A" />
+                    <Label Text="Tur kayıtlarındaki yolcuları otel odalarına yerleştirin." TextColor="#687083" />
+                    <Button Text="Odalama Modülünü Aç" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnRoomingClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Stroke="#E7E4F0" StrokeShape="RoundRectangle 20" BackgroundColor="#EFEAFF" Padding="18">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Ayarlar" FontSize="18" FontAttributes="Bold" TextColor="#33266F" />
+                        <Label Text="Kayıt seçeneklerini yönetin." TextColor="#615B78" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1" Text="Ayarları Aç" BackgroundColor="#6D4AFF" TextColor="White" VerticalOptions="Center" Clicked="OnSettingsClicked" />
+                </Grid>
+            </Border>
+            <Border Stroke="#E7E4F0" StrokeShape="RoundRectangle 20" BackgroundColor="White" Padding="18">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Masaüstü Eşitleme" FontSize="20" FontAttributes="Bold" TextColor="#24213A" />
+                    <Label Text="Masaüstündeki QR kodu tarayın ve mobil kayıtlarınızı istediğiniz zaman aktarın." TextColor="#687083" />
+                    <Button Text="Eşitleme Modülünü Aç" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnMobileSyncClicked" />
+                </VerticalStackLayout>
+            </Border>
         </VerticalStackLayout>
     </ScrollView>
 

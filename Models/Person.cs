@@ -44,6 +44,8 @@ namespace TurizmOperasyonSistemi.Models
         // Yeni alan: Uyruk (Nationality)
         public string? Nationality { get; set; }
 
+        public DateTime LastModifiedUtc { get; set; }
+
         // (Açıklama ve Müsaitlik sütunları kaldırıldı)
     }
 }

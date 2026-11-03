@@ -75,5 +75,7 @@ namespace TurizmOperasyonSistemi.Models
         [Column("RegistrationDate")]
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
+
+        public DateTime LastModifiedUtc { get; set; }
     }
 }

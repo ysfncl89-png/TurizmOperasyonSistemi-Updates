@@ -583,6 +583,7 @@ namespace TurizmOperasyonSistemi
                     context.EnsureAciklamaColumnExists();
                     context.EnsureRegistrationPassportArrivedColumnExists();
                     context.EnsureRegistrationStatusChoiceColumnsExist();
+                    context.EnsureSyncMetadataColumnsExist();
                     context.NormalizeRegistrationNullValues();
                     // Seed default AppSettings on first run for many lookup types
                     try

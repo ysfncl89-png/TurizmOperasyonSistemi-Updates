@@ -72,6 +72,7 @@ namespace TurizmOperasyonSistemi.Data
 
         public override int SaveChanges()
         {
+            StampSyncEntities();
             var result = base.SaveChanges();
             // NOTE: Removed automatic manifest increment on every SaveChanges.
             // Manifest.DbVersion should only be incremented when the database schema/version actually changes
@@ -83,11 +84,47 @@ namespace TurizmOperasyonSistemi.Data
 
         public override System.Threading.Tasks.Task<int> SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default)
         {
+            StampSyncEntities();
             var task = base.SaveChangesAsync(cancellationToken);
             // Do not increment manifest version on every SaveChangesAsync for the same reason as above.
             // Increments are performed explicitly by migration/backup code paths when appropriate.
 
             return task;
+        }
+
+        private void StampSyncEntities()
+        {
+            var now = DateTime.UtcNow;
+            foreach (var entry in ChangeTracker.Entries<Person>().Where(x => x.State is EntityState.Added or EntityState.Modified))
+                if (entry.State == EntityState.Added && entry.Entity.LastModifiedUtc == default ||
+                    entry.State == EntityState.Modified && entry.Property(x => x.LastModifiedUtc).CurrentValue == entry.Property(x => x.LastModifiedUtc).OriginalValue)
+                    entry.Entity.LastModifiedUtc = now;
+            foreach (var entry in ChangeTracker.Entries<Registration>().Where(x => x.State is EntityState.Added or EntityState.Modified))
+                if (entry.State == EntityState.Added && entry.Entity.LastModifiedUtc == default ||
+                    entry.State == EntityState.Modified && entry.Property(x => x.LastModifiedUtc).CurrentValue == entry.Property(x => x.LastModifiedUtc).OriginalValue)
+                    entry.Entity.LastModifiedUtc = now;
+            foreach (var entry in ChangeTracker.Entries<RoomAllocation>().Where(x => x.State is EntityState.Added or EntityState.Modified))
+                if (entry.State == EntityState.Added && entry.Entity.LastModifiedUtc == default ||
+                    entry.State == EntityState.Modified && entry.Property(x => x.LastModifiedUtc).CurrentValue == entry.Property(x => x.LastModifiedUtc).OriginalValue)
+                    entry.Entity.LastModifiedUtc = now;
+        }
+
+        public void EnsureSyncMetadataColumnsExist()
+        {
+            var connection = Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open) connection.Open();
+            EnsureColumnExists(connection, "Persons", "LastModifiedUtc", "TEXT");
+            EnsureColumnExists(connection, "Registrations", "LastModifiedUtc", "TEXT");
+            EnsureColumnExists(connection, "RoomAllocations", "SyncId", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumnExists(connection, "RoomAllocations", "LastModifiedUtc", "TEXT");
+            EnsureColumnExists(connection, "RoomAllocations", "IsDeleted", "INTEGER NOT NULL DEFAULT 0");
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE Persons SET LastModifiedUtc = $baseline WHERE LastModifiedUtc IS NULL OR LastModifiedUtc = ''; UPDATE Registrations SET LastModifiedUtc = $baseline WHERE LastModifiedUtc IS NULL OR LastModifiedUtc = ''; UPDATE RoomAllocations SET LastModifiedUtc = $baseline WHERE LastModifiedUtc IS NULL OR LastModifiedUtc = ''; UPDATE RoomAllocations SET SyncId = lower(hex(randomblob(16))) WHERE SyncId IS NULL OR SyncId = '';";
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "$baseline";
+            parameter.Value = DateTime.UnixEpoch.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+            command.Parameters.Add(parameter);
+            command.ExecuteNonQuery();
         }
 
         public void EnsureRoomAllocationHistoryTableExists()

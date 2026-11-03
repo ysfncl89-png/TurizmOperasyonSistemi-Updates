@@ -6,6 +6,9 @@
 - MutfaGO projesi referans alınarak, TOS Lite için güncellemeler yalnızca GitHub Releases ve Velopack üzerinden yapılacak; mevcut INNO Setup entegrasyonu korunmayacak.
 - Kullanıcı girişini zorunlu hale getirin; hata düzeltmeleri mevcut girişsiz kullanım modunu korumalı. Kullanıcı girişi ve yerel kullanıcı yönetimi kaldırılmalı; kullanıcı Supabase altyapısına geçeceği için uygulama login olmadan açılmalı.
 - Mobil uygulamadaki Kişiler modülü, masaüstü TOS Lite Kişiler modülündeki mevcut kişi kaydetme mantığını ve işleyişini (alanlar, doğrulamalar, ilişkiler ve akış) yakından takip etmeli; masaüstü davranışından bağımsız sadeleştirme yapılmamalı.
+- Mobil eşitleme hatası, QR okutulunca değil “Şimdi Eşitle” düğmesine basıldıktan sonra çıkmaktadır; hata analizinde QR eşleştirme ile veri aktarımı aşamaları ayrılmalı ve kullanıcının belirttiği aşama esas alınmalıdır.
+- Ayarlar eşitleme davranışı: Desktop AppSettings kartlarının kayıtları mobil Ayarlar'a da aktarılmalı; mobilde eklenmiş olup masaüstünde olmayan ayarlar korunarak masaüstüne yeni ayar olarak eklenmeli. İstenen davranış iki taraflı birleştirme (union), masaüstü tek taraflı overwrite değil.
+- Kişiler modülünde silme kalıcı ve ilişkili tüm kayıtları kapsamalı; mobilde silip masaüstüyle eşitleyince masaüstünde de kişi ve ona bağlı tüm kayıtlar silinmeli, masaüstünden silip eşitleyince mobilde de aynı şekilde silinmeli. Bu kural yalnızca Kişiler modülü içindir; diğer modüllerin mevcut silme/eşitleme davranışı değiştirilmemelidir.
 
 ## Manifest Format
 - LocalAppData Manifest must be simple JSON with fields MachineId, Version, LastModified, Hash (e.g., {"MachineId":"A-PC","Version":1,"LastModified":"2026-07-05T18:22:00","Hash":"..."})

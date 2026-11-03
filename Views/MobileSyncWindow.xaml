@@ -1,0 +1,60 @@
+<Window x:Class="TurizmOperasyonSistemi.Views.MobileSyncWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Mobil Veri Eşitleme" Height="720" Width="760" MinHeight="640" MinWidth="680" WindowStartupLocation="CenterOwner" Background="#F6F7FB">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="Mobil Veri Eşitleme" FontSize="26" FontWeight="Bold" Foreground="#24213A" />
+            <TextBlock Text="Telefon ve bilgisayar aynı Wi-Fi/LAN ağına bağlı olmalıdır. Mobil uygulamada Eşitleme ekranından bu QR kodu okutun." Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#687083" />
+        </StackPanel>
+        <Grid Grid.Row="1" Margin="0,18,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Background="White" BorderBrush="#E7E4F0" BorderThickness="1" CornerRadius="16" Padding="12">
+                <Image x:Name="QrImage" Width="190" Height="190" />
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="Durum" FontWeight="Bold" Foreground="#33266F" Margin="0,0,0,4" />
+                <TextBlock x:Name="StatusText" Text="Eşleştirme bekleniyor. QR kod 10 dakika geçerlidir." TextWrapping="Wrap" Foreground="#24213A" />
+                <TextBlock Text="Adres" FontWeight="Bold" Foreground="#33266F" Margin="0,12,0,4" />
+                <TextBlock x:Name="AddressText" TextWrapping="Wrap" Foreground="#687083" />
+                <TextBlock Text="Güvenli bağlantı parmak izi" FontWeight="Bold" Foreground="#33266F" Margin="0,12,0,4" />
+                <TextBlock x:Name="FingerprintText" TextWrapping="Wrap" Foreground="#687083" FontSize="11" />
+            </StackPanel>
+        </Grid>
+        <GroupBox Grid.Row="2" Header="Son eşitleme raporu" Foreground="#33266F">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock x:Name="SummaryText" Text="Henüz eşitleme yapılmadı." Margin="0,0,0,8" Foreground="#24213A" />
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Aktarılan Kişiler" FontWeight="Bold" Foreground="#33266F" Margin="4,4,0,2" />
+                        <ListBox x:Name="ImportedPersonsList" MaxHeight="110" />
+                        <TextBlock Text="Aktarılan Tur Kayıtları" FontWeight="Bold" Foreground="#33266F" Margin="4,8,0,2" />
+                        <ListBox x:Name="ImportedRegistrationsList" MaxHeight="110" />
+                        <TextBlock Text="Aktarılan Oda Yerleşimleri" FontWeight="Bold" Foreground="#33266F" Margin="4,8,0,2" />
+                        <ListBox x:Name="ImportedRoomingList" MaxHeight="110" />
+                        <TextBlock Text="Aktarılan Ayarlar" FontWeight="Bold" Foreground="#33266F" Margin="4,8,0,2" />
+                        <ListBox x:Name="ImportedSettingsList" MaxHeight="110" />
+                        <TextBlock Text="Çakışmalar / Aktarılamayanlar" FontWeight="Bold" Foreground="#9B2C2C" Margin="4,8,0,2" />
+                        <ListBox x:Name="ConflictList" DisplayMemberPath="Description" MaxHeight="130" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </GroupBox>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Kapat" Width="100" Padding="12,8" Click="Close_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

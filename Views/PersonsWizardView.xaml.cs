@@ -244,11 +244,9 @@ namespace TurizmOperasyonSistemi.Views
             {
                 using (var db = new AppDbContext())
                 {
-                    var dbPerson = db.Persons.FirstOrDefault(x => x.Id == person.Id);
-                    if (dbPerson != null)
+                    if (db.Persons.Any(x => x.Id == person.Id))
                     {
-                        db.Persons.Remove(dbPerson);
-                        db.SaveChanges();
+                        TurizmOperasyonSistemi.Services.PersonDeletionService.DeleteAsync(db, person.Id).GetAwaiter().GetResult();
 
                         // Yayınla: kişiler modülünde bir kullanıcı veritabanından silindiğini bildir
                         try

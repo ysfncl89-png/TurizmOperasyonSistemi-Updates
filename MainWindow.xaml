@@ -271,6 +271,22 @@
                     </StackPanel>
                 </Button>
 
+                <Button x:Name="MobileSyncButton"
+                        Style="{StaticResource MenuButtonStyle}"
+                        Height="50"
+                        Margin="15,10"
+                        Background="#1F2937"
+                        Foreground="White"
+                        BorderThickness="0"
+                        FontSize="16"
+                        Click="MobileSyncButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📱" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Mobil Eşitleme" FontSize="14" VerticalAlignment="Center" Foreground="White"
+                                   Visibility="{Binding ElementName=LeftMenu, Path=ActualWidth, Converter={StaticResource WidthToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Button>
+
             </StackPanel>
 
         </Border>

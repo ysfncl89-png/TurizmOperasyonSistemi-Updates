@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Views;
+using TOSLite.Mobile.Services;
+using ZXing.Net.Maui.Controls;
 
 namespace TOSLite.Mobile
 {
@@ -11,6 +13,7 @@ namespace TOSLite.Mobile
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseBarcodeReader()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -18,7 +21,16 @@ namespace TOSLite.Mobile
                 });
 
             builder.Services.AddSingleton<PersonRepository>();
+            builder.Services.AddSingleton<RegistrationRepository>();
+            builder.Services.AddSingleton<SettingsRepository>();
+            builder.Services.AddSingleton<RoomAllocationRepository>();
+            builder.Services.AddSingleton<MobileSyncService>();
             builder.Services.AddTransient<PersonsPage>();
+            builder.Services.AddTransient<RegistrationsPage>();
+            builder.Services.AddTransient<RegistrationFormPage>();
+            builder.Services.AddTransient<SettingsPage>();
+            builder.Services.AddTransient<RoomingPage>();
+            builder.Services.AddTransient<MobileSyncPage>();
 
 #if DEBUG
     		builder.Logging.AddDebug();

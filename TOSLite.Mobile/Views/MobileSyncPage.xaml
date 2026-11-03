@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
+             x:Class="TOSLite.Mobile.Views.MobileSyncPage"
+             Title="Masaüstü Eşitleme"
+             BackgroundColor="#F6F7FB">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="14">
+            <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="#6D4AFF" Clicked="OnHomeClicked" />
+            <Label Text="Masaüstü Eşitleme" FontSize="26" FontAttributes="Bold" TextColor="#24213A" />
+            <Label x:Name="StatusLabel" Text="Bilgisayar ve telefonun aynı Wi-Fi/LAN ağına bağlı olduğundan emin olun." TextColor="#687083" />
+            <Border Stroke="#E7E4F0" StrokeShape="RoundRectangle 18" BackgroundColor="White" Padding="12">
+                <zxing:CameraBarcodeReaderView x:Name="CameraView" HeightRequest="320" BarcodesDetected="OnBarcodesDetected" IsDetecting="False" />
+            </Border>
+            <Button x:Name="ScanButton" Text="Masaüstü QR Kodunu Tara" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnScanClicked" />
+            <Button x:Name="SyncButton" Text="Şimdi Eşitle" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
+            <Border x:Name="ResultPanel" IsVisible="False" Stroke="#D8F0DF" StrokeShape="RoundRectangle 18" BackgroundColor="White" Padding="18">
+                <VerticalStackLayout Spacing="12">
+                    <Label x:Name="ResultIcon" Text="✓" FontSize="64" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#20A464" />
+                    <Label x:Name="ResultTitle" Text="Eşitleme tamamlandı" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#176B43" />
+                    <Label x:Name="ResultSummary" TextColor="#394150" />
+                    <CollectionView x:Name="ImportedItemsView" HeightRequest="220" SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="6" ColumnDefinitions="110,*">
+                                    <Label Text="{Binding RecordType}" FontAttributes="Bold" TextColor="#4932A8" />
+                                    <Label Grid.Column="1" Text="{Binding Description}" TextColor="#394150" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <Label x:Name="ConflictSummary" IsVisible="False" TextColor="#A65A00" />
+                </VerticalStackLayout>
+            </Border>
+            <Button x:Name="UnpairButton" Text="Eşleşmeyi Kaldır" BackgroundColor="#EFEAFF" TextColor="#4932A8" Clicked="OnUnpairClicked" IsVisible="False" />
+            <Label x:Name="ReportLabel" Text="Çakışmalar masaüstünde raporlanır; mevcut masaüstü kayıtları otomatik değiştirilmez." TextColor="#687083" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -21,6 +21,8 @@ public sealed class PersonRecord
     public string HealthStatus { get; set; } = string.Empty;
     public string VaccineStatus { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; }
     public string AgeRange { get; set; } = string.Empty;
     public string? Nationality { get; set; }
+    public DateTime LastModifiedUtc { get; set; }
 }

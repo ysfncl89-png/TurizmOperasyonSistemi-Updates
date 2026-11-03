@@ -14,11 +14,22 @@ public partial class PersonsPage : ContentPage
     private bool _loadingPerson;
     private bool _normalizingTc;
     private int _currentStep = 1;
+    private bool _openNewPersonOnAppear;
+    private string _initialPersonSearch = string.Empty;
+
+    public event EventHandler<PersonRecord>? PersonSaved;
+
+    public void OpenNewPersonForRegistration(string? initialSearch)
+    {
+        _openNewPersonOnAppear = true;
+        _initialPersonSearch = initialSearch?.Trim() ?? string.Empty;
+    }
 
     public PersonsPage(PersonRepository repository)
     {
         InitializeComponent();
         _repository = repository;
+        MobileTheme.Apply(this);
     }
 
     protected override async void OnAppearing()
@@ -29,6 +40,11 @@ public partial class PersonsPage : ContentPage
             await _repository.InitializeAsync();
             await LoadLookupOptionsAsync();
             await RefreshPeopleAsync();
+            if (_openNewPersonOnAppear)
+            {
+                _openNewPersonOnAppear = false;
+                OpenNewPersonWizard(_initialPersonSearch);
+            }
         }
         catch (Exception ex)
         {
@@ -59,7 +75,7 @@ public partial class PersonsPage : ContentPage
 
     private async Task RefreshPeopleAsync()
     {
-        _people = (await _repository.GetAllAsync()).ToList();
+        _people = (await _repository.GetAllAsync()).Where(person => person.IsActive && !person.IsDeleted).ToList();
         UpdateSearchResults();
     }
 
@@ -156,8 +172,17 @@ public partial class PersonsPage : ContentPage
 
     private void OnNewPersonClicked(object? sender, EventArgs e)
     {
+        OpenNewPersonWizard();
+    }
+
+    private void OpenNewPersonWizard(string? initialName = null)
+    {
         _formPerson = new PersonRecord { IsActive = true, BirthDate = DateTime.Now };
         ResetFormFields();
+        if (!string.IsNullOrWhiteSpace(initialName))
+        {
+            FirstNameEntry.Text = initialName;
+        }
         OpenWizard();
     }
 
@@ -182,8 +207,8 @@ public partial class PersonsPage : ContentPage
 
         var fullName = $"{_selectedPerson.FirstName} {_selectedPerson.LastName}".Trim();
         var confirmed = await DisplayAlertAsync(
-            "Kalıcı silme",
-            $"{fullName} adlı kişiyi cihazdaki veritabanından kalıcı olarak silmek istiyor musunuz?",
+            "Kişiyi sil",
+            $"{fullName} adlı kişiyi ve ilişkili tur/oda kayıtlarını kalıcı olarak silmek istiyor musunuz? Eşitleme sırasında masaüstünden de silinir.",
             "Sil",
             "Vazgeç");
         if (!confirmed)
@@ -197,7 +222,7 @@ public partial class PersonsPage : ContentPage
             _selectedPerson = null;
             SearchEntry.Text = string.Empty;
             await RefreshPeopleAsync();
-            await DisplayAlertAsync("Bilgi", "Kişi silindi.", "Tamam");
+            await DisplayAlertAsync("Bilgi", "Kişi silinmek üzere işaretlendi. Eşitleme sırasında masaüstündeki ilişkili kayıtlarla birlikte silinecek.", "Tamam");
         }
         catch (Exception ex)
         {
@@ -680,9 +705,14 @@ public partial class PersonsPage : ContentPage
         {
             var isNew = _formPerson.Id == 0;
             await _repository.SaveAsync(_formPerson);
+            var savedPerson = ClonePerson(_formPerson);
             await DisplayAlertAsync("Bilgi", isNew ? "Kaydedildi" : "Güncellendi", "Tamam");
             CloseWizard(clearSearch: true);
             await RefreshPeopleAsync();
+            if (isNew)
+            {
+                PersonSaved?.Invoke(this, savedPerson);
+            }
         }
         catch (Exception ex)
         {

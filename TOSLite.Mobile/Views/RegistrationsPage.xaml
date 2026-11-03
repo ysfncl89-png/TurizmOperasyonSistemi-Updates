@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TOSLite.Mobile.Views.RegistrationsPage"
+             Title="Tur Kayıtları"
+             BackgroundColor="#F6F7FB">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="18" RowSpacing="12">
+        <VerticalStackLayout Grid.Row="0" Spacing="8">
+            <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="#6D4AFF" Clicked="OnHomeClicked" />
+            <Label Text="Tur Kayıtları" FontSize="28" FontAttributes="Bold" TextColor="#24213A" />
+            <Entry x:Name="SearchEntry" Placeholder="Kişi, tur veya dönem ara" PlaceholderColor="#687083" TextColor="#24213A" BackgroundColor="White" TextChanged="OnSearchTextChanged" />
+        </VerticalStackLayout>
+        <Label x:Name="StatusLabel" Grid.Row="1" Text="Kayıtlı turlar" TextColor="#687083" FontSize="13" />
+        <CollectionView x:Name="RegistrationsCollection" Grid.Row="2" SelectionMode="Single" SelectionChanged="OnRegistrationSelected">
+            <CollectionView.EmptyView>
+                <Label Text="Henüz tur kaydı yok." TextColor="#687083" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Stroke="#E4E6EF" StrokeShape="RoundRectangle 14" BackgroundColor="White" Padding="16" Margin="0,4">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{Binding PersonName}" FontAttributes="Bold" FontSize="16" TextColor="#24213A" />
+                            <Label Text="{Binding TourType}" TextColor="#6D4AFF" />
+                            <Label Text="{Binding Period}" TextColor="#687083" />
+                            <Label Text="{Binding GroupType}" TextColor="#687083" />
+                            <Label Text="{Binding DaysCount}" TextColor="#687083" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+        <VerticalStackLayout Grid.Row="3" Spacing="8">
+            <HorizontalStackLayout x:Name="SelectedActions" IsVisible="False" Spacing="8">
+                <Button Text="Düzenle" HorizontalOptions="FillAndExpand" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnEditClicked" />
+                <Button Text="Sil" HorizontalOptions="FillAndExpand" BackgroundColor="#C53B4A" TextColor="White" Clicked="OnDeleteClicked" />
+            </HorizontalStackLayout>
+            <Button Text="Yeni Tur Kaydı Oluştur" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnNewClicked" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

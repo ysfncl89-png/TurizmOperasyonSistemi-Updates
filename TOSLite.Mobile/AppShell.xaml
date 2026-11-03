@@ -6,6 +6,15 @@
     xmlns:local="clr-namespace:TOSLite.Mobile"
     Title="TOS Lite Mobil">
 
+    <Shell.Resources>
+        <Style TargetType="Shell" ApplyToDerivedTypes="True">
+            <Setter Property="Shell.BackgroundColor" Value="White" />
+            <Setter Property="Shell.ForegroundColor" Value="#24213A" />
+            <Setter Property="Shell.TitleColor" Value="#24213A" />
+            <Setter Property="Shell.NavBarHasShadow" Value="True" />
+        </Style>
+    </Shell.Resources>
+
     <ShellContent
         Title="Ana Sayfa"
         ContentTemplate="{DataTemplate local:MainPage}"

@@ -69,8 +69,10 @@ public sealed class PersonRepository
                     HealthStatus TEXT NOT NULL,
                     VaccineStatus TEXT NOT NULL,
                     IsActive INTEGER NOT NULL,
+                    IsDeleted INTEGER NOT NULL DEFAULT 0,
                     AgeRange TEXT NOT NULL,
-                    Nationality TEXT NULL
+                    Nationality TEXT NULL,
+                    LastModifiedUtc TEXT NOT NULL DEFAULT '1970-01-01T00:00:00.0000000Z'
                 );
                 CREATE INDEX IF NOT EXISTS IX_PersonRecords_TcKimlikNo
                     ON PersonRecords (TcKimlikNo);
@@ -83,6 +85,8 @@ public sealed class PersonRepository
                 );
                 """;
             await command.ExecuteNonQueryAsync();
+            await EnsureColumnAsync(connection, "PersonRecords", "LastModifiedUtc", "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00.0000000Z'");
+            await EnsureColumnAsync(connection, "PersonRecords", "IsDeleted", "INTEGER NOT NULL DEFAULT 0");
             await SeedDefaultLookupOptionsAsync(connection);
             _databaseInitialized = true;
         }
@@ -100,7 +104,7 @@ public sealed class PersonRepository
             SELECT Id, ClientId, DesktopPersonId, FirstName, LastName, TcKimlikNo,
                    Gender, BirthDate, PhoneNumber, Address, Aciklama, PassportType,
                    PassportNumber, PassportStartDate, PassportEndDate, BloodType,
-                   HealthStatus, VaccineStatus, IsActive, AgeRange, Nationality
+                   HealthStatus, VaccineStatus, IsActive, IsDeleted, AgeRange, Nationality, LastModifiedUtc
             FROM PersonRecords
             ORDER BY Id DESC;
             """;
@@ -145,7 +149,7 @@ public sealed class PersonRepository
             SELECT Id, ClientId, DesktopPersonId, FirstName, LastName, TcKimlikNo,
                    Gender, BirthDate, PhoneNumber, Address, Aciklama, PassportType,
                    PassportNumber, PassportStartDate, PassportEndDate, BloodType,
-                   HealthStatus, VaccineStatus, IsActive, AgeRange, Nationality
+                   HealthStatus, VaccineStatus, IsActive, IsDeleted, AgeRange, Nationality, LastModifiedUtc
             FROM PersonRecords
             WHERE Id = $id;
             """;
@@ -171,7 +175,7 @@ public sealed class PersonRepository
         return Convert.ToInt32(await command.ExecuteScalarAsync(), CultureInfo.InvariantCulture) != 0;
     }
 
-    public async Task<int> SaveAsync(PersonRecord person)
+    public async Task<int> SaveAsync(PersonRecord person, bool preserveLastModifiedUtc = false)
     {
         if (string.IsNullOrWhiteSpace(person.ClientId))
         {
@@ -179,6 +183,8 @@ public sealed class PersonRepository
         }
 
         await using var connection = await OpenConnectionAsync();
+        if (!preserveLastModifiedUtc || person.LastModifiedUtc == default)
+            person.LastModifiedUtc = DateTime.UtcNow;
         await using var command = connection.CreateCommand();
 
         if (person.Id <= 0)
@@ -188,12 +194,12 @@ public sealed class PersonRepository
                     ClientId, DesktopPersonId, FirstName, LastName, TcKimlikNo, Gender,
                     BirthDate, PhoneNumber, Address, Aciklama, PassportType, PassportNumber,
                     PassportStartDate, PassportEndDate, BloodType, HealthStatus, VaccineStatus,
-                    IsActive, AgeRange, Nationality
+                    IsActive, IsDeleted, AgeRange, Nationality, LastModifiedUtc
                 ) VALUES (
                     $clientId, $desktopPersonId, $firstName, $lastName, $tcKimlikNo, $gender,
                     $birthDate, $phoneNumber, $address, $aciklama, $passportType, $passportNumber,
                     $passportStartDate, $passportEndDate, $bloodType, $healthStatus, $vaccineStatus,
-                    $isActive, $ageRange, $nationality
+                    $isActive, $isDeleted, $ageRange, $nationality, $lastModifiedUtc
                 );
                 """;
             AddPersonParameters(command, person);
@@ -225,8 +231,10 @@ public sealed class PersonRepository
                 HealthStatus = $healthStatus,
                 VaccineStatus = $vaccineStatus,
                 IsActive = $isActive,
+                IsDeleted = $isDeleted,
                 AgeRange = $ageRange,
-                Nationality = $nationality
+                Nationality = $nationality,
+                LastModifiedUtc = $lastModifiedUtc
             WHERE Id = $id;
             """;
         AddPersonParameters(command, person);
@@ -238,10 +246,43 @@ public sealed class PersonRepository
     public async Task DeleteAsync(int id)
     {
         await using var connection = await OpenConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM PersonRecords WHERE Id = $id;";
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = "UPDATE RoomAllocations SET IsDeleted = CASE WHEN (SELECT COUNT(*) FROM RoomOccupants o WHERE o.RoomAllocationId = RoomAllocations.Id AND o.PassengerId <> $id) = 0 THEN 1 ELSE 0 END, LastModifiedUtc = $lastModifiedUtc WHERE Id IN (SELECT RoomAllocationId FROM RoomOccupants WHERE PassengerId = $id); DELETE FROM RoomOccupants WHERE PassengerId = $id; DELETE FROM TourRegistrations WHERE PersonId = $id; UPDATE PersonRecords SET IsDeleted = 1, LastModifiedUtc = $lastModifiedUtc WHERE Id = $id;";
+        command.Parameters.AddWithValue("$lastModifiedUtc", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
         command.Parameters.AddWithValue("$id", id);
         await command.ExecuteNonQueryAsync();
+        await transaction.CommitAsync();
+    }
+
+    public async Task DeleteSyncedAsync(int id)
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        await using (var occupants = connection.CreateCommand())
+        {
+            occupants.Transaction = (SqliteTransaction)transaction;
+            occupants.CommandText = "UPDATE RoomAllocations SET IsDeleted = CASE WHEN (SELECT COUNT(*) FROM RoomOccupants o WHERE o.RoomAllocationId = RoomAllocations.Id AND o.PassengerId <> $id) = 0 THEN 1 ELSE 0 END, LastModifiedUtc = $modified WHERE Id IN (SELECT RoomAllocationId FROM RoomOccupants WHERE PassengerId = $id); DELETE FROM RoomOccupants WHERE PassengerId = $id;";
+            occupants.Parameters.AddWithValue("$id", id);
+            occupants.Parameters.AddWithValue("$modified", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+            await occupants.ExecuteNonQueryAsync();
+        }
+        await using (var registrations = connection.CreateCommand())
+        {
+            registrations.Transaction = (SqliteTransaction)transaction;
+            registrations.CommandText = "DELETE FROM TourRegistrations WHERE PersonId = $id;";
+            registrations.Parameters.AddWithValue("$id", id);
+            await registrations.ExecuteNonQueryAsync();
+        }
+        await using (var person = connection.CreateCommand())
+        {
+            person.Transaction = (SqliteTransaction)transaction;
+            person.CommandText = "DELETE FROM PersonRecords WHERE Id = $id;";
+            person.Parameters.AddWithValue("$id", id);
+            await person.ExecuteNonQueryAsync();
+        }
+        await transaction.CommitAsync();
     }
 
     private async Task<SqliteConnection> OpenConnectionAsync()
@@ -249,6 +290,9 @@ public sealed class PersonRepository
         await InitializeAsync();
         var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync();
+        await using var pragma = connection.CreateCommand();
+        pragma.CommandText = "PRAGMA foreign_keys = ON;";
+        await pragma.ExecuteNonQueryAsync();
         return connection;
     }
 
@@ -308,8 +352,10 @@ public sealed class PersonRepository
         command.Parameters.AddWithValue("$healthStatus", person.HealthStatus);
         command.Parameters.AddWithValue("$vaccineStatus", person.VaccineStatus);
         command.Parameters.AddWithValue("$isActive", person.IsActive ? 1 : 0);
+        command.Parameters.AddWithValue("$isDeleted", person.IsDeleted ? 1 : 0);
         command.Parameters.AddWithValue("$ageRange", person.AgeRange);
         AddNullableParameter(command, "$nationality", person.Nationality);
+        command.Parameters.AddWithValue("$lastModifiedUtc", FormatDate(person.LastModifiedUtc));
     }
 
     private static void AddNullableParameter(SqliteCommand command, string name, object? value)
@@ -349,7 +395,22 @@ public sealed class PersonRepository
         HealthStatus = ReadString(reader, 16),
         VaccineStatus = ReadString(reader, 17),
         IsActive = reader.GetInt32(18) != 0,
-        AgeRange = ReadString(reader, 19),
-        Nationality = reader.IsDBNull(20) ? null : reader.GetString(20)
+        IsDeleted = reader.GetInt32(19) != 0,
+        AgeRange = ReadString(reader, 20),
+        Nationality = reader.IsDBNull(21) ? null : reader.GetString(21),
+        LastModifiedUtc = ParseDate(reader, 22)
     };
+
+    private static async Task EnsureColumnAsync(SqliteConnection connection, string table, string column, string declaration)
+    {
+        await using var check = connection.CreateCommand();
+        check.CommandText = $"PRAGMA table_info({table});";
+        await using var reader = await check.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase)) return;
+        await reader.DisposeAsync();
+        await using var alter = connection.CreateCommand();
+        alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {declaration};";
+        await alter.ExecuteNonQueryAsync();
+    }
 }

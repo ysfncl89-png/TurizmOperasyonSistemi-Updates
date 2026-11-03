@@ -45,5 +45,7 @@
 	</dict>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Masaüstü eşleştirme QR kodunu okumak için kamera kullanılır.</string>
 </dict>
 </plist>

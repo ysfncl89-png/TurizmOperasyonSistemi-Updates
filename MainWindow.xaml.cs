@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using TurizmOperasyonSistemi.Views;
 using TurizmOperasyonSistemi.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace TurizmOperasyonSistemi
 {
@@ -15,6 +16,12 @@ namespace TurizmOperasyonSistemi
         public MainWindow()
         {
             InitializeComponent(); 
+            try
+            {
+                using var db = new Data.AppDbContext();
+                db.Database.ExecuteSqlRaw("CREATE TABLE IF NOT EXISTS MobileSyncLedger (DeviceId TEXT NOT NULL, RecordType TEXT NOT NULL, SourceId TEXT NOT NULL, DesktopId INTEGER NOT NULL, PRIMARY KEY(DeviceId, RecordType, SourceId));");
+            }
+            catch { }
 
             // Kullanıcı yönetimi ve modül butonlarını kullanıcının izinlerine göre göster
             // Show buttons if user has specific permission OR is admin (backward compatible)
@@ -123,6 +130,7 @@ namespace TurizmOperasyonSistemi
             PersonsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             ListsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             SettingsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
+            MobileSyncButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             HotelAllocationButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             PaymentsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
             CargoButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
@@ -200,6 +208,19 @@ namespace TurizmOperasyonSistemi
             ResetMenuColors();
             SettingsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EC4899"));
             MainFrame.Navigate(new SettingsView());
+        }
+
+        private void MobileSyncButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var window = new MobileSyncWindow { Owner = this };
+                window.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Mobil eşitleme başlatılamadı: {ex.Message}", "Mobil Eşitleme", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // YENİ: KAYIT MODÜLÜ BUTON TIKLAMA OLAYI
