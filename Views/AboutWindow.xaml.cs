@@ -78,15 +78,23 @@ namespace TurizmOperasyonSistemi.Views
                 case UpdateState.Applying:
                     SetUpdateStatus("Güncelleme uygulanıyor...", "↻", System.Windows.Media.Brushes.DeepSkyBlue, false);
                     break;
+                case UpdateState.NotChecked:
+                    SetUpdateStatus("Güncelleme durumu henüz kontrol edilmedi", "i", System.Windows.Media.Brushes.LightGray, true);
+                    break;
+                case UpdateState.UpdateAvailable:
+                    SetUpdateStatus("Yeni güncelleme bulundu", "!", System.Windows.Media.Brushes.Gold, true);
+                    break;
+                case UpdateState.Deferred:
+                    SetUpdateStatus("Güncelleme ertelendi", "!", System.Windows.Media.Brushes.Gold, true);
+                    break;
+                case UpdateState.Failed:
+                    SetUpdateStatus("Güncelleme kontrol edilemedi", "!", System.Windows.Media.Brushes.Salmon, true);
+                    break;
                 case UpdateState.Disabled:
                     SetUpdateStatus("Güncelleme kapalı", "", System.Windows.Media.Brushes.LightGray, false);
                     break;
-                case UpdateState.NotChecked:
-                case UpdateState.UpdateAvailable:
-                case UpdateState.Deferred:
-                case UpdateState.Failed:
                 default:
-                    SetUpdateStatus("Program güncel değil", "!", System.Windows.Media.Brushes.Salmon, true);
+                    SetUpdateStatus("Güncelleme durumu bilinmiyor", "!", System.Windows.Media.Brushes.LightGray, true);
                     break;
             }
         }
