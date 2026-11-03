@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TOSLite.Mobile.MainPage">
+
+    <ScrollView BackgroundColor="#0F172A">
+        <VerticalStackLayout Padding="24,40" Spacing="18">
+            <Label Text="TOS LITE"
+                   FontSize="30"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+            <Label Text="Mobil operasyon kayıtları"
+                   FontSize="16"
+                   TextColor="#CBD5E1" />
+
+            <Border Stroke="#334155"
+                    StrokeShape="RoundRectangle 18"
+                    BackgroundColor="#172033"
+                    Padding="18"
+                    Margin="0,14,0,0">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Kişiler"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label Text="Kişi kayıtlarını çevrimdışı oluşturun ve yönetin."
+                           TextColor="#CBD5E1" />
+                    <Button Text="Kişiler Modülünü Aç"
+                            BackgroundColor="#512BD4"
+                            TextColor="White"
+                            Clicked="OnPersonsClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Tur Kayıtları — Yakında"
+                    IsEnabled="False"
+                    BackgroundColor="#1E293B"
+                    TextColor="#94A3B8" />
+            <Button Text="Odalama — Yakında"
+                    IsEnabled="False"
+                    BackgroundColor="#1E293B"
+                    TextColor="#94A3B8" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TOSLite.Mobile.Views.PersonsPage"
+             Title="Kişiler"
+             BackgroundColor="#0F172A">
+    <ScrollView>
+        <VerticalStackLayout Padding="20,18" Spacing="16">
+            <Button Text="‹ Ana Sayfa"
+                    HorizontalOptions="Start"
+                    BackgroundColor="Transparent"
+                    TextColor="#C4B5FD"
+                    Clicked="OnHomeClicked" />
+
+            <Label Text="Kişiler"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+
+            <VerticalStackLayout x:Name="SearchPanel" Spacing="12">
+                <Label Text="Önce kişiyi arayın"
+                       FontSize="17"
+                       FontAttributes="Bold"
+                       TextColor="#E2E8F0" />
+                <Entry x:Name="SearchEntry"
+                       Placeholder="Ad, soyad veya TC kimlik no"
+                       PlaceholderColor="#94A3B8"
+                       TextColor="White"
+                       BackgroundColor="#1E293B"
+                       TextChanged="OnSearchTextChanged" />
+                <Label x:Name="SearchStatusLabel"
+                       Text="Kayıtlı kişiler"
+                       TextColor="#CBD5E1"
+                       FontSize="13" />
+                <CollectionView x:Name="PeopleCollection"
+                                SelectionMode="Single"
+                                SelectionChanged="OnPersonSelected"
+                                HeightRequest="260">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Stroke="#334155"
+                                    StrokeShape="RoundRectangle 12"
+                                    BackgroundColor="#172033"
+                                    Padding="14"
+                                    Margin="0,3">
+                                <VerticalStackLayout Spacing="3">
+                                    <Label Text="{Binding FirstName}"
+                                           FontAttributes="Bold"
+                                           FontSize="16"
+                                           TextColor="White" />
+                                    <Label Text="{Binding LastName}"
+                                           FontSize="14"
+                                           TextColor="#CBD5E1" />
+                                    <Label Text="{Binding TcKimlikNo}"
+                                           FontSize="12"
+                                           TextColor="#94A3B8" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Border x:Name="SelectedPersonActions"
+                        IsVisible="False"
+                        Stroke="#334155"
+                        StrokeShape="RoundRectangle 12"
+                        BackgroundColor="#172033"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="10">
+                        <Label x:Name="SelectedPersonLabel"
+                               TextColor="White"
+                               FontAttributes="Bold" />
+                        <HorizontalStackLayout Spacing="10">
+                            <Button Text="Düzenle"
+                                    HorizontalOptions="FillAndExpand"
+                                    BackgroundColor="#512BD4"
+                                    TextColor="White"
+                                    Clicked="OnEditClicked" />
+                            <Button Text="Kalıcı Sil"
+                                    HorizontalOptions="FillAndExpand"
+                                    BackgroundColor="#B91C1C"
+                                    TextColor="White"
+                                    Clicked="OnDeleteClicked" />
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button x:Name="NewPersonButton"
+                        Text="Aradığım kişi listede yok — Yeni Kişi Kaydı"
+                        IsVisible="False"
+                        BackgroundColor="#512BD4"
+                        TextColor="White"
+                        Clicked="OnNewPersonClicked" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout x:Name="WizardPanel"
+                                 IsVisible="False"
+                                 Spacing="14">
+                <Label x:Name="StepHeading"
+                       FontSize="19"
+                       FontAttributes="Bold"
+                       TextColor="#C4B5FD" />
+                <ProgressBar x:Name="StepProgress"
+                             Progress="0.2"
+                             ProgressColor="#8B5CF6"
+                             BackgroundColor="#334155" />
+
+                <VerticalStackLayout x:Name="Step1Layout" Spacing="10">
+                    <Label Text="1. Kimlik Bilgileri"
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label Text="Ad *" TextColor="#E2E8F0" />
+                    <Entry x:Name="FirstNameEntry" Placeholder="Ad" TextColor="White" BackgroundColor="#1E293B" />
+                    <Label Text="Soyad *" TextColor="#E2E8F0" />
+                    <Entry x:Name="LastNameEntry" Placeholder="Soyad" TextColor="White" BackgroundColor="#1E293B" />
+                    <Label Text="Uyruk *" TextColor="#E2E8F0" />
+                    <Picker x:Name="NationalityPicker"
+                            Title="Uyruk seçin"
+                            TextColor="White"
+                            BackgroundColor="#1E293B"
+                            SelectedIndexChanged="OnNationalityChanged" />
+                    <Label Text="TC Kimlik No (Türkiye uyruklular için zorunlu)" TextColor="#E2E8F0" />
+                    <Entry x:Name="TcEntry"
+                           Placeholder="11 haneli TC Kimlik No"
+                           Keyboard="Numeric"
+                           TextColor="White"
+                           BackgroundColor="#1E293B"
+                           TextChanged="OnTcTextChanged" />
+                    <Label Text="Cinsiyet *" TextColor="#E2E8F0" />
+                    <Picker x:Name="GenderPicker" Title="Seçiniz" TextColor="White" BackgroundColor="#1E293B" />
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                        <CheckBox x:Name="BirthDateEnabled"
+                                  Color="#8B5CF6"
+                                  CheckedChanged="OnBirthDateEnabledChanged" />
+                        <Label Text="Doğum tarihi gir"
+                               TextColor="#E2E8F0"
+                               VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                    <DatePicker x:Name="BirthDatePicker"
+                                IsVisible="False"
+                                TextColor="White"
+                                DateSelected="OnBirthDateSelected" />
+                    <Label x:Name="AgeLabel" TextColor="#CBD5E1" />
+                    <Label Text="Yaş Aralığı" TextColor="#E2E8F0" />
+                    <Picker x:Name="AgeRangePicker" Title="Seçiniz" TextColor="White" BackgroundColor="#1E293B" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="Step2Layout" IsVisible="False" Spacing="10">
+                    <Label Text="2. İletişim Bilgileri"
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label Text="Telefon" TextColor="#E2E8F0" />
+                    <Entry x:Name="PhoneEntry" Placeholder="Telefon" Keyboard="Telephone" TextColor="White" BackgroundColor="#1E293B" />
+                    <Label Text="Adres" TextColor="#E2E8F0" />
+                    <Editor x:Name="AddressEditor"
+                            Placeholder="Adres"
+                            AutoSize="TextChanges"
+                            MinimumHeightRequest="110"
+                            TextColor="White"
+                            BackgroundColor="#1E293B" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="Step3Layout" IsVisible="False" Spacing="10">
+                    <Label Text="3. Sağlık Bilgileri"
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label Text="Kan Grubu" TextColor="#E2E8F0" />
+                    <Picker x:Name="BloodPicker" Title="Seçiniz" TextColor="White" BackgroundColor="#1E293B" />
+                    <Label Text="Hastalık Durumu" TextColor="#E2E8F0" />
+                    <Editor x:Name="HealthEditor"
+                            Placeholder="Hastalık durumu"
+                            AutoSize="TextChanges"
+                            MinimumHeightRequest="80"
+                            TextColor="White"
+                            BackgroundColor="#1E293B" />
+                    <Label Text="Aşı Durumu" TextColor="#E2E8F0" />
+                    <Editor x:Name="VaccineEditor"
+                            Placeholder="Aşı durumu"
+                            AutoSize="TextChanges"
+                            MinimumHeightRequest="80"
+                            TextColor="White"
+                            BackgroundColor="#1E293B" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="Step4Layout" IsVisible="False" Spacing="10">
+                    <Label Text="4. Pasaport Bilgileri"
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label Text="Pasaport Türü" TextColor="#E2E8F0" />
+                    <Picker x:Name="PassportTypePicker" Title="Seçiniz" TextColor="White" BackgroundColor="#1E293B" />
+                    <Label Text="Pasaport No (Yabancı uyruklular için zorunlu)" TextColor="#E2E8F0" />
+                    <Entry x:Name="PassportNumberEntry" Placeholder="Pasaport numarası" TextColor="White" BackgroundColor="#1E293B" />
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                        <CheckBox x:Name="PassportStartEnabled"
+                                  Color="#8B5CF6"
+                                  CheckedChanged="OnPassportDateEnabledChanged" />
+                        <Label Text="Pasaport başlangıç tarihi gir"
+                               TextColor="#E2E8F0"
+                               VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                    <DatePicker x:Name="PassportStartPicker" IsVisible="False" TextColor="White" DateSelected="OnPassportDateSelected" />
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                        <CheckBox x:Name="PassportEndEnabled"
+                                  Color="#8B5CF6"
+                                  CheckedChanged="OnPassportDateEnabledChanged" />
+                        <Label Text="Pasaport bitiş tarihi gir"
+                               TextColor="#E2E8F0"
+                               VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                    <DatePicker x:Name="PassportEndPicker" IsVisible="False" TextColor="White" DateSelected="OnPassportDateSelected" />
+                    <Border x:Name="PassportValidityBorder"
+                            IsVisible="False"
+                            Stroke="#22D3EE"
+                            StrokeShape="RoundRectangle 10"
+                            BackgroundColor="#1E293B"
+                            Padding="12">
+                        <Label x:Name="PassportValidityLabel"
+                               TextColor="#67E8F9"
+                               FontAttributes="Bold" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="Step5Layout" IsVisible="False" Spacing="10">
+                    <Label Text="5. Kayıt Önizleme"
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Border Stroke="#334155"
+                            StrokeShape="RoundRectangle 12"
+                            BackgroundColor="#172033"
+                            Padding="16">
+                        <Label x:Name="PreviewLabel"
+                               TextColor="White"
+                               LineBreakMode="WordWrap" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <Label x:Name="ValidationLabel"
+                       IsVisible="False"
+                       TextColor="#FCA5A5"
+                       FontAttributes="Bold" />
+                <HorizontalStackLayout Spacing="10">
+                    <Button x:Name="BackButton"
+                            Text="Geri"
+                            IsVisible="False"
+                            HorizontalOptions="FillAndExpand"
+                            BackgroundColor="#334155"
+                            TextColor="White"
+                            Clicked="OnBackClicked" />
+                    <Button x:Name="NextButton"
+                            Text="İleri"
+                            HorizontalOptions="FillAndExpand"
+                            BackgroundColor="#512BD4"
+                            TextColor="White"
+                            Clicked="OnNextClicked" />
+                    <Button x:Name="SaveButton"
+                            Text="Kaydet"
+                            IsVisible="False"
+                            HorizontalOptions="FillAndExpand"
+                            BackgroundColor="#16A34A"
+                            TextColor="White"
+                            Clicked="OnSaveClicked" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

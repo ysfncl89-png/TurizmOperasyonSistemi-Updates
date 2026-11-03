@@ -24,6 +24,9 @@
 
   <ItemGroup>
     <Compile Remove="Views\SettingDialogCities.xaml.cs" />
+    <Compile Remove="TOSLite.Mobile\**\*.cs" />
+    <Page Remove="TOSLite.Mobile\**\*.xaml" />
+    <ApplicationDefinition Remove="TOSLite.Mobile\**\*.xaml" />
   </ItemGroup>
 
   <!-- Exclude tools/Updater source files from main project compile to keep Updater as separate project -->
