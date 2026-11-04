@@ -7,7 +7,10 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="18" RowSpacing="12">
         <VerticalStackLayout Grid.Row="0" Spacing="8">
             <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="#6D4AFF" Clicked="OnHomeClicked" />
-            <Label Text="Tur Kayıtları" FontSize="28" FontAttributes="Bold" TextColor="#24213A" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Label Text="Tur Kayıtları" FontSize="28" FontAttributes="Bold" TextColor="#24213A" VerticalOptions="Center" />
+                <Picker x:Name="PeriodPicker" Grid.Column="1" Title="Dönem" WidthRequest="158" HorizontalOptions="End" FontSize="13" SelectedIndexChanged="OnPeriodChanged" />
+            </Grid>
             <Entry x:Name="SearchEntry" Placeholder="Kişi, tur veya dönem ara" PlaceholderColor="#687083" TextColor="#24213A" BackgroundColor="White" TextChanged="OnSearchTextChanged" />
         </VerticalStackLayout>
         <Label x:Name="StatusLabel" Grid.Row="1" Text="Kayıtlı turlar" TextColor="#687083" FontSize="13" />

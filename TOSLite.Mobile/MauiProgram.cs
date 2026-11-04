@@ -25,11 +25,14 @@ namespace TOSLite.Mobile
             builder.Services.AddSingleton<SettingsRepository>();
             builder.Services.AddSingleton<RoomAllocationRepository>();
             builder.Services.AddSingleton<MobileSyncService>();
+            builder.Services.AddSingleton<ListExportService>();
+            builder.Services.AddSingleton<DownloadFileService>();
             builder.Services.AddTransient<PersonsPage>();
             builder.Services.AddTransient<RegistrationsPage>();
             builder.Services.AddTransient<RegistrationFormPage>();
             builder.Services.AddTransient<SettingsPage>();
             builder.Services.AddTransient<RoomingPage>();
+            builder.Services.AddTransient<ListsPage>();
             builder.Services.AddTransient<MobileSyncPage>();
 
 #if DEBUG

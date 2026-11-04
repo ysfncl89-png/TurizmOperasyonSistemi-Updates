@@ -10,6 +10,7 @@ public partial class RoomingPage : ContentPage
     private readonly ObservableCollection<RoomAllocationRecord> _rooms = [];
     private readonly ObservableCollection<RoomingCandidate> _candidates = [];
     private readonly List<RoomingCriteria> _criteria = [];
+    private readonly HashSet<int> _releasedPassengerIds = [];
     private IReadOnlyList<string> _roomTypes = [];
     private RoomAllocationRecord? _selectedRoom;
     private RoomAllocationRecord? _firstRoomToConnect;
@@ -107,7 +108,7 @@ public partial class RoomingPage : ContentPage
         if (criteria == null) return;
         criteria.HotelName = HotelPicker.SelectedItem?.ToString() ?? string.Empty;
         var assignedIds = _rooms.SelectMany(x => x.Occupants).Select(x => x.PassengerId).ToHashSet();
-        foreach (var candidate in await _repository.GetCandidatesAsync(criteria).ConfigureAwait(true))
+        foreach (var candidate in await _repository.GetCandidatesAsync(criteria, _releasedPassengerIds).ConfigureAwait(true))
         {
             if (!assignedIds.Contains(candidate.PersonId)) _candidates.Add(candidate);
         }
@@ -196,7 +197,11 @@ public partial class RoomingPage : ContentPage
         var selectedName = await DisplayActionSheetAsync("Odadan çıkarılacak yolcu", "Vazgeç", null, names);
         if (selectedName == null || selectedName == "Vazgeç") return;
         var occupant = room.Occupants.FirstOrDefault(x => x.PersonName == selectedName);
-        if (occupant != null) room.Occupants.Remove(occupant);
+        if (occupant != null)
+        {
+            room.Occupants.Remove(occupant);
+            _releasedPassengerIds.Add(occupant.PassengerId);
+        }
         RefreshRoomItems();
         await RefreshCandidatesAsync();
     }
@@ -274,6 +279,7 @@ public partial class RoomingPage : ContentPage
             var capacityExceeded = _rooms.Any(x => x.Occupants.Count > x.Capacity);
             if (capacityExceeded && !await DisplayAlertAsync("Kapasite aşımı", "Bir veya daha fazla oda kapasite üstünde. Yine de devam edilsin mi?", "Evet", "Hayır")) return;
             await _repository.SaveBatchAsync(criteria, _rooms, capacityExceeded);
+            _releasedPassengerIds.Clear();
             await DisplayAlertAsync("Kaydedildi", "Odalama kayıtları telefona kaydedildi.", "Tamam");
             await LoadCriteriaDataAsync();
         }

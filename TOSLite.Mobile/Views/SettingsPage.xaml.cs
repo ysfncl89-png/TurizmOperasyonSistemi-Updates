@@ -34,6 +34,7 @@ public partial class SettingsPage : ContentPage
     private readonly SettingsRepository _repository;
     private SettingOption? _editingOption;
     private string? _selectedType;
+    private string? _selectedTitle;
     private List<SettingOption> _currentOptions = [];
 
     public SettingsPage(SettingsRepository repository)
@@ -57,17 +58,18 @@ public partial class SettingsPage : ContentPage
         SettingsCards.Children.Clear();
         foreach (var category in Categories.Where(x => string.IsNullOrWhiteSpace(query) || x.Title.Contains(query, StringComparison.CurrentCultureIgnoreCase)))
         {
+            var isSelected = _selectedType == CanonicalType(category.Type);
             var button = new Button
             {
-                Text = category.Title,
-                WidthRequest = 154,
+                Text = isSelected ? $"✓  {category.Title}" : category.Title,
+                WidthRequest = 164,
                 HeightRequest = 58,
                 Margin = new Thickness(5),
-                CornerRadius = 14,
-                BackgroundColor = Color.FromArgb("#EFEAFF"),
-                BorderColor = Color.FromArgb("#DCD4FF"),
-                BorderWidth = 1,
-                TextColor = Color.FromArgb("#4932A8"),
+                CornerRadius = 16,
+                BackgroundColor = isSelected ? Color.FromArgb("#6D4AFF") : Color.FromArgb("#EFEAFF"),
+                BorderColor = isSelected ? Color.FromArgb("#4932A8") : Color.FromArgb("#DCD4FF"),
+                BorderWidth = isSelected ? 2 : 1,
+                TextColor = isSelected ? Colors.White : Color.FromArgb("#4932A8"),
                 FontAttributes = FontAttributes.Bold,
                 CommandParameter = category.Type
             };
@@ -79,11 +81,13 @@ public partial class SettingsPage : ContentPage
 
     private async void OnCategoryClicked(object? sender, EventArgs e)
     {
-        if (sender is not Button { CommandParameter: string type, Text: string title }) return;
+        if (sender is not Button { CommandParameter: string type }) return;
         _selectedType = CanonicalType(type);
-        SelectedCategoryLabel.Text = $"Seçili kart: {title}";
-        OptionsHeading.Text = $"{title} seçenekleri";
-        OptionsPanel.IsVisible = true;
+        _selectedTitle = Categories.First(category => CanonicalType(category.Type) == _selectedType).Title;
+        OptionsHeading.Text = _selectedTitle;
+        ClearEditor();
+        OptionsDialog.IsVisible = true;
+        BuildCards();
         await LoadOptionsAsync();
     }
 
@@ -128,6 +132,7 @@ public partial class SettingsPage : ContentPage
         _editingOption = option;
         ValueEntry.Text = option.Value;
         SortOrderEntry.Text = option.SortOrder.ToString();
+        SaveOptionButton.Text = "Güncelle";
     }
 
     private async void OnToggleOptionClicked(object? sender, EventArgs e)
@@ -149,11 +154,18 @@ public partial class SettingsPage : ContentPage
 
     private void OnClearClicked(object? sender, EventArgs e) => ClearEditor();
 
+    private void OnCloseOptionsClicked(object? sender, EventArgs e)
+    {
+        OptionsDialog.IsVisible = false;
+        ClearEditor();
+    }
+
     private void ClearEditor()
     {
         _editingOption = null;
         ValueEntry.Text = string.Empty;
         SortOrderEntry.Text = (_currentOptions.Select(x => x.SortOrder).DefaultIfEmpty(0).Max() + 1).ToString();
+        SaveOptionButton.Text = "Seçeneği ekle";
     }
 
     private void OnSearchTextChanged(object? sender, TextChangedEventArgs e) => BuildCards();

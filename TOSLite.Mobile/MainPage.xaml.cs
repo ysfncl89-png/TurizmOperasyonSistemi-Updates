@@ -7,7 +7,6 @@ namespace TOSLite.Mobile
         public MainPage()
         {
             InitializeComponent();
-            MobileTheme.Apply(this);
         }
 
         private async void OnPersonsClicked(object? sender, EventArgs e)
@@ -28,6 +27,11 @@ namespace TOSLite.Mobile
         private async void OnRoomingClicked(object? sender, EventArgs e)
         {
             await Shell.Current.GoToAsync(nameof(RoomingPage));
+        }
+
+        private async void OnListsClicked(object? sender, EventArgs e)
+        {
+            await Shell.Current.GoToAsync(nameof(ListsPage));
         }
 
         private async void OnMobileSyncClicked(object? sender, EventArgs e)

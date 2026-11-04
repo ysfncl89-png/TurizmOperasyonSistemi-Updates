@@ -101,7 +101,7 @@ public sealed class RoomAllocationRepository
         return criteria;
     }
 
-    public async Task<IReadOnlyList<RoomingCandidate>> GetCandidatesAsync(RoomingCriteria criteria)
+    public async Task<IReadOnlyList<RoomingCandidate>> GetCandidatesAsync(RoomingCriteria criteria, IReadOnlySet<int>? releasedPassengerIds = null)
     {
         await using var connection = await OpenConnectionAsync();
         await using var command = connection.CreateCommand();
@@ -112,17 +112,21 @@ public sealed class RoomAllocationRepository
             WHERE r.IsActive = 1 AND p.IsActive = 1
               AND r.TourType = $tourType AND r.Period = $period
               AND r.GroupType = $groupType AND r.DaysCount = $daysCount
-              AND NOT EXISTS (
-                  SELECT 1 FROM RoomOccupants o
-                  INNER JOIN RoomAllocations a ON a.Id = o.RoomAllocationId
-                  WHERE o.PassengerId = p.Id
-                    AND a.TourType = $tourType AND a.Period = $period
-                    AND a.GroupType = $groupType AND a.DaysCount = $daysCount
-                    AND a.HotelId = COALESCE((SELECT Id FROM Hotels WHERE Name = $hotelName), -1)
+              AND (
+                  NOT EXISTS (
+                      SELECT 1 FROM RoomOccupants o
+                      INNER JOIN RoomAllocations a ON a.Id = o.RoomAllocationId
+                      WHERE o.PassengerId = p.Id
+                        AND a.TourType = $tourType AND a.Period = $period
+                        AND a.GroupType = $groupType AND a.DaysCount = $daysCount
+                        AND a.HotelId = COALESCE((SELECT Id FROM Hotels WHERE Name = $hotelName), -1)
+                  )
+                  OR p.Id IN (SELECT value FROM json_each($releasedPassengerIds))
               )
             ORDER BY p.LastName, p.FirstName, p.Id;
             """;
         AddCriteria(command, criteria);
+        command.Parameters.AddWithValue("$releasedPassengerIds", System.Text.Json.JsonSerializer.Serialize(releasedPassengerIds ?? new HashSet<int>()));
         var candidates = new List<RoomingCandidate>();
         await using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
