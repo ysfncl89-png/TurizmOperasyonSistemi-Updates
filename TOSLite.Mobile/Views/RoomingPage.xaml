@@ -4,10 +4,10 @@
              x:Class="TOSLite.Mobile.Views.RoomingPage"
              Title="Odalama"
              BackgroundColor="#F6F7FB">
-    <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="12" BackgroundColor="#F6F7FB">
-        <VerticalStackLayout Grid.Row="0" Spacing="8">
+    <ScrollView VerticalScrollBarVisibility="Always" BackgroundColor="#F6F7FB">
+        <VerticalStackLayout Padding="12" Spacing="8" BackgroundColor="#F6F7FB">
             <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="#6D4AFF" Clicked="OnHomeClicked" />
-            <Label Text="Odalama Motoru" FontSize="26" FontAttributes="Bold" TextColor="#24213A" />
+            <Label Text="Odalama Motoru" FontSize="22" FontAttributes="Bold" TextColor="#24213A" />
             <Label Text="Tur kayıtlarındaki yolcuları otel odalarına yerleştirin." TextColor="#687083" />
             <Picker x:Name="HotelPicker" Title="Otel seçin" SelectedIndexChanged="OnHotelChanged" TextColor="#24213A" TitleColor="#687083" BackgroundColor="White" />
             <Picker x:Name="CriteriaPicker" Title="Tur / dönem / grup seçin" ItemDisplayBinding="{Binding DisplayText}" SelectedIndexChanged="OnCriteriaChanged" TextColor="#24213A" TitleColor="#687083" BackgroundColor="White" />
@@ -26,13 +26,10 @@
                 <Button Grid.Column="1" Text="Bağla / çöz" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnToggleConnectionClicked" />
             </Grid>
             <Label x:Name="ConnectionLabel" Text="Bağlı oda: yok" TextColor="#5B43B5" FontSize="12" />
-        </VerticalStackLayout>
-        <ScrollView Grid.Row="1">
-            <VerticalStackLayout Spacing="12">
             <Border Stroke="#E4E6EF" StrokeShape="RoundRectangle 16" BackgroundColor="White" Padding="12">
                 <VerticalStackLayout Spacing="8">
                     <Label x:Name="CandidatesHeading" Text="Yolcu havuzu" FontAttributes="Bold" TextColor="#24213A" />
-                    <CollectionView x:Name="CandidatesCollection" SelectionMode="None" HeightRequest="260">
+                    <CollectionView x:Name="CandidatesCollection" SelectionMode="None" HeightRequest="190">
                         <CollectionView.EmptyView>
                             <Label Text="Seçilen kriterlerde boş yolcu yok." TextColor="#687083" FontSize="12" />
                         </CollectionView.EmptyView>
@@ -56,7 +53,7 @@
                         <Label Text="Açılan odalar" FontAttributes="Bold" TextColor="#24213A" VerticalOptions="Center" />
                         <Button Grid.Column="1" Text="Kaydet" Padding="8,4" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnSaveClicked" />
                     </Grid>
-                    <CollectionView x:Name="RoomsCollection" SelectionMode="Single" SelectionChanged="OnRoomSelected" HeightRequest="280">
+                    <CollectionView x:Name="RoomsCollection" SelectionMode="Single" SelectionChanged="OnRoomSelected" HeightRequest="210">
                         <CollectionView.EmptyView>
                             <Label Text="Henüz oda açılmadı." TextColor="#687083" FontSize="12" />
                         </CollectionView.EmptyView>
@@ -78,7 +75,6 @@
                     </CollectionView>
                 </VerticalStackLayout>
             </Border>
-            </VerticalStackLayout>
-        </ScrollView>
-    </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -22,6 +23,7 @@ public sealed class MobileSyncServer : IDisposable
     private string _pairingCode = string.Empty;
     private DateTime _pairingExpiresUtc;
     private readonly SemaphoreSlim _importLock = new(1, 1);
+    private readonly ConcurrentDictionary<string, MobileSyncResultDto> _pendingExports = new(StringComparer.OrdinalIgnoreCase);
     private string? _pairedDeviceId;
     private int _disposed;
 
@@ -122,10 +124,33 @@ public sealed class MobileSyncServer : IDisposable
                     !await IsDeviceAuthorizedAsync(package.DeviceId, HashToken(request.Authorization), _shutdown.Token))
                     return JsonResponse(400, new { error = "Eşitleme paketi doğrulanamadı." });
                 var result = await ImportAsync(package, _shutdown.Token);
+                _pendingExports[package.DeviceId] = result;
                 SyncCompleted?.Invoke(result);
                 return JsonResponse(200, result);
             }
             finally { _importLock.Release(); }
+        }
+
+        if (request.Method == "POST" && request.Path == "/download")
+        {
+            var deviceRequest = JsonSerializer.Deserialize<MobileSyncDeviceRequest>(request.Body, JsonOptions);
+            if (deviceRequest is null || string.IsNullOrWhiteSpace(request.Authorization) ||
+                !await IsDeviceAuthorizedAsync(deviceRequest.DeviceId, HashToken(request.Authorization), _shutdown.Token))
+                return JsonResponse(401, new { error = "Cihaz doğrulanamadı. Masaüstü QR kodunu yeniden okutun." });
+            if (!_pendingExports.TryGetValue(deviceRequest.DeviceId, out var pendingExport))
+                return JsonResponse(409, new { error = "Masaüstünde bekleyen eşitleme bulunamadı. Mobilden Masaüstü Programa Eşitle adımını yeniden başlatın." });
+            return JsonResponse(200, pendingExport);
+        }
+
+        if (request.Method == "POST" && request.Path == "/complete")
+        {
+            var deviceRequest = JsonSerializer.Deserialize<MobileSyncDeviceRequest>(request.Body, JsonOptions);
+            if (deviceRequest is null || string.IsNullOrWhiteSpace(request.Authorization) ||
+                !await IsDeviceAuthorizedAsync(deviceRequest.DeviceId, HashToken(request.Authorization), _shutdown.Token))
+                return JsonResponse(401, new { error = "Cihaz doğrulanamadı. Masaüstü QR kodunu yeniden okutun." });
+            _pendingExports.TryRemove(deviceRequest.DeviceId, out _);
+            StatusChanged?.Invoke("Her iki cihaz da eşitlendi. Mobil uygulamadaki veriler masaüstündeki verilerle aynı.");
+            return JsonResponse(200, new { completed = true });
         }
 
         return JsonResponse(404, new { error = "Uç nokta bulunamadı." });
@@ -238,15 +263,11 @@ public sealed class MobileSyncServer : IDisposable
                 var existing = await db.Persons.FirstOrDefaultAsync(x => x.Id == importedId.Value, cancellationToken);
                 if (existing is not null)
                 {
-                    var isNewer = mobilePerson.LastModifiedUtc > existing.LastModifiedUtc;
-                    if (isNewer)
-                    {
-                        CopyPerson(mobilePerson, existing);
-                        existing.LastModifiedUtc = mobilePerson.LastModifiedUtc;
-                        await db.SaveChangesAsync(cancellationToken);
-                        result.ImportedPersons++;
-                        AddImportedItem(result, "Kişi güncellendi", $"{existing.FirstName} {existing.LastName}");
-                    }
+                    CopyPerson(mobilePerson, existing);
+                    existing.LastModifiedUtc = mobilePerson.LastModifiedUtc;
+                    await db.SaveChangesAsync(cancellationToken);
+                    result.ImportedPersons++;
+                    AddImportedItem(result, "Kişi güncellendi", $"{existing.FirstName} {existing.LastName}");
                     clientMap[mobilePerson.ClientId] = importedId.Value;
                     continue;
                 }
@@ -303,15 +324,11 @@ public sealed class MobileSyncServer : IDisposable
             }
             else
             {
-                var isNewer = mobilePerson.LastModifiedUtc > match.LastModifiedUtc;
-                if (isNewer)
-                {
-                    CopyPerson(mobilePerson, match);
-                    match.LastModifiedUtc = mobilePerson.LastModifiedUtc;
-                    await db.SaveChangesAsync(cancellationToken);
-                    result.ImportedPersons++;
-                    AddImportedItem(result, "Kişi güncellendi", $"{match.FirstName} {match.LastName}");
-                }
+                CopyPerson(mobilePerson, match);
+                match.LastModifiedUtc = mobilePerson.LastModifiedUtc;
+                await db.SaveChangesAsync(cancellationToken);
+                result.ImportedPersons++;
+                AddImportedItem(result, "Kişi güncellendi", $"{match.FirstName} {match.LastName}");
             }
             await AddLedgerAsync(db, package.DeviceId, "Person", mobilePerson.ClientId, match.Id, cancellationToken);
             clientMap[mobilePerson.ClientId] = match.Id;
@@ -356,33 +373,26 @@ public sealed class MobileSyncServer : IDisposable
                 var existing = await db.Registrations.FirstOrDefaultAsync(x => x.Id == importedRegistrationId.Value, cancellationToken);
                 if (existing is not null)
                 {
-                    var isNewer = registration.LastModifiedUtc > existing.LastModifiedUtc;
-                    if (isNewer)
-                    {
-                        CopyRegistration(registration, existing, desktopPersonId);
-                        existing.LastModifiedUtc = registration.LastModifiedUtc;
-                        await db.SaveChangesAsync(cancellationToken);
-                        result.ImportedRegistrations++;
-                        AddImportedItem(result, "Tur kaydı güncellendi", $"{sourcePerson.FirstName} {sourcePerson.LastName} - {registration.TourType} / {registration.Period}");
-                    }
-                    await AddLedgerAsync(db, package.DeviceId, "Registration", sourceId, existing.Id, cancellationToken);
-                    continue;
-                }
-                await DeleteLedgerAsync(db, package.DeviceId, "Registration", sourceId, cancellationToken);
-            }
-            var matches = await db.Registrations.Where(x => x.PersonId == desktopPersonId && x.TourType == registration.TourType && x.Period == registration.Period && x.GroupType == registration.GroupType && x.DaysCount == registration.DaysCount).ToListAsync(cancellationToken);
-            if (matches.Count == 1)
-            {
-                var existing = matches[0];
-                await AddLedgerAsync(db, package.DeviceId, "Registration", sourceId, existing.Id, cancellationToken);
-                if (registration.LastModifiedUtc > existing.LastModifiedUtc)
-                {
                     CopyRegistration(registration, existing, desktopPersonId);
                     existing.LastModifiedUtc = registration.LastModifiedUtc;
                     await db.SaveChangesAsync(cancellationToken);
                     result.ImportedRegistrations++;
                     AddImportedItem(result, "Tur kaydı güncellendi", $"{sourcePerson.FirstName} {sourcePerson.LastName} - {registration.TourType} / {registration.Period}");
+                    await AddLedgerAsync(db, package.DeviceId, "Registration", sourceId, existing.Id, cancellationToken);
+                    continue;
                 }
+                await DeleteLedgerAsync(db, package.DeviceId, "Registration", sourceId, cancellationToken);
+            }
+            var matches = await db.Registrations.Where(x => x.PersonId == desktopPersonId && x.TourType == registration.TourType && x.GroupType == registration.GroupType && x.DaysCount == registration.DaysCount).ToListAsync(cancellationToken);
+            if (matches.Count == 1)
+            {
+                var existing = matches[0];
+                await AddLedgerAsync(db, package.DeviceId, "Registration", sourceId, existing.Id, cancellationToken);
+                CopyRegistration(registration, existing, desktopPersonId);
+                existing.LastModifiedUtc = registration.LastModifiedUtc;
+                await db.SaveChangesAsync(cancellationToken);
+                result.ImportedRegistrations++;
+                AddImportedItem(result, "Tur kaydı güncellendi", $"{sourcePerson.FirstName} {sourcePerson.LastName} - {registration.TourType} / {registration.Period}");
                 continue;
             }
             if (matches.Count > 1)
@@ -447,7 +457,6 @@ public sealed class MobileSyncServer : IDisposable
             var activePassengerIds = room.PassengerIds
                 .Where(id => package.PersonLocalIds.TryGetValue(id, out var clientId) && !deletedClientIds.Contains(clientId))
                 .ToList();
-            if (activePassengerIds.Count == 0) continue;
             var sourceId = string.IsNullOrWhiteSpace(room.SyncId) ? room.Id.ToString(CultureInfo.InvariantCulture) : room.SyncId;
             var legacyDesktopId = room.Id > 0
                 ? await FindLedgerIdAsync(db, package.DeviceId, "RoomAllocation", room.Id.ToString(CultureInfo.InvariantCulture), cancellationToken)
@@ -458,7 +467,6 @@ public sealed class MobileSyncServer : IDisposable
             existing ??= await db.RoomAllocations.Include(x => x.Hotel).Include(x => x.Occupants)
                 .FirstOrDefaultAsync(x => x.SyncId == room.SyncId, cancellationToken);
             var existingRoomId = existing?.Id ?? 0;
-            if (existing is not null && room.LastModifiedUtc <= existing.LastModifiedUtc) continue;
             if (room.IsDeleted)
             {
                 if (existing is null)
@@ -474,6 +482,7 @@ public sealed class MobileSyncServer : IDisposable
                     await AddLedgerAsync(db, package.DeviceId, "RoomAllocation", sourceId, existing.Id, cancellationToken);
                 continue;
             }
+            if (activePassengerIds.Count == 0) continue;
             var personIds = new List<int>();
             foreach (var mobilePersonId in activePassengerIds)
             {
@@ -493,8 +502,8 @@ public sealed class MobileSyncServer : IDisposable
                 continue;
             }
             var alreadyAllocated = await db.RoomOccupants.Where(x => personIds.Contains(x.PassengerId) && x.RoomAllocationId != existingRoomId)
-                .Select(x => new { x.PassengerId, x.RoomAllocation.TourType, x.RoomAllocation.Period, x.RoomAllocation.GroupType, x.RoomAllocation.DaysCount })
-                .AnyAsync(x => personIds.Contains(x.PassengerId) && x.TourType == room.TourType && x.Period == room.Period && x.GroupType == room.GroupType && x.DaysCount == room.DaysCount, cancellationToken);
+                .Select(x => new { x.PassengerId, x.RoomAllocation.TourType, x.RoomAllocation.Period, x.RoomAllocation.GroupType, x.RoomAllocation.DaysCount, HotelName = x.RoomAllocation.Hotel.Name })
+                .AnyAsync(x => personIds.Contains(x.PassengerId) && x.TourType == room.TourType && x.Period == room.Period && x.GroupType == room.GroupType && x.DaysCount == room.DaysCount && x.HotelName == room.HotelName, cancellationToken);
             if (alreadyAllocated)
             {
                 AddConflict(result, "Oda yerleşimi", sourceId, "Katılımcılardan en az biri aynı tur ölçütlerinde başka odaya atanmış; oda aktarılmadı.");
@@ -583,7 +592,17 @@ public sealed class MobileSyncServer : IDisposable
                 : package.Registrations.FirstOrDefault(x => x.PersonId == mobilePersonId &&
                     x.TourType == registration.TourType && x.Period == registration.Period &&
                     x.GroupType == registration.GroupType && x.DaysCount == registration.DaysCount)?.Id ?? 0;
-            result.Registrations.Add(ToMobileRegistration(registration, mobileId, mobilePersonId));
+            var mobileRegistration = mobileRegistrationsById.GetValueOrDefault(mobileId);
+            var mobileDto = ToMobileRegistration(registration, mobileId, mobilePersonId);
+            mobileDto.PassportArrivedValue = mobileRegistration?.PassportArrived == registration.PassportArrived
+                ? mobileRegistration.PassportArrivedValue
+                : registration.PassportArrived switch
+                {
+                    1 => "Evet",
+                    0 => "Hayır",
+                    _ => string.Empty
+                };
+            result.Registrations.Add(mobileDto);
         }
         var desktopRooms = await db.RoomAllocations.AsNoTracking().Include(x => x.Hotel).Include(x => x.Occupants)
             .ToListAsync(cancellationToken);
@@ -608,6 +627,7 @@ public sealed class MobileSyncServer : IDisposable
                 IsConnection = room.IsConnection,
                 ConnectionGroupId = room.ConnectionGroupId,
                 PassengerIds = room.Occupants.Where(x => localPersonIds.ContainsKey(x.PassengerId)).Select(x => localPersonIds[x.PassengerId]).ToList(),
+                PassengerDesktopIds = room.Occupants.Select(x => x.PassengerId).ToList(),
                 LastModifiedUtc = room.LastModifiedUtc,
                 IsDeleted = room.IsDeleted
             });

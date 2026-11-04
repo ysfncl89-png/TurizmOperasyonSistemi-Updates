@@ -35,6 +35,7 @@ public sealed class MobileSyncService
 
     public bool IsPaired => Preferences.Default.Get("MobileSync.Paired", false) && Preferences.Default.ContainsKey("MobileSync.Url");
     public string PairedAddress => Preferences.Default.Get("MobileSync.Url", string.Empty);
+    public bool IsAwaitingDesktopSync => Preferences.Default.Get("MobileSync.AwaitingDesktopSync", false);
 
     public async Task PairAsync(string qrText, CancellationToken cancellationToken = default)
     {
@@ -53,6 +54,7 @@ public sealed class MobileSyncService
         Preferences.Default.Set("MobileSync.Fingerprint", payload.CertificateFingerprint);
         Preferences.Default.Set("MobileSync.DeviceId", deviceId);
         Preferences.Default.Set("MobileSync.Paired", true);
+        Preferences.Default.Set("MobileSync.AwaitingDesktopSync", false);
     }
 
     public async Task<MobileSyncResultDto> SyncAsync(CancellationToken cancellationToken = default)
@@ -85,15 +87,7 @@ public sealed class MobileSyncService
             }
             var result = JsonSerializer.Deserialize<MobileSyncResultDto>(responseBody, JsonOptions)
                 ?? throw new InvalidOperationException("Masaüstünden boş eşitleme yanıtı geldi. Masaüstü raporunu kontrol edin.");
-            await ApplyDesktopStateAsync(result, cancellationToken);
-            await _settings.MergeFromDesktopAsync(result.Settings.Select(x => new SettingOption
-            {
-                Type = ToMobileSettingType(x.Type),
-                Value = x.Value,
-                IsActive = x.IsActive,
-                SortOrder = x.SortOrder
-            }).ToList());
-            await _registrations.AcknowledgeDeletedAsync(result.AcknowledgedDeletedRegistrationIds);
+            Preferences.Default.Set("MobileSync.AwaitingDesktopSync", true);
             return result;
         }
         catch (HttpRequestException ex)
@@ -104,6 +98,67 @@ public sealed class MobileSyncService
         {
             throw new InvalidOperationException("Masaüstünden zamanında yanıt alınamadı. Masaüstü eşitleme penceresinin açık olduğunu ve aynı Wi-Fi ağında olduğunuzu kontrol edin.", ex);
         }
+    }
+
+    public async Task<MobileSyncResultDto> SyncFromDesktopAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsPaired) throw new InvalidOperationException("Önce masaüstündeki QR kodu okutarak eşleştirin.");
+        if (!IsAwaitingDesktopSync) throw new InvalidOperationException("Önce Mobilden Masaüstü Programa Eşitle adımını tamamlayın.");
+
+        var fingerprint = Preferences.Default.Get("MobileSync.Fingerprint", string.Empty);
+        using var client = CreatePinnedClient(fingerprint);
+        using var request = new HttpRequestMessage(HttpMethod.Post, Preferences.Default.Get("MobileSync.Url", string.Empty) + "download");
+        request.Version = System.Net.HttpVersion.Version11;
+        request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
+        var token = await SecureStorage.Default.GetAsync("MobileSync.Token") ?? string.Empty;
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        request.Content = JsonContent.Create(new MobileSyncDeviceRequest
+        {
+            DeviceId = Preferences.Default.Get("MobileSync.DeviceId", string.Empty)
+        }, options: JsonOptions);
+
+        try
+        {
+            using var response = await client.SendAsync(request, cancellationToken);
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var serverError = TryReadServerError(responseBody);
+                throw new InvalidOperationException(serverError is null
+                    ? $"Masaüstü verileri alınamadı (HTTP {(int)response.StatusCode})."
+                    : serverError);
+            }
+            var result = JsonSerializer.Deserialize<MobileSyncResultDto>(responseBody, JsonOptions)
+                ?? throw new InvalidOperationException("Masaüstünden boş veri paketi geldi.");
+            await ApplyDesktopSnapshotAsync(result, cancellationToken, CompleteDesktopSyncAsync);
+            Preferences.Default.Set("MobileSync.AwaitingDesktopSync", false);
+            return result;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException("Masaüstüne bağlanılamadı. Masaüstü eşitleme penceresini açık tutun ve aynı Wi-Fi ağında olduğunuzu kontrol edin.", ex);
+        }
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new InvalidOperationException("Masaüstünden zamanında yanıt alınamadı. Masaüstü eşitleme penceresinin açık olduğunu kontrol edin.", ex);
+        }
+    }
+
+    private async Task CompleteDesktopSyncAsync(CancellationToken cancellationToken)
+    {
+        using var client = CreatePinnedClient(Preferences.Default.Get("MobileSync.Fingerprint", string.Empty));
+        using var request = new HttpRequestMessage(HttpMethod.Post, Preferences.Default.Get("MobileSync.Url", string.Empty) + "complete");
+        request.Version = System.Net.HttpVersion.Version11;
+        request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
+        var token = await SecureStorage.Default.GetAsync("MobileSync.Token") ?? string.Empty;
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        request.Content = JsonContent.Create(new MobileSyncDeviceRequest
+        {
+            DeviceId = Preferences.Default.Get("MobileSync.DeviceId", string.Empty)
+        }, options: JsonOptions);
+        using var response = await client.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException("Mobil veriler uygulandı ancak masaüstü tamamlandı onayı alınamadı.");
     }
 
     private async Task ApplyDesktopStateAsync(MobileSyncResultDto result, CancellationToken cancellationToken)
@@ -220,6 +275,7 @@ public sealed class MobileSyncService
                 local.VisaStatusChoice = desktopRegistration.VisaStatusChoice;
                 local.TicketStatusChoice = desktopRegistration.TicketStatusChoice;
                 local.PassportArrived = desktopRegistration.PassportArrived;
+                local.PassportArrivedValue = desktopRegistration.PassportArrivedValue;
                 local.CargoRequest = desktopRegistration.CargoRequest;
                 local.RoomType = desktopRegistration.RoomType;
                 local.DepartureCity = desktopRegistration.DepartureCity;
@@ -238,7 +294,113 @@ public sealed class MobileSyncService
                 await _registrations.SaveAsync(local, preserveLastModifiedUtc: true);
             }
         }
+        localPeople = (await _persons.GetAllAsync()).ToList();
+        var localIdsByDesktopId = localPeople
+            .Where(x => x.DesktopPersonId.HasValue)
+            .ToDictionary(x => x.DesktopPersonId!.Value, x => x.Id);
+        foreach (var room in result.Rooming)
+        {
+            var passengerDesktopIds = room.PassengerDesktopIds.Count > 0
+                ? room.PassengerDesktopIds
+                : result.Persons.Where(x => room.PassengerIds.Contains(x.LocalId) && x.DesktopPersonId.HasValue)
+                    .Select(x => x.DesktopPersonId!.Value).ToList();
+            room.PassengerIds = passengerDesktopIds
+                .Where(localIdsByDesktopId.ContainsKey)
+                .Select(id => localIdsByDesktopId[id])
+                .Distinct()
+                .ToList();
+        }
         await _rooming.ApplyDesktopStateAsync(result.Rooming);
+    }
+
+    private async Task ApplyDesktopSnapshotAsync(MobileSyncResultDto result, CancellationToken cancellationToken, Func<CancellationToken, Task> confirmCompletion)
+    {
+        var backupPath = Path.Combine(FileSystem.AppDataDirectory, $"toslite-mobile-sync-backup-{Guid.NewGuid():N}.db3");
+        await CreateDatabaseBackupAsync(backupPath, cancellationToken);
+        try
+        {
+            await ClearSyncedDataAsync(cancellationToken);
+            await ApplyDesktopStateAsync(result, cancellationToken);
+            await _settings.MergeFromDesktopAsync(result.Settings.Select(x => new SettingOption
+            {
+                Type = ToMobileSettingType(x.Type),
+                Value = x.Value,
+                IsActive = x.IsActive,
+                SortOrder = x.SortOrder
+            }).ToList());
+            await _registrations.AcknowledgeDeletedAsync(result.AcknowledgedDeletedRegistrationIds);
+            await VerifyDesktopSnapshotAsync(result, cancellationToken);
+            await confirmCompletion(cancellationToken);
+            File.Delete(backupPath);
+        }
+        catch (Exception applyException)
+        {
+            try
+            {
+                await RestoreDatabaseBackupAsync(backupPath, CancellationToken.None);
+                File.Delete(backupPath);
+            }
+            catch (Exception restoreException)
+            {
+                throw new InvalidOperationException(
+                    $"Masaüstünden mobil uygulamaya eşitleme başarısız oldu ve otomatik geri yükleme tamamlanamadı. Yedek korunuyor: {backupPath}",
+                    new AggregateException(applyException, restoreException));
+            }
+
+            throw new InvalidOperationException("Masaüstünden mobil uygulamaya eşitleme başarısız oldu. Önceki mobil veriler geri yüklendi.", applyException);
+        }
+    }
+
+    private async Task CreateDatabaseBackupAsync(string backupPath, CancellationToken cancellationToken)
+    {
+        await using var source = new SqliteConnection(_connectionString);
+        await source.OpenAsync(cancellationToken);
+        await using var backup = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = backupPath }.ToString());
+        await backup.OpenAsync(cancellationToken);
+        source.BackupDatabase(backup);
+    }
+
+    private async Task RestoreDatabaseBackupAsync(string backupPath, CancellationToken cancellationToken)
+    {
+        await using var backup = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = backupPath, Mode = SqliteOpenMode.ReadOnly }.ToString());
+        await backup.OpenAsync(cancellationToken);
+        await using var target = new SqliteConnection(_connectionString);
+        await target.OpenAsync(cancellationToken);
+        backup.BackupDatabase(target);
+    }
+
+    private async Task ClearSyncedDataAsync(CancellationToken cancellationToken)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = "DELETE FROM RoomOccupants; DELETE FROM RoomAllocations; DELETE FROM TourRegistrations; DELETE FROM PersonRecords; DELETE FROM Hotels; DELETE FROM DeletedTourRegistrations;";
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    private async Task VerifyDesktopSnapshotAsync(MobileSyncResultDto result, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var expectedPersons = result.Persons.Count(x => !x.IsDeleted);
+        var expectedRegistrations = result.Registrations.Count;
+        var expectedRooms = result.Rooming.Count(x => !x.IsDeleted);
+        foreach (var (table, expected) in new[]
+        {
+            ("PersonRecords", expectedPersons),
+            ("TourRegistrations", expectedRegistrations),
+            ("RoomAllocations", expectedRooms)
+        })
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT COUNT(*) FROM {table};";
+            var actual = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), System.Globalization.CultureInfo.InvariantCulture);
+            if (actual != expected)
+                throw new InvalidOperationException($"{table} doğrulaması başarısız: beklenen {expected}, bulunan {actual}.");
+        }
     }
 
     public void Unpair()
@@ -247,6 +409,7 @@ public sealed class MobileSyncService
         Preferences.Default.Remove("MobileSync.Fingerprint");
         Preferences.Default.Remove("MobileSync.DeviceId");
         Preferences.Default.Remove("MobileSync.Paired");
+        Preferences.Default.Remove("MobileSync.AwaitingDesktopSync");
         SecureStorage.Default.Remove("MobileSync.Token");
     }
 

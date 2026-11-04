@@ -118,7 +118,7 @@ public sealed class RoomAllocationRepository
                   WHERE o.PassengerId = p.Id
                     AND a.TourType = $tourType AND a.Period = $period
                     AND a.GroupType = $groupType AND a.DaysCount = $daysCount
-                    AND a.HotelId <> COALESCE((SELECT Id FROM Hotels WHERE Name = $hotelName), -1)
+                    AND a.HotelId = COALESCE((SELECT Id FROM Hotels WHERE Name = $hotelName), -1)
               )
             ORDER BY p.LastName, p.FirstName, p.Id;
             """;
@@ -272,10 +272,16 @@ public sealed class RoomAllocationRepository
             }
             if (existingId > 0)
             {
+                await using var hotel = connection.CreateCommand();
+                hotel.Transaction = (SqliteTransaction)transaction;
+                hotel.CommandText = "INSERT INTO Hotels (Name) VALUES ($name) ON CONFLICT(Name) DO NOTHING; SELECT Id FROM Hotels WHERE Name=$name;";
+                hotel.Parameters.AddWithValue("$name", room.HotelName);
+                var hotelId = Convert.ToInt32(await hotel.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
                 await using var update = connection.CreateCommand();
                 update.Transaction = (SqliteTransaction)transaction;
-                update.CommandText = "UPDATE RoomAllocations SET RoomNumber=$roomNumber, RoomType=$roomType, TourType=$tourType, Period=$period, GroupType=$groupType, DaysCount=$daysCount, CheckInDate=$checkIn, CheckOutDate=$checkOut, IsConnection=$isConnection, ConnectionGroupId=$connectionGroupId, SyncId=$syncId, LastModifiedUtc=$modified, IsDeleted=$deleted WHERE Id=$id; DELETE FROM RoomOccupants WHERE RoomAllocationId=$id;";
+                update.CommandText = "UPDATE RoomAllocations SET HotelId=$hotelId, RoomNumber=$roomNumber, RoomType=$roomType, TourType=$tourType, Period=$period, GroupType=$groupType, DaysCount=$daysCount, CheckInDate=$checkIn, CheckOutDate=$checkOut, IsConnection=$isConnection, ConnectionGroupId=$connectionGroupId, SyncId=$syncId, LastModifiedUtc=$modified, IsDeleted=$deleted WHERE Id=$id; DELETE FROM RoomOccupants WHERE RoomAllocationId=$id;";
                 update.Parameters.AddWithValue("$id", existingId);
+                update.Parameters.AddWithValue("$hotelId", hotelId);
                 AddRoomParameters(update, room);
                 await update.ExecuteNonQueryAsync();
             }

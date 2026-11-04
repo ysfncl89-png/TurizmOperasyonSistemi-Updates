@@ -9,6 +9,7 @@
 - Mobil eşitleme hatası, QR okutulunca değil “Şimdi Eşitle” düğmesine basıldıktan sonra çıkmaktadır; hata analizinde QR eşleştirme ile veri aktarımı aşamaları ayrılmalı ve kullanıcının belirttiği aşama esas alınmalıdır.
 - Ayarlar eşitleme davranışı: Desktop AppSettings kartlarının kayıtları mobil Ayarlar'a da aktarılmalı; mobilde eklenmiş olup masaüstünde olmayan ayarlar korunarak masaüstüne yeni ayar olarak eklenmeli. İstenen davranış iki taraflı birleştirme (union), masaüstü tek taraflı overwrite değil.
 - Kişiler modülünde silme kalıcı ve ilişkili tüm kayıtları kapsamalı; mobilde silip masaüstüyle eşitleyince masaüstünde de kişi ve ona bağlı tüm kayıtlar silinmeli, masaüstünden silip eşitleyince mobilde de aynı şekilde silinmeli. Bu kural yalnızca Kişiler modülü içindir; diğer modüllerin mevcut silme/eşitleme davranışı değiştirilmemelidir.
+- Kullanıcı, mobil ile masaüstü arasındaki mevcut eşitleme davranışının sorunsuz olduğunu ve gelecekteki değişikliklerde eşitleme akışının bozulmaması için sync ile ilgili düzenlemelere dokunulmamasını tercih ediyor; gerekli olduğunda önce yalnızca hedeflenen sorunu dar kapsamda çöz, sync davranışını değiştirme.
 
 ## Manifest Format
 - LocalAppData Manifest must be simple JSON with fields MachineId, Version, LastModified, Hash (e.g., {"MachineId":"A-PC","Version":1,"LastModified":"2026-07-05T18:22:00","Hash":"..."})

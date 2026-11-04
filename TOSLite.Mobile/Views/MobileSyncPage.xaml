@@ -14,12 +14,14 @@
                 <zxing:CameraBarcodeReaderView x:Name="CameraView" HeightRequest="320" BarcodesDetected="OnBarcodesDetected" IsDetecting="False" />
             </Border>
             <Button x:Name="ScanButton" Text="Masaüstü QR Kodunu Tara" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnScanClicked" />
-            <Button x:Name="SyncButton" Text="Şimdi Eşitle" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
+            <Button x:Name="SyncButton" Text="Mobilden Masaüstü Programa Eşitle" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
+            <Button x:Name="DesktopSyncButton" Text="Masaüstü Programından Mobil Programa Eşitle" BackgroundColor="#C62828" TextColor="White" Clicked="OnDesktopSyncClicked" IsVisible="False" />
             <Border x:Name="ResultPanel" IsVisible="False" Stroke="#D8F0DF" StrokeShape="RoundRectangle 18" BackgroundColor="White" Padding="18">
                 <VerticalStackLayout Spacing="12">
                     <Label x:Name="ResultIcon" Text="✓" FontSize="64" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#20A464" />
                     <Label x:Name="ResultTitle" Text="Eşitleme tamamlandı" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#176B43" />
                     <Label x:Name="ResultSummary" TextColor="#394150" />
+                    <Label x:Name="FinalSyncMessage" IsVisible="False" TextColor="#C62828" FontSize="18" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                     <CollectionView x:Name="ImportedItemsView" HeightRequest="220" SelectionMode="None">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
@@ -34,7 +36,7 @@
                 </VerticalStackLayout>
             </Border>
             <Button x:Name="UnpairButton" Text="Eşleşmeyi Kaldır" BackgroundColor="#EFEAFF" TextColor="#4932A8" Clicked="OnUnpairClicked" IsVisible="False" />
-            <Label x:Name="ReportLabel" Text="Çakışmalar masaüstünde raporlanır; mevcut masaüstü kayıtları otomatik değiştirilmez." TextColor="#687083" />
+            <Label x:Name="ReportLabel" Text="Eşitleme iki aşamalıdır: önce mobil veriler masaüstüne aktarılır, ardından masaüstü verileri mobilde uygulanır." TextColor="#687083" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

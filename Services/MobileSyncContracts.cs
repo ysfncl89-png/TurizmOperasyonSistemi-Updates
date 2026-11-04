@@ -20,6 +20,11 @@ public sealed class MobileSyncPackage
     public List<MobileRoomingDto> Rooming { get; set; } = [];
 }
 
+public sealed class MobileSyncDeviceRequest
+{
+    public string DeviceId { get; set; } = string.Empty;
+}
+
 public sealed class MobilePersonDto
 {
     public int LocalId { get; set; }
@@ -103,6 +108,7 @@ public sealed class MobileRoomingDto
     public bool IsConnection { get; set; }
     public string ConnectionGroupId { get; set; } = string.Empty;
     public List<int> PassengerIds { get; set; } = [];
+    public List<int> PassengerDesktopIds { get; set; } = [];
     public DateTime LastModifiedUtc { get; set; }
     public bool IsDeleted { get; set; }
 }

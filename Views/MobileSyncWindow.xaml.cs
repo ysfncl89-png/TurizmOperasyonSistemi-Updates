@@ -67,6 +67,14 @@ public partial class MobileSyncWindow : Window
             ImportedRoomingList.ItemsSource = GetImportedItems(result, "Oda yerleşimi");
             ImportedSettingsList.ItemsSource = GetImportedItems(result, "Ayar");
             ConflictList.ItemsSource = result.Conflicts;
+            SyncCompletionPanel.Visibility = Visibility.Visible;
+            SyncSuccessIcon.Text = result.Conflicts.Count == 0 ? "✓" : "i";
+            SyncSuccessIcon.Foreground = result.Conflicts.Count == 0
+                ? System.Windows.Media.Brushes.ForestGreen
+                : System.Windows.Media.Brushes.DarkOrange;
+            SyncInstructionText.Text = result.Conflicts.Count == 0
+                ? "Mobilden Masaüstüne eşitleme yapıldı. Şimdi mobil cihazınızdan “Masaüstü Programından Mobil Programa Eşitle” düğmesine tıklayarak eşitlemeyi tamamlayın."
+                : $"Eşitleme bağlantısı kuruldu ve aktarım tamamlandı. {result.Conflicts.Count} kayıt aktarılmadı; ayrıntılarını aşağıdan inceleyin. Ardından mobil cihazınızdan “Masaüstü Programından Mobil Programa Eşitle” düğmesine tıklayın.";
         });
     }
 
