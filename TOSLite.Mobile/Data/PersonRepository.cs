@@ -243,6 +243,18 @@ public sealed class PersonRepository
         return person.Id;
     }
 
+    public async Task UpdateCargoContactAsync(int personId, string phoneNumber, string address)
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE PersonRecords SET PhoneNumber=$phoneNumber, Address=$address, LastModifiedUtc=$modified WHERE Id=$id;";
+        command.Parameters.AddWithValue("$phoneNumber", phoneNumber ?? string.Empty);
+        command.Parameters.AddWithValue("$address", address ?? string.Empty);
+        command.Parameters.AddWithValue("$modified", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$id", personId);
+        await command.ExecuteNonQueryAsync();
+    }
+
     public async Task DeleteAsync(int id)
     {
         await using var connection = await OpenConnectionAsync();

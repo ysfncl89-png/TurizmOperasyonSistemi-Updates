@@ -8,11 +8,12 @@ namespace TOSLite.Mobile.Views;
 public sealed class CargoCandidate
 {
     public int RegistrationId { get; init; }
+    public int PersonId { get; init; }
     public int? DesktopRegistrationId { get; init; }
     public string PersonName { get; init; } = string.Empty;
     public string Tc { get; init; } = string.Empty;
-    public string PhoneNumber { get; init; } = string.Empty;
-    public string Address { get; init; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
     public string TourType { get; init; } = string.Empty;
     public string Period { get; init; } = string.Empty;
     public string GroupType { get; init; } = string.Empty;
@@ -78,7 +79,7 @@ public partial class CargoDocumentsPage : ContentPage
             if (!people.TryGetValue(registration.PersonId, out var person)) continue;
             _allCandidates.Add(new CargoCandidate
             {
-                RegistrationId = registration.Id, DesktopRegistrationId = registration.Id,
+                RegistrationId = registration.Id, PersonId = person.Id, DesktopRegistrationId = registration.Id,
                 PersonName = $"{person.FirstName} {person.LastName}".Trim(), Tc = person.TcKimlikNo,
                 PhoneNumber = person.PhoneNumber, Address = person.Address,
                 TourType = registration.TourType, Period = registration.Period,
@@ -105,7 +106,67 @@ public partial class CargoDocumentsPage : ContentPage
     private async void OnPreviewCandidateClicked(object? sender, EventArgs e)
     {
         if (_selected == null) { await DisplayAlertAsync("Kayıt seçin", "Kargo havuzuna göndermeden önce incelemek istediğiniz kişiyi seçin.", "Tamam"); return; }
-        await DisplayAlertAsync("Gönderi bilgilerini inceleyin", $"Kişi: {_selected.PersonName}\nKimlik: {_selected.Tc}\nTelefon: {_selected.PhoneNumber}\nAdres: {_selected.Address}\nTur: {_selected.TourSummary}", "Kapat");
+        var candidate = _selected;
+        var edited = await ShowCandidatePreviewAsync(candidate);
+        if (edited is null) return;
+        await _persons.UpdateCargoContactAsync(candidate.PersonId, edited.Value.Phone, edited.Value.Address);
+        candidate.PhoneNumber = edited.Value.Phone;
+        candidate.Address = edited.Value.Address;
+        ApplyCandidateFilters();
+    }
+
+    private async Task<(string Phone, string Address)?> ShowCandidatePreviewAsync(CargoCandidate candidate)
+    {
+        var phoneEntry = new Entry { Text = candidate.PhoneNumber, Placeholder = "Telefon", Keyboard = Keyboard.Telephone };
+        var addressEditor = new Editor { Text = candidate.Address, Placeholder = "Adres", AutoSize = EditorAutoSizeOption.TextChanges, HeightRequest = 100 };
+        var result = new TaskCompletionSource<(string Phone, string Address)?>();
+        var cancelButton = new Button { Text = "İptal", BackgroundColor = Color.FromArgb("#E2E8F0"), TextColor = Color.FromArgb("#172033") };
+        var saveButton = new Button { Text = "Kaydet", BackgroundColor = Color.FromArgb("#4338CA"), TextColor = Colors.White };
+        var modal = new ContentPage
+        {
+            Title = "Gönderi bilgileri",
+            BackgroundColor = Color.FromArgb("#F4F6FA"),
+            Content = new ScrollView
+            {
+                Content = new VerticalStackLayout
+                {
+                    Padding = 20,
+                    Spacing = 12,
+                    Children =
+                    {
+                        new Label { Text = "Gönderi bilgilerini inceleyin", FontSize = 21, FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#172033") },
+                        new Label { Text = $"Kişi: {candidate.PersonName}\nKimlik: {candidate.Tc}", FontSize = 15, TextColor = Color.FromArgb("#334155") },
+                        new Label { Text = "Telefon (düzenlenebilir)", FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#334155") },
+                        phoneEntry,
+                        new Label { Text = "Adres (düzenlenebilir)", FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#334155") },
+                        addressEditor,
+                        new Label { Text = $"Tur: {candidate.TourSummary}", FontSize = 14, TextColor = Color.FromArgb("#475569") },
+                        new HorizontalStackLayout
+                        {
+                            Spacing = 10,
+                            HorizontalOptions = LayoutOptions.End,
+                            Children =
+                            {
+                                cancelButton,
+                                saveButton
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        cancelButton.Clicked += async (_, _) =>
+        {
+            result.TrySetResult(null);
+            await Navigation.PopModalAsync();
+        };
+        saveButton.Clicked += async (_, _) =>
+        {
+            result.TrySetResult((phoneEntry.Text?.Trim() ?? string.Empty, addressEditor.Text?.Trim() ?? string.Empty));
+            await Navigation.PopModalAsync();
+        };
+        await Navigation.PushModalAsync(new NavigationPage(modal));
+        return await result.Task;
     }
 
     private async void OnAddToQueueClicked(object? sender, EventArgs e)
@@ -147,13 +208,7 @@ public partial class CargoDocumentsPage : ContentPage
         {
             var items = (await _queue.GetQueueAsync()).ToList();
             if (items.Count == 0) { await DisplayAlertAsync("Kargo havuzu boş", "PDF için önce kargo kayıtlarını havuza ekleyin.", "Tamam"); return; }
-            var rows = items.Select(item => (IReadOnlyDictionary<string, string>)new Dictionary<string, string>
-            {
-                ["Ad Soyad"] = item.FullName, ["Telefon"] = item.Phone, ["Adres"] = item.Address,
-                ["Tur"] = item.TourType, ["Dönem"] = item.Period, ["Grup"] = item.GroupType,
-                ["Gün"] = item.DaysCount, ["Etiket adedi"] = item.Quantity.ToString(CultureInfo.CurrentCulture)
-            }).ToList();
-            var bytes = _export.CreatePdf("Kargo Havuzu", ["Ad Soyad", "Telefon", "Adres", "Tur", "Dönem", "Grup", "Gün", "Etiket adedi"], rows);
+            var bytes = _export.CreateCargoLabelsPdf(items);
             var fileName = $"Kargo_Havuzu_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
             await _downloads.SaveAsync(fileName, "application/pdf", bytes);
             await DisplayAlertAsync("İndirme tamamlandı", $"Kargo PDF dosyası İndirilenler klasörüne kaydedildi:\n{fileName}", "Tamam");

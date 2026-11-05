@@ -4,6 +4,7 @@ using System.Text;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using TOSLite.Mobile.Models;
 
 namespace TOSLite.Mobile.Services;
 
@@ -87,7 +88,163 @@ public sealed class ListExportService
 #endif
     }
 
+    public byte[] CreateCargoLabelsPdf(IReadOnlyList<CargoQueueRecord> items)
+    {
+        var groups = items
+            .SelectMany(item => Enumerable.Repeat(item, Math.Max(1, item.Quantity)))
+            .GroupBy(item => new { item.TourType, item.Period, item.GroupType, item.DaysCount })
+            .Select(group => (Title: string.Join(" · ", new[] { group.Key.TourType, group.Key.Period, group.Key.GroupType, group.Key.DaysCount }.Where(value => !string.IsNullOrWhiteSpace(value))), Items: group.ToList()))
+            .ToList();
 #if ANDROID
+        return CreateAndroidCargoLabelsPdf(groups);
+#else
+        QuestPDF.Settings.License = LicenseType.Community;
+        return Document.Create(document =>
+        {
+            foreach (var group in groups)
+            {
+                foreach (var pageItems in group.Items.Chunk(12))
+                {
+                    document.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(22.7f);
+                        page.DefaultTextStyle(style => style.FontFamily(Fonts.Arial).FontSize(9));
+                        page.Content().Column(column =>
+                        {
+                            column.Item().Height(28).AlignCenter().AlignMiddle().Text(group.Title).Bold().FontSize(12);
+                            column.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn();
+                                    columns.RelativeColumn();
+                                    columns.RelativeColumn();
+                                });
+                                for (var index = 0; index < 12; index++)
+                                {
+                                    var item = index < pageItems.Length ? pageItems[index] : null;
+                                    table.Cell().Padding(3).Border(1).BorderColor("#334155").Height(185).Padding(7).Column(cell =>
+                                    {
+                                        if (item is null) return;
+                                        cell.Item().Text("ALICI").Bold().FontSize(9);
+                                        cell.Item().PaddingTop(5).Text(item.FullName).SemiBold().FontSize(11);
+                                        cell.Item().PaddingTop(3).Text($"Tel: {item.Phone}").FontSize(10);
+                                        cell.Item().PaddingTop(3).Text(item.Address).FontSize(9);
+                                    });
+                                }
+                            });
+                        });
+                    });
+                }
+            }
+        }).GeneratePdf();
+#endif
+    }
+
+#if ANDROID
+    private static byte[] CreateAndroidCargoLabelsPdf(IReadOnlyList<(string Title, List<CargoQueueRecord> Items)> groups)
+    {
+        const int pageWidth = 595;
+        const int pageHeight = 842;
+        const int margin = 23;
+        const int headerHeight = 28;
+        const int columns = 3;
+        const int rows = 4;
+        const int perPage = columns * rows;
+        var cellWidth = (pageWidth - margin * 2) / columns;
+        var cellHeight = (pageHeight - margin * 2 - headerHeight) / rows;
+        using var document = new Android.Graphics.Pdf.PdfDocument();
+        using var output = new MemoryStream();
+        var pageNumber = 0;
+        using var titlePaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias)
+        {
+            Color = Android.Graphics.Color.Rgb(23, 35, 54),
+            TextSize = 12
+        };
+        titlePaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var headingPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias)
+        {
+            Color = Android.Graphics.Color.Rgb(51, 65, 85),
+            TextSize = 9
+        };
+        headingPaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var namePaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias)
+        {
+            Color = Android.Graphics.Color.Rgb(15, 23, 42),
+            TextSize = 11
+        };
+        namePaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var detailPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias)
+        {
+            Color = Android.Graphics.Color.Rgb(15, 23, 42),
+            TextSize = 9
+        };
+        using var borderPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias)
+        {
+            Color = Android.Graphics.Color.Rgb(51, 65, 85),
+            StrokeWidth = 1
+        };
+        using var labelFillPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias)
+        {
+            Color = Android.Graphics.Color.White
+        };
+
+        foreach (var group in groups)
+        {
+            foreach (var pageItems in group.Items.Chunk(perPage))
+            {
+                var info = new Android.Graphics.Pdf.PdfDocument.PageInfo.Builder(pageWidth, pageHeight, ++pageNumber).Create();
+                var page = document.StartPage(info);
+                var canvas = page.Canvas;
+                var title = group.Title;
+                while (title.Length > 0 && titlePaint.MeasureText(title) > pageWidth - margin * 2)
+                    title = title[..^1];
+                canvas.DrawText(title, margin, margin + 15, titlePaint);
+
+                for (var index = 0; index < perPage; index++)
+                {
+                    var column = index % columns;
+                    var row = index / columns;
+                    var left = margin + column * cellWidth + 3;
+                    var top = margin + headerHeight + row * cellHeight + 3;
+                    var right = margin + (column + 1) * cellWidth - 3;
+                    var bottom = margin + headerHeight + (row + 1) * cellHeight - 3;
+                    canvas.DrawRect(left + 1, top + 1, right - 1, bottom - 1, labelFillPaint);
+                    canvas.DrawLine(left, top, right, top, borderPaint);
+                    canvas.DrawLine(right, top, right, bottom, borderPaint);
+                    canvas.DrawLine(right, bottom, left, bottom, borderPaint);
+                    canvas.DrawLine(left, bottom, left, top, borderPaint);
+                    if (index >= pageItems.Length) continue;
+
+                    var item = pageItems[index];
+                    var textX = left + 9;
+                    float textY = top + 18;
+                    canvas.DrawText("ALICI", textX, textY, headingPaint);
+                    textY += 19;
+                    textY = DrawCargoLabelText(canvas, item.FullName, textX, textY, right - left - 18, namePaint, 16, bottom);
+                    textY = DrawCargoLabelText(canvas, $"Tel: {item.Phone}", textX, textY + 4, right - left - 18, detailPaint, 13, bottom);
+                    DrawCargoLabelText(canvas, item.Address, textX, textY + 4, right - left - 18, detailPaint, 13, bottom);
+                }
+                document.FinishPage(page);
+            }
+        }
+
+        document.WriteTo(output);
+        return output.ToArray();
+    }
+
+    private static float DrawCargoLabelText(Android.Graphics.Canvas canvas, string? text, float x, float y, float maxWidth, Android.Graphics.Paint paint, float lineHeight, float bottom)
+    {
+        foreach (var line in WrapText(text ?? string.Empty, maxWidth, paint))
+        {
+            if (y > bottom - 8) break;
+            canvas.DrawText(line, x, y, paint);
+            y += lineHeight;
+        }
+        return y;
+    }
+
     private static byte[] CreateAndroidPdf(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyDictionary<string, string>> rows)
     {
         const int margin = 28;
