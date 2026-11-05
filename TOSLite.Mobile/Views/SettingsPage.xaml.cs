@@ -1,4 +1,4 @@
-using TOSLite.Mobile.Data;
+﻿using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Models;
 
 namespace TOSLite.Mobile.Views;
@@ -61,15 +61,15 @@ public partial class SettingsPage : ContentPage
             var isSelected = _selectedType == CanonicalType(category.Type);
             var button = new Button
             {
-                Text = isSelected ? $"✓  {category.Title}" : category.Title,
-                WidthRequest = 164,
-                HeightRequest = 58,
-                Margin = new Thickness(5),
-                CornerRadius = 16,
-                BackgroundColor = isSelected ? Color.FromArgb("#6D4AFF") : Color.FromArgb("#EFEAFF"),
-                BorderColor = isSelected ? Color.FromArgb("#4932A8") : Color.FromArgb("#DCD4FF"),
-                BorderWidth = isSelected ? 2 : 1,
-                TextColor = isSelected ? Colors.White : Color.FromArgb("#4932A8"),
+                Text = isSelected ? $"✓  {category.Title}" : $"{category.Title}  ›",
+                HeightRequest = 52,
+                HorizontalOptions = LayoutOptions.Fill,
+                Margin = new Thickness(0, 2),
+                CornerRadius = 12,
+                BackgroundColor = isSelected ? Color.FromArgb("#EEF2FF") : Colors.White,
+                BorderColor = isSelected ? Color.FromArgb("#C7D2FE") : Color.FromArgb("#E2E8F0"),
+                BorderWidth = 1,
+                TextColor = isSelected ? Color.FromArgb("#3730A3") : Color.FromArgb("#0F172A"),
                 FontAttributes = FontAttributes.Bold,
                 CommandParameter = category.Type
             };

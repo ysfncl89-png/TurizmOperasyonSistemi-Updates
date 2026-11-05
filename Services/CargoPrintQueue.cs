@@ -10,6 +10,11 @@ namespace TurizmOperasyonSistemi.Services
 {
     public class PrintQueueItem
     {
+        public string SyncId { get; set; } = Guid.NewGuid().ToString("N");
+        public string SyncDeviceId { get; set; } = string.Empty;
+        public int? DesktopQueueId { get; set; }
+        public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
+        public bool IsDeleted { get; set; }
         public int RegistrationId { get; set; }
         public string FullName { get; set; }
         public string Tc { get; set; }
@@ -63,9 +68,46 @@ namespace TurizmOperasyonSistemi.Services
         {
             if (item == null) return;
             item.AddedAt = DateTime.UtcNow;
+            item.LastModifiedUtc = DateTime.UtcNow;
+            item.SyncId = string.IsNullOrWhiteSpace(item.SyncId) ? Guid.NewGuid().ToString("N") : item.SyncId;
+            item.IsDeleted = false;
             lock (_sync)
             {
                 Items.Add(item);
+            }
+        }
+
+        public PrintQueueItem ApplySyncItem(PrintQueueItem item)
+        {
+            lock (_sync)
+            {
+                var existing = Items.FirstOrDefault(x => x.SyncId == item.SyncId && x.SyncDeviceId == item.SyncDeviceId);
+                if (item.IsDeleted)
+                {
+                    if (existing is not null) Items.Remove(existing);
+                    return item;
+                }
+                if (existing is null)
+                {
+                    Items.Add(item);
+                    return item;
+                }
+                if (existing.LastModifiedUtc > item.LastModifiedUtc) return existing;
+                existing.RegistrationId = item.RegistrationId;
+                existing.FullName = item.FullName;
+                existing.Tc = item.Tc;
+                existing.Phone = item.Phone;
+                existing.Address = item.Address;
+                existing.TourType = item.TourType;
+                existing.Period = item.Period;
+                existing.GroupType = item.GroupType;
+                existing.DaysCount = item.DaysCount;
+                existing.Quantity = item.Quantity;
+                existing.AddedAt = item.AddedAt;
+                existing.Printed = item.Printed;
+                existing.DesktopQueueId = item.DesktopQueueId;
+                existing.LastModifiedUtc = item.LastModifiedUtc;
+                return existing;
             }
         }
 
@@ -74,6 +116,8 @@ namespace TurizmOperasyonSistemi.Services
             if (item == null) return;
             lock (_sync)
             {
+                item.IsDeleted = true;
+                item.LastModifiedUtc = DateTime.UtcNow;
                 Items.Remove(item);
                 try { ItemRemoved?.Invoke(item); } catch { }
             }
@@ -110,6 +154,8 @@ namespace TurizmOperasyonSistemi.Services
 
                     if (existing.Quantity <= 0)
                     {
+                        existing.IsDeleted = true;
+                        existing.LastModifiedUtc = DateTime.UtcNow;
                         Items.Remove(existing);
                         try { ItemRemoved?.Invoke(existing); } catch { }
                     }
@@ -145,6 +191,7 @@ namespace TurizmOperasyonSistemi.Services
                     try
                     {
                         existing.Quantity = Math.Max(0, existing.Quantity + amount);
+                        existing.LastModifiedUtc = DateTime.UtcNow;
                     }
                     catch { existing.Quantity = Math.Max(1, amount); }
 
@@ -159,6 +206,7 @@ namespace TurizmOperasyonSistemi.Services
         {
             if (item == null) return;
             item.Printed = true;
+            item.LastModifiedUtc = DateTime.UtcNow;
             ThreadPool.QueueUserWorkItem(_ => SaveToFile());
         }
 

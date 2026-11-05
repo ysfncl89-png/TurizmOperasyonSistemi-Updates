@@ -4,39 +4,39 @@
              xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
              x:Class="TOSLite.Mobile.Views.MobileSyncPage"
              Title="Masaüstü Eşitleme"
-             BackgroundColor="#F6F7FB">
+             BackgroundColor="{StaticResource PageBackground}">
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="14">
-            <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="#6D4AFF" Clicked="OnHomeClicked" />
-            <Label Text="Masaüstü Eşitleme" FontSize="26" FontAttributes="Bold" TextColor="#24213A" />
-            <Label x:Name="StatusLabel" Text="Bilgisayar ve telefonun aynı Wi-Fi/LAN ağına bağlı olduğundan emin olun." TextColor="#687083" />
-            <Border Stroke="#E7E4F0" StrokeShape="RoundRectangle 18" BackgroundColor="White" Padding="12">
-                <zxing:CameraBarcodeReaderView x:Name="CameraView" HeightRequest="320" BarcodesDetected="OnBarcodesDetected" IsDetecting="False" />
+        <VerticalStackLayout Padding="18,12,18,24" Spacing="16">
+            <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" Clicked="OnHomeClicked" />
+            <Label Text="Masaüstü Eşitleme" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+            <Label x:Name="StatusLabel" Text="Bilgisayar ve telefonun aynı Wi-Fi/LAN ağına bağlı olduğundan emin olun." TextColor="{StaticResource TextSecondary}" />
+            <Border Style="{StaticResource CardBorder}" Padding="12">
+                <zxing:CameraBarcodeReaderView x:Name="CameraView" HeightRequest="280" BarcodesDetected="OnBarcodesDetected" IsDetecting="False" />
             </Border>
-            <Button x:Name="ScanButton" Text="Masaüstü QR Kodunu Tara" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnScanClicked" />
-            <Button x:Name="SyncButton" Text="Mobilden Masaüstü Programa Eşitle" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
-            <Button x:Name="DesktopSyncButton" Text="Masaüstü Programından Mobil Programa Eşitle" BackgroundColor="#C62828" TextColor="White" Clicked="OnDesktopSyncClicked" IsVisible="False" />
-            <Border x:Name="ResultPanel" IsVisible="False" Stroke="#D8F0DF" StrokeShape="RoundRectangle 18" BackgroundColor="White" Padding="18">
+            <Button x:Name="ScanButton" Text="Masaüstü QR Kodunu Tara" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnScanClicked" />
+            <Button x:Name="SyncButton" Text="Mobilden Masaüstü Programa Eşitle" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
+            <Button x:Name="DesktopSyncButton" Text="Masaüstü Programından Mobil Programa Eşitle" BackgroundColor="{StaticResource Warning}" TextColor="White" Clicked="OnDesktopSyncClicked" IsVisible="False" />
+            <Border x:Name="ResultPanel" IsVisible="False" Stroke="{StaticResource Success}" StrokeShape="RoundRectangle 20" BackgroundColor="{StaticResource Surface}" Padding="18">
                 <VerticalStackLayout Spacing="12">
-                    <Label x:Name="ResultIcon" Text="✓" FontSize="64" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#20A464" />
-                    <Label x:Name="ResultTitle" Text="Eşitleme tamamlandı" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#176B43" />
-                    <Label x:Name="ResultSummary" TextColor="#394150" />
-                    <Label x:Name="FinalSyncMessage" IsVisible="False" TextColor="#C62828" FontSize="18" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                    <Label x:Name="ResultIcon" Text="✓" FontSize="64" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="{StaticResource Success}" />
+                    <Label x:Name="ResultTitle" Text="Eşitleme tamamlandı" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="{StaticResource Success}" />
+                    <Label x:Name="ResultSummary" TextColor="{StaticResource TextPrimary}" />
+                    <Label x:Name="FinalSyncMessage" IsVisible="False" TextColor="{StaticResource Danger}" FontSize="18" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                     <CollectionView x:Name="ImportedItemsView" HeightRequest="220" SelectionMode="None">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Grid Padding="6" ColumnDefinitions="110,*">
-                                    <Label Text="{Binding RecordType}" FontAttributes="Bold" TextColor="#4932A8" />
-                                    <Label Grid.Column="1" Text="{Binding Description}" TextColor="#394150" />
+                                    <Label Text="{Binding RecordType}" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                                    <Label Grid.Column="1" Text="{Binding Description}" TextColor="{StaticResource TextPrimary}" />
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
-                    <Label x:Name="ConflictSummary" IsVisible="False" TextColor="#A65A00" />
+                    <Label x:Name="ConflictSummary" IsVisible="False" TextColor="{StaticResource Warning}" />
                 </VerticalStackLayout>
             </Border>
-            <Button x:Name="UnpairButton" Text="Eşleşmeyi Kaldır" BackgroundColor="#EFEAFF" TextColor="#4932A8" Clicked="OnUnpairClicked" IsVisible="False" />
-            <Label x:Name="ReportLabel" Text="Eşitleme iki aşamalıdır: önce mobil veriler masaüstüne aktarılır, ardından masaüstü verileri mobilde uygulanır." TextColor="#687083" />
+            <Button x:Name="UnpairButton" Text="Eşleşmeyi Kaldır" Style="{StaticResource SecondaryButton}" Clicked="OnUnpairClicked" IsVisible="False" />
+            <Label x:Name="ReportLabel" Text="Eşitleme iki aşamalıdır: önce mobil veriler masaüstüne aktarılır, ardından masaüstü verileri mobilde uygulanır." TextColor="{StaticResource TextSecondary}" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

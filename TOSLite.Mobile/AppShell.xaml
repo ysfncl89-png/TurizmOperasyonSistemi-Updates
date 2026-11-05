@@ -3,21 +3,19 @@
     x:Class="TOSLite.Mobile.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:TOSLite.Mobile"
-    Title="TOS Lite Mobil">
+    Title="TOS Lite Mobil"
+    Shell.TabBarBackgroundColor="{StaticResource Surface}"
+    Shell.TabBarForegroundColor="{StaticResource Primary}"
+    Shell.TabBarTitleColor="{StaticResource Primary}"
+    Shell.TabBarUnselectedColor="{StaticResource TextSecondary}">
 
     <Shell.Resources>
         <Style TargetType="Shell" ApplyToDerivedTypes="True">
-            <Setter Property="Shell.BackgroundColor" Value="#F6F7FB" />
-            <Setter Property="Shell.ForegroundColor" Value="#24213A" />
-            <Setter Property="Shell.TitleColor" Value="#24213A" />
+            <Setter Property="Shell.BackgroundColor" Value="{StaticResource Surface}" />
+            <Setter Property="Shell.ForegroundColor" Value="{StaticResource TextPrimary}" />
+            <Setter Property="Shell.TitleColor" Value="{StaticResource TextPrimary}" />
             <Setter Property="Shell.NavBarHasShadow" Value="False" />
         </Style>
     </Shell.Resources>
-
-    <ShellContent
-        Title="Ana Sayfa"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
 
 </Shell>

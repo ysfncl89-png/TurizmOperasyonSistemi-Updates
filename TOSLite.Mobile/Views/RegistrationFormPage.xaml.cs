@@ -392,13 +392,59 @@ public partial class RegistrationFormPage : ContentPage
         _record.PaidAmount = paid;
         _record.RemainingDebt = total - paid;
         var person = _personItems.First(x => x.Id == _selectedPersonId);
-        PreviewLabel.Text =
-            $"KİŞİ\n{person.FirstName} {person.LastName}\n\n" +
-            $"TUR VE GRUP\n{Selected(TourTypePicker)} — {Selected(PeriodPicker)}\n{Selected(GroupTypePicker)} — {Selected(DaysCountPicker)}\n\n" +
-            $"VİZE / BİLET / KARGO\nVize: {Selected(VisaRequestPicker)} / {Selected(VisaStatusPicker)}\nPasaport: {Selected(PassportArrivedPicker)}\nBilet: {Selected(TicketRequestPicker)} / {Selected(TicketStatusPicker)}\nKargo: {Selected(CargoPicker)}\n\n" +
-            $"ODA VE ULAŞIM\nOda: {Selected(RoomTypePicker)}\nKatılım şehri: {Selected(DepartureCityPicker)}\nAktarma: {Selected(TransferPicker)} {Selected(TransferCityPicker)}\nİlçe: {DistrictEntry.Text}\n\n" +
-            $"ÖDEME\nToplam: {total:N2} {Selected(CurrencyPicker)}\nÖdenen: {paid:N2}\nKalan: {total - paid:N2}\n\n" +
-            $"Referans: {ReferenceEntry.Text}";
+        var formattedPreview = new FormattedString();
+        var headingColor = (Color)Application.Current!.Resources["Primary"];
+        var fieldColors = new[]
+        {
+            (Color)Application.Current.Resources["PrimaryDark"],
+            (Color)Application.Current.Resources["Success"],
+            (Color)Application.Current.Resources["Warning"],
+            Color.FromArgb("#7C3AED"),
+            Color.FromArgb("#0F766E"),
+            Color.FromArgb("#C2410C")
+        };
+        var colorIndex = 0;
+
+        void AddHeading(string text)
+        {
+            if (formattedPreview.Spans.Count > 0)
+                formattedPreview.Spans.Add(new Span { Text = "\n" });
+            formattedPreview.Spans.Add(new Span { Text = text + "\n", FontAttributes = FontAttributes.Bold, TextColor = headingColor });
+            colorIndex = 0;
+        }
+
+        void AddField(string label, string value)
+        {
+            var color = fieldColors[colorIndex++ % fieldColors.Length];
+            formattedPreview.Spans.Add(new Span { Text = label + ": ", FontAttributes = FontAttributes.Bold, TextColor = color });
+            formattedPreview.Spans.Add(new Span { Text = value, FontAttributes = FontAttributes.Bold, TextColor = color });
+            formattedPreview.Spans.Add(new Span { Text = "\n" });
+        }
+
+        AddHeading("KİŞİ");
+        AddField("Ad Soyad", $"{person.FirstName} {person.LastName}");
+        AddHeading("TUR VE GRUP");
+        AddField("Tur", $"{Selected(TourTypePicker)} — {Selected(PeriodPicker)}");
+        AddField("Grup", $"{Selected(GroupTypePicker)} — {Selected(DaysCountPicker)} gün");
+        AddHeading("VİZE / BİLET / KARGO");
+        AddField("Vize talebi", Selected(VisaRequestPicker));
+        AddField("Vize durumu", Selected(VisaStatusPicker));
+        AddField("Pasaport", Selected(PassportArrivedPicker));
+        AddField("Bilet talebi", Selected(TicketRequestPicker));
+        AddField("Bilet durumu", Selected(TicketStatusPicker));
+        AddField("Kargo talebi", Selected(CargoPicker));
+        AddHeading("ODA VE ULAŞIM");
+        AddField("Oda", Selected(RoomTypePicker));
+        AddField("Katılım şehri", Selected(DepartureCityPicker));
+        AddField("Aktarma", $"{Selected(TransferPicker)} {Selected(TransferCityPicker)}".Trim());
+        AddField("İlçe", DistrictEntry.Text ?? string.Empty);
+        AddHeading("ÖDEME");
+        AddField("Toplam", $"{total:N2} {Selected(CurrencyPicker)}");
+        AddField("Ödenen", $"{paid:N2} {Selected(CurrencyPicker)}");
+        AddField("Kalan", $"{total - paid:N2} {Selected(CurrencyPicker)}");
+        AddHeading("REFERANS");
+        AddField("Referans kişi", ReferenceEntry.Text ?? string.Empty);
+        PreviewLabel.FormattedText = formattedPreview;
         return true;
     }
 

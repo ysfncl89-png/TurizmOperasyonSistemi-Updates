@@ -52,6 +52,9 @@ public sealed class ListExportService
 
     public byte[] CreatePdf(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyDictionary<string, string>> rows)
     {
+#if ANDROID
+        return CreateAndroidPdf(title, headers, rows);
+#else
         QuestPDF.Settings.License = LicenseType.Community;
         var landscape = headers.Count > 5;
         return Document.Create(document => document.Page(page =>
@@ -81,7 +84,112 @@ public sealed class ListExportService
                 text.TotalPages();
             });
         })).GeneratePdf();
+#endif
     }
+
+#if ANDROID
+    private static byte[] CreateAndroidPdf(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyDictionary<string, string>> rows)
+    {
+        const int margin = 28;
+        const float headerFontSize = 8;
+        const float bodyFontSize = 7;
+        const float lineHeight = 10;
+        var landscape = headers.Count > 5;
+        var pageWidth = landscape ? 842 : 595;
+        var pageHeight = landscape ? 595 : 842;
+        var columns = headers.Count == 0 ? new[] { string.Empty } : headers.ToArray();
+        var columnWidth = (pageWidth - margin * 2f) / columns.Length;
+        using var document = new Android.Graphics.Pdf.PdfDocument();
+        using var output = new MemoryStream();
+        Android.Graphics.Pdf.PdfDocument.Page? page = null;
+        Android.Graphics.Canvas? canvas = null;
+        var pageNumber = 0;
+        var y = 0f;
+
+        using var titlePaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias);
+        titlePaint.Color = Android.Graphics.Color.Rgb(23, 59, 114);
+        titlePaint.TextSize = 15;
+        titlePaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var headerPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias);
+        headerPaint.Color = Android.Graphics.Color.White;
+        headerPaint.TextSize = headerFontSize;
+        headerPaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var bodyPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias);
+        bodyPaint.Color = Android.Graphics.Color.Rgb(15, 23, 42);
+        bodyPaint.TextSize = bodyFontSize;
+        bodyPaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Normal));
+        using var linePaint = new Android.Graphics.Paint { Color = Android.Graphics.Color.Rgb(216, 224, 236), StrokeWidth = 0.6f };
+        using var headerBackground = new Android.Graphics.Paint { Color = Android.Graphics.Color.Rgb(23, 59, 114) };
+
+        void StartPage()
+        {
+            pageNumber++;
+            var info = new Android.Graphics.Pdf.PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).Create();
+            page = document.StartPage(info);
+            canvas = page.Canvas;
+            canvas.DrawText(title, margin, 32, titlePaint);
+            y = 52;
+            canvas.DrawRect(margin, y, pageWidth - margin, y + 22, headerBackground);
+            for (var index = 0; index < columns.Length; index++)
+            {
+                var text = WrapText(columns[index], columnWidth - 8, headerPaint).FirstOrDefault() ?? string.Empty;
+                canvas.DrawText(text, margin + index * columnWidth + 4, y + 14, headerPaint);
+            }
+            y += 22;
+        }
+
+        void FinishPage()
+        {
+            if (page is not null)
+            {
+                document.FinishPage(page);
+                page = null;
+                canvas = null;
+            }
+        }
+
+        StartPage();
+        foreach (var row in rows)
+        {
+            var cellLines = columns.Select(header => WrapText(GetValue(row, header), columnWidth - 8, bodyPaint)).ToArray();
+            var rowHeight = Math.Max(20, cellLines.Max(lines => lines.Count) * lineHeight + 8);
+            if (y + rowHeight > pageHeight - 36)
+            {
+                FinishPage();
+                StartPage();
+            }
+            for (var column = 0; column < cellLines.Length; column++)
+            {
+                for (var line = 0; line < cellLines[column].Count; line++)
+                    canvas!.DrawText(cellLines[column][line], margin + column * columnWidth + 4, y + 13 + line * lineHeight, bodyPaint);
+                canvas!.DrawLine(margin + column * columnWidth, y + rowHeight, margin + (column + 1) * columnWidth, y + rowHeight, linePaint);
+            }
+            y += rowHeight;
+        }
+        FinishPage();
+        document.WriteTo(output);
+        return output.ToArray();
+    }
+
+    private static List<string> WrapText(string text, float maxWidth, Android.Graphics.Paint paint)
+    {
+        var lines = new List<string>();
+        var current = string.Empty;
+        foreach (var word in (text ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var candidate = string.IsNullOrEmpty(current) ? word : $"{current} {word}";
+            if (paint.MeasureText(candidate) <= maxWidth)
+            {
+                current = candidate;
+                continue;
+            }
+            if (!string.IsNullOrEmpty(current)) lines.Add(current);
+            current = word;
+        }
+        if (!string.IsNullOrEmpty(current)) lines.Add(current);
+        return lines.Count == 0 ? [string.Empty] : lines;
+    }
+#endif
 
     private static string BuildWordRow(IReadOnlyList<string> values, bool header)
     {

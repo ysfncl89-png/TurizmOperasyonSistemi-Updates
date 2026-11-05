@@ -3,30 +3,35 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="TOSLite.Mobile.Views.RegistrationsPage"
              Title="Tur Kayıtları"
-             BackgroundColor="#F6F7FB">
+             BackgroundColor="{StaticResource PageBackground}">
     <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="18" RowSpacing="12">
-        <VerticalStackLayout Grid.Row="0" Spacing="8">
-            <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="#6D4AFF" Clicked="OnHomeClicked" />
+        <VerticalStackLayout Grid.Row="0" Spacing="10">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                <Label Text="Tur Kayıtları" FontSize="28" FontAttributes="Bold" TextColor="#24213A" VerticalOptions="Center" />
+                <Label Text="Tur Kayıtları" FontSize="28" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                 <Picker x:Name="PeriodPicker" Grid.Column="1" Title="Dönem" WidthRequest="158" HorizontalOptions="End" FontSize="13" SelectedIndexChanged="OnPeriodChanged" />
             </Grid>
             <Entry x:Name="SearchEntry" Placeholder="Kişi, tur veya dönem ara" PlaceholderColor="#687083" TextColor="#24213A" BackgroundColor="White" TextChanged="OnSearchTextChanged" />
         </VerticalStackLayout>
-        <Label x:Name="StatusLabel" Grid.Row="1" Text="Kayıtlı turlar" TextColor="#687083" FontSize="13" />
+        <Label x:Name="StatusLabel" Grid.Row="1" Text="Kayıtlı turlar" TextColor="{StaticResource TextSecondary}" FontSize="13" />
         <CollectionView x:Name="RegistrationsCollection" Grid.Row="2" SelectionMode="Single" SelectionChanged="OnRegistrationSelected">
             <CollectionView.EmptyView>
-                <Label Text="Henüz tur kaydı yok." TextColor="#687083" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                <Label Text="Henüz tur kaydı yok." TextColor="{StaticResource TextSecondary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
             </CollectionView.EmptyView>
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Border Stroke="#E4E6EF" StrokeShape="RoundRectangle 14" BackgroundColor="White" Padding="16" Margin="0,4">
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="{Binding PersonName}" FontAttributes="Bold" FontSize="16" TextColor="#24213A" />
-                            <Label Text="{Binding TourType}" TextColor="#6D4AFF" />
-                            <Label Text="{Binding Period}" TextColor="#687083" />
-                            <Label Text="{Binding GroupType}" TextColor="#687083" />
-                            <Label Text="{Binding DaysCount}" TextColor="#687083" />
+                    <Border Style="{StaticResource CardBorder}" Margin="0,5">
+                        <VerticalStackLayout Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <Label Text="{Binding PersonName}" FontAttributes="Bold" FontSize="17" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                                <Border Grid.Column="1" StrokeThickness="0" StrokeShape="RoundRectangle 10" BackgroundColor="{StaticResource PrimarySoft}" Padding="9,5" VerticalOptions="Center">
+                                    <Label Text="{Binding TourType}" FontAttributes="Bold" FontSize="12" TextColor="{StaticResource Primary}" />
+                                </Border>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+                                <Label Text="{Binding Period, StringFormat='Dönem: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
+                                <Label Grid.Column="1" Text="{Binding GroupType, StringFormat='Grup: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
+                                <Label Grid.Row="1" Text="{Binding DaysCount, StringFormat='Süre: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
+                            </Grid>
                         </VerticalStackLayout>
                     </Border>
                 </DataTemplate>
@@ -34,10 +39,10 @@
         </CollectionView>
         <VerticalStackLayout Grid.Row="3" Spacing="8">
             <HorizontalStackLayout x:Name="SelectedActions" IsVisible="False" Spacing="8">
-                <Button Text="Düzenle" HorizontalOptions="FillAndExpand" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnEditClicked" />
-                <Button Text="Sil" HorizontalOptions="FillAndExpand" BackgroundColor="#C53B4A" TextColor="White" Clicked="OnDeleteClicked" />
+                <Button Text="Düzenle" HorizontalOptions="FillAndExpand" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnEditClicked" />
+                <Button Text="Sil" HorizontalOptions="FillAndExpand" Style="{StaticResource DangerButton}" Clicked="OnDeleteClicked" />
             </HorizontalStackLayout>
-            <Button Text="Yeni Tur Kaydı Oluştur" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnNewClicked" />
+            <Button Text="+  Yeni Tur Kaydı Oluştur" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnNewClicked" />
         </VerticalStackLayout>
     </Grid>
 </ContentPage>

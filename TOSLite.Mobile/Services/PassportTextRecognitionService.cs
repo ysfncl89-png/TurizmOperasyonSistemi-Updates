@@ -38,7 +38,9 @@ public sealed class PassportTextRecognitionService : IPassportTextRecognitionSer
     public async Task<string> RecognizeAsync(string imagePath)
     {
 #if ANDROID
-        var image = InputImage.FromFilePath(Android.App.Application.Context, Android.Net.Uri.FromFile(new Java.IO.File(imagePath)));
+        var imageUri = Android.Net.Uri.FromFile(new Java.IO.File(imagePath))
+            ?? throw new ArgumentException("Pasaport görselinin URI'si oluşturulamadı.", nameof(imagePath));
+        var image = InputImage.FromFilePath(Android.App.Application.Context, imageUri);
         using var recognizer = Xamarin.Google.MLKit.Vision.Text.TextRecognition.GetClient(TextRecognizerOptions.DefaultOptions);
         var result = await recognizer.Process(image).AsAsync<Xamarin.Google.MLKit.Vision.Text.Text>();
         return string.Join(Environment.NewLine,

@@ -3,43 +3,65 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="TOSLite.Mobile.Views.RoomingPage"
              Title="Odalama"
-             BackgroundColor="#F6F7FB">
-    <ScrollView VerticalScrollBarVisibility="Always" BackgroundColor="#F6F7FB">
-        <VerticalStackLayout Padding="12" Spacing="8" BackgroundColor="#F6F7FB">
-            <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="#6D4AFF" Clicked="OnHomeClicked" />
-            <Label Text="Odalama Motoru" FontSize="22" FontAttributes="Bold" TextColor="#24213A" />
-            <Label Text="Tur kayıtlarındaki yolcuları otel odalarına yerleştirin." TextColor="#687083" />
-            <Picker x:Name="HotelPicker" Title="Otel seçin" SelectedIndexChanged="OnHotelChanged" TextColor="#24213A" TitleColor="#687083" BackgroundColor="White" />
-            <Picker x:Name="CriteriaPicker" Title="Tur / dönem / grup seçin" ItemDisplayBinding="{Binding DisplayText}" SelectedIndexChanged="OnCriteriaChanged" TextColor="#24213A" TitleColor="#687083" BackgroundColor="White" />
-            <Label x:Name="CriteriaLabel" Text="Tur kriteri seçildiğinde yolcu havuzu açılır." TextColor="#5B43B5" FontSize="12" />
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                <DatePicker x:Name="CheckInPicker" Grid.Column="0" Format="dd.MM.yyyy" TextColor="#24213A" BackgroundColor="White" DateSelected="OnCheckInDateSelected" />
-                <DatePicker x:Name="CheckOutPicker" Grid.Column="1" Format="dd.MM.yyyy" TextColor="#24213A" BackgroundColor="White" DateSelected="OnCheckOutDateSelected" />
-            </Grid>
-            <Label Text="Giriş tarihi                         Çıkış tarihi" TextColor="#687083" FontSize="12" />
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <Picker x:Name="RoomTypePicker" Grid.Column="0" Title="Oda türü" TextColor="#24213A" TitleColor="#687083" BackgroundColor="White" />
-                <Button Grid.Column="1" Text="Oda ekle" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnAddRoomClicked" />
-            </Grid>
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <Picker x:Name="RoomPicker" Grid.Column="0" Title="Yerleştirme yapılacak oda" ItemDisplayBinding="{Binding DisplayText}" SelectedIndexChanged="OnRoomPickerChanged" TextColor="#24213A" TitleColor="#687083" BackgroundColor="White" />
-                <Button Grid.Column="1" Text="Bağla / çöz" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnToggleConnectionClicked" />
-            </Grid>
-            <Label x:Name="ConnectionLabel" Text="Bağlı oda: yok" TextColor="#5B43B5" FontSize="12" />
-            <Border Stroke="#E4E6EF" StrokeShape="RoundRectangle 16" BackgroundColor="White" Padding="12">
-                <VerticalStackLayout Spacing="8">
-                    <Label x:Name="CandidatesHeading" Text="Yolcu havuzu" FontAttributes="Bold" TextColor="#24213A" />
-                    <CollectionView x:Name="CandidatesCollection" SelectionMode="None" HeightRequest="190">
-                        <CollectionView.EmptyView>
-                            <Label Text="Seçilen kriterlerde boş yolcu yok." TextColor="#687083" FontSize="12" />
-                        </CollectionView.EmptyView>
+             BackgroundColor="{StaticResource PageBackground}">
+    <ScrollView VerticalScrollBarVisibility="Always" BackgroundColor="{StaticResource PageBackground}">
+        <VerticalStackLayout Padding="16,12,16,24" Spacing="14" BackgroundColor="{StaticResource PageBackground}">
+            <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" Clicked="OnHomeClicked" />
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Odalama Motoru" FontSize="24" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                <Label Text="Tur kayıtlarındaki yolcuları otel odalarına yerleştirin." TextColor="{StaticResource TextSecondary}" />
+            </VerticalStackLayout>
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Konaklama planı" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Label Text="Otel" Style="{StaticResource FormFieldLabel}" />
+                    <Picker x:Name="HotelPicker" Title="Otel seçin" SelectedIndexChanged="OnHotelChanged" TextColor="{StaticResource TextPrimary}" TitleColor="{StaticResource TextSecondary}" BackgroundColor="{StaticResource SurfaceAlt}" />
+                    <Label Text="Tur, dönem ve grup" Style="{StaticResource FormFieldLabel}" />
+                    <Picker x:Name="CriteriaPicker" Title="Tur / dönem / grup seçin" ItemDisplayBinding="{Binding DisplayText}" SelectedIndexChanged="OnCriteriaChanged" TextColor="{StaticResource TextPrimary}" TitleColor="{StaticResource TextSecondary}" BackgroundColor="{StaticResource SurfaceAlt}" />
+                    <Label x:Name="CriteriaLabel" Text="Tur kriteri seçildiğinde yolcu havuzu açılır." TextColor="{StaticResource Primary}" FontSize="12" />
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="4">
+                        <Label Text="Giriş tarihi" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+                        <Label Grid.Column="1" Text="Çıkış tarihi" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+                        <DatePicker x:Name="CheckInPicker" Grid.Row="1" Format="dd.MM.yyyy" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource SurfaceAlt}" DateSelected="OnCheckInDateSelected" />
+                        <DatePicker x:Name="CheckOutPicker" Grid.Row="1" Grid.Column="1" Format="dd.MM.yyyy" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource SurfaceAlt}" DateSelected="OnCheckOutDateSelected" />
+                    </Grid>
+                    <VerticalStackLayout Spacing="2">
+                            <Label Text="Oda türü" Style="{StaticResource FormFieldLabel}" />
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <Picker x:Name="RoomTypePicker" Title="Oda türü seçin" TextColor="{StaticResource TextPrimary}" TitleColor="{StaticResource TextSecondary}" BackgroundColor="{StaticResource SurfaceAlt}" />
+                                <Button Grid.Column="1" Text="Oda ekle" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnAddRoomClicked" />
+                            </Grid>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="2">
+                            <Label Text="Yerleştirme yapılacak oda" Style="{StaticResource FormFieldLabel}" />
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <Picker x:Name="RoomPicker" Title="Oda seçin" ItemDisplayBinding="{Binding DisplayText}" SelectedIndexChanged="OnRoomPickerChanged" TextColor="{StaticResource TextPrimary}" TitleColor="{StaticResource TextSecondary}" BackgroundColor="{StaticResource SurfaceAlt}" />
+                                <Button Grid.Column="1" Text="Bağla / çöz" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnToggleConnectionClicked" />
+                            </Grid>
+                    </VerticalStackLayout>
+                    <Label x:Name="ConnectionLabel" Text="Bağlı oda: yok" TextColor="{StaticResource Primary}" FontSize="12" />
+                </VerticalStackLayout>
+            </Border>
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="6">
+                    <Label x:Name="CandidatesHeading" Text="Yolcu havuzu" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Label Text="Havuzda kişi ara" Style="{StaticResource FormFieldLabel}" />
+                    <Entry x:Name="CandidateSearchEntry"
+                           Placeholder="Havuzda kişi ara"
+                           PlaceholderColor="{StaticResource TextSecondary}"
+                           TextColor="{StaticResource TextPrimary}"
+                           BackgroundColor="{StaticResource SurfaceAlt}"
+                           ClearButtonVisibility="WhileEditing"
+                           TextChanged="OnCandidateSearchTextChanged" />
+                    <Label x:Name="CandidateEmptyLabel" Text="Seçilen kriterlerde boş yolcu yok." TextColor="{StaticResource TextSecondary}" FontSize="12" IsVisible="False" />
+                    <CollectionView x:Name="CandidatesCollection" SelectionMode="None" HeightRequest="270">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border Stroke="#E4E6EF" StrokeShape="RoundRectangle 12" Padding="10" Margin="0,3" BackgroundColor="#F6F7FB">
+                                <Border Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 14" Padding="12" Margin="0,4" BackgroundColor="{StaticResource SurfaceAlt}">
                                     <VerticalStackLayout Spacing="3">
-                                        <Label Text="{Binding PersonName}" TextColor="#24213A" FontAttributes="Bold" FontSize="12" />
-                                        <Label Text="{Binding RoomType, StringFormat='Tur kaydındaki oda: {0}'}" TextColor="#687083" FontSize="10" />
-                                        <Button Text="Seçili odaya yerleştir" Padding="6,3" FontSize="11" BackgroundColor="#16875D" TextColor="White" Clicked="OnPlaceCandidateClicked" CommandParameter="{Binding .}" />
+                                        <Label Text="{Binding PersonName}" TextColor="{StaticResource TextPrimary}" FontAttributes="Bold" FontSize="15" />
+                                        <Label Text="{Binding RoomType, StringFormat='Tur kaydındaki oda: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="12" />
+                                        <Button Text="Seçili odaya yerleştir" Padding="6,3" FontSize="11" BackgroundColor="{StaticResource Success}" TextColor="White" Clicked="OnPlaceCandidateClicked" CommandParameter="{Binding .}" />
                                     </VerticalStackLayout>
                                 </Border>
                             </DataTemplate>
@@ -47,23 +69,23 @@
                     </CollectionView>
                 </VerticalStackLayout>
             </Border>
-            <Border Stroke="#E4E6EF" StrokeShape="RoundRectangle 16" BackgroundColor="White" Padding="12">
+            <Border Style="{StaticResource CardBorder}">
                 <VerticalStackLayout Spacing="8">
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Açılan odalar" FontAttributes="Bold" TextColor="#24213A" VerticalOptions="Center" />
-                        <Button Grid.Column="1" Text="Kaydet" Padding="8,4" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnSaveClicked" />
+                        <Label Text="Açılan odalar" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Kaydet" Padding="8,4" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSaveClicked" />
                     </Grid>
-                    <CollectionView x:Name="RoomsCollection" SelectionMode="Single" SelectionChanged="OnRoomSelected" HeightRequest="210">
+                    <CollectionView x:Name="RoomsCollection" SelectionMode="Single" SelectionChanged="OnRoomSelected" HeightRequest="340">
                         <CollectionView.EmptyView>
-                            <Label Text="Henüz oda açılmadı." TextColor="#687083" FontSize="12" />
+                            <Label Text="Henüz oda açılmadı." TextColor="{StaticResource TextSecondary}" FontSize="12" />
                         </CollectionView.EmptyView>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border Stroke="#E4E6EF" StrokeShape="RoundRectangle 12" Padding="10" Margin="0,3" BackgroundColor="#F6F7FB">
+                                <Border Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 14" Padding="12" Margin="0,4" BackgroundColor="{StaticResource SurfaceAlt}">
                                     <VerticalStackLayout Spacing="4">
-                                        <Label Text="{Binding DisplayText}" TextColor="#24213A" FontAttributes="Bold" FontSize="12" />
-                                        <Label Text="{Binding OccupantSummary}" TextColor="#687083" FontSize="10" />
-                                        <Label Text="{Binding ConnectionGroupId, StringFormat='Bağlantı: {0}'}" TextColor="#5B43B5" FontSize="10" IsVisible="{Binding IsConnection}" />
+                                        <Label Text="{Binding DisplayText}" TextColor="{StaticResource TextPrimary}" FontAttributes="Bold" FontSize="12" />
+                                        <Label Text="{Binding OccupantSummary}" TextColor="{StaticResource TextPrimary}" FontSize="13" />
+                                        <Label Text="{Binding ConnectionGroupId, StringFormat='Bağlantı: {0}'}" TextColor="{StaticResource Primary}" FontSize="12" IsVisible="{Binding IsConnection}" />
                                         <HorizontalStackLayout Spacing="4">
                                             <Button Text="Çıkar" Padding="6,3" FontSize="10" BackgroundColor="#B7791F" TextColor="White" Clicked="OnRemoveOccupantClicked" CommandParameter="{Binding .}" />
                                             <Button Text="Odayı sil" Padding="6,3" FontSize="10" BackgroundColor="#C53B4A" TextColor="White" Clicked="OnRemoveRoomClicked" CommandParameter="{Binding .}" />

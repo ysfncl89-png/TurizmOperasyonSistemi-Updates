@@ -62,7 +62,6 @@ public sealed class RegistrationRepository
         }
         await EnsurePassportArrivedValueColumnAsync(connection);
         await EnsureLastModifiedColumnAsync(connection);
-
         foreach (var (type, values) in DefaultOptions)
         {
             await using var existsCommand = connection.CreateCommand();
@@ -98,7 +97,7 @@ public sealed class RegistrationRepository
                    r.VisaRequest, r.TicketRequest, r.VisaStatusChoice, r.TicketStatusChoice,
                    r.PassportArrived, r.PassportArrivedValue, r.CargoRequest, r.RoomType, r.DepartureCity,
                    r.HasTransfer, r.TransferCity, r.District, r.TotalPrice, r.Currency,
-                   r.PaidAmount, r.RemainingDebt, r.Reference, r.Status, r.CreatedDate, r.IsActive, r.LastModifiedUtc
+                   r.PaidAmount, r.RemainingDebt, r.Reference, r.Status, r.CreatedDate, r.IsActive, r.LastModifiedUtc, r.DesktopRegistrationId
             FROM TourRegistrations r
             INNER JOIN PersonRecords p ON p.Id = r.PersonId
             ORDER BY r.Id DESC;
@@ -179,13 +178,14 @@ public sealed class RegistrationRepository
                     VisaStatusChoice, TicketStatusChoice, PassportArrived, CargoRequest, RoomType,
                     PassportArrivedValue,
                     DepartureCity, HasTransfer, TransferCity, District, TotalPrice, Currency,
-                    PaidAmount, RemainingDebt, Reference, Status, CreatedDate, IsActive, LastModifiedUtc)
+                    PaidAmount, RemainingDebt, Reference, Status, CreatedDate, IsActive, LastModifiedUtc, DesktopRegistrationId
+                )
                 VALUES (
                     $personId, $tourType, $period, $groupType, $daysCount, $visaRequest, $ticketRequest,
                     $visaStatusChoice, $ticketStatusChoice, $passportArrived, $cargoRequest, $roomType,
                     $passportArrivedValue,
                     $departureCity, $hasTransfer, $transferCity, $district, $totalPrice, $currency,
-                    $paidAmount, $remainingDebt, $reference, $status, $createdDate, $isActive, $lastModifiedUtc);
+                    $paidAmount, $remainingDebt, $reference, $status, $createdDate, $isActive, $lastModifiedUtc, $desktopRegistrationId);
                 """;
         }
         else
@@ -201,7 +201,7 @@ public sealed class RegistrationRepository
                     HasTransfer = $hasTransfer, TransferCity = $transferCity, District = $district,
                     TotalPrice = $totalPrice, Currency = $currency, PaidAmount = $paidAmount,
                     RemainingDebt = $remainingDebt, Reference = $reference, Status = $status,
-                    IsActive = $isActive, LastModifiedUtc = $lastModifiedUtc
+                    IsActive = $isActive, LastModifiedUtc = $lastModifiedUtc, DesktopRegistrationId = $desktopRegistrationId
                 WHERE Id = $id;
                 """;
             command.Parameters.AddWithValue("$id", registration.Id);
@@ -230,12 +230,45 @@ public sealed class RegistrationRepository
                    VisaRequest, TicketRequest, VisaStatusChoice, TicketStatusChoice,
                    PassportArrived, PassportArrivedValue, CargoRequest, RoomType, DepartureCity,
                    HasTransfer, TransferCity, District, TotalPrice, Currency,
-                    PaidAmount, RemainingDebt, Reference, Status, CreatedDate, IsActive, LastModifiedUtc
+                   PaidAmount, RemainingDebt, Reference, Status, CreatedDate, IsActive, LastModifiedUtc, DesktopRegistrationId
             FROM TourRegistrations WHERE Id = $id;
             """;
         command.Parameters.AddWithValue("$id", id);
         await using var reader = await command.ExecuteReaderAsync();
         return await reader.ReadAsync() ? ReadRegistration(reader) : null;
+    }
+
+    public async Task<IReadOnlyDictionary<int, int>> GetDesktopIdsByLocalIdAsync()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Id, DesktopRegistrationId FROM TourRegistrations WHERE DesktopRegistrationId IS NOT NULL;";
+        var result = new Dictionary<int, int>();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync()) result[reader.GetInt32(0)] = reader.GetInt32(1);
+        return result;
+    }
+
+    public async Task<IReadOnlyDictionary<int, int>> GetLocalIdsByDesktopIdAsync()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Id, DesktopRegistrationId FROM TourRegistrations WHERE DesktopRegistrationId IS NOT NULL;";
+        var result = new Dictionary<int, int>();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync()) result[reader.GetInt32(1)] = reader.GetInt32(0);
+        return result;
+    }
+
+    public async Task SavePaymentSummaryAsync(int id, decimal paidAmount)
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE TourRegistrations SET PaidAmount = $paid, RemainingDebt = TotalPrice - $paid, LastModifiedUtc = $modified WHERE Id = $id;";
+        command.Parameters.AddWithValue("$paid", paidAmount);
+        command.Parameters.AddWithValue("$modified", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$id", id);
+        await command.ExecuteNonQueryAsync();
     }
 
     public async Task DeleteAsync(int id)
@@ -352,6 +385,20 @@ public sealed class RegistrationRepository
                 ON TourRegistrations (PersonId);
             """;
         await command.ExecuteNonQueryAsync();
+        await EnsureDesktopRegistrationIdColumnAsync(connection);
+    }
+
+    private static async Task EnsureDesktopRegistrationIdColumnAsync(SqliteConnection connection)
+    {
+        await using var check = connection.CreateCommand();
+        check.CommandText = "PRAGMA table_info(TourRegistrations);";
+        await using var reader = await check.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            if (string.Equals(reader.GetString(1), "DesktopRegistrationId", StringComparison.OrdinalIgnoreCase)) return;
+        await reader.DisposeAsync();
+        await using var alter = connection.CreateCommand();
+        alter.CommandText = "ALTER TABLE TourRegistrations ADD COLUMN DesktopRegistrationId INTEGER NULL;";
+        await alter.ExecuteNonQueryAsync();
     }
 
     private static async Task EnsureLastModifiedColumnAsync(SqliteConnection connection)
@@ -419,6 +466,7 @@ public sealed class RegistrationRepository
         command.Parameters.AddWithValue("$createdDate", record.CreatedDate.ToString("O", CultureInfo.InvariantCulture));
         command.Parameters.AddWithValue("$isActive", record.IsActive ? 1 : 0);
         command.Parameters.AddWithValue("$lastModifiedUtc", record.LastModifiedUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$desktopRegistrationId", (object?)record.DesktopRegistrationId ?? DBNull.Value);
     }
 
     private static RegistrationRecord ReadRegistration(SqliteDataReader reader) => new()
@@ -450,7 +498,8 @@ public sealed class RegistrationRepository
         Status = reader.GetString(24),
         CreatedDate = DateTime.Parse(reader.GetString(25), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
         IsActive = reader.GetInt32(26) != 0,
-        LastModifiedUtc = DateTime.Parse(reader.GetString(27), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
+        LastModifiedUtc = DateTime.Parse(reader.GetString(27), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
+        DesktopRegistrationId = reader.IsDBNull(28) ? null : reader.GetInt32(28)
     };
 
     private static readonly Dictionary<string, string[]> DefaultOptions = new()

@@ -4,6 +4,7 @@ public sealed class RegistrationRecord
 {
     public int Id { get; set; }
     public int PersonId { get; set; }
+    public int? DesktopRegistrationId { get; set; }
     public string TourType { get; set; } = string.Empty;
     public string Period { get; set; } = string.Empty;
     public string GroupType { get; set; } = string.Empty;

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TOSLite.Mobile.Views.PaymentsPage"
+             Title="Ödemeler ve Finans"
+             BackgroundColor="{StaticResource PageBackground}">
+    <ScrollView>
+        <VerticalStackLayout Padding="18" Spacing="14">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Label Text="Ödemeler ve Finans" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="Grafik filtreleri" Style="{StaticResource SecondaryButton}" Padding="10,8" Clicked="OnToggleChartFiltersClicked" />
+            </Grid>
+            <Border x:Name="ChartFiltersPanel" IsVisible="False" Style="{StaticResource CardBorder}" Padding="12">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Yalnızca grafikler için filtre" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="2">
+                        <Label Text="Dönem" Style="{StaticResource FormFieldLabel}" />
+                        <Label Grid.Column="1" Text="Tur türü" Style="{StaticResource FormFieldLabel}" />
+                        <Picker x:Name="ChartPeriodPicker" Grid.Row="1" Title="Tüm dönemler" SelectedIndexChanged="OnChartFilterChanged" />
+                        <Picker x:Name="ChartTourPicker" Grid.Row="1" Grid.Column="1" Title="Tüm tur türleri" SelectedIndexChanged="OnChartFilterChanged" />
+                        <Label Grid.Row="2" Text="Grup türü" Style="{StaticResource FormFieldLabel}" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="Grup süresi" Style="{StaticResource FormFieldLabel}" />
+                        <Picker x:Name="ChartGroupPicker" Grid.Row="3" Title="Tüm grup türleri" SelectedIndexChanged="OnChartFilterChanged" />
+                        <Picker x:Name="ChartDaysPicker" Grid.Row="3" Grid.Column="1" Title="Tüm süreler" SelectedIndexChanged="OnChartFilterChanged" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+            <VerticalStackLayout x:Name="CurrencySummaryLayout" Spacing="10" />
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Cari hesap / tur kaydı" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Label Text="Kişi, tur veya dönem ara" Style="{StaticResource FormFieldLabel}" />
+                    <Entry x:Name="SearchEntry" Placeholder="Önce arayın, sonra alt satırdan kaydı seçin" TextChanged="OnSearchChanged" />
+                    <Label Text="Ödeme yapılacak tur kaydı" Style="{StaticResource FormFieldLabel}" />
+                    <Picker x:Name="RegistrationPicker" Title="Kayıt seçin" ItemDisplayBinding="{Binding DisplayText}" SelectedIndexChanged="OnRegistrationChanged" />
+                    <Label x:Name="AccountSummaryLabel" TextColor="{StaticResource TextSecondary}" />
+                </VerticalStackLayout>
+            </Border>
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Label Text="Ödeme hareketleri" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Hareketleri indir" Style="{StaticResource SecondaryButton}" Clicked="OnExportPaymentsClicked" />
+                    </Grid>
+                    <CollectionView x:Name="PaymentsCollection" HeightRequest="260" SelectionMode="None">
+                        <CollectionView.EmptyView><Label Text="Bu kayıtta ödeme hareketi yok." TextColor="{StaticResource TextSecondary}" /></CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 12" Padding="10" Margin="0,3" BackgroundColor="{StaticResource SurfaceAlt}">
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8">
+                                        <Label Text="{Binding OriginalAmount, StringFormat='{0:N2}'}" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                                        <Button Grid.Column="1" Grid.RowSpan="3" Text="Sil" Style="{StaticResource DangerButton}" CommandParameter="{Binding .}" Clicked="OnDeletePaymentClicked" />
+                                        <Label Grid.Row="1" Text="{Binding Note}" TextColor="{StaticResource TextSecondary}" FontSize="12" />
+                                        <Label Grid.Row="2" Text="{Binding CreatedAt, StringFormat='{0:dd.MM.yyyy HH:mm}'}" TextColor="{StaticResource TextSecondary}" FontSize="11" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="9">
+                    <Label Text="Yeni tahsilat / iade" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <VerticalStackLayout Spacing="0">
+                            <Label Text="Tutar" Style="{StaticResource FormFieldLabel}" />
+                            <Entry x:Name="AmountEntry" Placeholder="Ödeme tutarı" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                        <HorizontalStackLayout Grid.Column="1" Spacing="6"><Label Text="İade" VerticalOptions="Center" TextColor="{StaticResource TextPrimary}"/><Switch x:Name="RefundSwitch" /></HorizontalStackLayout>
+                    </Grid>
+                    <Label Text="Ödeme para birimi" Style="{StaticResource FormFieldLabel}" />
+                    <Picker x:Name="CurrencyPicker" Title="Ödeme para birimi" />
+                    <Label Text="Dönüşüm kuru (gerekiyorsa)" Style="{StaticResource FormFieldLabel}" />
+                    <Entry x:Name="RateEntry" Placeholder="Kur (ödeme biriminden kayıt para birimine)" Keyboard="Numeric" />
+                    <Label Text="Ödeme yöntemi" Style="{StaticResource FormFieldLabel}" />
+                    <Picker x:Name="MethodPicker" Title="Ödeme yöntemi" />
+                    <Label Text="Açıklama" Style="{StaticResource FormFieldLabel}" />
+                    <Entry x:Name="NoteEntry" Placeholder="Açıklama" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Label x:Name="DocumentLabel" Text="Dekont eklenmedi" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Dekont seç" Style="{StaticResource SecondaryButton}" Clicked="OnDocumentClicked" />
+                    </Grid>
+                    <Button Text="Hareketi kaydet" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSavePaymentClicked" />
+                </VerticalStackLayout>
+            </Border>
+            <Button Text="Finans özetini Word / Excel / PDF indir" Style="{StaticResource SecondaryButton}" Clicked="OnExportClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

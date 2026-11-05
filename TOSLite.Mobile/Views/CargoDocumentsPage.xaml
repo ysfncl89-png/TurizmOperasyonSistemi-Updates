@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TOSLite.Mobile.Views.CargoDocumentsPage"
+             Title="Kargo Evrak Hazırlama"
+             BackgroundColor="{StaticResource PageBackground}">
+    <ScrollView>
+        <VerticalStackLayout Padding="18" Spacing="14">
+            <Label Text="Kargo Evrak Hazırlama" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="9">
+                    <Label Text="Gönderim bekleyen kayıtlar" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Label Text="Kişi, tur, dönem veya telefon" Style="{StaticResource FormFieldLabel}" />
+                    <Entry x:Name="CandidateSearchEntry" Placeholder="Kişi, tur, dönem veya telefon ara" TextChanged="OnCandidateSearchChanged" />
+                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="7" RowSpacing="0">
+                        <Label Text="Tur türü" Style="{StaticResource FormFieldLabel}" FontSize="12" />
+                        <Label Grid.Column="1" Text="Dönem" Style="{StaticResource FormFieldLabel}" FontSize="12" />
+                        <Label Grid.Column="2" Text="Grup türü" Style="{StaticResource FormFieldLabel}" FontSize="12" />
+                        <Picker x:Name="TourFilterPicker" Grid.Row="1" Title="Tur seçin" SelectedIndexChanged="OnFilterChanged" />
+                        <Picker x:Name="PeriodFilterPicker" Grid.Row="1" Grid.Column="1" Title="Dönem seçin" SelectedIndexChanged="OnFilterChanged" />
+                        <Picker x:Name="GroupFilterPicker" Grid.Row="1" Grid.Column="2" Title="Grup seçin" SelectedIndexChanged="OnFilterChanged" />
+                    </Grid>
+                    <CollectionView x:Name="CandidatesCollection" HeightRequest="310" SelectionMode="Single" SelectionChanged="OnCandidateSelected">
+                        <CollectionView.EmptyView><Label Text="Gönderim bekleyen kayıt bulunamadı." TextColor="{StaticResource TextSecondary}" /></CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource CardBorder}" Margin="0,4">
+                                    <VerticalStackLayout Spacing="5">
+                                        <Label Text="{Binding PersonName}" FontAttributes="Bold" FontSize="16" TextColor="{StaticResource TextPrimary}" />
+                                        <Label Text="{Binding TourSummary}" TextColor="{StaticResource Primary}" FontSize="12" />
+                                        <Label Text="{Binding PhoneNumber, StringFormat='Telefon: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
+                                        <Label Text="{Binding Address, StringFormat='Adres: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="13" LineBreakMode="WordWrap" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                        <VerticalStackLayout Grid.Column="0" Spacing="0">
+                            <Label Text="Etiket adedi" Style="{StaticResource FormFieldLabel}" />
+                            <Entry x:Name="QuantityEntry" Text="1" Keyboard="Numeric" Placeholder="Adet" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1" Text="Önizle" Style="{StaticResource SecondaryButton}" Clicked="OnPreviewCandidateClicked" />
+                        <Button Grid.Column="2" Text="Havuza gönder" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnAddToQueueClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="9">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Kargo havuzu" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Havuz PDF indir" BackgroundColor="{StaticResource Success}" TextColor="White" Clicked="OnExportQueueClicked" />
+                    </Grid>
+                    <Label Text="Havuzda kişi veya adres ara" Style="{StaticResource FormFieldLabel}" />
+                    <Entry x:Name="QueueSearchEntry" Placeholder="Kargo havuzunda ara" TextChanged="OnQueueSearchChanged" />
+                    <CollectionView x:Name="QueueCollection" HeightRequest="330" SelectionMode="None">
+                        <CollectionView.EmptyView><Label Text="Kargo havuzu boş." TextColor="{StaticResource TextSecondary}" /></CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 14" Padding="12" Margin="0,4" BackgroundColor="{StaticResource SurfaceAlt}">
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8">
+                                        <Label Text="{Binding DisplayTitle}" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                                        <Button Grid.Column="1" Grid.RowSpan="4" Text="Kaldır" Style="{StaticResource DangerButton}" CommandParameter="{Binding .}" Clicked="OnRemoveQueueItemClicked" />
+                                        <Label Grid.Row="1" Text="{Binding Phone, StringFormat='Tel: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="12" />
+                                        <Label Grid.Row="2" Text="{Binding Address, StringFormat='Adres: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="12" LineBreakMode="WordWrap" />
+                                        <Label Grid.Row="3" Text="{Binding Quantity, StringFormat='Etiket: {0}'}" TextColor="{StaticResource Primary}" FontSize="12" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

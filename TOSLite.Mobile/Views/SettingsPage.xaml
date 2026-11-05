@@ -3,49 +3,51 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="TOSLite.Mobile.Views.SettingsPage"
              Title="Ayarlar"
-             BackgroundColor="#F6F7FB">
+             BackgroundColor="{StaticResource PageBackground}">
     <Grid>
         <Grid RowDefinitions="Auto,*" Padding="18" RowSpacing="12">
             <VerticalStackLayout Grid.Row="0" Spacing="8">
-                <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="#6D4AFF" Clicked="OnHomeClicked" />
-                <Label Text="Ayarlar" FontSize="28" FontAttributes="Bold" TextColor="#24213A" />
-                <Label Text="Kayıt seçeneklerini düzenleyin ve sıralayın." TextColor="#687083" />
-                <Entry x:Name="SearchEntry" Placeholder="Ayar kartlarında ara" PlaceholderColor="#687083" TextColor="#24213A" BackgroundColor="White" TextChanged="OnSearchTextChanged" />
+                <Label Text="Ayarlar" FontSize="28" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                <Label Text="Kayıt seçeneklerini düzenleyin ve sıralayın." TextColor="{StaticResource TextSecondary}" />
+                <Label Text="Ayar kartlarında ara" Style="{StaticResource FormFieldLabel}" />
+                <Entry x:Name="SearchEntry" Placeholder="Ayar adı yazın" PlaceholderColor="{StaticResource TextSecondary}" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource Surface}" TextChanged="OnSearchTextChanged" />
             </VerticalStackLayout>
             <ScrollView Grid.Row="1">
-                <FlexLayout x:Name="SettingsCards" Direction="Row" Wrap="Wrap" JustifyContent="Start" AlignItems="Start" />
+                <FlexLayout x:Name="SettingsCards" Direction="Column" Wrap="NoWrap" JustifyContent="Start" AlignItems="Stretch" />
             </ScrollView>
         </Grid>
 
         <Grid x:Name="OptionsDialog" IsVisible="False" BackgroundColor="#990F172A" Padding="18">
-            <Border VerticalOptions="Center" Stroke="#DCD4FF" StrokeShape="RoundRectangle 24" BackgroundColor="White" Padding="18" MaximumHeightRequest="680">
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
+            <Border VerticalOptions="Center" Stroke="{StaticResource Secondary}" StrokeShape="RoundRectangle 24" BackgroundColor="{StaticResource Surface}" Padding="18" MaximumHeightRequest="680">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                        <Label x:Name="OptionsHeading" FontSize="21" FontAttributes="Bold" TextColor="#342477" VerticalOptions="Center" />
-                        <Button Grid.Column="1" Text="✕" WidthRequest="42" HeightRequest="42" Padding="0" CornerRadius="14" BackgroundColor="#F0ECFF" TextColor="#4932A8" Clicked="OnCloseOptionsClicked" />
+                        <Label x:Name="OptionsHeading" FontSize="21" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="✕" WidthRequest="42" HeightRequest="42" Padding="0" CornerRadius="14" BackgroundColor="{StaticResource PrimarySoft}" TextColor="{StaticResource Primary}" Clicked="OnCloseOptionsClicked" />
                     </Grid>
-                    <Label Grid.Row="1" Text="Mevcut seçenekleri yönetin veya yenisini ekleyin." FontSize="13" TextColor="#60697A" />
-                    <Entry x:Name="ValueEntry" Grid.Row="2" Placeholder="Yeni seçenek değeri" PlaceholderColor="#687083" TextColor="#24213A" BackgroundColor="#F6F7FB" />
-                    <Entry x:Name="SortOrderEntry" Grid.Row="3" Placeholder="Sıra" Keyboard="Numeric" Text="1" TextColor="#24213A" BackgroundColor="#F6F7FB" />
-                    <HorizontalStackLayout Grid.Row="4" Spacing="8">
-                        <Button x:Name="SaveOptionButton" Text="Seçeneği ekle" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnSaveOptionClicked" />
-                        <Button Text="Temizle" BackgroundColor="#EFEAFF" TextColor="#4932A8" Clicked="OnClearClicked" />
+                    <Label Grid.Row="1" Text="Mevcut seçenekleri yönetin veya yenisini ekleyin." FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                    <Label Grid.Row="2" Text="Yeni seçenek değeri" Style="{StaticResource FormFieldLabel}" />
+                    <Entry x:Name="ValueEntry" Grid.Row="3" Placeholder="Seçenek değerini yazın" PlaceholderColor="{StaticResource TextSecondary}" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource SurfaceAlt}" />
+                    <Label Grid.Row="4" Text="Sıralama numarası" Style="{StaticResource FormFieldLabel}" />
+                    <Entry x:Name="SortOrderEntry" Grid.Row="5" Placeholder="Sıra" Keyboard="Numeric" Text="1" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource SurfaceAlt}" />
+                    <HorizontalStackLayout Grid.Row="6" Spacing="8">
+                        <Button x:Name="SaveOptionButton" Text="Seçeneği ekle" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSaveOptionClicked" />
+                        <Button Text="Temizle" Style="{StaticResource SecondaryButton}" Clicked="OnClearClicked" />
                     </HorizontalStackLayout>
-                    <CollectionView x:Name="OptionsCollection" Grid.Row="5" SelectionMode="None" Margin="0,4,0,0">
+                    <CollectionView x:Name="OptionsCollection" Grid.Row="7" SelectionMode="None" Margin="0,4,0,0">
                         <CollectionView.EmptyView>
-                            <Label Text="Henüz seçenek eklenmemiş." TextColor="#687083" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                            <Label Text="Henüz seçenek eklenmemiş." TextColor="{StaticResource TextSecondary}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
                         </CollectionView.EmptyView>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border Stroke="#E4E6EF" StrokeShape="RoundRectangle 12" Padding="12" Margin="0,3" BackgroundColor="White">
+                                <Border Style="{StaticResource CardBorder}" Padding="12" Margin="0,3">
                                     <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
                                         <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
-                                            <Label Text="{Binding Value}" TextColor="#24213A" FontAttributes="Bold" />
-                                            <Label Text="{Binding SortOrder, StringFormat='Sıra: {0}'}" TextColor="#687083" FontSize="12" />
+                                            <Label Text="{Binding Value}" TextColor="{StaticResource TextPrimary}" FontAttributes="Bold" />
+                                            <Label Text="{Binding SortOrder, StringFormat='Sıra: {0}'}" TextColor="{StaticResource TextSecondary}" FontSize="12" />
                                         </VerticalStackLayout>
-                                        <Button Grid.Column="1" Text="Düzenle" Padding="8,4" BackgroundColor="#6D4AFF" TextColor="White" Clicked="OnEditOptionClicked" CommandParameter="{Binding .}" />
-                                        <Button Grid.Column="2" Text="Durum" Padding="8,4" BackgroundColor="#EFEAFF" TextColor="#4932A8" Clicked="OnToggleOptionClicked" CommandParameter="{Binding .}" />
-                                        <Button Grid.Column="3" Text="Sil" Padding="8,4" BackgroundColor="#FCE8EA" TextColor="#A52D3C" Clicked="OnDeleteOptionClicked" CommandParameter="{Binding .}" />
+                                        <Button Grid.Column="1" Text="Düzenle" Padding="8,4" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnEditOptionClicked" CommandParameter="{Binding .}" />
+                                        <Button Grid.Column="2" Text="Durum" Padding="8,4" BackgroundColor="{StaticResource PrimarySoft}" TextColor="{StaticResource SecondaryDarkText}" Clicked="OnToggleOptionClicked" CommandParameter="{Binding .}" />
+                                        <Button Grid.Column="3" Text="Sil" Padding="8,4" Style="{StaticResource DangerButton}" Clicked="OnDeleteOptionClicked" CommandParameter="{Binding .}" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>

@@ -507,7 +507,7 @@ public partial class PersonsPage : ContentPage
 
     private async void OnHomeClicked(object? sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("..");
+        await Shell.Current.GoToAsync("//home");
     }
 
     private void OpenWizard()
@@ -913,7 +913,7 @@ public partial class PersonsPage : ContentPage
         var passportType = PassportTypePicker.SelectedItem as string ?? "Seçiniz";
         var passportValidity = GetPassportValiditySummary();
 
-        PreviewLabel.Text =
+        var preview =
             $"AD SOYAD : {FirstNameEntry.Text} {LastNameEntry.Text}\n" +
             $"TC KİMLİK NO : {TcEntry.Text}\n" +
             $"UYRUK : {nationality}\n" +
@@ -931,6 +931,25 @@ public partial class PersonsPage : ContentPage
             $"PASAPORT BAŞLANGIÇ : {(PassportStartEnabled.IsChecked ? PassportStartPicker.Date?.ToShortDateString() ?? string.Empty : string.Empty)}\n" +
             $"PASAPORT BİTİŞ : {(PassportEndEnabled.IsChecked ? PassportEndPicker.Date?.ToShortDateString() ?? string.Empty : string.Empty)}" +
             (string.IsNullOrWhiteSpace(passportValidity) ? string.Empty : $"\n{passportValidity}");
+        var formattedPreview = new FormattedString();
+        var previewLines = preview.Split('\n');
+        for (var index = 0; index < previewLines.Length; index++)
+        {
+            var line = previewLines[index];
+            var separator = line.IndexOf(" : ", StringComparison.Ordinal);
+            if (separator >= 0)
+            {
+                formattedPreview.Spans.Add(new Span { Text = line[..(separator + 3)], FontAttributes = FontAttributes.Bold, TextColor = (Color)Application.Current!.Resources["PrimaryDark"] });
+                formattedPreview.Spans.Add(new Span { Text = line[(separator + 3)..], TextColor = (Color)Application.Current.Resources["TextPrimary"] });
+            }
+            else
+            {
+                formattedPreview.Spans.Add(new Span { Text = line, FontAttributes = FontAttributes.Bold, TextColor = (Color)Application.Current!.Resources["Primary"] });
+            }
+            if (index < previewLines.Length - 1)
+                formattedPreview.Spans.Add(new Span { Text = "\n" });
+        }
+        PreviewLabel.FormattedText = formattedPreview;
     }
 
     private string GetPassportValiditySummary()

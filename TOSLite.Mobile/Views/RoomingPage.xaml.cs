@@ -9,6 +9,7 @@ public partial class RoomingPage : ContentPage
     private readonly RoomAllocationRepository _repository;
     private readonly ObservableCollection<RoomAllocationRecord> _rooms = [];
     private readonly ObservableCollection<RoomingCandidate> _candidates = [];
+    private readonly List<RoomingCandidate> _allCandidates = [];
     private readonly List<RoomingCriteria> _criteria = [];
     private readonly HashSet<int> _releasedPassengerIds = [];
     private IReadOnlyList<string> _roomTypes = [];
@@ -17,6 +18,7 @@ public partial class RoomingPage : ContentPage
     private bool _loading;
     private bool _checkInDateSelected;
     private bool _checkOutDateSelected;
+    private bool _refreshingRooms;
 
     public RoomingPage(RoomAllocationRepository repository)
     {
@@ -73,6 +75,8 @@ public partial class RoomingPage : ContentPage
     {
         var criteria = SelectedCriteria();
         if (criteria == null) return;
+        var selectedRoomNumber = _selectedRoom?.RoomNumber;
+        _releasedPassengerIds.Clear();
         criteria.HotelName = HotelPicker.SelectedItem?.ToString() ?? string.Empty;
         CriteriaLabel.Text = $"{criteria.TourType} · {criteria.Period} · {criteria.GroupType} · {criteria.DaysCount}";
         try
@@ -80,6 +84,15 @@ public partial class RoomingPage : ContentPage
             var allocations = await _repository.GetAllocationsAsync(criteria);
             _rooms.Clear();
             foreach (var room in allocations) _rooms.Add(room);
+            var restoredRoom = !string.IsNullOrWhiteSpace(selectedRoomNumber)
+                ? _rooms.FirstOrDefault(x => x.RoomNumber == selectedRoomNumber)
+                : null;
+            _selectedRoom = restoredRoom;
+            _refreshingRooms = true;
+            RoomPicker.ItemsSource = _rooms;
+            RoomPicker.SelectedItem = restoredRoom;
+            RoomsCollection.SelectedItem = restoredRoom;
+            _refreshingRooms = false;
             if (allocations.Count > 0)
             {
                 if (DateTime.TryParseExact(allocations[0].CheckInDate, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var checkIn))
@@ -104,26 +117,58 @@ public partial class RoomingPage : ContentPage
     private async Task RefreshCandidatesAsync(RoomingCriteria? criteria = null)
     {
         criteria ??= SelectedCriteria();
-        _candidates.Clear();
-        if (criteria == null) return;
+        _allCandidates.Clear();
+        if (criteria == null)
+        {
+            ApplyCandidateSearch();
+            return;
+        }
         criteria.HotelName = HotelPicker.SelectedItem?.ToString() ?? string.Empty;
         var assignedIds = _rooms.SelectMany(x => x.Occupants).Select(x => x.PassengerId).ToHashSet();
         foreach (var candidate in await _repository.GetCandidatesAsync(criteria, _releasedPassengerIds).ConfigureAwait(true))
         {
-            if (!assignedIds.Contains(candidate.PersonId)) _candidates.Add(candidate);
+            if (!assignedIds.Contains(candidate.PersonId)) _allCandidates.Add(candidate);
         }
-        CandidatesHeading.Text = $"Yolcu havuzu ({_candidates.Count})";
+        ApplyCandidateSearch();
+    }
+
+    private void OnCandidateSearchTextChanged(object? sender, TextChangedEventArgs e) => ApplyCandidateSearch();
+
+    private void ApplyCandidateSearch()
+    {
+        var search = CandidateSearchEntry?.Text?.Trim() ?? string.Empty;
+        _candidates.Clear();
+        CandidateEmptyLabel.IsVisible = _allCandidates.Count == 0 || !string.IsNullOrWhiteSpace(search);
+        foreach (var candidate in _allCandidates.Where(candidate =>
+                     string.IsNullOrWhiteSpace(search) ||
+                     candidate.PersonName.Contains(search, StringComparison.CurrentCultureIgnoreCase) ||
+                     candidate.RoomType.Contains(search, StringComparison.CurrentCultureIgnoreCase) ||
+                     candidate.PersonId.ToString().Contains(search, StringComparison.CurrentCultureIgnoreCase)))
+        {
+            _candidates.Add(candidate);
+        }
+
+        CandidatesHeading.Text = string.IsNullOrWhiteSpace(search)
+            ? $"Yolcu havuzu ({_allCandidates.Count})"
+            : $"Yolcu havuzu ({_candidates.Count}/{_allCandidates.Count})";
+        CandidateEmptyLabel.Text = string.IsNullOrWhiteSpace(search)
+            ? "Seçilen kriterlerde boş yolcu yok."
+            : "Aramayla eşleşen yolcu bulunamadı.";
+        CandidateEmptyLabel.IsVisible = _candidates.Count == 0;
     }
 
     private void OnRoomSelected(object? sender, SelectionChangedEventArgs e)
     {
         _selectedRoom = e.CurrentSelection.FirstOrDefault() as RoomAllocationRecord;
+        if (!_refreshingRooms && _selectedRoom != null && !ReferenceEquals(RoomPicker.SelectedItem, _selectedRoom))
+            RoomPicker.SelectedItem = _selectedRoom;
     }
 
     private void OnRoomPickerChanged(object? sender, EventArgs e)
     {
         _selectedRoom = RoomPicker.SelectedItem as RoomAllocationRecord;
-        RoomsCollection.SelectedItem = _selectedRoom;
+        if (!_refreshingRooms)
+            RoomsCollection.SelectedItem = _selectedRoom;
     }
 
     private void OnCheckInDateSelected(object? sender, DateChangedEventArgs e) => _checkInDateSelected = true;
@@ -209,9 +254,11 @@ public partial class RoomingPage : ContentPage
     private async void OnRemoveRoomClicked(object? sender, EventArgs e)
     {
         if (sender is not Button { CommandParameter: RoomAllocationRecord room }) return;
+        foreach (var occupant in room.Occupants)
+            _releasedPassengerIds.Add(occupant.PassengerId);
+        var selectedRoomNumber = _selectedRoom?.RoomNumber;
         _rooms.Remove(room);
-        RoomPicker.ItemsSource = null;
-        RoomPicker.ItemsSource = _rooms;
+        RestoreRoomSelection(selectedRoomNumber == room.RoomNumber ? null : selectedRoomNumber);
         if (_selectedRoom == room) _selectedRoom = null;
         RefreshRoomItems();
         await RefreshCandidatesAsync();
@@ -253,7 +300,7 @@ public partial class RoomingPage : ContentPage
             await DisplayAlertAsync("Eksik bilgi", "Otel ve tur kriteri seçin.", "Tamam");
             return;
         }
-        if (_rooms.Count == 0 || _rooms.All(x => x.Occupants.Count == 0))
+        if (_rooms.Count > 0 && _rooms.All(x => x.Occupants.Count == 0))
         {
             await DisplayAlertAsync("Eksik odalama", "Kaydetmek için en az bir oda açıp içine en az bir kişi yerleştirin.", "Tamam");
             return;
@@ -291,12 +338,24 @@ public partial class RoomingPage : ContentPage
 
     private void RefreshRoomItems()
     {
+        var selectedRoomNumber = _selectedRoom?.RoomNumber;
         RoomsCollection.ItemsSource = null;
         RoomsCollection.ItemsSource = _rooms;
-        RoomPicker.ItemsSource = null;
-        RoomPicker.ItemsSource = _rooms;
+        RestoreRoomSelection(selectedRoomNumber);
         ConnectionLabel.Text = string.Join(" · ", _rooms.Where(x => x.IsConnection).Select(x => $"Oda {x.RoomNumber}: {x.ConnectionGroupId}"));
-        _ = RefreshCandidatesAsync();
+    }
+
+    private void RestoreRoomSelection(string? roomNumber)
+    {
+        var room = !string.IsNullOrWhiteSpace(roomNumber)
+            ? _rooms.FirstOrDefault(x => x.RoomNumber == roomNumber)
+            : null;
+        _refreshingRooms = true;
+        _selectedRoom = room;
+        RoomPicker.ItemsSource = _rooms;
+        RoomPicker.SelectedItem = room;
+        RoomsCollection.SelectedItem = room;
+        _refreshingRooms = false;
     }
 
     private RoomingCriteria? SelectedCriteria() =>

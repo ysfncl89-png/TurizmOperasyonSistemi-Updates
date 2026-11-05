@@ -18,6 +18,49 @@ public sealed class MobileSyncPackage
     public List<int> DeletedRegistrationIds { get; set; } = [];
     public List<MobileSettingDto> Settings { get; set; } = [];
     public List<MobileRoomingDto> Rooming { get; set; } = [];
+    public List<MobilePaymentDto> Payments { get; set; } = [];
+    public List<MobileCargoQueueDto> CargoQueue { get; set; } = [];
+}
+
+public sealed class MobilePaymentDto
+{
+    public int Id { get; set; }
+    public string SyncId { get; set; } = string.Empty;
+    public int? DesktopPaymentId { get; set; }
+    public int RegistrationId { get; set; }
+    public int? DesktopRegistrationId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public decimal OriginalAmount { get; set; }
+    public string OriginalCurrency { get; set; } = string.Empty;
+    public decimal AmountInRegistrationCurrency { get; set; }
+    public decimal? Rate { get; set; }
+    public string Note { get; set; } = string.Empty;
+    public string UploadedDocumentPath { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
+    public DateTime LastModifiedUtc { get; set; }
+    public bool IsDeleted { get; set; }
+}
+
+public sealed class MobileCargoQueueDto
+{
+    public int Id { get; set; }
+    public string SyncId { get; set; } = string.Empty;
+    public int? DesktopQueueId { get; set; }
+    public int RegistrationId { get; set; }
+    public int? DesktopRegistrationId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Tc { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string TourType { get; set; } = string.Empty;
+    public string Period { get; set; } = string.Empty;
+    public string GroupType { get; set; } = string.Empty;
+    public string DaysCount { get; set; } = string.Empty;
+    public int Quantity { get; set; } = 1;
+    public DateTime AddedAt { get; set; }
+    public bool Printed { get; set; }
+    public DateTime LastModifiedUtc { get; set; }
+    public bool IsDeleted { get; set; }
 }
 
 public sealed class MobileSyncDeviceRequest
@@ -55,6 +98,7 @@ public sealed class MobilePersonDto
 public sealed class MobileRegistrationDto
 {
     public int Id { get; set; }
+    public int? DesktopRegistrationId { get; set; }
     public int PersonId { get; set; }
     public int? DesktopPersonId { get; set; }
     public string TourType { get; set; } = string.Empty;
@@ -132,6 +176,8 @@ public sealed class MobileSyncResultDto
     public List<MobileRegistrationDto> Registrations { get; set; } = [];
     public List<int> AcknowledgedDeletedRegistrationIds { get; set; } = [];
     public List<MobileRoomingDto> Rooming { get; set; } = [];
+    public List<MobilePaymentDto> Payments { get; set; } = [];
+    public List<MobileCargoQueueDto> CargoQueue { get; set; } = [];
     public List<MobileSyncItemDto> ImportedItems { get; set; } = [];
     public List<MobileSyncConflictDto> Conflicts { get; set; } = [];
 }
