@@ -1,3 +1,5 @@
+﻿using CommunityToolkit.Maui.Storage;
+
 namespace TOSLite.Mobile.Services;
 
 public sealed class DownloadFileService
@@ -31,16 +33,10 @@ public sealed class DownloadFileService
             }
         });
 #else
-        var destination = await FilePicker.Default.SaveFileAsync(new PickOptions
-        {
-            PickerTitle = "Dışa aktarılan dosyayı kaydet",
-            FileName = fileName
-        });
-        if (destination == null)
-            throw new OperationCanceledException("Dosya kaydetme iptal edildi.");
-
-        await using var outputStream = await destination.OpenWriteAsync();
-        await outputStream.WriteAsync(contents);
+        using var source = new MemoryStream(contents);
+        var result = await FileSaver.Default.SaveAsync(fileName, source);
+        if (!result.IsSuccessful)
+            throw result.Exception ?? new OperationCanceledException("Dosya kaydetme iptal edildi.");
 #endif
     }
 }

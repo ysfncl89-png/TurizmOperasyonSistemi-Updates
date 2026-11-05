@@ -46,6 +46,8 @@
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Masaüstü eşleştirme QR kodunu okumak için kamera kullanılır.</string>
+	<string>Pasaport fotoğrafı çekmek ve masaüstü eşleştirme QR kodunu okumak için kamera kullanılır.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pasaport görseli seçerek bilgileri cihazda ön doldurmak için fotoğraf arşivi kullanılır.</string>
 </dict>
 </plist>

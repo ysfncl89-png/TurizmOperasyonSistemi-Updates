@@ -2,20 +2,24 @@ using System.Globalization;
 using System.Text;
 using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Models;
+using TOSLite.Mobile.Services;
 
 namespace TOSLite.Mobile.Views;
 
 public partial class PersonsPage : ContentPage
 {
     private readonly PersonRepository _repository;
+    private readonly IPassportTextRecognitionService _passportTextRecognitionService;
     private List<PersonRecord> _people = [];
     private PersonRecord? _selectedPerson;
     private PersonRecord? _formPerson;
     private bool _loadingPerson;
     private bool _normalizingTc;
+    private bool _isPassportProcessing;
     private int _currentStep = 1;
     private bool _openNewPersonOnAppear;
     private string _initialPersonSearch = string.Empty;
+    private string? _passportImagePath;
 
     public event EventHandler<PersonRecord>? PersonSaved;
 
@@ -25,11 +29,19 @@ public partial class PersonsPage : ContentPage
         _initialPersonSearch = initialSearch?.Trim() ?? string.Empty;
     }
 
-    public PersonsPage(PersonRepository repository)
+    public PersonsPage(PersonRepository repository, IPassportTextRecognitionService passportTextRecognitionService)
     {
         InitializeComponent();
         _repository = repository;
+        _passportTextRecognitionService = passportTextRecognitionService;
+        CapturePassportImageButton.IsVisible = MediaPicker.Default.IsCaptureSupported;
         MobileTheme.Apply(this);
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        DeletePassportImage();
     }
 
     protected override async void OnAppearing()
@@ -175,8 +187,271 @@ public partial class PersonsPage : ContentPage
         OpenNewPersonWizard();
     }
 
+    private async void OnChoosePassportImageClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            var image = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Pasaport görseli seçin",
+                FileTypes = FilePickerFileType.Images
+            });
+            if (image != null)
+            {
+                await SetPassportImageAsync(image);
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Hata", $"Pasaport görseli açılamadı: {ex.Message}", "Tamam");
+        }
+    }
+
+    private async void OnCapturePassportImageClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            var image = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
+            {
+                Title = "Pasaport fotoğrafı"
+            });
+            if (image != null)
+            {
+                await SetPassportImageAsync(image);
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Hata", $"Pasaport fotoğrafı çekilemedi: {ex.Message}", "Tamam");
+        }
+    }
+
+    private async Task SetPassportImageAsync(FileResult image)
+    {
+        DeletePassportImage();
+        var extension = Path.GetExtension(image.FileName);
+        var imagePath = Path.Combine(FileSystem.CacheDirectory, $"passport-{Guid.NewGuid():N}{extension}");
+        try
+        {
+            await using var source = await image.OpenReadAsync();
+            await using var destination = File.Create(imagePath);
+            await source.CopyToAsync(destination);
+            await destination.FlushAsync();
+
+            if (destination.Length == 0)
+            {
+                throw new InvalidDataException("Seçilen görsel boş.");
+            }
+
+            _passportImagePath = imagePath;
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                PassportImageStatusLabel.Text = $"Görsel hazır: {image.FileName}";
+                PassportImageStatusLabel.IsVisible = true;
+                ProcessPassportImageButton.IsEnabled = true;
+                ProcessPassportImageButton.Text = "Bilgileri İşle";
+                ProcessPassportImageButton.BackgroundColor = Color.FromArgb("#6D4AFF");
+                ProcessPassportImageButton.TextColor = Colors.White;
+            });
+        }
+        catch
+        {
+            if (File.Exists(imagePath))
+            {
+                File.Delete(imagePath);
+            }
+
+            _passportImagePath = null;
+            await MainThread.InvokeOnMainThreadAsync(() => ProcessPassportImageButton.IsEnabled = false);
+            throw;
+        }
+    }
+
+    private async void OnProcessPassportImageClicked(object? sender, EventArgs e)
+    {
+        if (_isPassportProcessing)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_passportImagePath))
+        {
+            await DisplayAlertAsync("Bilgi", "Önce pasaport görseli yükleyin veya fotoğraf çekin.", "Tamam");
+            return;
+        }
+
+        if (!_passportTextRecognitionService.IsSupported)
+        {
+            await DisplayAlertAsync("Bilgi", "Bu cihazda yerel OCR desteği bulunmuyor. Bilgileri elle girebilirsiniz.", "Tamam");
+            return;
+        }
+
+        _isPassportProcessing = true;
+        ProcessPassportImageButton.Text = "İşleniyor...";
+        ProcessPassportImageButton.BackgroundColor = Color.FromArgb("#4C35B5");
+        try
+        {
+            var recognizedText = await _passportTextRecognitionService.RecognizeAsync(_passportImagePath);
+            var extracted = PassportMrzParser.Parse(recognizedText);
+            if (extracted == null)
+            {
+                await DisplayAlertAsync("Bilgi", "Pasaport MRZ satırları okunamadı. Görseli netleştirip tekrar deneyin veya bilgileri elle girin.", "Tamam");
+                return;
+            }
+
+            ApplyPassportData(extracted);
+            SetStep(5);
+            await DisplayAlertAsync("Kontrol", "Okunan bilgiler önizlemeye aktarıldı. Kaydetmeden önce doğruluğunu kontrol edin.", "Tamam");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Hata", $"Pasaport işlenemedi: {ex.Message}", "Tamam");
+        }
+        finally
+        {
+            _isPassportProcessing = false;
+            ProcessPassportImageButton.IsEnabled = !string.IsNullOrWhiteSpace(_passportImagePath);
+            ProcessPassportImageButton.Text = "Bilgileri İşle";
+            ProcessPassportImageButton.BackgroundColor = Color.FromArgb("#6D4AFF");
+        }
+    }
+
+    private void ApplyPassportData(PassportExtractedData extracted)
+    {
+        if (!string.IsNullOrWhiteSpace(extracted.FirstName))
+        {
+            FirstNameEntry.Text = extracted.FirstName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(extracted.LastName))
+        {
+            LastNameEntry.Text = extracted.LastName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(extracted.DocumentNumber))
+        {
+            PassportNumberEntry.Text = extracted.DocumentNumber;
+        }
+
+        var nationality = FindNationalityOption(extracted.NationalityCode);
+        if (nationality != null)
+        {
+            NationalityPicker.SelectedItem = nationality;
+        }
+
+        var gender = FindGenderOption(extracted.GenderCode);
+        if (gender != null)
+        {
+            GenderPicker.SelectedItem = gender;
+        }
+
+        if (extracted.BirthDate.HasValue)
+        {
+            BirthDateEnabled.IsChecked = true;
+            BirthDatePicker.Date = extracted.BirthDate.Value;
+            SetAgeRangeFromBirthDate(extracted.BirthDate.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(extracted.TcKimlikNo) && GetNationalityMode() == NationalityMode.Turkey)
+        {
+            TcEntry.Text = extracted.TcKimlikNo;
+        }
+
+        if (extracted.PassportStartDate.HasValue)
+        {
+            PassportStartEnabled.IsChecked = true;
+            PassportStartPicker.Date = extracted.PassportStartDate.Value;
+        }
+
+        if (extracted.PassportEndDate.HasValue)
+        {
+            PassportEndEnabled.IsChecked = true;
+            PassportEndPicker.Date = extracted.PassportEndDate.Value;
+        }
+
+        PassportImageStatusLabel.Text = "Görsel cihazda işlendi. Bilgileri önizlemede kontrol edin.";
+    }
+
+    private string? FindNationalityOption(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return null;
+        }
+
+        var aliases = code.ToUpperInvariant() switch
+        {
+            "TUR" => new[] { "turkiye", "turk", "tc" },
+            "USA" => new[] { "abd", "amerika", "unitedstates", "usa" },
+            "GBR" => new[] { "ingiltere", "birlesikkrallik", "unitedkingdom", "gbr" },
+            "DEU" => new[] { "almanya", "germany", "deu" },
+            "FRA" => new[] { "fransa", "france", "fra" },
+            "ITA" => new[] { "italya", "italy", "ita" },
+            "ESP" => new[] { "ispanya", "spain", "esp" },
+            "NLD" => new[] { "hollanda", "netherlands", "nld" },
+            "RUS" => new[] { "rusya", "russia", "rus" },
+            "UKR" => new[] { "ukrayna", "ukraine", "ukr" },
+            "AZE" => new[] { "azerbaycan", "azerbaijan", "aze" },
+            "IRN" => new[] { "iran", "irn" },
+            "IRQ" => new[] { "irak", "iraq", "irq" },
+            "SYR" => new[] { "suriye", "syria", "syr" },
+            "GEO" => new[] { "gurcistan", "georgia", "geo" },
+            "BGR" => new[] { "bulgaristan", "bulgaria", "bgr" },
+            "ROU" => new[] { "romanya", "romania", "rou" },
+            "POL" => new[] { "polonya", "poland", "pol" },
+            "CAN" => new[] { "kanada", "canada", "can" },
+            "AUS" => new[] { "avustralya", "australia", "aus" },
+            "CHN" => new[] { "cin", "china", "chn" },
+            "JPN" => new[] { "japonya", "japan", "jpn" },
+            _ => new[] { code.ToLowerInvariant() }
+        };
+
+        var options = NationalityPicker.ItemsSource as IEnumerable<string> ?? [];
+        return options.FirstOrDefault(option =>
+        {
+            var normalized = RemoveDiacritics(option).ToLowerInvariant().Replace(" ", string.Empty, StringComparison.Ordinal);
+            return aliases.Any(alias => normalized.Contains(alias, StringComparison.Ordinal));
+        });
+    }
+
+    private string? FindGenderOption(string? code)
+    {
+        var expected = code?.ToUpperInvariant() switch
+        {
+            "M" => "erkek",
+            "F" => "kadin",
+            _ => null
+        };
+        if (expected == null)
+        {
+            return null;
+        }
+
+        var options = GenderPicker.ItemsSource as IEnumerable<string> ?? [];
+        return options.FirstOrDefault(option => RemoveDiacritics(option).Contains(expected, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void DeletePassportImage()
+    {
+        if (string.IsNullOrWhiteSpace(_passportImagePath))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(_passportImagePath);
+        }
+        catch
+        {
+        }
+
+        _passportImagePath = null;
+    }
+
     private void OpenNewPersonWizard(string? initialName = null)
     {
+        DeletePassportImage();
         _formPerson = new PersonRecord { IsActive = true, BirthDate = DateTime.Now };
         ResetFormFields();
         if (!string.IsNullOrWhiteSpace(initialName))
@@ -245,6 +520,7 @@ public partial class PersonsPage : ContentPage
 
     private void CloseWizard(bool clearSearch)
     {
+        DeletePassportImage();
         WizardPanel.IsVisible = false;
         SearchPanel.IsVisible = true;
         _formPerson = null;
@@ -287,6 +563,9 @@ public partial class PersonsPage : ContentPage
             PassportEndPicker.Date = DateTime.Today;
             PassportEndPicker.IsVisible = false;
             PassportValidityBorder.IsVisible = false;
+            PassportImageStatusLabel.IsVisible = false;
+            PassportImageStatusLabel.Text = string.Empty;
+            ProcessPassportImageButton.IsEnabled = false;
         }
         finally
         {
@@ -462,6 +741,28 @@ public partial class PersonsPage : ContentPage
     private void OnBirthDateSelected(object? sender, DateChangedEventArgs e)
     {
         UpdateAgeLabel();
+        if (e.NewDate.HasValue)
+        {
+            SetAgeRangeFromBirthDate(e.NewDate.Value);
+        }
+    }
+
+    private void SetAgeRangeFromBirthDate(DateTime birthDate)
+    {
+        if (birthDate.Date > DateTime.Today)
+        {
+            return;
+        }
+
+        var today = DateTime.Today;
+        var age = today.Year - birthDate.Year;
+        if (birthDate.Date > today.AddYears(-age))
+        {
+            age--;
+        }
+
+        var ageRange = age < 2 ? "Bebek" : age < 18 ? "Çocuk" : "Yetişkin";
+        SetPickerValue(AgeRangePicker, ageRange, includePlaceholder: true);
     }
 
     private void UpdateAgeLabel()
@@ -610,6 +911,7 @@ public partial class PersonsPage : ContentPage
         var ageRange = AgeRangePicker.SelectedItem as string ?? "Seçiniz";
         var blood = BloodPicker.SelectedItem as string ?? "Seçiniz";
         var passportType = PassportTypePicker.SelectedItem as string ?? "Seçiniz";
+        var passportValidity = GetPassportValiditySummary();
 
         PreviewLabel.Text =
             $"AD SOYAD : {FirstNameEntry.Text} {LastNameEntry.Text}\n" +
@@ -627,7 +929,40 @@ public partial class PersonsPage : ContentPage
             $"PASAPORT TÜRÜ : {passportType}\n" +
             $"PASAPORT NO : {PassportNumberEntry.Text}\n" +
             $"PASAPORT BAŞLANGIÇ : {(PassportStartEnabled.IsChecked ? PassportStartPicker.Date?.ToShortDateString() ?? string.Empty : string.Empty)}\n" +
-            $"PASAPORT BİTİŞ : {(PassportEndEnabled.IsChecked ? PassportEndPicker.Date?.ToShortDateString() ?? string.Empty : string.Empty)}";
+            $"PASAPORT BİTİŞ : {(PassportEndEnabled.IsChecked ? PassportEndPicker.Date?.ToShortDateString() ?? string.Empty : string.Empty)}" +
+            (string.IsNullOrWhiteSpace(passportValidity) ? string.Empty : $"\n{passportValidity}");
+    }
+
+    private string GetPassportValiditySummary()
+    {
+        if (!PassportEndEnabled.IsChecked || !PassportEndPicker.Date.HasValue)
+        {
+            return string.Empty;
+        }
+
+        var endDate = PassportEndPicker.Date.Value.Date;
+        if (endDate < DateTime.Today)
+        {
+            return "PASAPORT GEÇERLİLİK : Süresi dolmuştur.";
+        }
+
+        var cursor = DateTime.Today;
+        var years = 0;
+        var months = 0;
+        while (cursor.AddYears(1) <= endDate)
+        {
+            cursor = cursor.AddYears(1);
+            years++;
+        }
+
+        while (cursor.AddMonths(1) <= endDate)
+        {
+            cursor = cursor.AddMonths(1);
+            months++;
+        }
+
+        var days = (endDate - cursor).Days;
+        return $"PASAPORT GEÇERLİLİK : {years} yıl, {months} ay, {days} gün kaldı.";
     }
 
     private static string GetAge(DateTime? birthDate)

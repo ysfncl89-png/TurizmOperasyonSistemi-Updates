@@ -1,4 +1,6 @@
 <Solution>
-  <Project Path="TOSLite.Mobile/TOSLite.Mobile.csproj" />
+  <Project Path="TOSLite.Mobile/TOSLite.Mobile.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
   <Project Path="TurizmOperasyonSistemi.csproj" />
 </Solution>

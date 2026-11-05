@@ -3,6 +3,7 @@ using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Views;
 using TOSLite.Mobile.Services;
 using ZXing.Net.Maui.Controls;
+using CommunityToolkit.Maui;
 
 namespace TOSLite.Mobile
 {
@@ -13,6 +14,7 @@ namespace TOSLite.Mobile
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 .UseBarcodeReader()
                 .ConfigureFonts(fonts =>
                 {
@@ -25,6 +27,7 @@ namespace TOSLite.Mobile
             builder.Services.AddSingleton<SettingsRepository>();
             builder.Services.AddSingleton<RoomAllocationRepository>();
             builder.Services.AddSingleton<MobileSyncService>();
+            builder.Services.AddSingleton<IPassportTextRecognitionService, PassportTextRecognitionService>();
             builder.Services.AddSingleton<ListExportService>();
             builder.Services.AddSingleton<DownloadFileService>();
             builder.Services.AddTransient<PersonsPage>();

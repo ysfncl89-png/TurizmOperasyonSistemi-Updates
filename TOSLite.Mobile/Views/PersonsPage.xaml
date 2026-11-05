@@ -110,6 +110,36 @@
                            FontSize="17"
                            FontAttributes="Bold"
                             TextColor="#24213A" />
+                    <Label Text="Pasaport Görselinden Ön Doldurma"
+                           FontSize="15"
+                           FontAttributes="Bold"
+                           TextColor="#6D4AFF" />
+                    <Label Text="Fotoğraf cihazınızda işlenir; kaydetmeden önce tüm bilgileri kontrol edebilirsiniz."
+                           FontSize="12"
+                           TextColor="#687083" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Button Text="Fotoğraf Yükle"
+                                HorizontalOptions="FillAndExpand"
+                                BackgroundColor="#6D4AFF"
+                                TextColor="White"
+                                Clicked="OnChoosePassportImageClicked" />
+                        <Button x:Name="CapturePassportImageButton"
+                                Text="Fotoğraf Çek"
+                                HorizontalOptions="FillAndExpand"
+                                BackgroundColor="#16875D"
+                                TextColor="White"
+                                Clicked="OnCapturePassportImageClicked" />
+                    </HorizontalStackLayout>
+                    <Label x:Name="PassportImageStatusLabel"
+                           IsVisible="False"
+                           FontSize="12"
+                           TextColor="#16875D" />
+                    <Button x:Name="ProcessPassportImageButton"
+                            Text="Bilgileri İşle"
+                            IsEnabled="False"
+                            BackgroundColor="#24213A"
+                            TextColor="White"
+                            Clicked="OnProcessPassportImageClicked" />
                     <Label Text="Ad *" TextColor="#687083" />
                     <Entry x:Name="FirstNameEntry" Placeholder="Ad" TextColor="#24213A" BackgroundColor="White" />
                     <Label Text="Soyad *" TextColor="#687083" />

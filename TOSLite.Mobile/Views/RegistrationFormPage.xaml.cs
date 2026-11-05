@@ -1,6 +1,7 @@
 using System.Globalization;
 using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Models;
+using TOSLite.Mobile.Services;
 
 namespace TOSLite.Mobile.Views;
 
@@ -9,6 +10,7 @@ public partial class RegistrationFormPage : ContentPage
 {
     private readonly RegistrationRepository _repository;
     private readonly PersonRepository _personRepository;
+    private readonly IPassportTextRecognitionService _passportTextRecognitionService;
     private RegistrationRecord _record = new();
     private List<PersonRecord> _personItems = [];
     private List<string> _periodOptions = [];
@@ -38,11 +40,12 @@ public partial class RegistrationFormPage : ContentPage
         }
     }
 
-    public RegistrationFormPage(RegistrationRepository repository, PersonRepository personRepository)
+    public RegistrationFormPage(RegistrationRepository repository, PersonRepository personRepository, IPassportTextRecognitionService passportTextRecognitionService)
     {
         InitializeComponent();
         _repository = repository;
         _personRepository = personRepository;
+        _passportTextRecognitionService = passportTextRecognitionService;
         MobileTheme.Apply(this);
     }
 
@@ -160,7 +163,7 @@ public partial class RegistrationFormPage : ContentPage
 
     private async void OnAddPersonClicked(object? sender, EventArgs e)
     {
-        var personsPage = new PersonsPage(_personRepository);
+        var personsPage = new PersonsPage(_personRepository, _passportTextRecognitionService);
         personsPage.OpenNewPersonForRegistration(PersonSearchEntry.Text);
         var saved = new TaskCompletionSource<PersonRecord?>(TaskCreationOptions.RunContinuationsAsynchronously);
         EventHandler<PersonRecord>? handler = null;
