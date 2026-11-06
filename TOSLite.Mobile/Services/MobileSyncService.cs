@@ -322,7 +322,7 @@ public sealed class MobileSyncService
         var payments = result.Payments.Select(x => new PaymentRecord
         {
             Id = x.DesktopPaymentId ?? x.Id, SyncId = x.SyncId, DesktopPaymentId = x.DesktopPaymentId,
-            RegistrationId = x.RegistrationId,
+            RegistrationId = x.DesktopRegistrationId ?? x.RegistrationId,
             CreatedAt = x.CreatedAt, OriginalAmount = x.OriginalAmount, OriginalCurrency = x.OriginalCurrency,
             AmountInRegistrationCurrency = x.AmountInRegistrationCurrency, Rate = x.Rate, Note = x.Note,
             UploadedDocumentPath = x.UploadedDocumentPath, PaymentMethod = x.PaymentMethod,
@@ -332,7 +332,7 @@ public sealed class MobileSyncService
         var cargoItems = result.CargoQueue.Select(x => new CargoQueueRecord
         {
             Id = x.Id, SyncId = x.SyncId, DesktopQueueId = x.DesktopQueueId,
-            RegistrationId = x.RegistrationId,
+            RegistrationId = x.DesktopRegistrationId ?? x.RegistrationId,
             DesktopRegistrationId = x.DesktopRegistrationId,
             FullName = x.FullName, Tc = x.Tc, Phone = x.Phone, Address = x.Address,
             TourType = x.TourType, Period = x.Period, GroupType = x.GroupType, DaysCount = x.DaysCount,

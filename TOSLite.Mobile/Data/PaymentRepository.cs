@@ -174,7 +174,6 @@ public sealed class PaymentRepository
             command.Transaction = (SqliteTransaction)transaction;
             command.CommandText = "INSERT INTO Payments (SyncId, DesktopPaymentId, RegistrationId, DesktopRegistrationId, CreatedAt, OriginalAmount, OriginalCurrency, AmountInRegistrationCurrency, Rate, Note, UploadedDocumentPath, PaymentMethod, LastModifiedUtc, IsDeleted) VALUES ($syncId, $desktopId, $registrationId, $desktopRegistrationId, $createdAt, $originalAmount, $originalCurrency, $converted, $rate, $note, $document, $method, $modified, $deleted);";
             AddParameters(command, payment);
-            command.Parameters.AddWithValue("$deleted", payment.IsDeleted ? 1 : 0);
             await command.ExecuteNonQueryAsync();
         }
         await transaction.CommitAsync();

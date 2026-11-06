@@ -36,12 +36,12 @@ namespace TOSLite.Mobile
 
         private async void OnListsClicked(object? sender, EventArgs e)
         {
-            await NavigateFromCardAsync(sender, "//lists");
+            await NavigateFromCardAsync(sender, "lists");
         }
 
         private async void OnSettingsClicked(object? sender, EventArgs e)
         {
-            await NavigateFromCardAsync(sender, "//settings");
+            await NavigateFromCardAsync(sender, "settings");
         }
 
         private async void OnMobileSyncClicked(object? sender, EventArgs e)

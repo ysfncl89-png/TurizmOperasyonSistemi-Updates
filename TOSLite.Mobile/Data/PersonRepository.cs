@@ -175,6 +175,22 @@ public sealed class PersonRepository
         return Convert.ToInt32(await command.ExecuteScalarAsync(), CultureInfo.InvariantCulture) != 0;
     }
 
+    public async Task<PersonRecord?> FindUniqueByTurkishIdAsync(string tcKimlikNo)
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Id, ClientId, DesktopPersonId, FirstName, LastName, TcKimlikNo, Gender, BirthDate, PhoneNumber, Address, Aciklama, PassportType, PassportNumber, PassportStartDate, PassportEndDate, BloodType, HealthStatus, VaccineStatus, IsActive, IsDeleted, AgeRange, Nationality, LastModifiedUtc FROM PersonRecords WHERE TcKimlikNo = $tc AND IsDeleted = 0 LIMIT 2;";
+        command.Parameters.AddWithValue("$tc", tcKimlikNo);
+        await using var reader = await command.ExecuteReaderAsync();
+        if (!await reader.ReadAsync())
+        {
+            return null;
+        }
+
+        var person = ReadPerson(reader);
+        return await reader.ReadAsync() ? null : person;
+    }
+
     public async Task<int> SaveAsync(PersonRecord person, bool preserveLastModifiedUtc = false)
     {
         if (string.IsNullOrWhiteSpace(person.ClientId))

@@ -14,6 +14,7 @@
 - Pasaport alanı anlamı: “Pasaport başlangıç tarihi” düzenlenme (issue/issued) tarihidir; MRZ’deki son kullanma tarihi pasaport bitiş tarihidir. Kullanıcı önizlemede pasaport bitiş tarihinin altında kalan geçerlilik süresinin gösterilmesini istiyor; kişi formunda başlangıç/bitiş tarihleri girilince görünen mevcut süre gösterimiyle tutarlı olmalı.
 - Ana sayfadaki tüm çalışma alanı/yönetim satırlarının tamamı tıklanabilir olmalı ve dokunmada hafif görsel geri bildirim (ör. küçük ölçek/renk değişimi) vermeli; kartlara hafif, zarif gölge eklenmeli; indigo gradyan koyu lacivert marka tonuyla daha derin olmalı.
 - Tur kayıtları modülündeki önizlemede kullanıcı yalnızca bölüm/özel vize-kargo değerlerinin değil, tüm alan başlıkları ve açıklamalarının farklı, okunaklı renklerle gösterilmesini istiyor; ilgili isteklerde tüm preview bilgilerini renkli biçimlendir.
+- Uyruk seçenekleri yalnızca Türkiye ve Yabancı olarak belirlenmeli; ülke kodları ayrı uyruk seçenekleri olarak eklenmemeli ve eşitleme sözleşmesini bozmayacak biçimde mevcut seçeneklere eşlenmeli.
 
 ## Finans Dışa Aktarma
 - Mevcut seçim/filtre neyse (kişi/tur/dönem) sadece görünen eşleşen kayıtları dışa aktar; filtre/seçim yoksa tüm finans kayıtlarını aktar.

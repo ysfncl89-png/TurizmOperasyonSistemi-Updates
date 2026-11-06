@@ -279,7 +279,10 @@ public partial class ListsPage : ContentPage
                     ["Kapasite"] = room.Capacity.ToString(),
                     ["Yerleşen Kişi Sayısı"] = room.Occupants.Count.ToString(),
                     ["Yerleşen Kişiler"] = string.Join("\n", room.Occupants.Select((occupant, index) => $"{index + 1}. {occupant.PersonName}")),
-                    ["Connection"] = room.IsConnection ? "Evet" : "Hayır"
+                    ["Connection"] = room.IsConnection ? "Evet" : "Hayır",
+                    ["__HotelName"] = room.HotelName,
+                    ["__CheckInDate"] = FormatExportDate(room.CheckInDate),
+                    ["__CheckOutDate"] = FormatExportDate(room.CheckOutDate)
                 }
             }).ToList();
             var filteredRows = FilterRows(rows);
@@ -309,23 +312,30 @@ public partial class ListsPage : ContentPage
 
         try
         {
+            var kind = _selectedKind.Value;
             var rows = _visibleRows.Select(row => (IReadOnlyDictionary<string, string>)row.ExportValues).ToList();
-            var headers = _visibleRows.SelectMany(row => row.ExportValues.Keys).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var headers = _visibleRows[0].ExportValues.Keys
+                .Where(header => !header.StartsWith("__", StringComparison.Ordinal))
+                .ToList();
             if (_selectedKind == ListKind.Airline)
             {
                 headers = headers.Select(TransformForAirline).ToList();
-                rows = _visibleRows.Select(row => (IReadOnlyDictionary<string, string>)row.ExportValues.ToDictionary(pair => TransformForAirline(pair.Key), pair => TransformForAirline(pair.Value), StringComparer.OrdinalIgnoreCase)).ToList();
+                rows = _visibleRows.Select(row => (IReadOnlyDictionary<string, string>)row.ExportValues
+                    .Where(pair => !pair.Key.StartsWith("__", StringComparison.Ordinal))
+                    .ToDictionary(pair => TransformForAirline(pair.Key), pair => TransformForAirline(pair.Value), StringComparer.OrdinalIgnoreCase)).ToList();
             }
 
-            var fileName = $"{SafeFileName(GetTitle(_selectedKind.Value))}_{DateTime.Now:yyyyMMdd_HHmmss}";
+            var options = CreateExportOptions(kind);
+            var exportTitle = BuildExportTitle(kind, options);
+            var fileName = BuildExportBaseFileName(kind, options);
             var (extension, contentType, bytes) = format switch
             {
-                "Word (.docx)" => (".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", _listExportService.CreateWord(GetTitle(_selectedKind.Value), headers, rows)),
-                "Excel (.xlsx)" => (".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", _listExportService.CreateExcel(GetTitle(_selectedKind.Value), headers, rows)),
-                _ => (".pdf", "application/pdf", _listExportService.CreatePdf(GetTitle(_selectedKind.Value), headers, rows))
+                "Word (.docx)" => (".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", _listExportService.CreateWord(exportTitle, headers, rows, options)),
+                "Excel (.xlsx)" => (".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", _listExportService.CreateExcel(exportTitle, headers, rows, options)),
+                _ => (".pdf", "application/pdf", _listExportService.CreatePdf(exportTitle, headers, rows, options))
             };
 
-            var fullFileName = fileName + extension;
+            var fullFileName = SafeFileName(fileName, kind == ListKind.Rooms ? '_' : '-') + extension;
             await _downloadFileService.SaveAsync(fullFileName, contentType, bytes);
             await DisplayAlertAsync("İndirme tamamlandı", $"Dosya İndirilenler klasörüne kaydedildi:\n{fullFileName}", "Tamam");
         }
@@ -341,11 +351,109 @@ public partial class ListsPage : ContentPage
         .Replace("Ö", "O").Replace("ö", "o").Replace("Ç", "C").Replace("ç", "c")
         .ToUpperInvariant();
 
-    private static string SafeFileName(string value)
+    private ListExportOptions CreateExportOptions(ListKind kind)
     {
-        foreach (var character in Path.GetInvalidFileNameChars())
-            value = value.Replace(character, '_');
-        return value;
+        var firstRoom = kind == ListKind.Rooms ? _visibleRows[0].ExportValues : null;
+        var roomTypes = kind == ListKind.Rooms
+            ? _visibleRows.Select(row => row.ExportValues.TryGetValue("Oda Türü", out var roomType) ? roomType : string.Empty)
+                .Where(roomType => !string.IsNullOrWhiteSpace(roomType))
+                .GroupBy(roomType => roomType.Trim(), StringComparer.CurrentCultureIgnoreCase)
+                .Select(group => new { RoomType = group.Key, Count = group.Count() })
+                .OrderByDescending(item => item.Count)
+                .ThenBy(item => RoomTypeSortOrder(item.RoomType))
+                .ToList()
+            : [];
+        var roomSummary = string.Join(", ", roomTypes.Select(item => $"{item.Count} {item.RoomType}"));
+        return new ListExportOptions
+        {
+            UseDesktopTemplate = true,
+            IsRoomAllocation = kind == ListKind.Rooms,
+            HotelName = firstRoom?.GetValueOrDefault("__HotelName") ?? string.Empty,
+            CheckInDate = firstRoom?.GetValueOrDefault("__CheckInDate") ?? string.Empty,
+            CheckOutDate = firstRoom?.GetValueOrDefault("__CheckOutDate") ?? string.Empty,
+            TourType = SelectedValue(TourTypePicker) ?? string.Empty,
+            Period = SelectedValue(PeriodPicker) ?? string.Empty,
+            GroupType = SelectedValue(GroupTypePicker) ?? string.Empty,
+            DaysCount = SelectedValue(DaysPicker) ?? string.Empty,
+            Footers = kind == ListKind.Rooms ? [$"TOPLAM ODA : {_visibleRows.Count}", roomSummary] : []
+        };
+    }
+
+    private string BuildExportTitle(ListKind kind, ListExportOptions options)
+    {
+        if (kind == ListKind.Rooms)
+        {
+            var baseName = BuildExportBaseFileName(kind, options);
+            return string.Join("\n", new[] { baseName, options.HotelName, $"Giriş: {options.CheckInDate}", $"Çıkış: {options.CheckOutDate}" });
+        }
+
+        var parts = new List<string> { GetDesktopModeName(kind) + " Liste" };
+        if (!string.IsNullOrWhiteSpace(options.TourType)) parts.Add(options.TourType);
+        if (!string.IsNullOrWhiteSpace(options.Period)) parts.Add(options.Period);
+        if (!string.IsNullOrWhiteSpace(options.GroupType)) parts.Add(options.GroupType);
+        if (!string.IsNullOrWhiteSpace(options.DaysCount)) parts.Add(options.DaysCount + " Günlük");
+        return string.Join("\n", parts);
+    }
+
+    private string BuildExportBaseFileName(ListKind kind, ListExportOptions options)
+    {
+        if (kind == ListKind.Rooms)
+            return string.Join(" - ", new[]
+            {
+                options.TourType,
+                options.Period,
+                string.Join(" ", new[] { options.GroupType, options.DaysCount }.Where(value => !string.IsNullOrWhiteSpace(value))),
+                options.HotelName,
+                "Otel Odalama Listesi"
+            }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+        var parts = new List<string> { GetDesktopModeName(kind) + " Liste" };
+        if (!string.IsNullOrWhiteSpace(options.TourType)) parts.Add(options.TourType);
+        if (!string.IsNullOrWhiteSpace(options.Period)) parts.Add(options.Period);
+        if (!string.IsNullOrWhiteSpace(options.DaysCount)) parts.Add(options.DaysCount + " Günlük");
+        if (!string.IsNullOrWhiteSpace(options.GroupType)) parts.Add(options.GroupType);
+        var query = SearchEntry.Text?.Trim();
+        if (!string.IsNullOrWhiteSpace(query)) parts.Add(query);
+        return string.Join(" - ", parts);
+    }
+
+    private static string GetDesktopModeName(ListKind kind) => kind switch
+    {
+        ListKind.Phone => "Telefon",
+        ListKind.Health => "Sağlık",
+        ListKind.TourGeneral => "Genel",
+        ListKind.Visa => "Vize",
+        ListKind.Passport => "Pasaport",
+        ListKind.Ticket => "Bilet",
+        ListKind.Transfer => "Aktarma",
+        ListKind.Airline => "Havayolu",
+        ListKind.Reference => "Referans",
+        ListKind.Payments => "Ödeme Listesi",
+        ListKind.Cargo => "Kargo Listesi",
+        _ => "Liste"
+    };
+
+    private static string SafeFileName(string value, char replacement)
+    {
+        foreach (var character in "<>:\"/\\|?*".Concat(Enumerable.Range(0, 32).Select(value => (char)value)))
+            value = value.Replace(character, replacement);
+        return value.Trim();
+    }
+
+    private static string FormatExportDate(string value) => DateTime.TryParse(value, out var date)
+        ? date.ToString("dd.MM.yyyy")
+        : string.IsNullOrWhiteSpace(value) ? "-" : value;
+
+    private static int RoomTypeSortOrder(string roomType)
+    {
+        var normalized = roomType.Trim().ToUpperInvariant();
+        if (normalized.Contains("SINGLE") || normalized.Contains("SNGL")) return 0;
+        if (normalized.Contains("DBL")) return 1;
+        if (normalized.Contains("TRPL") || normalized.Contains("TRIPLE") || normalized.Contains("TRİPLE")) return 2;
+        if (normalized.Contains("TWIN")) return 3;
+        if (normalized.Contains("QUAD")) return 4;
+        if (normalized.Contains("QUINT")) return 5;
+        return 50;
     }
 
     private List<ListDisplayRow> FilterRows(IEnumerable<ListDisplayRow> rows)

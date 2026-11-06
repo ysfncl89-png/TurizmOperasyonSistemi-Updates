@@ -20,6 +20,22 @@ public partial class PersonsPage : ContentPage
     private bool _openNewPersonOnAppear;
     private string _initialPersonSearch = string.Empty;
     private string? _passportImagePath;
+    private PassportFormSnapshot? _passportOcrBaseline;
+
+    private sealed record PassportFormSnapshot(
+        string? FirstName,
+        string? LastName,
+        object? Nationality,
+        string? TurkishId,
+        object? Gender,
+        bool BirthDateEnabled,
+        DateTime? BirthDate,
+        object? AgeRange,
+        string? PassportNumber,
+        bool PassportStartEnabled,
+        DateTime? PassportStartDate,
+        bool PassportEndEnabled,
+        DateTime? PassportEndDate);
 
     public event EventHandler<PersonRecord>? PersonSaved;
 
@@ -228,6 +244,7 @@ public partial class PersonsPage : ContentPage
 
     private async Task SetPassportImageAsync(FileResult image)
     {
+        RestorePassportFormSnapshot();
         DeletePassportImage();
         var extension = Path.GetExtension(image.FileName);
         var imagePath = Path.Combine(FileSystem.CacheDirectory, $"passport-{Guid.NewGuid():N}{extension}");
@@ -299,6 +316,29 @@ public partial class PersonsPage : ContentPage
                 return;
             }
 
+            if (_formPerson?.Id is not > 0
+                && !string.IsNullOrWhiteSpace(extracted.TcKimlikNo)
+                && string.Equals(extracted.NationalityCode, "TUR", StringComparison.OrdinalIgnoreCase))
+            {
+                var existingPerson = await _repository.FindUniqueByTurkishIdAsync(extracted.TcKimlikNo);
+                if (existingPerson != null)
+                {
+                    var updateExisting = await DisplayAlertAsync(
+                        "Kayıtlı kişi bulundu",
+                        $"{existingPerson.FirstName} {existingPerson.LastName} adına kayıtlı kişi bulundu. Yeni pasaport bilgilerini bu kişinin kaydında güncellemek ister misiniz?",
+                        "Güncelle",
+                        "İptal");
+                    if (!updateExisting)
+                    {
+                        return;
+                    }
+
+                    _formPerson = ClonePerson(existingPerson);
+                    LoadPersonIntoForm(_formPerson);
+                }
+            }
+
+            _passportOcrBaseline ??= CapturePassportFormSnapshot();
             ApplyPassportData(extracted);
             SetStep(5);
             await DisplayAlertAsync("Kontrol", "Okunan bilgiler önizlemeye aktarıldı. Kaydetmeden önce doğruluğunu kontrol edin.", "Tamam");
@@ -407,19 +447,27 @@ public partial class PersonsPage : ContentPage
         };
 
         var options = NationalityPicker.ItemsSource as IEnumerable<string> ?? [];
-        return options.FirstOrDefault(option =>
+        var matchingOption = options.FirstOrDefault(option =>
         {
             var normalized = RemoveDiacritics(option).ToLowerInvariant().Replace(" ", string.Empty, StringComparison.Ordinal);
             return aliases.Any(alias => normalized.Contains(alias, StringComparison.Ordinal));
         });
+        if (matchingOption != null)
+        {
+            return matchingOption;
+        }
+
+        return code.Equals("TUR", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : options.FirstOrDefault(option => RemoveDiacritics(option).Contains("yabanci", StringComparison.OrdinalIgnoreCase));
     }
 
     private string? FindGenderOption(string? code)
     {
-        var expected = code?.ToUpperInvariant() switch
+        var expected = code?.Trim().ToUpperInvariant() switch
         {
-            "M" => "erkek",
-            "F" => "kadin",
+            "M" => new[] { "erkek", "male", "m" },
+            "F" => new[] { "kadin", "female", "f" },
             _ => null
         };
         if (expected == null)
@@ -428,7 +476,11 @@ public partial class PersonsPage : ContentPage
         }
 
         var options = GenderPicker.ItemsSource as IEnumerable<string> ?? [];
-        return options.FirstOrDefault(option => RemoveDiacritics(option).Contains(expected, StringComparison.OrdinalIgnoreCase));
+        return options.FirstOrDefault(option =>
+        {
+            var normalized = RemoveDiacritics(option.Trim()).ToLowerInvariant();
+            return expected.Any(value => normalized == value || normalized.Contains(value, StringComparison.Ordinal));
+        });
     }
 
     private void DeletePassportImage()
@@ -449,9 +501,63 @@ public partial class PersonsPage : ContentPage
         _passportImagePath = null;
     }
 
+    private PassportFormSnapshot CapturePassportFormSnapshot() => new(
+        FirstNameEntry.Text,
+        LastNameEntry.Text,
+        NationalityPicker.SelectedItem,
+        TcEntry.Text,
+        GenderPicker.SelectedItem,
+        BirthDateEnabled.IsChecked,
+        BirthDateEnabled.IsChecked ? BirthDatePicker.Date : null,
+        AgeRangePicker.SelectedItem,
+        PassportNumberEntry.Text,
+        PassportStartEnabled.IsChecked,
+        PassportStartEnabled.IsChecked ? PassportStartPicker.Date : null,
+        PassportEndEnabled.IsChecked,
+        PassportEndEnabled.IsChecked ? PassportEndPicker.Date : null);
+
+    private void RestorePassportFormSnapshot()
+    {
+        if (_passportOcrBaseline is not { } baseline)
+        {
+            return;
+        }
+
+        _loadingPerson = true;
+        try
+        {
+            FirstNameEntry.Text = baseline.FirstName;
+            LastNameEntry.Text = baseline.LastName;
+            NationalityPicker.SelectedItem = baseline.Nationality;
+            TcEntry.Text = baseline.TurkishId;
+            GenderPicker.SelectedItem = baseline.Gender;
+            BirthDateEnabled.IsChecked = baseline.BirthDateEnabled;
+            BirthDatePicker.Date = baseline.BirthDate ?? DateTime.Today;
+            BirthDatePicker.IsVisible = baseline.BirthDateEnabled;
+            AgeRangePicker.SelectedItem = baseline.AgeRange;
+            PassportNumberEntry.Text = baseline.PassportNumber;
+            PassportStartEnabled.IsChecked = baseline.PassportStartEnabled;
+            PassportStartPicker.Date = baseline.PassportStartDate ?? DateTime.Today;
+            PassportStartPicker.IsVisible = baseline.PassportStartEnabled;
+            PassportEndEnabled.IsChecked = baseline.PassportEndEnabled;
+            PassportEndPicker.Date = baseline.PassportEndDate ?? DateTime.Today;
+            PassportEndPicker.IsVisible = baseline.PassportEndEnabled;
+        }
+        finally
+        {
+            _loadingPerson = false;
+        }
+
+        _passportOcrBaseline = null;
+        UpdateNationalityFields();
+        UpdateAgeLabel();
+        UpdatePassportValidity();
+    }
+
     private void OpenNewPersonWizard(string? initialName = null)
     {
         DeletePassportImage();
+        _passportOcrBaseline = null;
         _formPerson = new PersonRecord { IsActive = true, BirthDate = DateTime.Now };
         ResetFormFields();
         if (!string.IsNullOrWhiteSpace(initialName))
@@ -514,8 +620,24 @@ public partial class PersonsPage : ContentPage
     {
         SearchPanel.IsVisible = false;
         WizardPanel.IsVisible = true;
+        ((Button)FindByName("NewPersonResetButton")!).IsVisible = _formPerson?.Id is not > 0;
         ValidationLabel.IsVisible = false;
         SetStep(1);
+    }
+
+    private async void OnStartAnotherPersonClicked(object? sender, EventArgs e)
+    {
+        var confirmed = await DisplayAlertAsync(
+            "Başka kişi ekle",
+            "Bu kişi için girdiğiniz kaydedilmemiş bilgiler silinecek. Başka kişi için boş form açılsın mı?",
+            "Evet, temizle",
+            "Vazgeç");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        OpenNewPersonWizard();
     }
 
     private void CloseWizard(bool clearSearch)
@@ -668,7 +790,10 @@ public partial class PersonsPage : ContentPage
         var mode = GetNationalityMode();
         if (mode == NationalityMode.Foreign)
         {
-            TcEntry.Text = string.Empty;
+            if (_formPerson?.Id is not > 0)
+            {
+                TcEntry.Text = string.Empty;
+            }
         }
 
         UpdateNationalityFields();

@@ -135,10 +135,4 @@ public partial class RegistrationsPage : ContentPage
     }
 
     private async void OnHomeClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("..");
-
-    protected override void OnNavigatedTo(NavigatedToEventArgs args)
-    {
-        base.OnNavigatedTo(args);
-        _ = RefreshRegistrationsAsync();
-    }
 }

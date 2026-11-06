@@ -28,6 +28,7 @@
                 <TextBlock x:Name="AddressText" TextWrapping="Wrap" Foreground="#687083" />
                 <TextBlock Text="Güvenli bağlantı parmak izi" FontWeight="Bold" Foreground="#33266F" Margin="0,12,0,4" />
                 <TextBlock x:Name="FingerprintText" TextWrapping="Wrap" Foreground="#687083" FontSize="11" />
+                <Button Content="Eşleştirme metnini kopyala" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,6" Click="CopyPairingText_Click" />
             </StackPanel>
         </Grid>
         <GroupBox Grid.Row="2" Header="Son eşitleme raporu" Foreground="#33266F">

@@ -58,6 +58,19 @@ public partial class MobileSyncWindow : Window
         });
     }
 
+    private void CopyPairingText_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText(_server.PairingPayload);
+            StatusText.Text = "Eşleştirme metni panoya kopyalandı. Mobil uygulamadaki QR ekranında Panodan Yapıştır'ı kullanın.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Eşleştirme metni panoya kopyalanamadı: {ex.Message}", "Kopyalama hatası", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void OnSyncCompleted(MobileSyncResultDto result)
     {
         Dispatcher.Invoke(() =>

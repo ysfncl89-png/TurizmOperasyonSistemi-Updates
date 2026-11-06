@@ -103,6 +103,12 @@
                              Progress="0.2"
                              ProgressColor="{StaticResource Primary}"
                              BackgroundColor="{StaticResource BorderColor}" />
+                <Button x:Name="NewPersonResetButton"
+                        Text="Bu kişiyi bırak, başka kişi ekle"
+                        IsVisible="False"
+                        HorizontalOptions="End"
+                        Style="{StaticResource SecondaryButton}"
+                        Clicked="OnStartAnotherPersonClicked" />
 
                 <VerticalStackLayout x:Name="Step1Layout" Spacing="10">
                     <Label Text="1. Kimlik Bilgileri"

@@ -10,10 +10,21 @@
             <Button Text="‹ Ana Sayfa" HorizontalOptions="Start" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" Clicked="OnHomeClicked" />
             <Label Text="Masaüstü Eşitleme" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
             <Label x:Name="StatusLabel" Text="Bilgisayar ve telefonun aynı Wi-Fi/LAN ağına bağlı olduğundan emin olun." TextColor="{StaticResource TextSecondary}" />
+            <Button x:Name="ChangePairingButton" Text="Yeni eşleştirme metni gir" Style="{StaticResource SecondaryButton}" Clicked="OnChangePairingClicked" IsVisible="False" />
             <Border Style="{StaticResource CardBorder}" Padding="12">
                 <zxing:CameraBarcodeReaderView x:Name="CameraView" HeightRequest="280" BarcodesDetected="OnBarcodesDetected" IsDetecting="False" />
             </Border>
             <Button x:Name="ScanButton" Text="Masaüstü QR Kodunu Tara" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnScanClicked" />
+            <Border x:Name="ManualPairPanel" Style="{StaticResource CardBorder}" Padding="14">
+                <VerticalStackLayout Spacing="10">
+                    <Label x:Name="ManualPairHeading" Text="Kamera kullanamıyor musunuz?" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Label Text="Masaüstündeki eşleştirme metnini kopyalayıp buraya yapıştırın. Güvenli bağlantı parmak izi tek başına yeterli değildir." TextColor="{StaticResource TextSecondary}" />
+                    <Entry x:Name="PairingTextEntry" Placeholder="Masaüstü eşleştirme metni" Keyboard="Text" TextColor="{StaticResource TextPrimary}" />
+                    <Button Text="Panodan Yapıştır" Style="{StaticResource SecondaryButton}" Clicked="OnPastePairingTextClicked" />
+                    <Button x:Name="ManualPairButton" Text="Metinle Eşleştir" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnManualPairClicked" />
+                    <Button x:Name="CancelManualPairButton" Text="Vazgeç" Style="{StaticResource SecondaryButton}" Clicked="OnCancelManualPairClicked" IsVisible="False" />
+                </VerticalStackLayout>
+            </Border>
             <Button x:Name="SyncButton" Text="Mobilden Masaüstü Programa Eşitle" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
             <Button x:Name="DesktopSyncButton" Text="Masaüstü Programından Mobil Programa Eşitle" BackgroundColor="{StaticResource Warning}" TextColor="White" Clicked="OnDesktopSyncClicked" IsVisible="False" />
             <Border x:Name="ResultPanel" IsVisible="False" Stroke="{StaticResource Success}" StrokeShape="RoundRectangle 20" BackgroundColor="{StaticResource Surface}" Padding="18">

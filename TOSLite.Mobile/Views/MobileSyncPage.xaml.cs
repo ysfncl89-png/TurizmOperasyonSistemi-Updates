@@ -10,6 +10,7 @@ public partial class MobileSyncPage : ContentPage
     private readonly MobileSyncService _syncService;
     private readonly ConcurrentDictionary<string, byte> _seen = new();
     private int _processing;
+    private bool _changingPairing;
 
     public MobileSyncPage(MobileSyncService syncService)
     {
@@ -21,13 +22,51 @@ public partial class MobileSyncPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        UpdatePairingUi();
+    }
+
+    private void UpdatePairingUi()
+    {
         SyncButton.IsVisible = _syncService.IsPaired && !_syncService.IsAwaitingDesktopSync;
         DesktopSyncButton.IsVisible = _syncService.IsPaired && _syncService.IsAwaitingDesktopSync;
         UnpairButton.IsVisible = _syncService.IsPaired;
+        ChangePairingButton.IsVisible = _syncService.IsPaired && !_changingPairing;
+        ManualPairPanel.IsVisible = !_syncService.IsPaired || _changingPairing;
+        ScanButton.IsVisible = !_changingPairing;
+        CameraView.IsVisible = !_changingPairing;
+        SyncButton.IsVisible = _syncService.IsPaired && !_syncService.IsAwaitingDesktopSync && !_changingPairing;
+        DesktopSyncButton.IsVisible = _syncService.IsPaired && _syncService.IsAwaitingDesktopSync && !_changingPairing;
+        UnpairButton.IsVisible = _syncService.IsPaired && !_changingPairing;
+        CancelManualPairButton.IsVisible = _changingPairing;
+        ManualPairHeading.Text = _changingPairing ? "Yeni masaüstüyle eşleştir" : "Kamera kullanamıyor musunuz?";
         if (_syncService.IsPaired)
             StatusLabel.Text = _syncService.IsAwaitingDesktopSync
                 ? "Mobil veriler masaüstüne aktarıldı. Eşitlemeyi tamamlamak için kırmızı düğmeye dokunun."
                 : $"Eşleştirildi: {_syncService.PairedAddress}. İlk aşamayı başlatabilirsiniz.";
+    }
+
+    private void OnChangePairingClicked(object? sender, EventArgs e)
+    {
+        _changingPairing = true;
+        PairingTextEntry.Text = string.Empty;
+        ChangePairingButton.IsVisible = false;
+        ManualPairPanel.IsVisible = true;
+        ManualPairHeading.Text = "Yeni masaüstüyle eşleştir";
+        ScanButton.IsVisible = false;
+        CameraView.IsVisible = false;
+        SyncButton.IsVisible = false;
+        DesktopSyncButton.IsVisible = false;
+        UnpairButton.IsVisible = false;
+        CancelManualPairButton.IsVisible = true;
+        StatusLabel.Text = "Masaüstü eşleştirme metnini yapıştırın. İşlem başarılı olana kadar mevcut eşleşme korunur.";
+    }
+
+    private void OnCancelManualPairClicked(object? sender, EventArgs e)
+    {
+        _changingPairing = false;
+        ManualPairPanel.IsVisible = false;
+        PairingTextEntry.Text = string.Empty;
+        UpdatePairingUi();
     }
 
     private async void OnScanClicked(object? sender, EventArgs e)
@@ -64,6 +103,9 @@ public partial class MobileSyncPage : ContentPage
                 await _syncService.PairAsync(text);
                 SyncButton.IsVisible = !_syncService.IsAwaitingDesktopSync;
                 UnpairButton.IsVisible = true;
+                ManualPairPanel.IsVisible = false;
+                _changingPairing = false;
+                ChangePairingButton.IsVisible = true;
                 ScanButton.IsEnabled = true;
                 StatusLabel.Text = $"Eşleştirme tamamlandı: {_syncService.PairedAddress}. Senkronizasyon için Şimdi Eşitle'ye dokunun.";
             }
@@ -75,6 +117,53 @@ public partial class MobileSyncPage : ContentPage
             }
             finally { Interlocked.Exchange(ref _processing, 0); }
         });
+    }
+
+    private async void OnPastePairingTextClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (Clipboard.Default.HasText)
+                PairingTextEntry.Text = await Clipboard.Default.GetTextAsync();
+            else
+                await DisplayAlertAsync("Pano boş", "Önce masaüstündeki eşleştirme metnini kopyalayın.", "Tamam");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Yapıştırılamadı", ex.Message, "Tamam");
+        }
+    }
+
+    private async void OnManualPairClicked(object? sender, EventArgs e)
+    {
+        var text = PairingTextEntry.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            await DisplayAlertAsync("Eşleştirme metni gerekli", "Masaüstü QR ekranından kopyaladığınız eşleştirme metnini yapıştırın.", "Tamam");
+            return;
+        }
+
+        ManualPairButton.IsEnabled = false;
+        try
+        {
+            StatusLabel.Text = "Masaüstüyle güvenli eşleştirme yapılıyor...";
+            await _syncService.PairAsync(text);
+            SyncButton.IsVisible = !_syncService.IsAwaitingDesktopSync;
+            UnpairButton.IsVisible = true;
+            ManualPairPanel.IsVisible = false;
+            _changingPairing = false;
+            ChangePairingButton.IsVisible = true;
+            StatusLabel.Text = $"Eşleştirme tamamlandı: {_syncService.PairedAddress}. Senkronizasyon için Şimdi Eşitle'ye dokunun.";
+        }
+        catch (Exception ex)
+        {
+            StatusLabel.Text = "Eşleştirme başarısız.";
+            await DisplayAlertAsync("Eşleştirme hatası", ex.Message, "Tamam");
+        }
+        finally
+        {
+            ManualPairButton.IsEnabled = true;
+        }
     }
 
     private async void OnSyncClicked(object? sender, EventArgs e)
@@ -106,8 +195,9 @@ public partial class MobileSyncPage : ContentPage
         }
         catch (Exception ex)
         {
-            StatusLabel.Text = "Mobilden masaüstüne eşitleme tamamlanamadı.";
-            await DisplayAlertAsync("Eşitleme hatası", ex.Message, "Tamam");
+            var errorDetails = GetExceptionDetails(ex);
+            StatusLabel.Text = "Mobilden masaüstüne eşitleme tamamlanamadı: " + errorDetails;
+            await DisplayAlertAsync("Eşitleme hatası", errorDetails, "Tamam");
         }
         finally { SyncButton.IsEnabled = true; }
     }
@@ -137,15 +227,16 @@ public partial class MobileSyncPage : ContentPage
         }
         catch (Exception ex)
         {
+            var errorDetails = GetExceptionDetails(ex);
             StatusLabel.Text = "Masaüstünden mobil uygulamaya eşitleme başarısız oldu.";
             ResultIcon.Text = "!";
             ResultIcon.TextColor = Color.FromArgb("#C62828");
-            ResultTitle.Text = "Eşitleme başarısız oldu";
+            ResultTitle.Text = "Eşitleme başarısız oldu: " + errorDetails;
             ResultTitle.TextColor = Color.FromArgb("#C62828");
-            ResultSummary.Text = ex.Message;
+            ResultSummary.Text = errorDetails;
             FinalSyncMessage.IsVisible = false;
             ResultPanel.IsVisible = true;
-            await DisplayAlertAsync("Eşitleme hatası", ex.Message, "Tamam");
+            await DisplayAlertAsync("Eşitleme hatası", errorDetails, "Tamam");
         }
         finally
         {
@@ -163,6 +254,17 @@ public partial class MobileSyncPage : ContentPage
         DesktopSyncButton.IsVisible = false;
         UnpairButton.IsVisible = false;
         StatusLabel.Text = "Eşleşme kaldırıldı. Yeniden bağlanmak için masaüstü QR kodunu okutun.";
+    }
+
+    private static string GetExceptionDetails(Exception exception)
+    {
+        var messages = new List<string>();
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (!string.IsNullOrWhiteSpace(current.Message) && !messages.Contains(current.Message))
+                messages.Add(current.Message);
+        }
+        return string.Join("\n\n", messages);
     }
 
     private async void OnHomeClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("..");

@@ -78,12 +78,13 @@ public sealed class MobileSyncServer : IDisposable
             }
             catch (Exception ex)
             {
-                StatusChanged?.Invoke($"Eşitleme hatası ({ex.GetType().Name}): {ex.Message}");
+                var errorDetails = GetExceptionDetails(ex);
+                StatusChanged?.Invoke($"Eşitleme hatası ({ex.GetType().Name}): {errorDetails}");
                 if (authenticated)
                 {
                     try
                     {
-                        var response = JsonResponse(500, new { error = $"{ex.GetType().Name}: {ex.Message}" });
+                        var response = JsonResponse(500, new { error = $"{ex.GetType().Name}: {errorDetails}" });
                         await WriteResponseAsync(stream, response.StatusCode, response.Body);
                     }
                     catch (Exception responseException) when (responseException is IOException or ObjectDisposedException or SocketException)
@@ -93,6 +94,18 @@ public sealed class MobileSyncServer : IDisposable
                 }
             }
         }
+    }
+
+    private static string GetExceptionDetails(Exception exception)
+    {
+        var messages = new List<string>();
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (!string.IsNullOrWhiteSpace(current.Message) && !messages.Contains(current.Message, StringComparer.Ordinal))
+                messages.Add(current.Message);
+        }
+
+        return string.Join(" | ", messages);
     }
 
     private async Task<(int StatusCode, byte[] Body)> ProcessRequestAsync(HttpRequest request)
@@ -607,10 +620,9 @@ public sealed class MobileSyncServer : IDisposable
             {
                 if (existing is null)
                 {
-                    existing = new RoomAllocation { SyncId = room.SyncId };
-                    db.RoomAllocations.Add(existing);
+                    continue;
                 }
-                else db.RoomOccupants.RemoveRange(existing.Occupants);
+                db.RoomOccupants.RemoveRange(existing.Occupants);
                 existing.IsDeleted = true;
                 existing.LastModifiedUtc = room.LastModifiedUtc;
                 await db.SaveChangesAsync(cancellationToken);
@@ -866,7 +878,7 @@ public sealed class MobileSyncServer : IDisposable
     private static async Task RecalculateDesktopPaymentSummaryAsync(AppDbContext db, int registrationId, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
-        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE Registrations SET PaidAmount = (SELECT COALESCE(SUM(AmountInRegistrationCurrency), 0) FROM Payments WHERE RegistrationId = {registrationId}), RemainingDebt = TotalPrice - (SELECT COALESCE(SUM(AmountInRegistrationCurrency), 0) FROM Payments WHERE RegistrationId = {registrationId}), LastModifiedUtc = {now} WHERE Id = {registrationId};", cancellationToken);
+        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE Registrations SET PaidAmount = (SELECT COALESCE(SUM(AmountInRegistrationCurrency), 0) FROM Payments WHERE RegistrationId = {registrationId}), RemainingDebt = TourPrice - (SELECT COALESCE(SUM(AmountInRegistrationCurrency), 0) FROM Payments WHERE RegistrationId = {registrationId}), LastModifiedUtc = {now} WHERE Id = {registrationId};", cancellationToken);
     }
 
     private sealed class CargoQueueSyncRow
@@ -1088,6 +1100,8 @@ public sealed class MobileSyncServer : IDisposable
         await stream.WriteAsync(header);
         await stream.WriteAsync(body);
         await stream.FlushAsync();
+        if (stream is SslStream sslStream)
+            await sslStream.ShutdownAsync();
     }
 
     private static async Task<HttpRequest> ReadRequestAsync(Stream stream, CancellationToken cancellationToken)
