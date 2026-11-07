@@ -488,23 +488,6 @@ namespace TurizmOperasyonSistemi
                 var config = Services.ConfigurationProvider.Instance;
                 config.LogConfiguration();
 
-                // Velopack is the sole application update path. It is intentionally checked
-                // before database startup so a successful update can restart the old process
-                // without opening the main window. Network failures are non-blocking.
-                try
-                {
-                    var updateApplied = await new VelopackUpdateService().CheckAndApplyAsync().ConfigureAwait(true);
-                    if (updateApplied)
-                    {
-                        Shutdown();
-                        return;
-                    }
-                }
-                catch (Exception updateEx)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Velopack startup check failed: {updateEx.Message}");
-                }
-
                 // Database synchronization is disabled; the local database remains authoritative.
 
                 string dbPath = config.GetDatabasePath();
@@ -710,6 +693,24 @@ namespace TurizmOperasyonSistemi
                 var mainWindow = new MainWindow();
                 MainWindow = mainWindow;
                 mainWindow.Show();
+
+                // Check after showing the main window so network latency cannot delay startup.
+                // Force the check on launch; the periodic interval must not hide a new release.
+                try
+                {
+                    var updateApplied = await new VelopackUpdateService()
+                        .CheckAndApplyAsync(forceCheck: true)
+                        .ConfigureAwait(true);
+                    if (updateApplied)
+                    {
+                        Shutdown();
+                        return;
+                    }
+                }
+                catch (Exception updateEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Velopack startup check failed: {updateEx.Message}");
+                }
             }
             catch (Exception ex)
             {
