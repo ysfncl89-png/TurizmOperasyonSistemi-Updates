@@ -26,6 +26,7 @@ namespace TurizmOperasyonSistemi
         // SyncService removed: OneDrive <-> LocalAppData automatic sync disabled
         private TurizmOperasyonSistemi.Services.BackgroundServiceManager _backgroundServiceManager;
         private bool _startupMigrationsSucceeded = true;
+        private bool _startupUpdateCheckStarted;
 
         public App()
         {
@@ -692,25 +693,8 @@ namespace TurizmOperasyonSistemi
 
                 var mainWindow = new MainWindow();
                 MainWindow = mainWindow;
+                mainWindow.ContentRendered += MainWindow_ContentRendered;
                 mainWindow.Show();
-
-                // Check after showing the main window so network latency cannot delay startup.
-                // Force the check on launch; the periodic interval must not hide a new release.
-                try
-                {
-                    var updateApplied = await new VelopackUpdateService()
-                        .CheckAndApplyAsync(forceCheck: true)
-                        .ConfigureAwait(true);
-                    if (updateApplied)
-                    {
-                        Shutdown();
-                        return;
-                    }
-                }
-                catch (Exception updateEx)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Velopack startup check failed: {updateEx.Message}");
-                }
             }
             catch (Exception ex)
             {
@@ -741,6 +725,27 @@ namespace TurizmOperasyonSistemi
 
                 // Uygulamayı kapat
                 this.Shutdown(1);
+            }
+        }
+
+        private async void MainWindow_ContentRendered(object? sender, EventArgs e)
+        {
+            if (_startupUpdateCheckStarted)
+                return;
+
+            _startupUpdateCheckStarted = true;
+
+            try
+            {
+                var updateApplied = await new VelopackUpdateService()
+                    .CheckAndApplyAsync(forceCheck: true)
+                    .ConfigureAwait(true);
+                if (updateApplied)
+                    Shutdown();
+            }
+            catch (Exception updateEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"Velopack startup check failed: {updateEx.Message}");
             }
         }
 
