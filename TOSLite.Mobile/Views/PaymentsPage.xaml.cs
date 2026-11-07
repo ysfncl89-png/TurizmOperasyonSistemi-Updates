@@ -80,12 +80,21 @@ public partial class PaymentsPage : ContentPage
         if (_selected == null)
         {
             AccountSummaryLabel.Text = "Cari hesap görüntülemek için tur kaydı seçin.";
+            SetPaymentsEmptyMessage("Ödeme hareketlerini görmek için önce yukarıdaki arama alanında kişiyi bulun, ardından ödeme yapılacak tur kaydını seçin.");
             PaymentsCollection.ItemsSource = null;
             return;
         }
         _selected = await _registrations.GetByIdAsync(_selected.Id) ?? _selected;
         AccountSummaryLabel.Text = $"Toplam {_selected.TotalPrice:N2} {_selected.Currency} · Tahsil {_selected.PaidAmount:N2} · Kalan {_selected.RemainingDebt:N2}";
-        PaymentsCollection.ItemsSource = (await _payments.GetForRegistrationAsync(_selected.Id)).Where(x => !x.IsDeleted).ToList();
+        var payments = (await _payments.GetForRegistrationAsync(_selected.Id)).Where(x => !x.IsDeleted).ToList();
+        SetPaymentsEmptyMessage("Seçilen tur kaydı için henüz ödeme hareketi yok. Yeni tahsilat veya iade eklemek için aşağıdaki formu kullanabilirsiniz.");
+        PaymentsCollection.ItemsSource = payments;
+    }
+
+    private void SetPaymentsEmptyMessage(string message)
+    {
+        if (PaymentsCollection.EmptyView is Label emptyLabel)
+            emptyLabel.Text = message;
     }
 
     private async Task RefreshSummaryAsync()
@@ -139,7 +148,12 @@ public partial class PaymentsPage : ContentPage
     private void BuildCurrencySummary(IEnumerable<RegistrationRecord> registrations)
     {
         CurrencySummaryLayout.Children.Clear();
-        var groups = registrations.GroupBy(x => string.IsNullOrWhiteSpace(x.Currency) ? "Para birimi yok" : x.Currency.Trim()).ToList();
+        var groups = registrations
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.Currency) ? "Para birimi yok" : x.Currency.Trim())
+            .OrderBy(group => string.Equals(group.Key, "Seçilmedi", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var sectionColors = new[] { "SectionBlue", "SectionViolet", "SectionTeal", "SectionAmber", "SectionRose", "SectionCyan", "SectionLime", "SectionOrange" };
+        var sectionIndex = 0;
         foreach (var group in groups)
         {
             var collected = group.Sum(x => x.PaidAmount);
@@ -152,12 +166,13 @@ public partial class PaymentsPage : ContentPage
             var remainingCard = CreateDonutCard("Kalan", remaining, remainingRatio, group.Key, remaining < 0 ? "Warning" : "Danger");
             Grid.SetColumn(remainingCard, 1);
             row.Children.Add(remainingCard);
+            var sectionColor = sectionColors[sectionIndex++ % sectionColors.Length];
             var currencyCard = new Border
             {
-                Stroke = (Color)Application.Current!.Resources["BorderColor"],
+                Stroke = (Color)Application.Current!.Resources[$"{sectionColor}Border"],
                 StrokeThickness = 1,
                 StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 18 },
-                BackgroundColor = (Color)Application.Current.Resources["Surface"],
+                BackgroundColor = (Color)Application.Current.Resources[sectionColor],
                 Padding = 16,
                 Content = new VerticalStackLayout
                 {

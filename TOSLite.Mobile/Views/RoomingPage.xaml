@@ -11,7 +11,7 @@
                 <Label Text="Odalama Motoru" FontSize="24" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                 <Label Text="Tur kayıtlarındaki yolcuları otel odalarına yerleştirin." TextColor="{StaticResource TextSecondary}" />
             </VerticalStackLayout>
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource SectionCardBlue}">
                 <VerticalStackLayout Spacing="12">
                     <Label Text="Konaklama planı" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Otel" Style="{StaticResource FormFieldLabel}" />
@@ -42,7 +42,7 @@
                     <Label x:Name="ConnectionLabel" Text="Bağlı oda: yok" TextColor="{StaticResource Primary}" FontSize="12" />
                 </VerticalStackLayout>
             </Border>
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource SectionCardViolet}">
                 <VerticalStackLayout Spacing="6">
                     <Label x:Name="CandidatesHeading" Text="Yolcu havuzu" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Havuzda kişi ara" Style="{StaticResource FormFieldLabel}" />
@@ -69,7 +69,7 @@
                     </CollectionView>
                 </VerticalStackLayout>
             </Border>
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource SectionCardTeal}">
                 <VerticalStackLayout Spacing="8">
                     <Grid ColumnDefinitions="*,Auto">
                         <Label Text="Açılan odalar" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />

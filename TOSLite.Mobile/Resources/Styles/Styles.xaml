@@ -26,6 +26,80 @@
         <Setter Property="Padding" Value="16" />
     </Style>
 
+    <Style x:Key="SectionCardBlue" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Stroke" Value="{StaticResource SectionBlueBorder}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionBlue}" />
+    </Style>
+    <Style x:Key="SectionCardViolet" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Stroke" Value="{StaticResource SectionVioletBorder}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionViolet}" />
+    </Style>
+    <Style x:Key="SectionCardTeal" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Stroke" Value="{StaticResource SectionTealBorder}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionTeal}" />
+    </Style>
+    <Style x:Key="SectionCardAmber" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Stroke" Value="{StaticResource SectionAmberBorder}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionAmber}" />
+    </Style>
+    <Style x:Key="SectionCardRose" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Stroke" Value="{StaticResource SectionRoseBorder}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionRose}" />
+    </Style>
+    <Style x:Key="SectionCardCyan" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Stroke" Value="{StaticResource SectionCyanBorder}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionCyan}" />
+    </Style>
+    <Style x:Key="SectionCardLime" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Stroke" Value="{StaticResource SectionLimeBorder}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionLime}" />
+    </Style>
+    <Style x:Key="SectionCardOrange" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Stroke" Value="{StaticResource SectionOrangeBorder}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionOrange}" />
+    </Style>
+
+    <Style x:Key="SectionPanelBlue" TargetType="VerticalStackLayout">
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionBlue}" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="SectionPanelViolet" TargetType="VerticalStackLayout">
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionViolet}" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="SectionPanelTeal" TargetType="VerticalStackLayout">
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionTeal}" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="SectionPanelAmber" TargetType="VerticalStackLayout">
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionAmber}" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="SectionPanelRose" TargetType="VerticalStackLayout">
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionRose}" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="SectionPanelCyan" TargetType="VerticalStackLayout">
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionCyan}" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="SectionPanelLime" TargetType="VerticalStackLayout">
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionLime}" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="SectionPanelOrange" TargetType="VerticalStackLayout">
+        <Setter Property="BackgroundColor" Value="{StaticResource SectionOrange}" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+
     <Style x:Key="FormFieldLabel" TargetType="Label">
         <Setter Property="FontSize" Value="14" />
         <Setter Property="FontAttributes" Value="Bold" />

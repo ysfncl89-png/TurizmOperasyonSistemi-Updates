@@ -6,7 +6,7 @@
              BackgroundColor="{StaticResource PageBackground}">
     <Grid>
         <Grid RowDefinitions="Auto,*" Padding="18" RowSpacing="12">
-            <VerticalStackLayout Grid.Row="0" Spacing="8">
+            <VerticalStackLayout Grid.Row="0" Style="{StaticResource SectionPanelViolet}" Spacing="8">
                 <Label Text="Ayarlar" FontSize="28" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                 <Label Text="Kayıt seçeneklerini düzenleyin ve sıralayın." TextColor="{StaticResource TextSecondary}" />
                 <Label Text="Ayar kartlarında ara" Style="{StaticResource FormFieldLabel}" />
@@ -18,7 +18,7 @@
         </Grid>
 
         <Grid x:Name="OptionsDialog" IsVisible="False" BackgroundColor="#990F172A" Padding="18">
-            <Border VerticalOptions="Center" Stroke="{StaticResource Secondary}" StrokeShape="RoundRectangle 24" BackgroundColor="{StaticResource Surface}" Padding="18" MaximumHeightRequest="680">
+            <Border VerticalOptions="Center" Style="{StaticResource SectionCardCyan}" Stroke="{StaticResource SectionCyanBorder}" StrokeShape="RoundRectangle 24" Padding="18" MaximumHeightRequest="680">
                 <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                         <Label x:Name="OptionsHeading" FontSize="21" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />

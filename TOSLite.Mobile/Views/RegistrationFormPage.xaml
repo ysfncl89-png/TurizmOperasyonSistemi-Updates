@@ -13,7 +13,7 @@
         </VerticalStackLayout>
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Spacing="12">
-                <VerticalStackLayout x:Name="Step1Layout" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step1Layout" Style="{StaticResource SectionPanelBlue}" Spacing="12" Padding="16">
                     <Label Text="1. Kişi Seçimi" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Entry x:Name="PersonSearchEntry"
                            Placeholder="Ad, soyad veya TC kimlik no ile arayın"
@@ -49,7 +49,7 @@
                     <Label x:Name="SelectedPersonLabel" IsVisible="False" TextColor="{StaticResource Success}" FontAttributes="Bold" />
                     <Button Text="Aradığım kişi yok — Kimlik bilgilerini ekle" BackgroundColor="{StaticResource Success}" TextColor="White" Clicked="OnAddPersonClicked" />
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step2Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step2Layout" IsVisible="False" Style="{StaticResource SectionPanelViolet}" Spacing="12" Padding="16">
                     <Label Text="2. Tur ve Grup Bilgileri" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Tur Türü *" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="TourTypePicker" Title="Tur türü seçin" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Dönem *" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="PeriodPicker" Title="Dönem seçin" TextColor="{StaticResource TextPrimary}" />
@@ -57,28 +57,28 @@
                     <Label Text="Grup Süresi (Gün) *" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="DaysCountPicker" Title="Süre seçin" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="* Dört alan da zorunludur." TextColor="{StaticResource Danger}" />
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step3Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step3Layout" IsVisible="False" Style="{StaticResource SectionPanelTeal}" Spacing="12" Padding="16">
                     <Label Text="3. Vize Bilgileri" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Vize Talebi" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="VisaRequestPicker" Title="Vize talebi" TextColor="{StaticResource TextPrimary}" SelectedIndexChanged="OnVisaRulesChanged" />
                     <Label Text="Pasaport Geldi mi?" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="PassportArrivedPicker" Title="Pasaport durumu" TextColor="{StaticResource TextPrimary}" SelectedIndexChanged="OnVisaRulesChanged" />
                     <Label Text="Vize Durumu" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="VisaStatusPicker" Title="Vize durumu" TextColor="{StaticResource TextPrimary}" />
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step4Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step4Layout" IsVisible="False" Style="{StaticResource SectionPanelAmber}" Spacing="12" Padding="16">
                     <Label Text="4. Bilet Bilgileri" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Bilet Talebi" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="TicketRequestPicker" Title="Bilet talebi" TextColor="{StaticResource TextPrimary}" SelectedIndexChanged="OnTicketRequestChanged" />
                     <Label Text="Bilet Durumu" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="TicketStatusPicker" Title="Bilet durumu" TextColor="{StaticResource TextPrimary}" />
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step5Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step5Layout" IsVisible="False" Style="{StaticResource SectionPanelRose}" Spacing="12" Padding="16">
                     <Label Text="5. Kargo Talebi" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Kargo Talebi" Style="{StaticResource FormFieldLabel}" />
                     <Picker x:Name="CargoPicker" Title="Kargo talebi seçin" TextColor="{StaticResource TextPrimary}" />
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step6Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step6Layout" IsVisible="False" Style="{StaticResource SectionPanelCyan}" Spacing="12" Padding="16">
                     <Label Text="6. Oda Türü" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Oda Türü" Style="{StaticResource FormFieldLabel}" />
                     <Picker x:Name="RoomTypePicker" Title="Oda türü seçin" TextColor="{StaticResource TextPrimary}" />
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step7Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step7Layout" IsVisible="False" Style="{StaticResource SectionPanelLime}" Spacing="12" Padding="16">
                     <Label Text="7. Katılım Şehri ve Aktarma" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Katılım Yapılacak Şehir" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="DepartureCityPicker" Title="Şehir seçin" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Aktarma" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="TransferPicker" Title="Aktarma var mı?" TextColor="{StaticResource TextPrimary}" SelectedIndexChanged="OnTransferChanged" />
@@ -87,19 +87,19 @@
                         <Label Text="İlçe" Style="{StaticResource FormFieldLabel}" /><Entry x:Name="DistrictEntry" Placeholder="İlçe" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource Surface}" />
                     </VerticalStackLayout>
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step8Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step8Layout" IsVisible="False" Style="{StaticResource SectionPanelOrange}" Spacing="12" Padding="16">
                     <Label Text="8. Fiyat ve Ödeme" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Toplam Fiyat" Style="{StaticResource FormFieldLabel}" /><Entry x:Name="TotalPriceEntry" Keyboard="Numeric" Text="0" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource Surface}" TextChanged="OnPaymentChanged" />
                     <Label Text="Para Birimi" Style="{StaticResource FormFieldLabel}" /><Picker x:Name="CurrencyPicker" Title="Para birimi" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Ödenen" Style="{StaticResource FormFieldLabel}" /><Entry x:Name="PaidAmountEntry" Keyboard="Numeric" Text="0" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource Surface}" TextChanged="OnPaymentChanged" />
                     <Label Text="Kalan Borç" Style="{StaticResource FormFieldLabel}" /><Entry x:Name="RemainingDebtEntry" IsReadOnly="True" Text="0" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource SurfaceAlt}" />
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step9Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step9Layout" IsVisible="False" Style="{StaticResource SectionPanelBlue}" Spacing="12" Padding="16">
                     <Label Text="9. Referans" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Referans Kişi" Style="{StaticResource FormFieldLabel}" />
                     <Entry x:Name="ReferenceEntry" Placeholder="Referans kişi" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource Surface}" />
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="Step10Layout" IsVisible="False" Spacing="12" Padding="16" BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout x:Name="Step10Layout" IsVisible="False" Style="{StaticResource SectionPanelViolet}" Spacing="12" Padding="16">
                     <Label Text="10. Önizleme" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Border Style="{StaticResource CardBorder}" BackgroundColor="{StaticResource PrimarySoft}" Stroke="{StaticResource Secondary}">
                         <Label x:Name="PreviewLabel" TextColor="{StaticResource TextPrimary}" LineBreakMode="WordWrap" />

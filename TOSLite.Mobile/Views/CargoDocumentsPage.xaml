@@ -7,7 +7,7 @@
     <ScrollView>
         <VerticalStackLayout Padding="18" Spacing="14">
             <Label Text="Kargo Evrak Hazırlama" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource SectionCardBlue}">
                 <VerticalStackLayout Spacing="9">
                     <Label Text="Gönderim bekleyen kayıtlar" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Kişi, tur, dönem veya telefon" Style="{StaticResource FormFieldLabel}" />
@@ -45,7 +45,7 @@
                     </Grid>
                 </VerticalStackLayout>
             </Border>
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource SectionCardTeal}">
                 <VerticalStackLayout Spacing="9">
                     <Grid ColumnDefinitions="*,Auto">
                         <Label Text="Kargo havuzu" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />

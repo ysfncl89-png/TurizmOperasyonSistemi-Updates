@@ -23,6 +23,8 @@ public sealed class CargoCandidate
 
 public partial class CargoDocumentsPage : ContentPage
 {
+    private sealed record QueueFilterChoice(string Label, string Value, bool IsAll = false, bool IsUnspecified = false);
+
     private readonly RegistrationRepository _registrations;
     private readonly PersonRepository _persons;
     private readonly CargoQueueRepository _queue;
@@ -208,11 +210,62 @@ public partial class CargoDocumentsPage : ContentPage
         {
             var items = (await _queue.GetQueueAsync()).ToList();
             if (items.Count == 0) { await DisplayAlertAsync("Kargo havuzu boş", "PDF için önce kargo kayıtlarını havuza ekleyin.", "Tamam"); return; }
-            var bytes = _export.CreateCargoLabelsPdf(items);
+
+            var periodFilter = await SelectQueueFilterAsync("Dönem", items.Select(item => item.Period));
+            if (periodFilter is null) return;
+            var daysFilter = await SelectQueueFilterAsync("Grup süresi", items.Select(item => item.DaysCount));
+            if (daysFilter is null) return;
+            var tourFilter = await SelectQueueFilterAsync("Tur türü", items.Select(item => item.TourType));
+            if (tourFilter is null) return;
+            var groupFilter = await SelectQueueFilterAsync("Grup türü", items.Select(item => item.GroupType));
+            if (groupFilter is null) return;
+
+            var filteredItems = items.Where(item =>
+                MatchesQueueFilter(item.Period, periodFilter)
+                && MatchesQueueFilter(item.DaysCount, daysFilter)
+                && MatchesQueueFilter(item.TourType, tourFilter)
+                && MatchesQueueFilter(item.GroupType, groupFilter)).ToList();
+            if (filteredItems.Count == 0)
+            {
+                await DisplayAlertAsync("Kayıt bulunamadı", "Seçilen filtrelerle eşleşen kargo kaydı bulunamadı.", "Tamam");
+                return;
+            }
+
+            var bytes = _export.CreateCargoLabelsPdf(filteredItems);
             var fileName = $"Kargo_Havuzu_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
             await _downloads.SaveAsync(fileName, "application/pdf", bytes);
             await DisplayAlertAsync("İndirme tamamlandı", $"Kargo PDF dosyası İndirilenler klasörüne kaydedildi:\n{fileName}", "Tamam");
         }
         catch (Exception ex) { await DisplayAlertAsync("PDF indirilemedi", ex.Message, "Tamam"); }
     }
+
+    private async Task<QueueFilterChoice?> SelectQueueFilterAsync(string filterName, IEnumerable<string> values)
+    {
+        var sourceValues = values.ToList();
+        var choices = new List<QueueFilterChoice> { new("Tümü", string.Empty, IsAll: true) };
+        foreach (var value in sourceValues
+                     .Where(value => !string.IsNullOrWhiteSpace(value))
+                     .Distinct(StringComparer.CurrentCultureIgnoreCase)
+                     .OrderBy(value => value, StringComparer.CurrentCultureIgnoreCase))
+        {
+            var label = value is "Tümü" or "Belirtilmemiş" or "Vazgeç" ? $"{value} (değer)" : value;
+            choices.Add(new QueueFilterChoice(label, value));
+        }
+
+        if (sourceValues.Any(string.IsNullOrWhiteSpace))
+            choices.Add(new QueueFilterChoice("Belirtilmemiş", string.Empty, IsUnspecified: true));
+
+        var selectedLabel = await DisplayActionSheetAsync(
+            $"PDF için {filterName} seçin",
+            "Vazgeç",
+            null,
+            choices.Select(choice => choice.Label).ToArray());
+        return choices.FirstOrDefault(choice => choice.Label == selectedLabel);
+    }
+
+    private static bool MatchesQueueFilter(string value, QueueFilterChoice filter) =>
+        filter.IsAll
+        || (filter.IsUnspecified
+            ? string.IsNullOrWhiteSpace(value)
+            : string.Equals(value, filter.Value, StringComparison.CurrentCultureIgnoreCase));
 }

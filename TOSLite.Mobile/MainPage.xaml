@@ -48,12 +48,12 @@
                 <Label Text="İşlemlerinize dokunarak devam edin." FontSize="13" TextColor="{StaticResource TextSecondary}" />
             </VerticalStackLayout>
 
-            <Border Style="{StaticResource CardBorder}" Padding="0" StrokeShape="RoundRectangle 20">
+            <Border Style="{StaticResource SectionCardViolet}" Padding="0" StrokeShape="RoundRectangle 20">
                 <Border.Shadow>
                     <Shadow Brush="#0F172A" Opacity="0.07" Radius="14" Offset="0,4" />
                 </Border.Shadow>
                 <VerticalStackLayout Spacing="0">
-                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BackgroundColor="{StaticResource SectionBlue}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnPersonsClicked" />
                         </Grid.GestureRecognizers>
@@ -67,7 +67,7 @@
                         <Label Grid.Column="2" Text="›" FontSize="26" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
                     </Grid>
                     <BoxView HeightRequest="1" BackgroundColor="{StaticResource BorderColor}" Margin="14,0" />
-                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BackgroundColor="{StaticResource SectionViolet}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnRegistrationsClicked" />
                         </Grid.GestureRecognizers>
@@ -81,7 +81,7 @@
                         <Label Grid.Column="2" Text="›" FontSize="26" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
                     </Grid>
                     <BoxView HeightRequest="1" BackgroundColor="{StaticResource BorderColor}" Margin="14,0" />
-                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BackgroundColor="{StaticResource SectionTeal}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnRoomingClicked" />
                         </Grid.GestureRecognizers>
@@ -95,7 +95,7 @@
                         <Label Grid.Column="2" Text="›" FontSize="26" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
                     </Grid>
                     <BoxView HeightRequest="1" BackgroundColor="{StaticResource BorderColor}" Margin="14,0" />
-                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BackgroundColor="{StaticResource SectionAmber}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnPaymentsClicked" />
                         </Grid.GestureRecognizers>
@@ -109,7 +109,7 @@
                         <Label Grid.Column="2" Text="›" FontSize="26" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
                     </Grid>
                     <BoxView HeightRequest="1" BackgroundColor="{StaticResource BorderColor}" Margin="14,0" />
-                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BackgroundColor="{StaticResource SectionRose}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnCargoDocumentsClicked" />
                         </Grid.GestureRecognizers>
@@ -123,7 +123,7 @@
                         <Label Grid.Column="2" Text="›" FontSize="26" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
                     </Grid>
                     <BoxView HeightRequest="1" BackgroundColor="{StaticResource BorderColor}" Margin="14,0" />
-                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BackgroundColor="{StaticResource SectionCyan}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnListsClicked" />
                         </Grid.GestureRecognizers>
@@ -146,7 +146,7 @@
                     <Shadow Brush="#0F172A" Opacity="0.07" Radius="14" Offset="0,4" />
                 </Border.Shadow>
                 <VerticalStackLayout Spacing="0">
-                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BackgroundColor="{StaticResource SectionLime}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnSettingsClicked" />
                         </Grid.GestureRecognizers>
@@ -157,7 +157,7 @@
                         <Label Grid.Column="2" Text="›" FontSize="26" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
                     </Grid>
                     <BoxView HeightRequest="1" BackgroundColor="{StaticResource BorderColor}" Margin="14,0" />
-                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Grid Padding="14,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BackgroundColor="{StaticResource SectionOrange}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnMobileSyncClicked" />
                         </Grid.GestureRecognizers>

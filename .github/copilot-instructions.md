@@ -15,11 +15,14 @@
 - Ana sayfadaki tüm çalışma alanı/yönetim satırlarının tamamı tıklanabilir olmalı ve dokunmada hafif görsel geri bildirim (ör. küçük ölçek/renk değişimi) vermeli; kartlara hafif, zarif gölge eklenmeli; indigo gradyan koyu lacivert marka tonuyla daha derin olmalı.
 - Tur kayıtları modülündeki önizlemede kullanıcı yalnızca bölüm/özel vize-kargo değerlerinin değil, tüm alan başlıkları ve açıklamalarının farklı, okunaklı renklerle gösterilmesini istiyor; ilgili isteklerde tüm preview bilgilerini renkli biçimlendir.
 - Uyruk seçenekleri yalnızca Türkiye ve Yabancı olarak belirlenmeli; ülke kodları ayrı uyruk seçenekleri olarak eklenmemeli ve eşitleme sözleşmesini bozmayacak biçimde mevcut seçeneklere eşlenmeli.
+- Kişiler formu ve önizlemesindeki tüm tarihlerin, doğum tarihi dahil, ay/gün/yıl yerine gün/ay/yıl (gg/aa/yyyy) biçiminde gösterilmesi tercih ediliyor.
+- Listeler > Listeyi Tasarla mobil ekranı masaüstü PersonsGeneralWizard ile birebir eşleşmeli: Tur listelerinde 34 sütun başlığı olmalı; Havayolu modunda başlık adları düzenlenebilmeli; masaüstünde olmayan seçenek eklenmemeli.
 
 ## Finans Dışa Aktarma
 - Mevcut seçim/filtre neyse (kişi/tur/dönem) sadece görünen eşleşen kayıtları dışa aktar; filtre/seçim yoksa tüm finans kayıtlarını aktar.
 - Finans özeti için Word, Excel ve PDF alternatifleri sun; formatlar masaüstü uygulamasının belirlediği şablon/düzene uymalı.
 - Seçilen kişinin ödeme hareketlerini ayrı dışa aktarma özelliği olmalı.
+- Ödemeler ve Finans KPI para birimi kartlarında “Seçilmedi” kartı her zaman sıralamanın en altında gösterilmeli.
 
 ## Manifest Format
 - LocalAppData Manifest must be simple JSON with fields MachineId, Version, LastModified, Hash (e.g., {"MachineId":"A-PC","Version":1,"LastModified":"2026-07-05T18:22:00","Hash":"..."})

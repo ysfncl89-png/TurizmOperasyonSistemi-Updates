@@ -5,7 +5,7 @@
              Title="Tur Kayıtları"
              BackgroundColor="{StaticResource PageBackground}">
     <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="18" RowSpacing="12">
-        <VerticalStackLayout Grid.Row="0" Spacing="10">
+        <VerticalStackLayout Grid.Row="0" Style="{StaticResource SectionPanelBlue}" Spacing="10">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                 <Label Text="Tur Kayıtları" FontSize="28" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                 <Picker x:Name="PeriodPicker" Grid.Column="1" Title="Dönem" WidthRequest="158" HorizontalOptions="End" FontSize="13" SelectedIndexChanged="OnPeriodChanged" />

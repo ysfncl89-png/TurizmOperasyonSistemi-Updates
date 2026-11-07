@@ -17,7 +17,7 @@
                    FontAttributes="Bold"
                     TextColor="{StaticResource TextPrimary}" />
 
-            <VerticalStackLayout x:Name="SearchPanel" Spacing="12" Padding="16" BackgroundColor="White">
+            <VerticalStackLayout x:Name="SearchPanel" Style="{StaticResource SectionPanelBlue}" Spacing="12" Padding="16">
                 <Label Text="Önce kişiyi arayın"
                        FontSize="17"
                        FontAttributes="Bold"
@@ -92,9 +92,9 @@
 
             <VerticalStackLayout x:Name="WizardPanel"
                                  IsVisible="False"
+                                 Style="{StaticResource SectionPanelViolet}"
                                  Spacing="14"
-                                 Padding="16"
-                                 BackgroundColor="White">
+                                 Padding="16">
                 <Label x:Name="StepHeading"
                        FontSize="19"
                        FontAttributes="Bold"
@@ -110,7 +110,7 @@
                         Style="{StaticResource SecondaryButton}"
                         Clicked="OnStartAnotherPersonClicked" />
 
-                <VerticalStackLayout x:Name="Step1Layout" Spacing="10">
+                <VerticalStackLayout x:Name="Step1Layout" Style="{StaticResource SectionPanelTeal}" Spacing="10">
                     <Label Text="1. Kimlik Bilgileri"
                            FontSize="17"
                            FontAttributes="Bold"
@@ -175,13 +175,14 @@
                     <DatePicker x:Name="BirthDatePicker"
                                 IsVisible="False"
                                 TextColor="{StaticResource TextPrimary}"
+                                Format="dd/MM/yyyy"
                                 DateSelected="OnBirthDateSelected" />
                     <Label x:Name="AgeLabel" TextColor="{StaticResource TextSecondary}" />
                     <Label Text="Yaş Aralığı" TextColor="{StaticResource TextSecondary}" />
                     <Picker x:Name="AgeRangePicker" Title="Seçiniz" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource Surface}" />
                 </VerticalStackLayout>
 
-                <VerticalStackLayout x:Name="Step2Layout" IsVisible="False" Spacing="10">
+                <VerticalStackLayout x:Name="Step2Layout" IsVisible="False" Style="{StaticResource SectionPanelAmber}" Spacing="10">
                     <Label Text="2. İletişim Bilgileri"
                            FontSize="17"
                            FontAttributes="Bold"
@@ -197,7 +198,7 @@
                             BackgroundColor="{StaticResource Surface}" />
                 </VerticalStackLayout>
 
-                <VerticalStackLayout x:Name="Step3Layout" IsVisible="False" Spacing="10">
+                <VerticalStackLayout x:Name="Step3Layout" IsVisible="False" Style="{StaticResource SectionPanelRose}" Spacing="10">
                     <Label Text="3. Sağlık Bilgileri"
                            FontSize="17"
                            FontAttributes="Bold"
@@ -220,7 +221,7 @@
                             BackgroundColor="{StaticResource Surface}" />
                 </VerticalStackLayout>
 
-                <VerticalStackLayout x:Name="Step4Layout" IsVisible="False" Spacing="10">
+                <VerticalStackLayout x:Name="Step4Layout" IsVisible="False" Style="{StaticResource SectionPanelCyan}" Spacing="10">
                     <Label Text="4. Pasaport Bilgileri"
                            FontSize="17"
                            FontAttributes="Bold"
@@ -237,7 +238,7 @@
                                TextColor="{StaticResource TextSecondary}"
                                VerticalTextAlignment="Center" />
                     </HorizontalStackLayout>
-                    <DatePicker x:Name="PassportStartPicker" IsVisible="False" TextColor="{StaticResource TextPrimary}" DateSelected="OnPassportDateSelected" />
+                    <DatePicker x:Name="PassportStartPicker" IsVisible="False" TextColor="{StaticResource TextPrimary}" Format="dd/MM/yyyy" DateSelected="OnPassportDateSelected" />
                     <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
                         <CheckBox x:Name="PassportEndEnabled"
                                   Color="{StaticResource Primary}"
@@ -246,7 +247,7 @@
                                TextColor="{StaticResource TextSecondary}"
                                VerticalTextAlignment="Center" />
                     </HorizontalStackLayout>
-                    <DatePicker x:Name="PassportEndPicker" IsVisible="False" TextColor="{StaticResource TextPrimary}" DateSelected="OnPassportDateSelected" />
+                    <DatePicker x:Name="PassportEndPicker" IsVisible="False" TextColor="{StaticResource TextPrimary}" Format="dd/MM/yyyy" DateSelected="OnPassportDateSelected" />
                     <Border x:Name="PassportValidityBorder"
                             IsVisible="False"
                             Stroke="{StaticResource BorderColor}"
@@ -259,7 +260,7 @@
                     </Border>
                 </VerticalStackLayout>
 
-                <VerticalStackLayout x:Name="Step5Layout" IsVisible="False" Spacing="10">
+                <VerticalStackLayout x:Name="Step5Layout" IsVisible="False" Style="{StaticResource SectionPanelLime}" Spacing="10">
                     <Label Text="5. Kayıt Önizleme"
                            FontSize="17"
                            FontAttributes="Bold"

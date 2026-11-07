@@ -11,11 +11,11 @@
             <Label Text="Masaüstü Eşitleme" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
             <Label x:Name="StatusLabel" Text="Bilgisayar ve telefonun aynı Wi-Fi/LAN ağına bağlı olduğundan emin olun." TextColor="{StaticResource TextSecondary}" />
             <Button x:Name="ChangePairingButton" Text="Yeni eşleştirme metni gir" Style="{StaticResource SecondaryButton}" Clicked="OnChangePairingClicked" IsVisible="False" />
-            <Border Style="{StaticResource CardBorder}" Padding="12">
+            <Border Style="{StaticResource SectionCardBlue}" Padding="12">
                 <zxing:CameraBarcodeReaderView x:Name="CameraView" HeightRequest="280" BarcodesDetected="OnBarcodesDetected" IsDetecting="False" />
             </Border>
             <Button x:Name="ScanButton" Text="Masaüstü QR Kodunu Tara" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnScanClicked" />
-            <Border x:Name="ManualPairPanel" Style="{StaticResource CardBorder}" Padding="14">
+            <Border x:Name="ManualPairPanel" Style="{StaticResource SectionCardViolet}" Padding="14">
                 <VerticalStackLayout Spacing="10">
                     <Label x:Name="ManualPairHeading" Text="Kamera kullanamıyor musunuz?" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Masaüstündeki eşleştirme metnini kopyalayıp buraya yapıştırın. Güvenli bağlantı parmak izi tek başına yeterli değildir." TextColor="{StaticResource TextSecondary}" />
@@ -27,7 +27,7 @@
             </Border>
             <Button x:Name="SyncButton" Text="Mobilden Masaüstü Programa Eşitle" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
             <Button x:Name="DesktopSyncButton" Text="Masaüstü Programından Mobil Programa Eşitle" BackgroundColor="{StaticResource Warning}" TextColor="White" Clicked="OnDesktopSyncClicked" IsVisible="False" />
-            <Border x:Name="ResultPanel" IsVisible="False" Stroke="{StaticResource Success}" StrokeShape="RoundRectangle 20" BackgroundColor="{StaticResource Surface}" Padding="18">
+            <Border x:Name="ResultPanel" IsVisible="False" Style="{StaticResource SectionCardTeal}" Stroke="{StaticResource Success}" StrokeShape="RoundRectangle 20" Padding="18">
                 <VerticalStackLayout Spacing="12">
                     <Label x:Name="ResultIcon" Text="✓" FontSize="64" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="{StaticResource Success}" />
                     <Label x:Name="ResultTitle" Text="Eşitleme tamamlandı" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="{StaticResource Success}" />

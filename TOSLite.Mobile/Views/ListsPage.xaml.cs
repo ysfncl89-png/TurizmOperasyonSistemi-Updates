@@ -1,3 +1,7 @@
+using System.Text.Json;
+using CommunityToolkit.Maui.Extensions;
+using CommunityToolkit.Maui.Views;
+using Microsoft.Maui.Storage;
 using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Models;
 using TOSLite.Mobile.Services;
@@ -35,6 +39,8 @@ public partial class ListsPage : ContentPage
     private bool _updatingFilters;
     private bool _initialized;
     private List<ListDisplayRow> _visibleRows = [];
+    private readonly Dictionary<ListKind, List<MobileColumnOption>> _sessionDesignColumns = [];
+    private ListKind? _designColumnsKind;
 
     public ListsPage(
         PersonRepository personRepository,
@@ -115,12 +121,13 @@ public partial class ListsPage : ContentPage
         {
             DashboardPanel.IsVisible = false;
             ResultsPanel.IsVisible = true;
+            ColumnsButton.Text = "Sütunlar";
             ResultsTitle.Text = GetTitle(kind);
             SearchEntry.Text = string.Empty;
             CriteriaFilters.IsVisible = !isPersonList;
             HotelFilterPanel.IsVisible = isRoomList;
             ExtraFilterPanel.IsVisible = kind is ListKind.Visa or ListKind.Ticket or ListKind.Airline or ListKind.Cargo;
-            SecondaryFilterPanel.IsVisible = kind == ListKind.Airline;
+            SecondaryFilterPanel.IsVisible = kind is ListKind.Airline or ListKind.Transfer;
             SetPickerItems(TourTypePicker, _registrations.Select(item => item.TourType));
             SetPickerItems(PeriodPicker, _registrations.Select(item => item.Period));
             SetPickerItems(GroupTypePicker, _registrations.Select(item => item.GroupType));
@@ -156,9 +163,9 @@ public partial class ListsPage : ContentPage
                 break;
         }
 
-        if (kind == ListKind.Airline)
+        if (kind is ListKind.Airline or ListKind.Transfer)
         {
-            SecondaryFilterLabel.Text = "Aktarma";
+            SecondaryFilterLabel.Text = "Aktarma var mı?";
             SetPickerItems(SecondaryFilterPicker, _registrations.Select(item => item.HasTransfer));
         }
     }
@@ -230,6 +237,7 @@ public partial class ListsPage : ContentPage
         {
             ListKind.Visa => registrations.Where(registration => Matches(registration.VisaRequest, extra)),
             ListKind.Ticket => registrations.Where(registration => Matches(registration.TicketRequest, extra)),
+            ListKind.Transfer => registrations.Where(registration => Matches(registration.HasTransfer, secondary)),
             ListKind.Airline => registrations
                 .Where(registration => Matches(registration.TicketRequest, extra))
                 .Where(registration => Matches(registration.HasTransfer, secondary)),
@@ -274,12 +282,16 @@ public partial class ListsPage : ContentPage
                 Context = $"{room.GroupType} · {room.DaysCount} gün · {room.CheckInDate} – {room.CheckOutDate}",
                 ExportValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
+                    ["Sıra"] = string.Empty,
+                    ["Telefon numarası"] = string.Empty,
+                    ["Adres"] = string.Empty,
                     ["Oda No"] = string.Empty,
                     ["Oda Türü"] = room.RoomType,
                     ["Kapasite"] = room.Capacity.ToString(),
                     ["Yerleşen Kişi Sayısı"] = room.Occupants.Count.ToString(),
                     ["Yerleşen Kişiler"] = string.Join("\n", room.Occupants.Select((occupant, index) => $"{index + 1}. {occupant.PersonName}")),
                     ["Connection"] = room.IsConnection ? "Evet" : "Hayır",
+                    ["__RoomNumber"] = room.RoomNumber,
                     ["__HotelName"] = room.HotelName,
                     ["__CheckInDate"] = FormatExportDate(room.CheckInDate),
                     ["__CheckOutDate"] = FormatExportDate(room.CheckOutDate)
@@ -314,16 +326,31 @@ public partial class ListsPage : ContentPage
         {
             var kind = _selectedKind.Value;
             var rows = _visibleRows.Select(row => (IReadOnlyDictionary<string, string>)row.ExportValues).ToList();
-            var headers = _visibleRows[0].ExportValues.Keys
-                .Where(header => !header.StartsWith("__", StringComparison.Ordinal))
-                .ToList();
-            if (_selectedKind == ListKind.Airline)
+            List<string> headers;
+            if (kind == ListKind.Rooms)
             {
-                headers = headers.Select(TransformForAirline).ToList();
-                rows = _visibleRows.Select(row => (IReadOnlyDictionary<string, string>)row.ExportValues
-                    .Where(pair => !pair.Key.StartsWith("__", StringComparison.Ordinal))
-                    .ToDictionary(pair => TransformForAirline(pair.Key), pair => TransformForAirline(pair.Value), StringComparer.OrdinalIgnoreCase)).ToList();
+                headers = ["Oda No", "Oda Türü", "Kapasite", "Yerleşen Kişi Sayısı", "Yerleşen Kişiler", "Connection"];
+                rows = rows.Select(row => (IReadOnlyDictionary<string, string>)headers.ToDictionary(
+                    header => header,
+                    header => row.TryGetValue(header, out var value) ? value : string.Empty,
+                    StringComparer.OrdinalIgnoreCase)).ToList();
             }
+            else
+            {
+                var availableHeaders = GetAvailableExportHeaders();
+                var designColumns = GetDesignColumns(kind, availableHeaders);
+                var columns = designColumns.Where(column => column.IsVisible).OrderBy(column => column.Order).ToList();
+                headers = columns.Select(column => column.Title).ToList();
+                rows = rows.Select((row, rowIndex) => (IReadOnlyDictionary<string, string>)columns.ToDictionary(
+                    column => column.Title,
+                    column => string.Equals(column.Key, "Sıra", StringComparison.OrdinalIgnoreCase)
+                        ? (rowIndex + 1).ToString()
+                        : row.TryGetValue(column.Key, out var value) ? value : string.Empty,
+                    StringComparer.OrdinalIgnoreCase)).ToList();
+            }
+            headers = headers.Select(header => TransformForAirlineMode(kind, header)).ToList();
+            rows = rows.Select(row => (IReadOnlyDictionary<string, string>)row.ToDictionary(
+                pair => TransformForAirlineMode(kind, pair.Key), pair => TransformForAirlineMode(kind, pair.Value), StringComparer.OrdinalIgnoreCase)).ToList();
 
             var options = CreateExportOptions(kind);
             var exportTitle = BuildExportTitle(kind, options);
@@ -350,6 +377,9 @@ public partial class ListsPage : ContentPage
         .Replace("Ğ", "G").Replace("ğ", "g").Replace("Ü", "U").Replace("ü", "u")
         .Replace("Ö", "O").Replace("ö", "o").Replace("Ç", "C").Replace("ç", "c")
         .ToUpperInvariant();
+
+    private static string TransformForAirlineMode(ListKind kind, string value) =>
+        kind == ListKind.Airline ? TransformForAirline(value) : value;
 
     private ListExportOptions CreateExportOptions(ListKind kind)
     {
@@ -480,8 +510,12 @@ public partial class ListsPage : ContentPage
             ["Ad"] = firstName,
             ["Soyad"] = lastName,
             ["TC Kimlik"] = person?.TcKimlikNo ?? string.Empty,
+            ["Uyruk"] = person?.Nationality ?? string.Empty,
+            ["Cinsiyet"] = person?.Gender ?? string.Empty,
+            ["Doğum Tarihi"] = person?.BirthDate.ToString("dd.MM.yyyy") ?? string.Empty,
             ["Telefon numarası"] = contact,
             ["Adres"] = person?.Address ?? string.Empty,
+            ["Açıklama"] = person?.Aciklama ?? string.Empty,
             ["Pasaport tipi"] = person?.PassportType ?? string.Empty,
             ["Pasaport numarası"] = person?.PassportNumber ?? string.Empty,
             ["Pasaport Başlangıç tarihi"] = DateText(person?.PassportStartDate),
@@ -491,6 +525,10 @@ public partial class ListsPage : ContentPage
             ["Pasaportu Geldi mi ?"] = PassportArrivedText(registration),
             ["Bilet Talebi"] = registration.TicketRequest,
             ["Bilet Durumu"] = registration.TicketStatusChoice,
+            ["Kan Grubu"] = person?.BloodType ?? string.Empty,
+            ["Aşı durumu"] = person?.VaccineStatus ?? string.Empty,
+            ["hastalık durumu"] = person?.HealthStatus ?? string.Empty,
+            ["Yaş aralığı"] = person?.AgeRange ?? string.Empty,
             ["Katılım yapılacak şehir"] = registration.DepartureCity,
             ["Aktarma var mı ?"] = registration.HasTransfer,
             ["Aktarma şehri"] = registration.TransferCity,
@@ -505,18 +543,7 @@ public partial class ListsPage : ContentPage
             ["İlçe"] = registration.District,
             ["Sıra"] = string.Empty
         };
-        row.ExportValues = kind switch
-        {
-            ListKind.Visa => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport tipi", "Pasaport numarası", "Pasaport Başlangıç tarihi", "Pasaport bitiş tarihi", "Vize Talebi", "Vize Durumu", "Pasaportu Geldi mi ?", "Telefon numarası", "Adres"),
-            ListKind.Passport => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport tipi", "Pasaport numarası", "Pasaport Başlangıç tarihi", "Pasaport bitiş tarihi", "Telefon numarası", "Adres"),
-            ListKind.Ticket => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Bilet Talebi", "Bilet Durumu", "Telefon numarası", "Adres", "Katılım yapılacak şehir"),
-            ListKind.Transfer => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Aktarma var mı ?", "Aktarma şehri", "Telefon numarası", "Adres", "Katılım yapılacak şehir"),
-            ListKind.Airline => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Katılım yapılacak şehir", "Bilet Talebi", "Telefon numarası", "Adres"),
-            ListKind.Reference => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Referans", "Telefon numarası", "Adres"),
-            ListKind.Payments => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Toplam Fiyat", "Para Birimi", "Ödenen", "Kalan"),
-            ListKind.Cargo => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi"),
-            _ => SelectExportValues(commonValues, "Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Pasaport tipi", "Pasaport numarası", "Pasaport Başlangıç tarihi", "Pasaport bitiş tarihi", "Kan Grubu", "Aşı durumu", "hastalık durumu", "Yaş aralığı", "Vize Talebi", "Bilet Talebi", "Kargo Talebi", "Oda tipi", "Katılım yapılacak şehir", "Aktarma var mı ?", "Aktarma şehri", "İlçe", "Toplam Fiyat", "Para Birimi", "Ödenen", "Kalan", "Referans")
-        };
+        row.ExportValues = SelectExportValues(commonValues, GetDesktopColumnHeaders(kind).ToArray());
 
         switch (kind)
         {
@@ -568,14 +595,7 @@ public partial class ListsPage : ContentPage
         Subtitle = ValueOrDash(person.PhoneNumber),
         Detail = ValueOrDash(person.Address),
         Context = $"TC Kimlik: {ValueOrDash(person.TcKimlikNo)}",
-        ExportValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Ad"] = person.FirstName,
-            ["Soyad"] = person.LastName,
-            ["TC Kimlik"] = person.TcKimlikNo,
-            ["Telefon numarası"] = person.PhoneNumber,
-            ["Adres"] = person.Address
-        }
+        ExportValues = CreatePersonExportValues(person)
     };
 
     private static ListDisplayRow CreateHealthRow(PersonRecord person) => new()
@@ -584,17 +604,34 @@ public partial class ListsPage : ContentPage
         Subtitle = $"Kan grubu: {ValueOrDash(person.BloodType)}",
         Detail = $"Sağlık durumu: {ValueOrDash(person.HealthStatus)} · Aşı: {ValueOrDash(person.VaccineStatus)}",
         Context = $"Tel: {ValueOrDash(person.PhoneNumber)}",
-        ExportValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        ExportValues = CreatePersonExportValues(person)
+    };
+
+    private static Dictionary<string, string> CreatePersonExportValues(PersonRecord person)
+    {
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
+            ["Sıra"] = string.Empty,
             ["Ad"] = person.FirstName,
             ["Soyad"] = person.LastName,
             ["TC Kimlik"] = person.TcKimlikNo,
             ["Uyruk"] = person.Nationality ?? string.Empty,
+            ["Cinsiyet"] = person.Gender,
+            ["Doğum Tarihi"] = person.BirthDate.ToString("dd.MM.yyyy"),
+            ["Telefon numarası"] = person.PhoneNumber,
+            ["Adres"] = person.Address,
+            ["Pasaport tipi"] = person.PassportType,
+            ["Pasaport numarası"] = person.PassportNumber,
+            ["Pasaport Başlangıç tarihi"] = DateText(person.PassportStartDate),
+            ["Pasaport bitiş tarihi"] = DateText(person.PassportEndDate),
             ["Kan Grubu"] = person.BloodType,
-            ["Hastalık Durumu"] = person.HealthStatus,
-            ["Aşı Durumu"] = person.VaccineStatus
-        }
-    };
+            ["Aşı durumu"] = person.VaccineStatus,
+            ["hastalık durumu"] = person.HealthStatus,
+            ["Yaş aralığı"] = person.AgeRange,
+            ["Açıklama"] = person.Aciklama ?? string.Empty
+        };
+        return SelectExportValues(values, GetDesktopColumnHeaders(ListKind.TourGeneral).ToArray());
+    }
 
     private static Dictionary<string, string> SelectExportValues(Dictionary<string, string> values, params string[] headers) =>
         headers.ToDictionary(header => header, header => values.TryGetValue(header, out var value) ? value : string.Empty, StringComparer.OrdinalIgnoreCase);
@@ -640,6 +677,124 @@ public partial class ListsPage : ContentPage
     {
         if (_updatingFilters || _selectedKind == null) return;
         await ApplyFiltersAsync();
+    }
+
+    private async void OnChooseColumnsClicked(object? sender, EventArgs e)
+    {
+        if (_selectedKind == null || _visibleRows.Count == 0)
+        {
+            await DisplayAlertAsync("Sütun seçimi", "Sütunları seçebilmek için önce sonuç bulunan bir liste açın.", "Tamam");
+            return;
+        }
+
+        var kind = _selectedKind.Value;
+        var columns = GetDesignColumns(kind, GetAvailableExportHeaders()).Select(column => column.Clone()).ToList();
+        var popup = new ColumnDesignPopup(
+            columns,
+            kind == ListKind.Airline,
+            HasFixedPassportRow(kind),
+            title => DisplayPromptAsync("Kolon adını düzenle", "Yeni kolon adı", "Tamam", "Vazgeç", initialValue: title),
+            async (action, editedColumns) => await CompleteColumnDesignAsync(kind, editedColumns, action));
+        await this.ShowPopupAsync(popup);
+    }
+
+    private async Task<bool> CompleteColumnDesignAsync(ListKind kind, List<MobileColumnOption> columns, ColumnDesignAction action)
+    {
+        if (action == ColumnDesignAction.Cancel) return true;
+        if (columns.All(column => !column.IsVisible))
+        {
+            await DisplayAlertAsync("Listeyi Tasarla", "En az bir kolon görünür olmalıdır.", "Tamam");
+            return false;
+        }
+        if (kind == ListKind.Airline && columns.Where(column => column.IsVisible).Any(column => string.IsNullOrWhiteSpace(column.Title)))
+        {
+            await DisplayAlertAsync("Listeyi Tasarla", "Görünür kolonların adı boş bırakılamaz.", "Tamam");
+            return false;
+        }
+        for (var index = 0; index < columns.Count; index++) columns[index].Order = index + 1;
+        _sessionDesignColumns[kind] = columns.Select(column => column.Clone()).ToList();
+        _designColumnsKind = kind;
+        if (action == ColumnDesignAction.Save) SaveDesignColumns(kind, columns);
+        return true;
+    }
+
+    private List<string> GetAvailableExportHeaders() => _selectedKind == null
+        ? []
+        : GetDesktopColumnHeaders(_selectedKind.Value).ToList();
+
+    private static bool HasFixedPassportRow(ListKind kind) => kind is not (ListKind.Phone or ListKind.Health or ListKind.Rooms);
+    private List<MobileColumnOption> GetDesignColumns(ListKind kind, IReadOnlyList<string> availableHeaders)
+    {
+        var supportedHeaders = availableHeaders.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (_sessionDesignColumns.TryGetValue(kind, out var sessionColumns))
+        {
+            var session = sessionColumns.Where(column => supportedHeaders.Contains(column.Key)).OrderBy(column => column.Order).Select(column => column.Clone()).ToList();
+            foreach (var header in availableHeaders.Where(header => session.All(column => !string.Equals(column.Key, header, StringComparison.OrdinalIgnoreCase))))
+                session.Add(new MobileColumnOption(header, header, session.Count + 1, true));
+            return session;
+        }
+
+        var saved = Preferences.Default.Get(GetExportColumnsPreferenceKey(kind), string.Empty);
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(saved))
+            {
+                var storedColumns = JsonSerializer.Deserialize<List<MobileColumnOption>>(saved);
+                if (storedColumns != null)
+                {
+                    var matched = storedColumns.Where(column => supportedHeaders.Contains(column.Key)).OrderBy(column => column.Order).ToList();
+                    foreach (var header in availableHeaders.Where(header => matched.All(column => !string.Equals(column.Key, header, StringComparison.OrdinalIgnoreCase))))
+                        matched.Add(new MobileColumnOption(header, header, matched.Count + 1, true));
+                    for (var index = 0; index < matched.Count; index++) matched[index].Order = index + 1;
+                    return matched;
+                }
+
+                var legacy = JsonSerializer.Deserialize<List<string>>(saved);
+                if (legacy != null)
+                {
+                    var selected = legacy.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var legacyHeaders = GetLegacyMobileHeaders();
+                    return availableHeaders.Select((header, index) => new MobileColumnOption(
+                        header,
+                        header,
+                        index + 1,
+                        selected.Contains(header) || !legacyHeaders.Contains(header))).ToList();
+                }
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return availableHeaders.Select((header, index) => new MobileColumnOption(header, header, index + 1, true)).ToList();
+    }
+
+    private static void SaveDesignColumns(ListKind kind, IReadOnlyList<MobileColumnOption> columns) =>
+        Preferences.Default.Set(GetExportColumnsPreferenceKey(kind), JsonSerializer.Serialize(columns));
+
+    private static string GetExportColumnsPreferenceKey(ListKind kind) => $"Lists.ExportColumns.{kind}";
+
+    private static HashSet<string> GetLegacyMobileHeaders() => new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Uyruk", "Kan Grubu", "Hastalık Durumu", "Aşı Durumu",
+        "Pasaport tipi", "Pasaport numarası", "Pasaport Başlangıç tarihi", "Pasaport bitiş tarihi", "Vize Talebi", "Vize Durumu",
+        "Pasaportu Geldi mi ?", "Bilet Talebi", "Bilet Durumu", "Katılım yapılacak şehir", "Aktarma var mı ?", "Aktarma şehri",
+        "Referans", "Kargo Talebi", "Toplam Fiyat", "Para Birimi", "Ödenen", "Kalan", "Oda tipi", "İlçe", "Sıra"
+    };
+
+    private static IReadOnlyList<string> GetDesktopColumnHeaders(ListKind kind)
+    {
+        if (kind == ListKind.Rooms)
+            return ["Oda No", "Oda Türü", "Kapasite", "Yerleşen Kişi Sayısı", "Yerleşen Kişiler", "Connection"];
+        string[] headers = [
+            "Sıra", "Ad", "Soyad", "TC Kimlik", "Uyruk", "Cinsiyet", "Doğum Tarihi", "Telefon numarası", "Adres", "Pasaport tipi",
+            "Bilet Durumu", "Vize Durumu", "Pasaport numarası", "Pasaportu Geldi mi ?", "Pasaport Başlangıç tarihi", "Pasaport bitiş tarihi",
+            "Kan Grubu", "Aşı durumu", "hastalık durumu", "Yaş aralığı", "Vize Talebi", "Bilet Talebi", "Kargo Talebi", "Oda tipi",
+            "Katılım yapılacak şehir", "Aktarma var mı ?", "Aktarma şehri", "İlçe", "Toplam Fiyat", "Para Birimi", "Ödenen", "Kalan", "Açıklama", "Referans"
+        ];
+        return kind == ListKind.Cargo
+            ? ["Sıra", "Ad", "Soyad", "TC Kimlik", "Telefon numarası", "Adres", "Kargo Talebi"]
+            : headers;
     }
 
     private void OnBackToCategoriesClicked(object? sender, EventArgs e)

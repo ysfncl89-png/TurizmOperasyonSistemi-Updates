@@ -51,50 +51,7 @@ public sealed class ListExportService
 
     private static byte[] CreateRoomWord(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyDictionary<string, string>> rows, ListExportOptions options)
     {
-        using var output = new MemoryStream();
-        using (var archive = new ZipArchive(output, ZipArchiveMode.Create, true))
-        {
-            AddEntry(archive, "[Content_Types].xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>");
-            AddEntry(archive, "_rels/.rels", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>");
-            var infoRows = new[]
-            {
-                new[] { ("OTEL", options.HotelName), ("GÝRÝÞ TARÝHÝ", options.CheckInDate), ("ÇIKIÞ TARÝHÝ", options.CheckOutDate) },
-                new[] { ("TUR TÜRÜ", options.TourType), ("DÖNEM", options.Period), ("GRUP TÜRÜ", options.GroupType), ("GRUP SÜRESÝ", options.DaysCount) }
-            };
-            var infoXml = new StringBuilder("<w:tbl><w:tblPr><w:tblW w:w=\"15300\" w:type=\"dxa\"/></w:tblPr>");
-            foreach (var cells in infoRows)
-            {
-                infoXml.Append("<w:tr>");
-                foreach (var (label, value) in cells)
-                    infoXml.Append(BuildRoomInfoCell(label, value));
-                infoXml.Append("</w:tr>");
-            }
-            infoXml.Append("</w:tbl><w:p><w:r><w:t> </w:t></w:r></w:p>");
-
-            var tableRows = new StringBuilder();
-            tableRows.Append(BuildDesktopWordRow(headers, true));
-            foreach (var row in rows)
-                tableRows.Append(BuildDesktopWordRow(headers.Select(header => GetValue(row, header)).ToList(), false));
-
-            var summaries = rows
-                .Select(row => GetValue(row, "Oda T\u00FCr\u00FC"))
-                .Where(roomType => !string.IsNullOrWhiteSpace(roomType))
-                .GroupBy(roomType => roomType.Trim(), StringComparer.CurrentCultureIgnoreCase)
-                .Select(group => new { RoomType = group.Key, Count = group.Count() })
-                .OrderByDescending(item => item.Count)
-                .ThenBy(item => GetRoomTypeSortOrder(item.RoomType))
-                .ToList();
-            var summaryRows = new StringBuilder();
-            summaryRows.Append("<w:tr><w:tc><w:tcPr><w:shd w:fill=\"EEF4FF\"/></w:tcPr><w:p><w:r><w:rPr><w:b/><w:color w:val=\"173B72\"/></w:rPr><w:t>ODA T&#x00DC;R&#x00DC;</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:shd w:fill=\"EEF4FF\"/></w:tcPr><w:p><w:r><w:rPr><w:b/><w:color w:val=\"173B72\"/></w:rPr><w:t>ODA SAYISI</w:t></w:r></w:p></w:tc></w:tr>");
-            foreach (var item in summaries)
-                summaryRows.Append($"<w:tr><w:tc><w:p><w:r><w:t>{EscapeXml(item.RoomType)}</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>{item.Count}</w:t></w:r></w:p></w:tc></w:tr>");
-            var summaryLine = summaries.Count == 0 ? "-" : string.Join(", ", summaries.Select(item => $"{item.Count} {item.RoomType}"));
-            summaryRows.Append($"<w:tr><w:tc><w:tcPr><w:shd w:fill=\"DCE8F8\"/></w:tcPr><w:p><w:r><w:rPr><w:b/><w:color w:val=\"173B72\"/></w:rPr><w:t>TOPLAM ODA</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:shd w:fill=\"DCE8F8\"/></w:tcPr><w:p><w:r><w:t>{rows.Count}</w:t></w:r></w:p></w:tc></w:tr>");
-            var summaryXml = $"<w:p><w:r><w:rPr><w:b/><w:color w:val=\"173B72\"/></w:rPr><w:t>ODA DA&#x011E;ILIM &#x00D6;ZET&#x0130;</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val=\"TableGrid\"/></w:tblPr>{summaryRows}</w:tbl><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>TOPLAM ODA: {rows.Count} - {EscapeXml(summaryLine)}</w:t></w:r></w:p>";
-            var document = $"<?xml version=\"1.0\" encoding=\"UTF-8\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body>{infoXml}<w:tbl><w:tblPr><w:tblStyle w:val=\"TableGrid\"/><w:tblW w:w=\"0\" w:type=\"auto\"/></w:tblPr>{tableRows}</w:tbl><w:p><w:r><w:t> </w:t></w:r></w:p>{summaryXml}<w:sectPr><w:pgSz w:w=\"16838\" w:h=\"11906\" w:orient=\"landscape\"/><w:pgMar w:top=\"540\" w:right=\"540\" w:bottom=\"540\" w:left=\"540\"/></w:sectPr></w:body></w:document>";
-            AddEntry(archive, "word/document.xml", document);
-        }
-        return output.ToArray();
+        return RoomListWordExporter.Create(rows, options);
     }
 
     private static string BuildDesktopWordRow(IReadOnlyList<string> values, bool header)
@@ -119,7 +76,7 @@ public sealed class ListExportService
         var type = roomType.Trim().ToUpperInvariant();
         if (type.Contains("SINGLE") || type.Contains("SNGL")) return 0;
         if (type.Contains("DBL")) return 1;
-        if (type.Contains("TRPL") || type.Contains("TRIPLE") || type.Contains("TRÝPLE")) return 2;
+        if (type.Contains("TRPL") || type.Contains("TRIPLE") || type.Contains("TRï¿½PLE")) return 2;
         if (type.Contains("TWIN")) return 3;
         if (type.Contains("QUAD")) return 4;
         if (type.Contains("QUINT")) return 5;
@@ -188,10 +145,10 @@ public sealed class ListExportService
             if (options.IsRoomAllocation)
             {
                 columnCount = 12;
-                sheetRows.Append(BuildDesktopExcelRow(rowNumber++, [Card("OTEL", options.HotelName), string.Empty, string.Empty, Card("GÝRÝÞ TARÝHÝ", options.CheckInDate), string.Empty, string.Empty, Card("ÇIKIÞ TARÝHÝ", options.CheckOutDate), string.Empty, string.Empty, string.Empty, string.Empty, string.Empty], false));
+                sheetRows.Append(BuildDesktopExcelRow(rowNumber++, [Card("OTEL", options.HotelName), string.Empty, string.Empty, Card("GÄ°RÄ°Åž TARÄ°HÄ°", options.CheckInDate), string.Empty, string.Empty, Card("Ã‡IKIÅž TARÄ°HÄ°", options.CheckOutDate), string.Empty, string.Empty, string.Empty, string.Empty, string.Empty], false));
                 sheetRows.Append(BuildDesktopExcelRow(rowNumber++, Enumerable.Repeat(string.Empty, 12).ToList(), false));
                 sheetRows.Append(BuildDesktopExcelRow(rowNumber++, Enumerable.Repeat(string.Empty, 12).ToList(), false));
-                sheetRows.Append(BuildDesktopExcelRow(rowNumber++, [Card("TUR TÜRÜ", options.TourType), string.Empty, string.Empty, Card("DÖNEM", options.Period), string.Empty, string.Empty, Card("GRUP TÜRÜ", options.GroupType), string.Empty, string.Empty, Card("GRUP SÜRESÝ", options.DaysCount), string.Empty, string.Empty], false));
+                sheetRows.Append(BuildDesktopExcelRow(rowNumber++, [Card("TUR TÃœRÃœ", options.TourType), string.Empty, string.Empty, Card("DÃ–NEM", options.Period), string.Empty, string.Empty, Card("GRUP TÃœRÃœ", options.GroupType), string.Empty, string.Empty, Card("GRUP SÃœRESÄ°", options.DaysCount), string.Empty, string.Empty], false));
                 sheetRows.Append(BuildDesktopExcelRow(rowNumber++, Enumerable.Repeat(string.Empty, 12).ToList(), false));
                 sheetRows.Append(BuildDesktopExcelRow(rowNumber++, Enumerable.Repeat(string.Empty, 12).ToList(), false));
                 sheetRows.Append(BuildDesktopExcelRow(rowNumber++, Enumerable.Repeat(string.Empty, 12).ToList(), false));
@@ -217,9 +174,9 @@ public sealed class ListExportService
             {
                 var summaryStart = rowNumber + 1;
                 merges.Add($"A{summaryStart}:L{summaryStart}");
-                sheetRows.Append(BuildDesktopExcelRow(summaryStart++, ["ODA DAÐILIM ÖZETÝ"], false, (_, _) => 1));
-                sheetRows.Append(BuildDesktopExcelRow(summaryStart++, ["ODA TÜRÜ", "ODA SAYISI", string.Empty, string.Empty, "TOPLAM ODA"], true));
-                var summary = rows.Select(row => GetValue(row, "Oda Türü"))
+                sheetRows.Append(BuildDesktopExcelRow(summaryStart++, ["ODA DAÄžILIM Ã–ZETÄ°"], false, (_, _) => 1));
+                sheetRows.Append(BuildDesktopExcelRow(summaryStart++, ["ODA TÃœRÃœ", "ODA SAYISI", string.Empty, string.Empty, "TOPLAM ODA"], true));
+                var summary = rows.Select(row => GetValue(row, "Oda Tï¿½rï¿½"))
                     .Where(value => !string.IsNullOrWhiteSpace(value))
                     .GroupBy(value => value.Trim(), StringComparer.CurrentCultureIgnoreCase)
                     .Select(group => new { RoomType = group.Key, Count = group.Count() })
@@ -286,6 +243,8 @@ public sealed class ListExportService
         if (options?.UseDesktopTemplate == true)
         {
 #if ANDROID
+        if (options.IsRoomAllocation)
+            return CreateAndroidRoomPdf(title, rows, options);
             return CreateAndroidDesktopPdf(title, headers, rows, options);
 #else
             return CreateDesktopQuestPdf(title, headers, rows, options);
@@ -343,8 +302,8 @@ public sealed class ListExportService
                     column.Item().Row(row =>
                     {
                         row.RelativeColumn().Text(options.HotelName).FontSize(10);
-                        row.RelativeColumn().Text($"Giriþ: {options.CheckInDate}").FontSize(10);
-                        row.RelativeColumn().Text($"Çýkýþ: {options.CheckOutDate}").FontSize(10);
+                        row.RelativeColumn().Text($"Giriï¿½: {options.CheckInDate}").FontSize(10);
+                        row.RelativeColumn().Text($"ï¿½ï¿½kï¿½ï¿½: {options.CheckOutDate}").FontSize(10);
                     });
             });
             page.Content().PaddingVertical(4).Table(table =>
@@ -377,7 +336,7 @@ public sealed class ListExportService
         var groups = items
             .SelectMany(item => Enumerable.Repeat(item, Math.Max(1, item.Quantity)))
             .GroupBy(item => new { item.TourType, item.Period, item.GroupType, item.DaysCount })
-            .Select(group => (Title: string.Join(" · ", new[] { group.Key.TourType, group.Key.Period, group.Key.GroupType, group.Key.DaysCount }.Where(value => !string.IsNullOrWhiteSpace(value))), Items: group.ToList()))
+            .Select(group => (Title: string.Join(" ï¿½ ", new[] { group.Key.TourType, group.Key.Period, group.Key.GroupType, group.Key.DaysCount }.Where(value => !string.IsNullOrWhiteSpace(value))), Items: group.ToList()))
             .ToList();
 #if ANDROID
         return CreateAndroidCargoLabelsPdf(groups);
@@ -427,6 +386,192 @@ public sealed class ListExportService
     }
 
 #if ANDROID
+    private static byte[] CreateAndroidRoomPdf(string title, IReadOnlyList<IReadOnlyDictionary<string, string>> rows, ListExportOptions options)
+    {
+        const int margin = 24;
+        const int pageWidth = 842;
+        const int pageHeight = 595;
+        const float headerFontSize = 9;
+        const float bodyFontSize = 9;
+        const float lineHeight = 12;
+        var headers = new[] { "Oda No", "Oda TÃ¼rÃ¼", "Kapasite", "YerleÅŸen KiÅŸi SayÄ±sÄ±", "YerleÅŸen KiÅŸiler", "Connection" };
+        var weights = new[] { 0.8f, 1.1f, 0.8f, 1.25f, 3.2f, 1f };
+        var totalWeight = weights.Sum();
+        var usableWidth = pageWidth - margin * 2f;
+        var widths = weights.Select(weight => usableWidth * weight / totalWeight).ToArray();
+        using var document = new Android.Graphics.Pdf.PdfDocument();
+        using var output = new MemoryStream();
+        using var titlePaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.Rgb(23, 59, 114), TextSize = 15 };
+        titlePaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var labelPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.Rgb(100, 116, 139), TextSize = 8 };
+        labelPaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var infoPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.Rgb(30, 41, 59), TextSize = 10 };
+        using var headerPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.White, TextSize = headerFontSize };
+        headerPaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var bodyPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.Rgb(31, 41, 55), TextSize = bodyFontSize };
+        using var boldBodyPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.Rgb(31, 41, 55), TextSize = 10 };
+        boldBodyPaint.SetTypeface(Android.Graphics.Typeface.Create("sans-serif", Android.Graphics.TypefaceStyle.Bold));
+        using var bluePaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.Rgb(37, 99, 235), TextSize = 9 };
+        using var redPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.Rgb(239, 68, 68), TextSize = 9 };
+        using var gridPaint = new Android.Graphics.Paint { Color = Android.Graphics.Color.Rgb(216, 224, 236), StrokeWidth = 0.8f };
+        using var headerFill = new Android.Graphics.Paint { Color = Android.Graphics.Color.Rgb(23, 59, 114) };
+        using var whiteFill = new Android.Graphics.Paint { Color = Android.Graphics.Color.White };
+        using var alternateFill = new Android.Graphics.Paint { Color = Android.Graphics.Color.Rgb(248, 251, 255) };
+        using var infoBorder = new Android.Graphics.Paint { Color = Android.Graphics.Color.Rgb(216, 224, 236), StrokeWidth = 0.8f };
+        infoBorder.SetStyle(Android.Graphics.Paint.Style.Stroke);
+        using var pageNumberPaint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias) { Color = Android.Graphics.Color.Rgb(71, 85, 105), TextSize = 8 };
+
+        var preparedRows = rows.Select(row =>
+        {
+            var cells = headers.Select((header, index) => WrapText(GetValue(row, header), widths[index] - 10, header == "YerleÅŸen KiÅŸiler" ? boldBodyPaint : bodyPaint)).ToArray();
+            return (Cells: cells, Height: Math.Max(24, cells.Max(lines => lines.Count) * lineHeight + 10));
+        }).ToList();
+        var roomTypeSummary = rows.Select(row => GetValue(row, "Oda TÃ¼rÃ¼").Trim()).Where(type => !string.IsNullOrWhiteSpace(type))
+            .GroupBy(type => type, StringComparer.CurrentCultureIgnoreCase)
+            .Select(group => new { RoomType = group.Key, Count = group.Count() })
+            .OrderByDescending(item => item.Count).ThenBy(item => GetRoomTypeSortOrder(item.RoomType)).ToList();
+        var summaryLine = roomTypeSummary.Count == 0 ? "-" : string.Join(", ", roomTypeSummary.Select(item => $"{item.Count} {item.RoomType}"));
+        var pageNumber = 0;
+        Android.Graphics.Pdf.PdfDocument.Page? page = null;
+        Android.Graphics.Canvas? canvas = null;
+        float y = 0;
+
+        void StartPage(bool repeatTableHeader)
+        {
+            var pageInfo = new Android.Graphics.Pdf.PdfDocument.PageInfo.Builder(pageWidth, pageHeight, ++pageNumber).Create();
+            page = document.StartPage(pageInfo);
+            canvas = page.Canvas;
+            y = margin;
+            if (pageNumber == 1)
+            {
+                canvas.DrawText(title, margin, y + titlePaint.TextSize, titlePaint);
+                y += 28;
+                DrawInfoCard("OTEL", options.HotelName, margin, y, usableWidth / 3);
+                DrawInfoCard("GÄ°RÄ°Åž TARÄ°HÄ°", options.CheckInDate, margin + usableWidth / 3, y, usableWidth / 3);
+                DrawInfoCard("Ã‡IKIÅž TARÄ°HÄ°", options.CheckOutDate, margin + 2 * usableWidth / 3, y, usableWidth / 3);
+                y += 42;
+                DrawInfoCard("TUR TÃœRÃœ", options.TourType, margin, y, usableWidth / 4);
+                DrawInfoCard("DÃ–NEM", options.Period, margin + usableWidth / 4, y, usableWidth / 4);
+                DrawInfoCard("GRUP TÃœRÃœ", options.GroupType, margin + usableWidth / 2, y, usableWidth / 4);
+                DrawInfoCard("GRUP SÃœRESÄ°", options.DaysCount, margin + 3 * usableWidth / 4, y, usableWidth / 4);
+                y += 46;
+            }
+            if (repeatTableHeader)
+                DrawTableHeader();
+        }
+
+        void DrawInfoCard(string label, string value, float x, float top, float width)
+        {
+            var rect = new Android.Graphics.RectF(x, top, x + width, top + 38);
+            canvas!.DrawRect(rect, whiteFill);
+            canvas.DrawRect(rect, infoBorder);
+            canvas.DrawText(label, x + 7, top + 13, labelPaint);
+            var shownValue = string.IsNullOrWhiteSpace(value) ? "-" : value;
+            var wrapped = WrapText(shownValue, width - 12, infoPaint);
+            canvas.DrawText(wrapped[0], x + 7, top + 29, infoPaint);
+        }
+
+        void DrawTableHeader()
+        {
+            var x = (float)margin;
+            for (var index = 0; index < headers.Length; index++)
+            {
+                canvas!.DrawRect(x, y, x + widths[index], y + 30, headerFill);
+                canvas.DrawRect(x, y, x + widths[index], y + 30, gridPaint);
+                var headerLines = WrapText(headers[index].ToUpperInvariant(), widths[index] - 8, headerPaint);
+                var startY = y + (headerLines.Count == 1 ? 18 : 12);
+                for (var line = 0; line < headerLines.Count; line++)
+                    canvas.DrawText(headerLines[line], x + 4, startY + line * 10, headerPaint);
+                x += widths[index];
+            }
+            y += 30;
+        }
+
+        void FinishPage()
+        {
+            if (page is null) return;
+            var pageText = $"{pageNumber}";
+            canvas!.DrawText(pageText, pageWidth - margin - pageNumberPaint.MeasureText(pageText), pageHeight - 10, pageNumberPaint);
+            document.FinishPage(page);
+            page = null;
+            canvas = null;
+        }
+
+        StartPage(true);
+        for (var rowIndex = 0; rowIndex < preparedRows.Count; rowIndex++)
+        {
+            var item = preparedRows[rowIndex];
+            if (y + item.Height > pageHeight - 35)
+            {
+                FinishPage();
+                StartPage(true);
+            }
+            var fill = rowIndex % 2 == 0 ? whiteFill : alternateFill;
+            var x = (float)margin;
+            for (var column = 0; column < headers.Length; column++)
+            {
+                canvas!.DrawRect(x, y, x + widths[column], y + item.Height, fill);
+                canvas.DrawRect(x, y, x + widths[column], y + item.Height, gridPaint);
+                var isConnection = headers[column] == "Connection";
+                var connectionNo = isConnection && GetValue(rows[rowIndex], "Connection").Equals("HayÄ±r", StringComparison.OrdinalIgnoreCase);
+                var paint = isConnection ? connectionNo ? redPaint : bluePaint : headers[column] == "YerleÅŸen KiÅŸiler" ? boldBodyPaint : bodyPaint;
+                var lines = item.Cells[column];
+                for (var line = 0; line < lines.Count; line++)
+                    canvas.DrawText(lines[line], x + 5, y + 15 + line * lineHeight, paint);
+                x += widths[column];
+            }
+            y += item.Height;
+        }
+
+        var summaryHeight = 48 + (roomTypeSummary.Count + 2) * 24;
+        if (y + summaryHeight > pageHeight - 32)
+        {
+            FinishPage();
+            StartPage(false);
+        }
+        y += 16;
+        canvas!.DrawText("ODA DAÄžILIM Ã–ZETÄ°", margin, y + 12, titlePaint);
+        y += 20;
+        var summaryTop = y;
+        var distributionWidth = 340f;
+        var totalWidth = usableWidth - distributionWidth - 12;
+        var distributionX = (float)margin;
+        var totalX = distributionX + distributionWidth + 12;
+        DrawSummaryCell("ODA TÃœRÃœ", "ODA SAYISI", distributionX, y, true);
+        y += 24;
+        foreach (var item in roomTypeSummary)
+        {
+            DrawSummaryCell(item.RoomType, item.Count.ToString(), distributionX, y, false);
+            y += 24;
+        }
+        DrawSummaryCell("TOPLAM ODA", rows.Count.ToString(), distributionX, y, true);
+        var totalCardHeight = (roomTypeSummary.Count + 2) * 24;
+        var totalCard = new Android.Graphics.RectF(totalX, summaryTop, totalX + totalWidth, summaryTop + totalCardHeight);
+        canvas.DrawRoundRect(totalCard, 6, 6, whiteFill);
+        canvas.DrawRoundRect(totalCard, 6, 6, infoBorder);
+        canvas.DrawText("TOPLAM ODA", totalX + 12, summaryTop + 22, labelPaint);
+        canvas.DrawText(rows.Count.ToString(), totalX + 12, summaryTop + 48, titlePaint);
+        var summaryLines = WrapText(summaryLine, totalWidth - 24, bodyPaint);
+        for (var index = 0; index < summaryLines.Count && summaryTop + 70 + index * 12 < summaryTop + totalCardHeight - 4; index++)
+            canvas.DrawText(summaryLines[index], totalX + 12, summaryTop + 70 + index * 12, bodyPaint);
+
+        void DrawSummaryCell(string left, string right, float x, float top, bool emphasized)
+        {
+            var leftFill = emphasized ? Android.Graphics.Color.Rgb(238, 244, 255) : Android.Graphics.Color.White;
+            using var fill = new Android.Graphics.Paint { Color = leftFill };
+            var rect = new Android.Graphics.RectF(x, top, x + distributionWidth, top + 24);
+            canvas!.DrawRect(rect, fill);
+            canvas.DrawRect(rect, gridPaint);
+            var paint = emphasized ? labelPaint : bodyPaint;
+            canvas.DrawText(left, x + 6, top + 16, paint);
+            canvas.DrawText(right, x + distributionWidth - 60, top + 16, paint);
+        }
+
+        FinishPage();
+        document.WriteTo(output);
+        return output.ToArray();
+    }
+
     private static byte[] CreateAndroidDesktopPdf(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyDictionary<string, string>> rows, ListExportOptions options)
     {
         const int margin = 20;

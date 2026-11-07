@@ -1043,7 +1043,7 @@ public partial class PersonsPage : ContentPage
             $"TC KİMLİK NO : {TcEntry.Text}\n" +
             $"UYRUK : {nationality}\n" +
             $"CİNSİYET : {gender}\n" +
-            $"DOĞUM TARİHİ : {(BirthDateEnabled.IsChecked ? BirthDatePicker.Date?.ToShortDateString() ?? string.Empty : string.Empty)}\n" +
+            $"DOĞUM TARİHİ : {(BirthDateEnabled.IsChecked ? BirthDatePicker.Date?.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) ?? string.Empty : string.Empty)}\n" +
             $"YAŞ : {age}\n" +
             $"YAŞ ARALIĞI : {ageRange}\n" +
             $"TELEFON : {PhoneEntry.Text}\n" +
@@ -1053,8 +1053,8 @@ public partial class PersonsPage : ContentPage
             $"AŞI DURUMU : {VaccineEditor.Text}\n" +
             $"PASAPORT TÜRÜ : {passportType}\n" +
             $"PASAPORT NO : {PassportNumberEntry.Text}\n" +
-            $"PASAPORT BAŞLANGIÇ : {(PassportStartEnabled.IsChecked ? PassportStartPicker.Date?.ToShortDateString() ?? string.Empty : string.Empty)}\n" +
-            $"PASAPORT BİTİŞ : {(PassportEndEnabled.IsChecked ? PassportEndPicker.Date?.ToShortDateString() ?? string.Empty : string.Empty)}" +
+            $"PASAPORT BAŞLANGIÇ : {(PassportStartEnabled.IsChecked ? PassportStartPicker.Date?.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) ?? string.Empty : string.Empty)}\n" +
+            $"PASAPORT BİTİŞ : {(PassportEndEnabled.IsChecked ? PassportEndPicker.Date?.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) ?? string.Empty : string.Empty)}" +
             (string.IsNullOrWhiteSpace(passportValidity) ? string.Empty : $"\n{passportValidity}");
         var formattedPreview = new FormattedString();
         var previewLines = preview.Split('\n');

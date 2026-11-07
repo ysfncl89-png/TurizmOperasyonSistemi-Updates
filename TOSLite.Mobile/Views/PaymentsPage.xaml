@@ -10,7 +10,7 @@
                 <Label Text="Ödemeler ve Finans" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                 <Button Grid.Column="1" Text="Grafik filtreleri" Style="{StaticResource SecondaryButton}" Padding="10,8" Clicked="OnToggleChartFiltersClicked" />
             </Grid>
-            <Border x:Name="ChartFiltersPanel" IsVisible="False" Style="{StaticResource CardBorder}" Padding="12">
+            <Border x:Name="ChartFiltersPanel" IsVisible="False" Style="{StaticResource SectionCardAmber}" Padding="12">
                 <VerticalStackLayout Spacing="8">
                     <Label Text="Yalnızca grafikler için filtre" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="2">
@@ -26,7 +26,7 @@
                 </VerticalStackLayout>
             </Border>
             <VerticalStackLayout x:Name="CurrencySummaryLayout" Spacing="10" />
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource SectionCardBlue}">
                 <VerticalStackLayout Spacing="10">
                     <Label Text="Cari hesap / tur kaydı" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Label Text="Kişi, tur veya dönem ara" Style="{StaticResource FormFieldLabel}" />
@@ -36,14 +36,18 @@
                     <Label x:Name="AccountSummaryLabel" TextColor="{StaticResource TextSecondary}" />
                 </VerticalStackLayout>
             </Border>
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource SectionCardViolet}">
                 <VerticalStackLayout Spacing="10">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <Label Text="Ödeme hareketleri" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                         <Button Grid.Column="1" Text="Hareketleri indir" Style="{StaticResource SecondaryButton}" Clicked="OnExportPaymentsClicked" />
                     </Grid>
                     <CollectionView x:Name="PaymentsCollection" HeightRequest="260" SelectionMode="None">
-                        <CollectionView.EmptyView><Label Text="Bu kayıtta ödeme hareketi yok." TextColor="{StaticResource TextSecondary}" /></CollectionView.EmptyView>
+                        <CollectionView.EmptyView>
+                            <Label Text="Ödeme hareketlerini görmek için önce yukarıdaki arama alanında kişiyi bulun, ardından ödeme yapılacak tur kaydını seçin."
+                                   TextColor="{StaticResource TextSecondary}"
+                                   LineBreakMode="WordWrap" />
+                        </CollectionView.EmptyView>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Border Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 12" Padding="10" Margin="0,3" BackgroundColor="{StaticResource SurfaceAlt}">
@@ -59,7 +63,7 @@
                     </CollectionView>
                 </VerticalStackLayout>
             </Border>
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource SectionCardTeal}">
                 <VerticalStackLayout Spacing="9">
                     <Label Text="Yeni tahsilat / iade" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">

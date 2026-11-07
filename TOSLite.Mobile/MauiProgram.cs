@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Globalization;
+using Microsoft.Extensions.Logging;
 using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Views;
 using TOSLite.Mobile.Services;
@@ -11,6 +12,10 @@ namespace TOSLite.Mobile
     {
         public static MauiApp CreateMauiApp()
         {
+            var culture = CultureInfo.GetCultureInfo("tr-TR");
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
+
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
