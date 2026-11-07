@@ -1,5 +1,6 @@
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Http;
@@ -22,17 +23,15 @@ public sealed class MobileSyncService
     private readonly SettingsRepository _settings;
     private readonly RoomAllocationRepository _rooming;
     private readonly PaymentRepository _payments;
-    private readonly CargoQueueRepository _cargoQueue;
     private readonly string _connectionString;
 
-    public MobileSyncService(PersonRepository persons, RegistrationRepository registrations, SettingsRepository settings, RoomAllocationRepository rooming, PaymentRepository payments, CargoQueueRepository cargoQueue)
+    public MobileSyncService(PersonRepository persons, RegistrationRepository registrations, SettingsRepository settings, RoomAllocationRepository rooming, PaymentRepository payments)
     {
         _persons = persons;
         _registrations = registrations;
         _settings = settings;
         _rooming = rooming;
         _payments = payments;
-        _cargoQueue = cargoQueue;
         var path = Path.Combine(FileSystem.AppDataDirectory, "toslite-mobile.db3");
         _connectionString = new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadWriteCreate }.ToString();
     }
@@ -69,7 +68,6 @@ public sealed class MobileSyncService
         await _settings.InitializeAsync();
         await _rooming.InitializeAsync();
         await _payments.InitializeAsync();
-        await _cargoQueue.InitializeAsync();
         var package = await CreatePackageAsync(cancellationToken);
         var fingerprint = Preferences.Default.Get("MobileSync.Fingerprint", string.Empty);
         using var client = CreatePinnedClient(fingerprint);
@@ -329,17 +327,6 @@ public sealed class MobileSyncService
             LastModifiedUtc = x.LastModifiedUtc, IsDeleted = x.IsDeleted
         }).ToList();
         await _payments.ApplyDesktopStateAsync(payments, localRegistrationIds);
-        var cargoItems = result.CargoQueue.Select(x => new CargoQueueRecord
-        {
-            Id = x.Id, SyncId = x.SyncId, DesktopQueueId = x.DesktopQueueId,
-            RegistrationId = x.DesktopRegistrationId ?? x.RegistrationId,
-            DesktopRegistrationId = x.DesktopRegistrationId,
-            FullName = x.FullName, Tc = x.Tc, Phone = x.Phone, Address = x.Address,
-            TourType = x.TourType, Period = x.Period, GroupType = x.GroupType, DaysCount = x.DaysCount,
-            Quantity = x.Quantity, AddedAt = x.AddedAt, Printed = x.Printed,
-            LastModifiedUtc = x.LastModifiedUtc, IsDeleted = x.IsDeleted
-        }).ToList();
-        await _cargoQueue.ApplyDesktopStateAsync(cargoItems, localRegistrationIds);
     }
 
     private async Task ApplyDesktopSnapshotAsync(MobileSyncResultDto result, CancellationToken cancellationToken, Func<CancellationToken, Task> confirmCompletion)
@@ -405,7 +392,7 @@ public sealed class MobileSyncService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.Transaction = (SqliteTransaction)transaction;
-        command.CommandText = "DELETE FROM RoomOccupants; DELETE FROM RoomAllocations; DELETE FROM Payments; DELETE FROM CargoQueue; DELETE FROM TourRegistrations; DELETE FROM PersonRecords; DELETE FROM Hotels; DELETE FROM DeletedTourRegistrations;";
+        command.CommandText = "DELETE FROM RoomOccupants; DELETE FROM RoomAllocations; DELETE FROM Payments; DELETE FROM TourRegistrations; DELETE FROM PersonRecords; DELETE FROM Hotels; DELETE FROM DeletedTourRegistrations;";
         await command.ExecuteNonQueryAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
@@ -418,14 +405,12 @@ public sealed class MobileSyncService
         var expectedRegistrations = result.Registrations.Count;
         var expectedRooms = result.Rooming.Count(x => !x.IsDeleted);
         var expectedPayments = result.Payments.Count(x => !x.IsDeleted);
-        var expectedCargo = result.CargoQueue.Count(x => !x.IsDeleted);
         foreach (var (table, expected) in new[]
         {
             ("PersonRecords", expectedPersons),
             ("TourRegistrations", expectedRegistrations),
             ("RoomAllocations", expectedRooms),
-            ("Payments", expectedPayments),
-            ("CargoQueue", expectedCargo)
+            ("Payments", expectedPayments)
         })
         {
             await using var command = connection.CreateCommand();
@@ -456,7 +441,6 @@ public sealed class MobileSyncService
         var roomRecords = await _rooming.GetAllForSyncAsync();
         var desktopRegistrationIds = await _registrations.GetDesktopIdsByLocalIdAsync();
         var paymentRecords = await _payments.GetAllForSyncAsync(desktopRegistrationIds);
-        var cargoRecords = await _cargoQueue.GetAllForSyncAsync(desktopRegistrationIds);
         var package = new MobileSyncPackage
         {
             DeviceId = deviceId,
@@ -503,15 +487,6 @@ public sealed class MobileSyncService
                 AmountInRegistrationCurrency = x.AmountInRegistrationCurrency, Rate = x.Rate, Note = x.Note,
                 UploadedDocumentPath = x.UploadedDocumentPath, PaymentMethod = x.PaymentMethod,
                 LastModifiedUtc = x.LastModifiedUtc, IsDeleted = x.IsDeleted
-            }).ToList(),
-            CargoQueue = cargoRecords.Select(x => new MobileCargoQueueDto
-            {
-                Id = x.Id, SyncId = x.SyncId, DesktopQueueId = x.DesktopQueueId,
-                RegistrationId = x.RegistrationId, DesktopRegistrationId = x.DesktopRegistrationId,
-                FullName = x.FullName, Tc = x.Tc, Phone = x.Phone, Address = x.Address,
-                TourType = x.TourType, Period = x.Period, GroupType = x.GroupType, DaysCount = x.DaysCount,
-                Quantity = x.Quantity, AddedAt = x.AddedAt, Printed = x.Printed,
-                LastModifiedUtc = x.LastModifiedUtc, IsDeleted = x.IsDeleted
             }).ToList()
         };
         return package;
@@ -522,6 +497,7 @@ public sealed class MobileSyncService
         var expected = Convert.FromHexString(fingerprint);
         var handler = new HttpClientHandler
         {
+            SslProtocols = SslProtocols.Tls12,
             ServerCertificateCustomValidationCallback = (_, certificate, _, errors) =>
                 certificate is not null && CryptographicOperations.FixedTimeEquals(SHA256.HashData(certificate.GetRawCertData()), expected)
         };

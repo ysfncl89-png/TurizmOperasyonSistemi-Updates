@@ -70,7 +70,7 @@ public sealed class MobileSyncServer : IDisposable
             var authenticated = false;
             try
             {
-                await stream.AuthenticateAsServerAsync(_certificate, false, System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13, false);
+                await stream.AuthenticateAsServerAsync(_certificate, false, System.Security.Authentication.SslProtocols.Tls12, false);
                 authenticated = true;
                 var request = await ReadRequestAsync(stream, _shutdown.Token);
                 var response = await ProcessRequestAsync(request);
@@ -239,7 +239,6 @@ public sealed class MobileSyncServer : IDisposable
         await db.Database.ExecuteSqlRawAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_Payments_SyncId ON Payments(SyncId);", cancellationToken);
         await db.Database.ExecuteSqlRawAsync("UPDATE Payments SET LastModifiedUtc = CreatedAt WHERE LastModifiedUtc IS NULL OR LastModifiedUtc = '';", cancellationToken);
         await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS RoomAllocationHistories (Id INTEGER PRIMARY KEY AUTOINCREMENT, RoomAllocationId INTEGER, HotelId INTEGER, HotelName TEXT, RoomNumber TEXT, RoomType TEXT, TourType TEXT, Period TEXT, GroupType TEXT, DaysCount TEXT, PersonId INTEGER, RegistrationId INTEGER, RemovedAt TEXT, Restored INTEGER DEFAULT 0, RestoredAt TEXT);", cancellationToken);
-        await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS MobileSyncCargoQueue (DeviceId TEXT NOT NULL, SyncId TEXT NOT NULL, DesktopQueueId INTEGER NULL, RegistrationId INTEGER NOT NULL, FullName TEXT NOT NULL, Tc TEXT NOT NULL, Phone TEXT NOT NULL, Address TEXT NOT NULL, TourType TEXT NOT NULL, Period TEXT NOT NULL, GroupType TEXT NOT NULL, DaysCount TEXT NOT NULL, Quantity INTEGER NOT NULL, AddedAt TEXT NOT NULL, Printed INTEGER NOT NULL, LastModifiedUtc TEXT NOT NULL, IsDeleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(DeviceId, SyncId));", cancellationToken);
         var personMap = new Dictionary<int, int>();
         var clientMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var deletedClientIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -364,7 +363,6 @@ public sealed class MobileSyncServer : IDisposable
             if (desktopRegistrationId is > 0)
             {
                 await db.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM Payments WHERE RegistrationId = {desktopRegistrationId.Value}", cancellationToken);
-                await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE MobileSyncCargoQueue SET IsDeleted = 1, LastModifiedUtc = {DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture)} WHERE RegistrationId = {desktopRegistrationId.Value}", cancellationToken);
                 await db.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM RoomAllocationHistories WHERE RegistrationId = {desktopRegistrationId.Value}", cancellationToken);
                 var registration = await db.Registrations.FirstOrDefaultAsync(x => x.Id == desktopRegistrationId.Value, cancellationToken);
                 if (registration is not null)
@@ -524,64 +522,6 @@ public sealed class MobileSyncServer : IDisposable
             }
             await RecalculateDesktopPaymentSummaryAsync(db, registrationId.Value, cancellationToken);
             result.ImportedItems.Add(new MobileSyncItemDto { RecordType = "Ödeme", Description = payment.SyncId });
-        }
-
-        foreach (var cargo in package.CargoQueue)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (string.IsNullOrWhiteSpace(cargo.SyncId))
-            {
-                AddConflict(result, "Kargo kuyruğu", cargo.Id.ToString(CultureInfo.InvariantCulture), "Kargo öğesi için kalıcı eşitleme kimliği bulunamadı; aktarılmadı.");
-                continue;
-            }
-            var registrationId = cargo.DesktopRegistrationId;
-            if (registrationId is null && cargo.RegistrationId > 0)
-                registrationId = await FindLedgerIdAsync(db, package.DeviceId, "Registration", cargo.RegistrationId.ToString(CultureInfo.InvariantCulture), cancellationToken);
-            if (registrationId is null || !await db.Registrations.AnyAsync(x => x.Id == registrationId.Value, cancellationToken))
-            {
-                AddConflict(result, "Kargo kuyruğu", cargo.SyncId, "Bağlı tur kaydı masaüstünde bulunamadı; kargo öğesi aktarılmadı.");
-                continue;
-            }
-            var queueCommand = db.Database.GetDbConnection().CreateCommand();
-            var cargoSyncId = cargo.SyncId;
-            var cargoIsDeleted = cargo.IsDeleted;
-            await using (queueCommand)
-            {
-                queueCommand.Transaction = db.Database.CurrentTransaction?.GetDbTransaction();
-                queueCommand.CommandText = "INSERT INTO MobileSyncCargoQueue (DeviceId, SyncId, DesktopQueueId, RegistrationId, FullName, Tc, Phone, Address, TourType, Period, GroupType, DaysCount, Quantity, AddedAt, Printed, LastModifiedUtc, IsDeleted) VALUES ($deviceId, $syncId, $queueId, $registrationId, $fullName, $tc, $phone, $address, $tourType, $period, $groupType, $daysCount, $quantity, $addedAt, $printed, $modified, $deleted) ON CONFLICT(DeviceId, SyncId) DO UPDATE SET DesktopQueueId=excluded.DesktopQueueId, RegistrationId=excluded.RegistrationId, FullName=excluded.FullName, Tc=excluded.Tc, Phone=excluded.Phone, Address=excluded.Address, TourType=excluded.TourType, Period=excluded.Period, GroupType=excluded.GroupType, DaysCount=excluded.DaysCount, Quantity=excluded.Quantity, AddedAt=excluded.AddedAt, Printed=excluded.Printed, LastModifiedUtc=excluded.LastModifiedUtc, IsDeleted=excluded.IsDeleted;";
-                AddParameter(queueCommand, "$deviceId", package.DeviceId);
-                AddParameter(queueCommand, "$syncId", cargo.SyncId);
-                AddParameter(queueCommand, "$queueId", (object?)cargo.DesktopQueueId ?? DBNull.Value);
-                AddParameter(queueCommand, "$registrationId", registrationId.Value);
-                AddParameter(queueCommand, "$fullName", cargo.FullName);
-                AddParameter(queueCommand, "$tc", cargo.Tc);
-                AddParameter(queueCommand, "$phone", cargo.Phone);
-                AddParameter(queueCommand, "$address", cargo.Address);
-                AddParameter(queueCommand, "$tourType", cargo.TourType);
-                AddParameter(queueCommand, "$period", cargo.Period);
-                AddParameter(queueCommand, "$groupType", cargo.GroupType);
-                AddParameter(queueCommand, "$daysCount", cargo.DaysCount);
-                AddParameter(queueCommand, "$quantity", cargo.Quantity);
-                AddParameter(queueCommand, "$addedAt", cargo.AddedAt.ToString("O", CultureInfo.InvariantCulture));
-                AddParameter(queueCommand, "$printed", cargo.Printed ? 1 : 0);
-                AddParameter(queueCommand, "$modified", cargo.LastModifiedUtc.ToString("O", CultureInfo.InvariantCulture));
-                AddParameter(queueCommand, "$deleted", cargo.IsDeleted ? 1 : 0);
-                await queueCommand.ExecuteNonQueryAsync(cancellationToken);
-            }
-            var cargoItem = new PrintQueueItem
-            {
-                SyncId = cargoSyncId, SyncDeviceId = package.DeviceId, DesktopQueueId = cargo.DesktopQueueId,
-                RegistrationId = registrationId.Value, FullName = cargo.FullName, Tc = cargo.Tc,
-                Phone = cargo.Phone, Address = cargo.Address, TourType = cargo.TourType, Period = cargo.Period,
-                GroupType = cargo.GroupType, DaysCount = cargo.DaysCount, Quantity = cargo.Quantity,
-                AddedAt = cargo.AddedAt, Printed = cargo.Printed, LastModifiedUtc = cargo.LastModifiedUtc,
-                IsDeleted = cargoIsDeleted
-            };
-            var dispatcher = System.Windows.Application.Current?.Dispatcher;
-            if (dispatcher is null || dispatcher.CheckAccess())
-                CargoPrintQueue.Instance.ApplySyncItem(cargoItem);
-            else
-                await dispatcher.InvokeAsync(() => CargoPrintQueue.Instance.ApplySyncItem(cargoItem));
         }
 
         foreach (var setting in package.Settings)
@@ -792,42 +732,6 @@ public sealed class MobileSyncServer : IDisposable
                 ? parsedRegistrationId
                 : package.Registrations.FirstOrDefault(x => x.DesktopRegistrationId == payment.DesktopRegistrationId)?.Id ?? 0;
         }
-        var cargoRows = await db.Database.SqlQueryRaw<CargoQueueSyncRow>("SELECT DeviceId, SyncId, DesktopQueueId, RegistrationId, FullName, Tc, Phone, Address, TourType, Period, GroupType, DaysCount, Quantity, AddedAt, Printed, LastModifiedUtc, IsDeleted FROM MobileSyncCargoQueue").ToListAsync(cancellationToken);
-        foreach (var cargo in cargoRows)
-        {
-            var sourceRegistrationId = await FindLedgerSourceIdAsync(db, package.DeviceId, "Registration", cargo.RegistrationId, cancellationToken);
-            var mobileRegistrationId = int.TryParse(sourceRegistrationId, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedRegistrationId)
-                ? parsedRegistrationId
-                : package.Registrations.FirstOrDefault(x => x.DesktopRegistrationId == cargo.RegistrationId)?.Id ?? 0;
-            result.CargoQueue.Add(new MobileCargoQueueDto
-            {
-                Id = 0, SyncId = cargo.SyncId, DesktopQueueId = cargo.DesktopQueueId ?? cargo.RegistrationId,
-                RegistrationId = mobileRegistrationId, DesktopRegistrationId = cargo.RegistrationId,
-                FullName = cargo.FullName, Tc = cargo.Tc, Phone = cargo.Phone, Address = cargo.Address,
-                TourType = cargo.TourType, Period = cargo.Period, GroupType = cargo.GroupType, DaysCount = cargo.DaysCount,
-                Quantity = cargo.Quantity, AddedAt = cargo.AddedAt, Printed = cargo.Printed,
-                LastModifiedUtc = cargo.LastModifiedUtc, IsDeleted = cargo.IsDeleted
-            });
-        }
-        foreach (var item in CargoPrintQueue.Instance.Items.Where(x => !x.IsDeleted))
-        {
-            var registrationSourceId = await FindLedgerSourceIdAsync(db, package.DeviceId, "Registration", item.RegistrationId, cancellationToken);
-            var mobileRegistrationId = int.TryParse(registrationSourceId, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedRegistrationId)
-                ? parsedRegistrationId
-                : package.Registrations.FirstOrDefault(x => x.DesktopRegistrationId == item.RegistrationId)?.Id ?? 0;
-            var cargoDto = new MobileCargoQueueDto
-            {
-                Id = 0, SyncId = item.SyncId, DesktopQueueId = item.DesktopQueueId ?? item.RegistrationId,
-                RegistrationId = mobileRegistrationId, DesktopRegistrationId = item.RegistrationId,
-                FullName = item.FullName, Tc = item.Tc, Phone = item.Phone, Address = item.Address,
-                TourType = item.TourType, Period = item.Period, GroupType = item.GroupType, DaysCount = item.DaysCount,
-                Quantity = item.Quantity, AddedAt = item.AddedAt, Printed = item.Printed,
-                LastModifiedUtc = item.LastModifiedUtc, IsDeleted = item.IsDeleted
-            };
-            var existingCargo = result.CargoQueue.FindIndex(x => x.SyncId == item.SyncId);
-            if (existingCargo >= 0) result.CargoQueue[existingCargo] = cargoDto;
-            else result.CargoQueue.Add(cargoDto);
-        }
         var desktopRooms = await db.RoomAllocations.AsNoTracking().Include(x => x.Hotel).Include(x => x.Occupants)
             .ToListAsync(cancellationToken);
         foreach (var room in desktopRooms)
@@ -879,27 +783,6 @@ public sealed class MobileSyncServer : IDisposable
     {
         var now = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
         await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE Registrations SET PaidAmount = (SELECT COALESCE(SUM(AmountInRegistrationCurrency), 0) FROM Payments WHERE RegistrationId = {registrationId}), RemainingDebt = TourPrice - (SELECT COALESCE(SUM(AmountInRegistrationCurrency), 0) FROM Payments WHERE RegistrationId = {registrationId}), LastModifiedUtc = {now} WHERE Id = {registrationId};", cancellationToken);
-    }
-
-    private sealed class CargoQueueSyncRow
-    {
-        public string DeviceId { get; set; } = string.Empty;
-        public string SyncId { get; set; } = string.Empty;
-        public int? DesktopQueueId { get; set; }
-        public int RegistrationId { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string Tc { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
-        public string Address { get; set; } = string.Empty;
-        public string TourType { get; set; } = string.Empty;
-        public string Period { get; set; } = string.Empty;
-        public string GroupType { get; set; } = string.Empty;
-        public string DaysCount { get; set; } = string.Empty;
-        public int Quantity { get; set; }
-        public DateTime AddedAt { get; set; }
-        public bool Printed { get; set; }
-        public DateTime LastModifiedUtc { get; set; }
-        public bool IsDeleted { get; set; }
     }
 
     private static string? GetClientIdForPerson(MobileSyncPackage package, int localId) => package.PersonLocalIds.TryGetValue(localId, out var id) ? id : null;
