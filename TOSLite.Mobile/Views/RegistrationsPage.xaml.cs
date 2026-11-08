@@ -105,7 +105,14 @@ public partial class RegistrationsPage : ContentPage
 
     private async void OnNewClicked(object? sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync(nameof(RegistrationFormPage));
+        try
+        {
+            await Shell.Current.GoToAsync(nameof(RegistrationFormPage));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Hata", $"Tur kayıt formu açılamadı: {ex.Message}", "Tamam");
+        }
     }
 
     private async void OnEditClicked(object? sender, EventArgs e)
