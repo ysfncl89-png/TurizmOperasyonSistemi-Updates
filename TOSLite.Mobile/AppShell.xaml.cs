@@ -17,12 +17,22 @@ namespace TOSLite.Mobile
             tabBar.Items.Add(CreateTab("Daha Fazla+", "more", "settings.svg", () => new MorePage()));
             Items.Add(tabBar);
 
-            Routing.RegisterRoute(nameof(RegistrationFormPage), typeof(RegistrationFormPage));
-            Routing.RegisterRoute(nameof(RoomingPage), typeof(RoomingPage));
-            Routing.RegisterRoute(nameof(MobileSyncPage), typeof(MobileSyncPage));
-            Routing.RegisterRoute("lists", typeof(ListsPage));
-            Routing.RegisterRoute("settings", typeof(SettingsPage));
-            Routing.RegisterRoute("cargo-documents", typeof(CargoDocumentsPage));
+            RegisterRoute<RegistrationFormPage>(services, nameof(RegistrationFormPage));
+            RegisterRoute<RoomingPage>(services, nameof(RoomingPage));
+            RegisterRoute<MobileSyncPage>(services, nameof(MobileSyncPage));
+            RegisterRoute<ListsPage>(services, "lists");
+            RegisterRoute<SettingsPage>(services, "settings");
+            RegisterRoute<CargoDocumentsPage>(services, "cargo-documents");
+        }
+
+        private static void RegisterRoute<TPage>(IServiceProvider services, string route) where TPage : Page =>
+            Routing.RegisterRoute(route, new ServiceRouteFactory<TPage>(services));
+
+        private sealed class ServiceRouteFactory<TPage>(IServiceProvider services) : RouteFactory where TPage : Page
+        {
+            public override Element GetOrCreate() => services.GetRequiredService<TPage>();
+
+            public override Element GetOrCreate(IServiceProvider routeServices) => services.GetRequiredService<TPage>();
         }
 
         private static Tab CreateTab(string title, string route, string icon, Func<Page> pageFactory)

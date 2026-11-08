@@ -49,15 +49,22 @@ namespace TOSLite.Mobile
             await NavigateFromCardAsync(sender, nameof(MobileSyncPage));
         }
 
-        private static async Task NavigateFromCardAsync(object? sender, string route)
+        private async Task NavigateFromCardAsync(object? sender, string route)
         {
-            if (sender is TapGestureRecognizer { Parent: VisualElement card })
+            try
             {
-                await card.ScaleTo(0.985, 70, Easing.CubicOut);
-                await card.ScaleTo(1, 90, Easing.CubicIn);
-            }
+                if (sender is TapGestureRecognizer { Parent: VisualElement card })
+                {
+                    await card.ScaleTo(0.985, 70, Easing.CubicOut);
+                    await card.ScaleTo(1, 90, Easing.CubicIn);
+                }
 
-            await Shell.Current.GoToAsync(route);
+                await Shell.Current.GoToAsync(route);
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlertAsync("Hata", $"Sayfa açılamadı: {ex.Message}", "Tamam");
+            }
         }
     }
 }
