@@ -1,5 +1,6 @@
 ﻿using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Models;
+using TOSLite.Mobile.Services;
 
 namespace TOSLite.Mobile.Views;
 
@@ -56,7 +57,7 @@ public partial class SettingsPage : ContentPage
     {
         var query = SearchEntry?.Text?.Trim() ?? string.Empty;
         SettingsCards.Children.Clear();
-        foreach (var category in Categories.Where(x => string.IsNullOrWhiteSpace(query) || x.Title.Contains(query, StringComparison.CurrentCultureIgnoreCase)))
+        foreach (var category in Categories.Where(x => string.IsNullOrWhiteSpace(query) || MobileSearchText.Contains(x.Title, query)))
         {
             var isSelected = _selectedType == CanonicalType(category.Type);
             var button = new Button

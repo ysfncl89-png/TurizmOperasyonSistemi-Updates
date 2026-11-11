@@ -1,5 +1,6 @@
 using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Models;
+using TOSLite.Mobile.Services;
 
 namespace TOSLite.Mobile.Views;
 
@@ -77,10 +78,10 @@ public partial class RegistrationsPage : ContentPage
         if (!string.IsNullOrWhiteSpace(query))
         {
             filtered = filtered.Where(x =>
-                x.PersonName.Contains(query, StringComparison.OrdinalIgnoreCase)
-                || x.TourType.Contains(query, StringComparison.OrdinalIgnoreCase)
-                || x.Period.Contains(query, StringComparison.OrdinalIgnoreCase)
-                || x.GroupType.Contains(query, StringComparison.OrdinalIgnoreCase));
+                MobileSearchText.Contains(x.PersonName, query)
+                || MobileSearchText.Contains(x.TourType, query)
+                || MobileSearchText.Contains(x.Period, query)
+                || MobileSearchText.Contains(x.GroupType, query));
         }
 
         var results = filtered.ToList();

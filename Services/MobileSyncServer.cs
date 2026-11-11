@@ -156,6 +156,21 @@ public sealed class MobileSyncServer : IDisposable
             return JsonResponse(200, pendingExport);
         }
 
+        if (request.Method == "POST" && request.Path == "/snapshot")
+        {
+            var deviceRequest = JsonSerializer.Deserialize<MobileSyncDeviceRequest>(request.Body, JsonOptions);
+            if (deviceRequest is null || string.IsNullOrWhiteSpace(request.Authorization) ||
+                !await IsDeviceAuthorizedAsync(deviceRequest.DeviceId, HashToken(request.Authorization), _shutdown.Token))
+                return JsonResponse(401, new { error = "Cihaz doğrulanamadı. Masaüstü QR kodunu yeniden okutun." });
+            await _importLock.WaitAsync(_shutdown.Token);
+            try
+            {
+                var snapshot = await ImportAsync(new MobileSyncPackage { DeviceId = deviceRequest.DeviceId }, _shutdown.Token);
+                return JsonResponse(200, snapshot);
+            }
+            finally { _importLock.Release(); }
+        }
+
         if (request.Method == "POST" && request.Path == "/complete")
         {
             var deviceRequest = JsonSerializer.Deserialize<MobileSyncDeviceRequest>(request.Body, JsonOptions);

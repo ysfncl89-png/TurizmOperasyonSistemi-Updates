@@ -661,7 +661,7 @@ public partial class ListsPage : ContentPage
 
     private static bool Matches(string value, string? selected) => selected == null || string.Equals(value, selected, StringComparison.CurrentCultureIgnoreCase);
 
-    private static bool Contains(string? value, string query) => value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
+    private static bool Contains(string? value, string query) => MobileSearchText.Contains(value, query);
 
     private static string ValueOrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "Belirtilmedi" : value.Trim();
 

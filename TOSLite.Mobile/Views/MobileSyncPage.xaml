@@ -25,7 +25,9 @@
                     <Button x:Name="CancelManualPairButton" Text="Vazgeç" Style="{StaticResource SecondaryButton}" Clicked="OnCancelManualPairClicked" IsVisible="False" />
                 </VerticalStackLayout>
             </Border>
-            <Button x:Name="SyncButton" Text="Mobilden Masaüstü Programa Eşitle" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
+            <Button x:Name="MobileFirstButton" Text="Önce Mobilden Masaüstüne Eşitle" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
+            <Button x:Name="DesktopFirstButton" Text="Önce Masaüstünden Mobile Eşitle" BackgroundColor="{StaticResource Warning}" TextColor="White" Clicked="OnDesktopFirstClicked" IsVisible="False" />
+            <Button x:Name="SyncButton" Text="Mobilden Masaüstüne Devam Et" BackgroundColor="{StaticResource Primary}" TextColor="White" Clicked="OnSyncClicked" IsVisible="False" />
             <Button x:Name="DesktopSyncButton" Text="Masaüstü Programından Mobil Programa Eşitle" BackgroundColor="{StaticResource Warning}" TextColor="White" Clicked="OnDesktopSyncClicked" IsVisible="False" />
             <Border x:Name="ResultPanel" IsVisible="False" Style="{StaticResource SectionCardTeal}" Stroke="{StaticResource Success}" StrokeShape="RoundRectangle 20" Padding="18">
                 <VerticalStackLayout Spacing="12">
@@ -47,7 +49,7 @@
                 </VerticalStackLayout>
             </Border>
             <Button x:Name="UnpairButton" Text="Eşleşmeyi Kaldır" Style="{StaticResource SecondaryButton}" Clicked="OnUnpairClicked" IsVisible="False" />
-            <Label x:Name="ReportLabel" Text="Eşitleme iki aşamalıdır: önce mobil veriler masaüstüne aktarılır, ardından masaüstü verileri mobilde uygulanır." TextColor="{StaticResource TextSecondary}" />
+            <Label x:Name="ReportLabel" Text="Eşleştirmeden sonra eşitlemenin hangi cihazdan başlayacağını seçin. Her iki seçenek de iki yönlü eşitlemeyi tamamlar." TextColor="{StaticResource TextSecondary}" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

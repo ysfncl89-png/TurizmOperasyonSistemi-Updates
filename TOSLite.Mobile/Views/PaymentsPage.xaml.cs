@@ -58,10 +58,10 @@ public partial class PaymentsPage : ContentPage
     {
         var query = SearchEntry.Text?.Trim() ?? string.Empty;
         var filtered = _allRegistrations.Where(x => string.IsNullOrWhiteSpace(query)
-            || x.PersonName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
-            || x.TourType.Contains(query, StringComparison.CurrentCultureIgnoreCase)
-            || x.Period.Contains(query, StringComparison.CurrentCultureIgnoreCase)
-            || x.GroupType.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            || MobileSearchText.Contains(x.PersonName, query)
+            || MobileSearchText.Contains(x.TourType, query)
+            || MobileSearchText.Contains(x.Period, query)
+            || MobileSearchText.Contains(x.GroupType, query)).ToList();
         RegistrationPicker.ItemsSource = filtered.Select(x => new PaymentRegistrationOption { Registration = x }).ToList();
         if (_selected != null)
             RegistrationPicker.SelectedItem = ((IEnumerable<PaymentRegistrationOption>)RegistrationPicker.ItemsSource).FirstOrDefault(x => x.Registration.Id == _selected.Id);
@@ -375,10 +375,10 @@ public partial class PaymentsPage : ContentPage
         if (string.IsNullOrWhiteSpace(query))
             return _allRegistrations.ToList();
         return _allRegistrations.Where(x =>
-            x.PersonName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
-            || x.TourType.Contains(query, StringComparison.CurrentCultureIgnoreCase)
-            || x.Period.Contains(query, StringComparison.CurrentCultureIgnoreCase)
-            || x.GroupType.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            MobileSearchText.Contains(x.PersonName, query)
+            || MobileSearchText.Contains(x.TourType, query)
+            || MobileSearchText.Contains(x.Period, query)
+            || MobileSearchText.Contains(x.GroupType, query)).ToList();
     }
 
     private (string Extension, string ContentType, byte[] Bytes) CreateExport(string format, string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyDictionary<string, string>> rows) => format switch

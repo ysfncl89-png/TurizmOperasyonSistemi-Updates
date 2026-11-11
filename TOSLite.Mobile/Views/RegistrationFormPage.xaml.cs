@@ -141,7 +141,7 @@ public partial class RegistrationFormPage : ContentPage
     }
 
     private static string NormalizePersonSearch(string? value) =>
-        new((value ?? string.Empty).Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+        MobileSearchText.Normalize(new string((value ?? string.Empty).Where(char.IsLetterOrDigit).ToArray()));
 
     private void OnPersonSelected(object? sender, SelectionChangedEventArgs e)
     {
@@ -381,13 +381,6 @@ public partial class RegistrationFormPage : ContentPage
             SetStep(8);
             return false;
         }
-        if (paid > total)
-        {
-            await ShowValidationAsync("Ödenen tutar toplam fiyattan büyük olamaz.");
-            SetStep(8);
-            return false;
-        }
-
         _record.TotalPrice = total;
         _record.PaidAmount = paid;
         _record.RemainingDebt = total - paid;
@@ -456,7 +449,7 @@ public partial class RegistrationFormPage : ContentPage
             SetStep(!_personItems.Any(x => x.Id == _selectedPersonId && x.IsActive) ? 1 : 2);
             return;
         }
-        if (!TryReadAmounts(out var total, out var paid) || total < 0 || paid < 0 || paid > total)
+        if (!TryReadAmounts(out var total, out var paid) || total < 0 || paid < 0)
         {
             await ShowValidationAsync("Fiyat ve ödeme değerlerini kontrol edin.");
             SetStep(8);

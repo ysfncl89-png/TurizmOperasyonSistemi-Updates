@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using TOSLite.Mobile.Data;
 using TOSLite.Mobile.Models;
+using TOSLite.Mobile.Services;
 
 namespace TOSLite.Mobile.Views;
 
@@ -141,9 +142,9 @@ public partial class RoomingPage : ContentPage
         CandidateEmptyLabel.IsVisible = _allCandidates.Count == 0 || !string.IsNullOrWhiteSpace(search);
         foreach (var candidate in _allCandidates.Where(candidate =>
                      string.IsNullOrWhiteSpace(search) ||
-                     candidate.PersonName.Contains(search, StringComparison.CurrentCultureIgnoreCase) ||
-                     candidate.RoomType.Contains(search, StringComparison.CurrentCultureIgnoreCase) ||
-                     candidate.PersonId.ToString().Contains(search, StringComparison.CurrentCultureIgnoreCase)))
+                     MobileSearchText.Contains(candidate.PersonName, search) ||
+                     MobileSearchText.Contains(candidate.RoomType, search) ||
+                     MobileSearchText.Contains(candidate.PersonId.ToString(), search)))
         {
             _candidates.Add(candidate);
         }

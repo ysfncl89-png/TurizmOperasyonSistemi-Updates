@@ -27,14 +27,19 @@ public partial class MobileSyncPage : ContentPage
 
     private void UpdatePairingUi()
     {
-        SyncButton.IsVisible = _syncService.IsPaired && !_syncService.IsAwaitingDesktopSync;
+        var canChooseDirection = _syncService.IsPaired && !_syncService.IsAwaitingDesktopSync && !_syncService.IsAwaitingMobileSync;
+        MobileFirstButton.IsVisible = canChooseDirection;
+        DesktopFirstButton.IsVisible = canChooseDirection;
+        SyncButton.IsVisible = _syncService.IsPaired && _syncService.IsAwaitingMobileSync;
         DesktopSyncButton.IsVisible = _syncService.IsPaired && _syncService.IsAwaitingDesktopSync;
         UnpairButton.IsVisible = _syncService.IsPaired;
         ChangePairingButton.IsVisible = _syncService.IsPaired && !_changingPairing;
         ManualPairPanel.IsVisible = !_syncService.IsPaired || _changingPairing;
         ScanButton.IsVisible = !_changingPairing;
         CameraView.IsVisible = !_changingPairing;
-        SyncButton.IsVisible = _syncService.IsPaired && !_syncService.IsAwaitingDesktopSync && !_changingPairing;
+        MobileFirstButton.IsVisible = canChooseDirection && !_changingPairing;
+        DesktopFirstButton.IsVisible = canChooseDirection && !_changingPairing;
+        SyncButton.IsVisible = _syncService.IsPaired && _syncService.IsAwaitingMobileSync && !_changingPairing;
         DesktopSyncButton.IsVisible = _syncService.IsPaired && _syncService.IsAwaitingDesktopSync && !_changingPairing;
         UnpairButton.IsVisible = _syncService.IsPaired && !_changingPairing;
         CancelManualPairButton.IsVisible = _changingPairing;
@@ -42,7 +47,9 @@ public partial class MobileSyncPage : ContentPage
         if (_syncService.IsPaired)
             StatusLabel.Text = _syncService.IsAwaitingDesktopSync
                 ? "Mobil veriler masaüstüne aktarıldı. Eşitlemeyi tamamlamak için kırmızı düğmeye dokunun."
-                : $"Eşleştirildi: {_syncService.PairedAddress}. İlk aşamayı başlatabilirsiniz.";
+                : _syncService.IsAwaitingMobileSync
+                    ? "Masaüstü verileri mobil uygulamaya aktarıldı. Eşitlemeye devam etmek için mavi düğmeye dokunun."
+                    : $"Eşleştirildi: {_syncService.PairedAddress}. Eşitlemenin başlangıç yönünü seçin.";
     }
 
     private void OnChangePairingClicked(object? sender, EventArgs e)
@@ -56,6 +63,8 @@ public partial class MobileSyncPage : ContentPage
         CameraView.IsVisible = false;
         SyncButton.IsVisible = false;
         DesktopSyncButton.IsVisible = false;
+        MobileFirstButton.IsVisible = false;
+        DesktopFirstButton.IsVisible = false;
         UnpairButton.IsVisible = false;
         CancelManualPairButton.IsVisible = true;
         StatusLabel.Text = "Masaüstü eşleştirme metnini yapıştırın. İşlem başarılı olana kadar mevcut eşleşme korunur.";
@@ -101,13 +110,12 @@ public partial class MobileSyncPage : ContentPage
             {
                 StatusLabel.Text = "Masaüstüyle güvenli eşleştirme yapılıyor...";
                 await _syncService.PairAsync(text);
-                SyncButton.IsVisible = !_syncService.IsAwaitingDesktopSync;
                 UnpairButton.IsVisible = true;
                 ManualPairPanel.IsVisible = false;
                 _changingPairing = false;
                 ChangePairingButton.IsVisible = true;
                 ScanButton.IsEnabled = true;
-                StatusLabel.Text = $"Eşleştirme tamamlandı: {_syncService.PairedAddress}. Senkronizasyon için Şimdi Eşitle'ye dokunun.";
+                UpdatePairingUi();
             }
             catch (Exception ex)
             {
@@ -148,12 +156,11 @@ public partial class MobileSyncPage : ContentPage
         {
             StatusLabel.Text = "Masaüstüyle güvenli eşleştirme yapılıyor...";
             await _syncService.PairAsync(text);
-            SyncButton.IsVisible = !_syncService.IsAwaitingDesktopSync;
             UnpairButton.IsVisible = true;
             ManualPairPanel.IsVisible = false;
             _changingPairing = false;
             ChangePairingButton.IsVisible = true;
-            StatusLabel.Text = $"Eşleştirme tamamlandı: {_syncService.PairedAddress}. Senkronizasyon için Şimdi Eşitle'ye dokunun.";
+            UpdatePairingUi();
         }
         catch (Exception ex)
         {
@@ -169,6 +176,8 @@ public partial class MobileSyncPage : ContentPage
     private async void OnSyncClicked(object? sender, EventArgs e)
     {
         SyncButton.IsEnabled = false;
+        MobileFirstButton.IsEnabled = false;
+        DesktopFirstButton.IsEnabled = false;
         try
         {
             ResultPanel.IsVisible = false;
@@ -187,8 +196,7 @@ public partial class MobileSyncPage : ContentPage
                 : string.Empty;
             ConflictSummary.IsVisible = hasConflicts;
             ResultPanel.IsVisible = true;
-            SyncButton.IsVisible = false;
-            DesktopSyncButton.IsVisible = true;
+            UpdatePairingUi();
             StatusLabel.Text = hasConflicts
                 ? "Bazı kayıtlar çözümlenemedi. Masaüstü raporunu inceledikten sonra kırmızı düğmeyle devam edin."
                 : "Mobilden masaüstüne aktarım tamamlandı. Şimdi kırmızı düğmeye dokunarak eşitlemeyi bitirin.";
@@ -199,7 +207,49 @@ public partial class MobileSyncPage : ContentPage
             StatusLabel.Text = "Mobilden masaüstüne eşitleme tamamlanamadı: " + errorDetails;
             await DisplayAlertAsync("Eşitleme hatası", errorDetails, "Tamam");
         }
-        finally { SyncButton.IsEnabled = true; }
+        finally
+        {
+            SyncButton.IsEnabled = true;
+            MobileFirstButton.IsEnabled = true;
+            DesktopFirstButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnDesktopFirstClicked(object? sender, EventArgs e)
+    {
+        DesktopFirstButton.IsEnabled = false;
+        MobileFirstButton.IsEnabled = false;
+        try
+        {
+            ResultPanel.IsVisible = false;
+            FinalSyncMessage.IsVisible = false;
+            StatusLabel.Text = "Masaüstü verileri yedek alınarak mobil uygulamaya aktarılıyor...";
+            var result = await _syncService.SyncDesktopFirstAsync();
+            ResultIcon.Text = "✓";
+            ResultIcon.TextColor = Color.FromArgb("#20A464");
+            ResultTitle.Text = "Masaüstü verileri mobil uygulamaya aktarıldı";
+            ResultTitle.TextColor = Color.FromArgb("#176B43");
+            ResultSummary.Text = $"Kişi: {result.Persons.Count(x => !x.IsDeleted)}, tur kaydı: {result.Registrations.Count}, ayar: {result.Settings.Count}, oda yerleşimi: {result.Rooming.Count(x => !x.IsDeleted)}";
+            ImportedItemsView.ItemsSource = result.ImportedItems;
+            ConflictSummary.IsVisible = false;
+            FinalSyncMessage.Text = "Şimdi mavi düğmeye dokunarak mobil verileri masaüstüne aktarın.";
+            FinalSyncMessage.TextColor = Color.FromArgb("#176B43");
+            FinalSyncMessage.IsVisible = true;
+            ResultPanel.IsVisible = true;
+            UpdatePairingUi();
+            StatusLabel.Text = "İlk aşama tamamlandı. Mobil verileri masaüstüne aktarmak için devam edin.";
+        }
+        catch (Exception ex)
+        {
+            var errorDetails = GetExceptionDetails(ex);
+            StatusLabel.Text = "Masaüstünden mobil uygulamaya ilk aktarım başarısız oldu.";
+            await DisplayAlertAsync("Eşitleme hatası", errorDetails, "Tamam");
+        }
+        finally
+        {
+            DesktopFirstButton.IsEnabled = true;
+            MobileFirstButton.IsEnabled = true;
+        }
     }
 
     private async void OnDesktopSyncClicked(object? sender, EventArgs e)
@@ -222,7 +272,7 @@ public partial class MobileSyncPage : ContentPage
             FinalSyncMessage.Text = "Her iki cihaz da eşitlendi. Mobil Uygulamadaki verileriniz Masaüstü Programınızdaki verilerle aynı.";
             FinalSyncMessage.IsVisible = true;
             ResultPanel.IsVisible = true;
-            DesktopSyncButton.IsVisible = false;
+            UpdatePairingUi();
             StatusLabel.Text = "Eşitleme başarıyla tamamlandı.";
         }
         catch (Exception ex)
@@ -250,9 +300,7 @@ public partial class MobileSyncPage : ContentPage
         var confirm = await DisplayAlertAsync("Eşleşmeyi kaldır", "Bu telefonun kayıtlı masaüstü bağlantısı silinsin mi?", "Kaldır", "Vazgeç");
         if (!confirm) return;
         _syncService.Unpair();
-        SyncButton.IsVisible = false;
-        DesktopSyncButton.IsVisible = false;
-        UnpairButton.IsVisible = false;
+        UpdatePairingUi();
         StatusLabel.Text = "Eşleşme kaldırıldı. Yeniden bağlanmak için masaüstü QR kodunu okutun.";
     }
 

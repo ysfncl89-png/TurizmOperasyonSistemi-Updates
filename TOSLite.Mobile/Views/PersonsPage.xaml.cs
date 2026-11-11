@@ -159,7 +159,7 @@ public partial class PersonsPage : ContentPage
             return string.Empty;
         }
 
-        return string.Join(" ", value.Trim().ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        return MobileSearchText.Normalize(string.Join(" ", value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries)));
     }
 
     private static string Digits(string? value) =>

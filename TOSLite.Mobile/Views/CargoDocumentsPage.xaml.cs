@@ -97,7 +97,7 @@ public partial class CargoDocumentsPage : ContentPage
         var tour = SelectedFilter(TourFilterPicker); var period = SelectedFilter(PeriodFilterPicker); var group = SelectedFilter(GroupFilterPicker);
         CandidatesCollection.ItemsSource = _allCandidates.Where(x =>
             (tour == "Tümü" || x.TourType == tour) && (period == "Tümü" || x.Period == period) && (group == "Tümü" || x.GroupType == group) &&
-            (string.IsNullOrWhiteSpace(query) || x.PersonName.Contains(query, StringComparison.CurrentCultureIgnoreCase) || x.TourSummary.Contains(query, StringComparison.CurrentCultureIgnoreCase) || x.PhoneNumber.Contains(query, StringComparison.CurrentCultureIgnoreCase))).ToList();
+            (string.IsNullOrWhiteSpace(query) || MobileSearchText.Contains(x.PersonName, query) || MobileSearchText.Contains(x.TourSummary, query) || MobileSearchText.Contains(x.PhoneNumber, query))).ToList();
     }
 
     private static string SelectedFilter(Picker picker) => picker.SelectedItem?.ToString() ?? "Tümü";
@@ -192,7 +192,7 @@ public partial class CargoDocumentsPage : ContentPage
     {
         var query = QueueSearchEntry.Text?.Trim() ?? string.Empty;
         var items = await _queue.GetQueueAsync();
-        QueueCollection.ItemsSource = items.Where(x => string.IsNullOrWhiteSpace(query) || x.DisplayTitle.Contains(query, StringComparison.CurrentCultureIgnoreCase) || x.Phone.Contains(query, StringComparison.CurrentCultureIgnoreCase) || x.Address.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToList();
+        QueueCollection.ItemsSource = items.Where(x => string.IsNullOrWhiteSpace(query) || MobileSearchText.Contains(x.DisplayTitle, query) || MobileSearchText.Contains(x.Phone, query) || MobileSearchText.Contains(x.Address, query)).ToList();
     }
 
     private async void OnQueueSearchChanged(object? sender, TextChangedEventArgs e) => await RefreshQueueAsync();

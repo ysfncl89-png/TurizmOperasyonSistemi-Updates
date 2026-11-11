@@ -39,6 +39,7 @@ public sealed class MobileSyncService
     public bool IsPaired => Preferences.Default.Get("MobileSync.Paired", false) && Preferences.Default.ContainsKey("MobileSync.Url");
     public string PairedAddress => Preferences.Default.Get("MobileSync.Url", string.Empty);
     public bool IsAwaitingDesktopSync => Preferences.Default.Get("MobileSync.AwaitingDesktopSync", false);
+    public bool IsAwaitingMobileSync => Preferences.Default.Get("MobileSync.AwaitingMobileSync", false);
 
     public async Task PairAsync(string qrText, CancellationToken cancellationToken = default)
     {
@@ -58,6 +59,7 @@ public sealed class MobileSyncService
         Preferences.Default.Set("MobileSync.DeviceId", deviceId);
         Preferences.Default.Set("MobileSync.Paired", true);
         Preferences.Default.Set("MobileSync.AwaitingDesktopSync", false);
+        Preferences.Default.Set("MobileSync.AwaitingMobileSync", false);
     }
 
     public async Task<MobileSyncResultDto> SyncAsync(CancellationToken cancellationToken = default)
@@ -92,6 +94,7 @@ public sealed class MobileSyncService
             var result = JsonSerializer.Deserialize<MobileSyncResultDto>(responseBody, JsonOptions)
                 ?? throw new InvalidOperationException("Masaüstünden boş eşitleme yanıtı geldi. Masaüstü raporunu kontrol edin.");
             Preferences.Default.Set("MobileSync.AwaitingDesktopSync", true);
+            Preferences.Default.Set("MobileSync.AwaitingMobileSync", false);
             return result;
         }
         catch (HttpRequestException ex)
@@ -136,6 +139,50 @@ public sealed class MobileSyncService
                 ?? throw new InvalidOperationException("Masaüstünden boş veri paketi geldi.");
             await ApplyDesktopSnapshotAsync(result, cancellationToken, CompleteDesktopSyncAsync);
             Preferences.Default.Set("MobileSync.AwaitingDesktopSync", false);
+            return result;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException("Masaüstüne bağlanılamadı. Masaüstü eşitleme penceresini açık tutun ve aynı Wi-Fi ağında olduğunuzu kontrol edin.", ex);
+        }
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new InvalidOperationException("Masaüstünden zamanında yanıt alınamadı. Masaüstü eşitleme penceresinin açık olduğunu kontrol edin.", ex);
+        }
+    }
+
+    public async Task<MobileSyncResultDto> SyncDesktopFirstAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsPaired) throw new InvalidOperationException("Önce masaüstündeki QR kodu okutarak eşleştirin.");
+
+        var fingerprint = Preferences.Default.Get("MobileSync.Fingerprint", string.Empty);
+        using var client = CreatePinnedClient(fingerprint);
+        using var request = new HttpRequestMessage(HttpMethod.Post, Preferences.Default.Get("MobileSync.Url", string.Empty) + "snapshot");
+        request.Version = System.Net.HttpVersion.Version11;
+        request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
+        var token = await SecureStorage.Default.GetAsync("MobileSync.Token") ?? string.Empty;
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        request.Content = JsonContent.Create(new MobileSyncDeviceRequest
+        {
+            DeviceId = Preferences.Default.Get("MobileSync.DeviceId", string.Empty)
+        }, options: JsonOptions);
+
+        try
+        {
+            using var response = await client.SendAsync(request, cancellationToken);
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var serverError = TryReadServerError(responseBody);
+                throw new InvalidOperationException(serverError is null
+                    ? $"Masaüstü verileri alınamadı (HTTP {(int)response.StatusCode})."
+                    : serverError);
+            }
+            var result = JsonSerializer.Deserialize<MobileSyncResultDto>(responseBody, JsonOptions)
+                ?? throw new InvalidOperationException("Masaüstünden boş veri paketi geldi.");
+            await ApplyDesktopSnapshotAsync(result, cancellationToken, CompleteDesktopSyncAsync);
+            Preferences.Default.Set("MobileSync.AwaitingDesktopSync", false);
+            Preferences.Default.Set("MobileSync.AwaitingMobileSync", true);
             return result;
         }
         catch (HttpRequestException ex)
@@ -428,6 +475,7 @@ public sealed class MobileSyncService
         Preferences.Default.Remove("MobileSync.DeviceId");
         Preferences.Default.Remove("MobileSync.Paired");
         Preferences.Default.Remove("MobileSync.AwaitingDesktopSync");
+        Preferences.Default.Remove("MobileSync.AwaitingMobileSync");
         SecureStorage.Default.Remove("MobileSync.Token");
     }
 
