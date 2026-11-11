@@ -49,69 +49,69 @@
             </VerticalStackLayout>
 
             <Grid ColumnDefinitions="*,*" RowDefinitions="*,*,*" ColumnSpacing="12" RowSpacing="12">
-                <Border Grid.Row="0" Grid.Column="0" HeightRequest="158" Padding="14" BackgroundColor="{StaticResource SectionBlue}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
+                <Border Grid.Row="0" Grid.Column="0" HeightRequest="166" Padding="14" BackgroundColor="{StaticResource SectionBlue}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnPersonsClicked" /></Border.GestureRecognizers>
                     <Border.Shadow><Shadow Brush="#0F172A" Opacity="0.09" Radius="12" Offset="0,4" /></Border.Shadow>
                     <VerticalStackLayout Spacing="8" VerticalOptions="Center">
                         <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource PrimarySoft}">
                             <Image Source="people.svg" WidthRequest="23" HeightRequest="23" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Label Text="Kişiler" FontFamily="OpenSansSemibold" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Kişiler" FontFamily="OpenSansSemibold" FontSize="16" FontAttributes="Bold" CharacterSpacing="0.15" TextColor="{StaticResource TextPrimary}" />
                         <Label Text="Kişi kayıtlarını yönetin" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Border>
-                <Border Grid.Row="0" Grid.Column="1" HeightRequest="158" Padding="14" BackgroundColor="{StaticResource SectionViolet}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
+                <Border Grid.Row="0" Grid.Column="1" HeightRequest="166" Padding="14" BackgroundColor="{StaticResource SectionViolet}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnRegistrationsClicked" /></Border.GestureRecognizers>
                     <Border.Shadow><Shadow Brush="#0F172A" Opacity="0.09" Radius="12" Offset="0,4" /></Border.Shadow>
                     <VerticalStackLayout Spacing="8" VerticalOptions="Center">
                         <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource Tertiary}">
                             <Image Source="tour.svg" WidthRequest="23" HeightRequest="23" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Label Text="Tur Kayıtları" FontFamily="OpenSansSemibold" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Tur Kayıtları" FontFamily="OpenSansSemibold" FontSize="16" FontAttributes="Bold" CharacterSpacing="0.15" TextColor="{StaticResource TextPrimary}" />
                         <Label Text="Tur kayıtlarını inceleyin ve yönetin" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Border>
-                <Border Grid.Row="1" Grid.Column="0" HeightRequest="158" Padding="14" BackgroundColor="{StaticResource SectionTeal}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
+                <Border Grid.Row="1" Grid.Column="0" HeightRequest="166" Padding="14" BackgroundColor="{StaticResource SectionTeal}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnRoomingClicked" /></Border.GestureRecognizers>
                     <Border.Shadow><Shadow Brush="#0F172A" Opacity="0.09" Radius="12" Offset="0,4" /></Border.Shadow>
                     <VerticalStackLayout Spacing="8" VerticalOptions="Center">
                         <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource SuccessSoft}">
                             <Image Source="room.svg" WidthRequest="23" HeightRequest="23" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Label Text="Odalama Motoru" FontFamily="OpenSansSemibold" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Odalama Motoru" FontFamily="OpenSansSemibold" FontSize="16" FontAttributes="Bold" CharacterSpacing="0.15" TextColor="{StaticResource TextPrimary}" />
                         <Label Text="Otel ve oda planını yönetin" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Border>
-                <Border Grid.Row="1" Grid.Column="1" HeightRequest="158" Padding="14" BackgroundColor="{StaticResource SectionAmber}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
+                <Border Grid.Row="1" Grid.Column="1" HeightRequest="166" Padding="14" BackgroundColor="{StaticResource SectionAmber}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnPaymentsClicked" /></Border.GestureRecognizers>
                     <Border.Shadow><Shadow Brush="#0F172A" Opacity="0.09" Radius="12" Offset="0,4" /></Border.Shadow>
                     <VerticalStackLayout Spacing="8" VerticalOptions="Center">
                         <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource PrimarySoft}">
                             <Image Source="list.svg" WidthRequest="23" HeightRequest="23" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Label Text="Ödemeler ve Finans" FontFamily="OpenSansSemibold" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Ödemeler ve Finans" FontFamily="OpenSansSemibold" FontSize="16" FontAttributes="Bold" CharacterSpacing="0.15" TextColor="{StaticResource TextPrimary}" />
                         <Label Text="Ödeme hareketleri ve finans özeti" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Border>
-                <Border Grid.Row="2" Grid.Column="0" HeightRequest="158" Padding="14" BackgroundColor="{StaticResource SectionRose}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
+                <Border Grid.Row="2" Grid.Column="0" HeightRequest="166" Padding="14" BackgroundColor="{StaticResource SectionRose}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnCargoDocumentsClicked" /></Border.GestureRecognizers>
                     <Border.Shadow><Shadow Brush="#0F172A" Opacity="0.09" Radius="12" Offset="0,4" /></Border.Shadow>
                     <VerticalStackLayout Spacing="8" VerticalOptions="Center">
                         <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource WarningSoft}">
-                            <Image Source="room.svg" WidthRequest="23" HeightRequest="23" HorizontalOptions="Center" VerticalOptions="Center" />
+                            <Image Source="cargo.svg" WidthRequest="23" HeightRequest="23" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Label Text="Kargo Evrak Hazırlama" FontFamily="OpenSansSemibold" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Kargo Evrak Hazırlama" FontFamily="OpenSansSemibold" FontSize="16" FontAttributes="Bold" CharacterSpacing="0.15" TextColor="{StaticResource TextPrimary}" LineBreakMode="WordWrap" />
                         <Label Text="İletişim bilgilerini evrak havuzuna gönderin" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Border>
-                <Border Grid.Row="2" Grid.Column="1" HeightRequest="158" Padding="14" BackgroundColor="{StaticResource SectionCyan}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
+                <Border Grid.Row="2" Grid.Column="1" HeightRequest="166" Padding="14" BackgroundColor="{StaticResource SectionCyan}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnListsClicked" /></Border.GestureRecognizers>
                     <Border.Shadow><Shadow Brush="#0F172A" Opacity="0.09" Radius="12" Offset="0,4" /></Border.Shadow>
                     <VerticalStackLayout Spacing="8" VerticalOptions="Center">
                         <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource WarningSoft}">
                             <Image Source="list.svg" WidthRequest="23" HeightRequest="23" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Label Text="Listeler" FontFamily="OpenSansSemibold" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Listeler" FontFamily="OpenSansSemibold" FontSize="16" FontAttributes="Bold" CharacterSpacing="0.15" TextColor="{StaticResource TextPrimary}" />
                         <Label Text="Telefon, vize, sağlık ve diğer listeler" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Border>
@@ -127,7 +127,7 @@
                         <Border WidthRequest="40" HeightRequest="40" StrokeThickness="0" StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource SurfaceAlt}">
                             <Image Source="settings.svg" WidthRequest="22" HeightRequest="22" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Label Text="Ayarlar" FontFamily="OpenSansSemibold" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Ayarlar" FontFamily="OpenSansSemibold" FontSize="16" FontAttributes="Bold" CharacterSpacing="0.15" TextColor="{StaticResource TextPrimary}" />
                     </VerticalStackLayout>
                 </Border>
                 <Border Grid.Column="1" HeightRequest="142" Padding="14" BackgroundColor="{StaticResource SectionOrange}" Stroke="{StaticResource BorderColor}" StrokeShape="RoundRectangle 22">
@@ -137,7 +137,7 @@
                         <Border WidthRequest="40" HeightRequest="40" StrokeThickness="0" StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource Tertiary}">
                             <Image Source="sync.svg" WidthRequest="22" HeightRequest="22" HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Label Text="Masaüstü Eşitleme" FontFamily="OpenSansSemibold" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Masaüstü Eşitleme" FontFamily="OpenSansSemibold" FontSize="16" FontAttributes="Bold" CharacterSpacing="0.15" TextColor="{StaticResource TextPrimary}" />
                     </VerticalStackLayout>
                 </Border>
             </Grid>
