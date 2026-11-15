@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using TurizmOperasyonSistemi.Data;
 using Microsoft.Win32;
 using System.IO;
@@ -14,7 +15,26 @@ namespace TurizmOperasyonSistemi.Views
 {
     public partial class TourProfitabilityAnalysisWindow : UserControl
     {
+        private const string PaymentExportTemplateName = "TourProfitabilityAnalysis.Payments";
+        private static readonly (string Key, string Header)[] PaymentExportColumns =
+        {
+            ("sequence", "Sıra"),
+            ("firstName", "Ad"),
+            ("lastName", "Soyad"),
+            ("tcKimlik", "TC Kimlik"),
+            ("passportNumber", "Pasaport numarası"),
+            ("paymentDate", "Ödeme Tarihi"),
+            ("paymentAmount", "Ödeme Tutarı"),
+            ("currency", "Para Birimi"),
+            ("paymentMethod", "Ödeme Yöntemi"),
+            ("note", "Açıklama")
+        };
+
         private readonly List<TourOption> _tourOptions = new();
+        private readonly List<CustomExpenseEntry> _customExpenses = new();
+        private readonly ListTemplateStore _paymentExportTemplateStore = new();
+        private readonly Dictionary<string, bool> _paymentExportColumnVisibility = PaymentExportColumns
+            .ToDictionary(column => column.Key, _ => true, StringComparer.OrdinalIgnoreCase);
         private List<Models.Registration> _currentRegistrations = new();
         private string _currentPrimaryCurrency = string.Empty;
         private decimal _currentTourTotal;
@@ -22,6 +42,7 @@ namespace TurizmOperasyonSistemi.Views
         private decimal _currentRemainingTotal;
         private bool _useCustomRates;
         private bool _suppressCustomRatesCheckChanged;
+        private int _summaryUpdateVersion;
         private decimal _customUsdRate;
         private decimal _customEurRate;
         private decimal _customGbpRate;
@@ -117,6 +138,8 @@ namespace TurizmOperasyonSistemi.Views
 
         private async System.Threading.Tasks.Task UpdateSummaryAsync(IEnumerable<Models.Registration> regs, bool resetExpenses = true)
         {
+            var updateVersion = ++_summaryUpdateVersion;
+            var useCustomRates = _useCustomRates;
             _currentRegistrations = regs.ToList();
 
             if (!_currentRegistrations.Any())
@@ -169,7 +192,7 @@ namespace TurizmOperasyonSistemi.Views
                 decimal usdRate = 0m, eurRate = 0m, gbpRate = 0m, sarRate = 0m;
                 try
                 {
-                    if (_useCustomRates)
+                    if (useCustomRates)
                     {
                         usdRate = _customUsdRate;
                         eurRate = _customEurRate;
@@ -180,6 +203,11 @@ namespace TurizmOperasyonSistemi.Views
                     {
                         var svc = new ExchangeRateService();
                         var rates = await svc.GetLatestRatesAsync();
+                        if (updateVersion != _summaryUpdateVersion || useCustomRates != _useCustomRates)
+                        {
+                            return;
+                        }
+
                         if (rates != null)
                         {
                             decimal.TryParse(rates.UsdBuy, NumberStyles.Any, CultureInfo.InvariantCulture, out usdRate);
@@ -204,8 +232,6 @@ namespace TurizmOperasyonSistemi.Views
                     return up;
                 }
 
-                bool hasUsd = grouped.Any(x => NormalizeCurrencyTop(x.Currency) == "USD");
-
                 decimal ConvertToUsdLocal(decimal amount, string currency, decimal usdRate, decimal eurRate, decimal gbpRate, decimal sarRate)
                 {
                     if (amount == 0m) return 0m;
@@ -223,110 +249,25 @@ namespace TurizmOperasyonSistemi.Views
                 }
 
 
-                if (hasUsd)
+                // Gider kutuları USD cinsinden olduğu için gelir ve tahsilatları da USD bazına çevir.
+                foreach (var g in grouped)
                 {
-                    // Tüm para birimlerini USD'ye çevir ve topla
-                    foreach (var g in grouped)
-                    {
-                        convertedTourTotal += ConvertToUsdLocal(g.TotalPrice, g.Currency, usdRate, eurRate, gbpRate, sarRate);
-                        convertedPaidTotal += ConvertToUsdLocal(g.Paid, g.Currency, usdRate, eurRate, gbpRate, sarRate);
-                        convertedRemainingTotal += ConvertToUsdLocal(g.Remaining, g.Currency, usdRate, eurRate, gbpRate, sarRate);
-                    }
+                    convertedTourTotal += ConvertToUsdLocal(g.TotalPrice, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+                    convertedPaidTotal += ConvertToUsdLocal(g.Paid, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+                    convertedRemainingTotal += ConvertToUsdLocal(g.Remaining, g.Currency, usdRate, eurRate, gbpRate, sarRate);
+                }
 
-                    // Eğer kur bilgisi alınamadıysa (usdRate==0) fallback: primary kullan
-                    if (convertedTourTotal == 0m && convertedPaidTotal == 0m && convertedRemainingTotal == 0m)
-                    {
-                        convertedTourTotal = primary.TotalPrice;
-                        convertedPaidTotal = primary.Paid;
-                        convertedRemainingTotal = primary.Remaining;
-                    }
-
-// Hedef para birimi artık USD olacak
-                    _currentPrimaryCurrency = "USD";
+                if (convertedTourTotal == 0m && convertedPaidTotal == 0m && convertedRemainingTotal == 0m)
+                {
+                    // Kur alınamadığında mevcut primary para birimindeki önceki toplamları koru.
+                    convertedTourTotal = primary.TotalPrice;
+                    convertedPaidTotal = primary.Paid;
+                    convertedRemainingTotal = primary.Remaining;
+                    _currentPrimaryCurrency = primary.Currency;
                 }
                 else
                 {
-                    // Önceki davranış: seçili primary para birimine çevir (TRY veya diğerleri)
-                    static decimal ToTry(decimal amount, string currency, decimal usdRate, decimal eurRate, decimal gbpRate, decimal sarRate)
-                    {
-                        var cur = (currency ?? "").Trim().ToUpperInvariant();
-                        if (string.IsNullOrEmpty(cur) || cur == "TRY" || cur == "TL") return amount;
-                        if (cur == "USD")
-                        {
-                            if (usdRate > 0) return amount * usdRate;
-                            return 0m;
-                        }
-                        if (cur == "EUR")
-                        {
-                            if (eurRate > 0) return amount * eurRate;
-                            return 0m;
-                        }
-                        if (cur == "GBP")
-                        {
-                            if (gbpRate > 0) return amount * gbpRate;
-                            return 0m;
-                        }
-                        if (cur == "SAR")
-                        {
-                            if (sarRate > 0) return amount * sarRate;
-                            return 0m;
-                        }
-                        return 0m;
-                    }
-
-                    static decimal FromTryTo(decimal amountInTry, string targetCurrency, decimal usdRate, decimal eurRate, decimal gbpRate, decimal sarRate)
-                    {
-                        var tgt = (targetCurrency ?? "").Trim().ToUpperInvariant();
-                        if (string.IsNullOrEmpty(tgt) || tgt == "TRY" || tgt == "TL") return amountInTry;
-                        if (tgt == "USD")
-                        {
-                            if (usdRate > 0) return amountInTry / usdRate;
-                            return 0m;
-                        }
-                        if (tgt == "EUR")
-                        {
-                            if (eurRate > 0) return amountInTry / eurRate;
-                            return 0m;
-                        }
-                        if (tgt == "GBP")
-                        {
-                            if (gbpRate > 0) return amountInTry / gbpRate;
-                            return 0m;
-                        }
-                        if (tgt == "SAR")
-                        {
-                            if (sarRate > 0) return amountInTry / sarRate;
-                            return 0m;
-                        }
-                        return 0m;
-                    }
-
-                    foreach (var g in grouped)
-                    {
-                        var amtTry = ToTry(g.TotalPrice, g.Currency, usdRate, eurRate, gbpRate, sarRate);
-                        var paidTry = ToTry(g.Paid, g.Currency, usdRate, eurRate, gbpRate, sarRate);
-                        var remTry = ToTry(g.Remaining, g.Currency, usdRate, eurRate, gbpRate, sarRate);
-
-                        if (string.IsNullOrWhiteSpace(_currentPrimaryCurrency) || _currentPrimaryCurrency.Trim().ToUpperInvariant() == "TRY" || _currentPrimaryCurrency.Trim().ToUpperInvariant() == "TL")
-                        {
-                            convertedTourTotal += amtTry;
-                            convertedPaidTotal += paidTry;
-                            convertedRemainingTotal += remTry;
-                        }
-                        else
-                        {
-                            convertedTourTotal += FromTryTo(amtTry, _currentPrimaryCurrency, usdRate, eurRate, gbpRate, sarRate);
-                            convertedPaidTotal += FromTryTo(paidTry, _currentPrimaryCurrency, usdRate, eurRate, gbpRate, sarRate);
-                            convertedRemainingTotal += FromTryTo(remTry, _currentPrimaryCurrency, usdRate, eurRate, gbpRate, sarRate);
-                        }
-                    }
-
-                    if (convertedTourTotal == 0m && convertedPaidTotal == 0m && convertedRemainingTotal == 0m)
-                    {
-                        convertedTourTotal = primary.TotalPrice;
-                        convertedPaidTotal = primary.Paid;
-                        convertedRemainingTotal = primary.Remaining;
-                    }
+                    _currentPrimaryCurrency = "USD";
                 }
             }
             catch
@@ -362,7 +303,17 @@ namespace TurizmOperasyonSistemi.Views
                 VisaExpenseTextBox.Text = "";
                 BagExpenseTextBox.Text = "";
                 StaffExpenseTextBox.Text = "";
-                OtherExpenseTextBox.Text = "";
+                HotelExpenseDescriptionTextBox.Text = "";
+                HotelMedineExpenseDescriptionTextBox.Text = "";
+                TicketExpenseDescriptionTextBox.Text = "";
+                VisaExpenseDescriptionTextBox.Text = "";
+                BagExpenseDescriptionTextBox.Text = "";
+                StaffExpenseDescriptionTextBox.Text = "";
+                foreach (var expense in _customExpenses)
+                {
+                    expense.AmountTextBox.Text = "";
+                    expense.DescriptionTextBox.Text = "";
+                }
             }
         }
 
@@ -393,7 +344,10 @@ namespace TurizmOperasyonSistemi.Views
                 CalculateResults();
             }
 
-            HintTextBlock.Text = "Özel kurlar kullanılıyor. İşareti kaldırarak TCMB kurlarına dönebilirsiniz.";
+            if (_useCustomRates && CustomRatesCheckBox.IsChecked == true)
+            {
+                HintTextBlock.Text = "Özel kurlar kullanılıyor; kâr/zarar USD bazında hesaplanıyor. İşareti kaldırarak TCMB kurlarına dönebilirsiniz.";
+            }
         }
 
         private async void CustomRatesCheckBox_Unchecked(object sender, RoutedEventArgs e)
@@ -404,13 +358,160 @@ namespace TurizmOperasyonSistemi.Views
             }
 
             _useCustomRates = false;
+            HintTextBlock.Text = "TCMB kurları alınıyor...";
             if (_currentRegistrations.Any())
             {
                 await UpdateSummaryAsync(_currentRegistrations, resetExpenses: false);
                 CalculateResults();
             }
 
-            HintTextBlock.Text = "TCMB kurları kullanılıyor.";
+            if (!_useCustomRates && CustomRatesCheckBox.IsChecked != true)
+            {
+                HintTextBlock.Text = "TCMB kurları kullanılıyor; kâr/zarar USD bazında hesaplanıyor.";
+            }
+        }
+
+        private void DesignPaymentExportColumnsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var savedColumns = _paymentExportTemplateStore.LoadTemplate(PaymentExportTemplateName);
+            if (savedColumns != null)
+            {
+                foreach (var column in PaymentExportColumns)
+                {
+                    var savedColumn = savedColumns.FirstOrDefault(saved =>
+                        string.Equals(saved.Key, column.Key, StringComparison.OrdinalIgnoreCase));
+                    if (savedColumn != null)
+                    {
+                        _paymentExportColumnVisibility[column.Key] = savedColumn.IsVisible;
+                    }
+                }
+            }
+
+            var foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(226, 232, 240));
+            var dialog = new Window
+            {
+                Title = "Listeyi Tasarla - Ödeme Yapan Kişiler",
+                Width = 440,
+                Height = 560,
+                MinWidth = 380,
+                MinHeight = 440,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(11, 18, 32)),
+                Foreground = foreground
+            };
+
+            var owner = Window.GetWindow(this);
+            if (owner != null)
+            {
+                dialog.Owner = owner;
+            }
+            else
+            {
+                dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+
+            var root = new Grid { Margin = new Thickness(18) };
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var heading = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+            heading.Children.Add(new TextBlock
+            {
+                Text = "Ödeme tablosunda gösterilecek sütunlar",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = foreground
+            });
+            heading.Children.Add(new TextBlock
+            {
+                Text = "İşaretli sütunlar Word, Excel ve PDF çıktısına eklenir. Seçiminiz kaydedilir.",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(148, 163, 184)),
+                Margin = new Thickness(0, 6, 0, 0)
+            });
+            Grid.SetRow(heading, 0);
+            root.Children.Add(heading);
+
+            var columnPanel = new StackPanel();
+            var checkBoxes = new List<(string Key, CheckBox CheckBox)>();
+            foreach (var column in PaymentExportColumns)
+            {
+                var checkBox = new CheckBox
+                {
+                    Content = column.Header,
+                    IsChecked = _paymentExportColumnVisibility[column.Key],
+                    Foreground = foreground,
+                    FontSize = 13,
+                    Margin = new Thickness(4, 8, 4, 8)
+                };
+                checkBoxes.Add((column.Key, checkBox));
+                columnPanel.Children.Add(checkBox);
+            }
+
+            var columnsBorder = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 27, 45)),
+                BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(51, 65, 85)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(14),
+                Child = new ScrollViewer
+                {
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Content = columnPanel
+                }
+            };
+            Grid.SetRow(columnsBorder, 1);
+            root.Children.Add(columnsBorder);
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 14, 0, 0)
+            };
+            var cancelButton = new Button
+            {
+                Content = "Vazgeç",
+                MinWidth = 90,
+                Margin = new Thickness(0, 0, 8, 0),
+                IsCancel = true
+            };
+            var applyButton = new Button
+            {
+                Content = "Uygula",
+                MinWidth = 90,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(109, 40, 217)),
+                Foreground = System.Windows.Media.Brushes.White,
+                IsDefault = true
+            };
+            applyButton.Click += (_, _) =>
+            {
+                foreach (var item in checkBoxes)
+                {
+                    _paymentExportColumnVisibility[item.Key] = item.CheckBox.IsChecked == true;
+                }
+
+                _paymentExportTemplateStore.SaveTemplate(
+                    PaymentExportTemplateName,
+                    PaymentExportColumns.Select((column, index) => new ListTemplateStore.ColumnDto
+                    {
+                        Key = column.Key,
+                        Title = column.Header,
+                        Order = index + 1,
+                        IsVisible = _paymentExportColumnVisibility[column.Key]
+                    }).ToList());
+
+                dialog.DialogResult = true;
+            };
+            buttons.Children.Add(cancelButton);
+            buttons.Children.Add(applyButton);
+            Grid.SetRow(buttons, 2);
+            root.Children.Add(buttons);
+
+            dialog.Content = root;
+            dialog.ShowDialog();
         }
 
         private bool TryShowCustomRatesDialog(out decimal usdRate, out decimal eurRate, out decimal gbpRate, out decimal sarRate)
@@ -518,6 +619,193 @@ namespace TurizmOperasyonSistemi.Views
             CalculateResults();
         }
 
+        private void AddExpenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            var expenseName = ShowAddExpenseDialog();
+            if (string.IsNullOrWhiteSpace(expenseName))
+            {
+                return;
+            }
+
+            AddCustomExpense(expenseName);
+            CalculateResults();
+        }
+
+        private string ShowAddExpenseDialog()
+        {
+            var dialogForeground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(226, 232, 240));
+            var dialog = new Window
+            {
+                Title = "Yeni Gider",
+                Width = 360,
+                Height = 190,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(17, 24, 39)),
+                Foreground = dialogForeground
+            };
+
+            var owner = Window.GetWindow(this);
+            if (owner != null)
+            {
+                dialog.Owner = owner;
+            }
+            else
+            {
+                dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Giderin adı",
+                FontSize = 14,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 0, 0, 8)
+            });
+
+            var nameTextBox = new TextBox
+            {
+                Height = 32,
+                MaxLength = 60,
+                Padding = new Thickness(7, 4, 7, 4),
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(31, 41, 55)),
+                Foreground = dialogForeground,
+                BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(139, 92, 246))
+            };
+            panel.Children.Add(nameTextBox);
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 14, 0, 0)
+            };
+            buttons.Children.Add(new Button
+            {
+                Content = "Vazgeç",
+                MinWidth = 80,
+                Margin = new Thickness(0, 0, 8, 0),
+                IsCancel = true
+            });
+
+            var addButton = new Button { Content = "Ekle", MinWidth = 80, IsDefault = true };
+            addButton.Click += (_, _) =>
+            {
+                var name = nameTextBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    MessageBox.Show(dialog, "Lütfen giderin adını girin.", "Gider adı gerekli", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    nameTextBox.Focus();
+                    return;
+                }
+
+                if (_customExpenses.Any(expense => string.Equals(expense.Name, name, StringComparison.CurrentCultureIgnoreCase)))
+                {
+                    MessageBox.Show(dialog, "Bu isimde bir gider zaten eklenmiş.", "Gider zaten mevcut", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    nameTextBox.SelectAll();
+                    nameTextBox.Focus();
+                    return;
+                }
+
+                dialog.DialogResult = true;
+            };
+            buttons.Children.Add(addButton);
+            panel.Children.Add(buttons);
+            dialog.Content = panel;
+            dialog.Loaded += (_, _) => nameTextBox.Focus();
+
+            return dialog.ShowDialog() == true ? nameTextBox.Text.Trim() : null;
+        }
+
+        private void AddCustomExpense(string expenseName)
+        {
+            var amountTextBox = new TextBox
+            {
+                Height = 28,
+                FontSize = 11,
+                Padding = new Thickness(6, 3, 6, 3),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            amountTextBox.SetBinding(FrameworkElement.WidthProperty, new Binding("ActualWidth")
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(Border), 1),
+                Converter = (IValueConverter)Resources["HalfConverter"]
+            });
+            amountTextBox.TextChanged += ExpenseTextBox_TextChanged;
+            var descriptionTextBox = new TextBox
+            {
+                Height = 28,
+                FontSize = 11,
+                Padding = new Thickness(6, 3, 6, 3),
+                ToolTip = "Gider açıklaması"
+            };
+
+            var expenseRow = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
+            var titleRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 3) };
+            titleRow.Children.Add(new TextBlock
+            {
+                Text = "🧾",
+                FontSize = 14,
+                Margin = new Thickness(0, 0, 8, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            titleRow.Children.Add(new TextBlock
+            {
+                Text = expenseName,
+                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(203, 213, 225)),
+                FontSize = 11,
+                MaxWidth = 220,
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            expenseRow.Children.Add(titleRow);
+
+            var amountRow = new Grid();
+            amountRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            amountRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            amountRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            amountRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(amountTextBox, 0);
+            amountRow.Children.Add(amountTextBox);
+
+            var descriptionLabel = new TextBlock
+            {
+                Text = "Açıklama",
+                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(148, 163, 184)),
+                FontSize = 10,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(6, 0, 4, 0)
+            };
+            Grid.SetColumn(descriptionLabel, 1);
+            amountRow.Children.Add(descriptionLabel);
+            Grid.SetColumn(descriptionTextBox, 2);
+            amountRow.Children.Add(descriptionTextBox);
+
+            var currencySymbol = new TextBlock
+            {
+                Text = "$",
+                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 185, 129)),
+                FontSize = 14,
+                FontWeight = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0)
+            };
+            currencySymbol.Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                Color = System.Windows.Media.Color.FromRgb(16, 185, 129),
+                BlurRadius = 10,
+                ShadowDepth = 0,
+                Opacity = 0.95
+            };
+            Grid.SetColumn(currencySymbol, 3);
+            amountRow.Children.Add(currencySymbol);
+            expenseRow.Children.Add(amountRow);
+
+            CustomExpensesPanel.Children.Add(expenseRow);
+            _customExpenses.Add(new CustomExpenseEntry(expenseName, amountTextBox, descriptionTextBox));
+        }
+
         private void CalculateResults()
         {
             try
@@ -540,9 +828,9 @@ namespace TurizmOperasyonSistemi.Views
                 var visaExpense = ReadAmount(VisaExpenseTextBox);
                 var bagExpense = ReadAmount(BagExpenseTextBox);
                 var staffExpense = ReadAmount(StaffExpenseTextBox);
-                var otherExpense = ReadAmount(OtherExpenseTextBox);
+                var customExpensesTotal = _customExpenses.Sum(expense => ReadAmount(expense.AmountTextBox));
 
-                var totalExpense = hotelExpense + hotelMedineExpense + ticketExpense + visaExpense + bagExpense + staffExpense + otherExpense;
+                var totalExpense = hotelExpense + hotelMedineExpense + ticketExpense + visaExpense + bagExpense + staffExpense + customExpensesTotal;
 
                 var tourProfitLoss = _currentTourTotal - totalExpense;
                 var instantProfitLoss = _currentPaidTotal - totalExpense;
@@ -661,6 +949,20 @@ namespace TurizmOperasyonSistemi.Views
 
             var prefix = amount >= 0 ? "+" : "-";
             return $"{prefix}{FormatAmount(Math.Abs(amount), currency)}";
+        }
+
+        private sealed class CustomExpenseEntry
+        {
+            public CustomExpenseEntry(string name, TextBox amountTextBox, TextBox descriptionTextBox)
+            {
+                Name = name;
+                AmountTextBox = amountTextBox;
+                DescriptionTextBox = descriptionTextBox;
+            }
+
+            public string Name { get; }
+            public TextBox AmountTextBox { get; }
+            public TextBox DescriptionTextBox { get; }
         }
 
         public sealed class TourOption : IEquatable<TourOption>
@@ -838,11 +1140,8 @@ namespace TurizmOperasyonSistemi.Views
             try
             {
                 var headers = GetExportHeaders();
-                // PDF için Türkçe karakterleri transliterate et
-                var headersForPdf = headers.Select(h => TransliterateTurkish(h)).ToList();
-                var rowsForPdf = GetExportRowsForPdf(headers);
-                var titleForPdf = TransliterateTurkish(GetExportTitle());
-                ExportHelper.ExportPdf(filePath, rowsForPdf, headersForPdf, titleForPdf);
+                var rows = GetExportRows(headers);
+                ExportHelper.ExportPdf(filePath, rows, headers, GetExportTitle());
                 MessageBox.Show("Çıktı başarıyla kaydedildi.", "Başarı", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -863,8 +1162,20 @@ namespace TurizmOperasyonSistemi.Views
             {
                 "Bölüm",
                 "Açıklama",
-                "Değer"
+                "Değer",
+                "Gider Açıklaması"
             };
+        }
+
+        private static string FormatExpenseForExport(string amount)
+        {
+            var value = amount?.Trim();
+            if (string.IsNullOrWhiteSpace(value) || value.Contains('$'))
+            {
+                return value ?? string.Empty;
+            }
+
+            return $"{value} $";
         }
 
         private List<Dictionary<string, string>> GetExportRows(List<string> headers)
@@ -883,13 +1194,22 @@ namespace TurizmOperasyonSistemi.Views
 
             // GİDERLER
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } }); // Boş satır
-            rows.Add(new Dictionary<string, string> { { "Bölüm", "GİDERLER" }, { "Açıklama", "Otel ve Yemek Mekke" }, { "Değer", HotelExpenseTextBox.Text ?? "" } });
-            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Otel ve Yemek Medine" }, { "Değer", HotelMedineExpenseTextBox.Text ?? "" } });
-            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Uçak Bileti" }, { "Değer", TicketExpenseTextBox.Text ?? "" } });
-            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Vize Masrafı" }, { "Değer", VisaExpenseTextBox.Text ?? "" } });
-            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Çanta / Kitapçık" }, { "Değer", BagExpenseTextBox.Text ?? "" } });
-            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Eleman Gideri" }, { "Değer", StaffExpenseTextBox.Text ?? "" } });
-            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Diğer Gider" }, { "Değer", OtherExpenseTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "GİDERLER" }, { "Açıklama", "Otel ve Yemek Mekke" }, { "Değer", FormatExpenseForExport(HotelExpenseTextBox.Text) }, { "Gider Açıklaması", HotelExpenseDescriptionTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Otel ve Yemek Medine" }, { "Değer", FormatExpenseForExport(HotelMedineExpenseTextBox.Text) }, { "Gider Açıklaması", HotelMedineExpenseDescriptionTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Uçak Bileti" }, { "Değer", FormatExpenseForExport(TicketExpenseTextBox.Text) }, { "Gider Açıklaması", TicketExpenseDescriptionTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Vize Masrafı" }, { "Değer", FormatExpenseForExport(VisaExpenseTextBox.Text) }, { "Gider Açıklaması", VisaExpenseDescriptionTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Çanta / Kitapçık" }, { "Değer", FormatExpenseForExport(BagExpenseTextBox.Text) }, { "Gider Açıklaması", BagExpenseDescriptionTextBox.Text ?? "" } });
+            rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Eleman Gideri" }, { "Değer", FormatExpenseForExport(StaffExpenseTextBox.Text) }, { "Gider Açıklaması", StaffExpenseDescriptionTextBox.Text ?? "" } });
+            foreach (var expense in _customExpenses)
+            {
+                rows.Add(new Dictionary<string, string>
+                {
+                    { "Bölüm", "" },
+                    { "Açıklama", expense.Name },
+                    { "Değer", FormatExpenseForExport(expense.AmountTextBox.Text) },
+                    { "Gider Açıklaması", expense.DescriptionTextBox.Text ?? "" }
+                });
+            }
 
             // KAR / ZARAR ANALİZİ
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } }); // Boş satır
@@ -900,6 +1220,38 @@ namespace TurizmOperasyonSistemi.Views
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Oranı (Net Kâr)" }, { "Değer", ProfitRateTextBlock.Text } });
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Marjı (Tahsil.Göre)" }, { "Değer", InstantProfitMarginTextBlock.Text } });
             rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "Kâr Oranı (Tahsil.Göre)" }, { "Değer", InstantProfitRateTextBlock.Text } });
+
+            if (_useCustomRates)
+            {
+                rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } });
+                rows.Add(new Dictionary<string, string>
+                {
+                    { "__TABLE_HEADERS", "Kur Tablosu,1 Birimin TL Karşılığı" }
+                });
+
+                var customRates = new[]
+                {
+                    (Currency: "USD / TL", Rate: _customUsdRate),
+                    (Currency: "EUR / TL", Rate: _customEurRate),
+                    (Currency: "GBP / TL", Rate: _customGbpRate),
+                    (Currency: "SAR / TL", Rate: _customSarRate)
+                };
+
+                foreach (var rate in customRates)
+                {
+                    rows.Add(new Dictionary<string, string>
+                    {
+                        { "Kur Tablosu", rate.Currency },
+                        { "1 Birimin TL Karşılığı", rate.Rate.ToString("N4", CultureInfo.CurrentCulture) }
+                    });
+                }
+
+                rows.Add(new Dictionary<string, string>
+                {
+                    { "Kur Tablosu", "Kur Kaynağı" },
+                    { "1 Birimin TL Karşılığı", "Kullanıcı tarafından girilmiştir; TCMB kuru değildir." }
+                });
+            }
 
             // ÖDEMELER bölümü: seçili tura ait ödemeleri ekle
             try
@@ -917,16 +1269,21 @@ namespace TurizmOperasyonSistemi.Views
                         .ThenInclude(r => r.Person)
                         .OrderBy(p => p.CreatedAt)
                         .ToList();
+                    var selectedPaymentColumns = PaymentExportColumns
+                        .Where(column => _paymentExportColumnVisibility.TryGetValue(column.Key, out var isVisible) && isVisible)
+                        .ToList();
 
-                    if (payments.Any())
+                    if (payments.Any() && selectedPaymentColumns.Any())
                     {
                         rows.Add(new Dictionary<string, string> { { "Bölüm", "" }, { "Açıklama", "" }, { "Değer", "" } });
                         // Her kişi yalnızca bir kez listelenir. Birden fazla ödeme varsa,
                         // ödeme alanları aynı hücrede satır satır gösterilir; böylece kişiye
                         // ait sabit bilgiler tekrar etmezken her ödemenin kendi para birimi korunur.
-                        var paymentHeaders = new[] { "Sıra", "Ad", "Soyad", "TC Kimlik", "Pasaport numarası", "Ödeme Tarihi", "Ödeme Tutarı", "Para Birimi", "Ödeme Yöntemi", "Açıklama" };
                         // Insert marker that ExportHelper recognizes to start a new table with these headers
-                        rows.Add(new Dictionary<string, string> { { "__TABLE_HEADERS", string.Join(",", paymentHeaders) } });
+                        rows.Add(new Dictionary<string, string>
+                        {
+                            { "__TABLE_HEADERS", string.Join(",", selectedPaymentColumns.Select(column => column.Header)) }
+                        });
 
                         var paymentGroups = payments
                             .GroupBy(payment => payment.Registration?.Person != null
@@ -959,21 +1316,23 @@ namespace TurizmOperasyonSistemi.Views
                                 paymentNotes.Add(payment.Note?.Trim() ?? string.Empty);
                             }
 
-                            var row = new Dictionary<string, string>
+                            var paymentRowValues = new Dictionary<string, string>
                             {
-                                { "Sıra", idx.ToString() },
-                                { "Ad", (person?.FirstName ?? string.Empty).Trim() },
-                                { "Soyad", (person?.LastName ?? string.Empty).Trim() },
-                                { "TC Kimlik", (person?.TcKimlikNo ?? string.Empty).Trim() },
-                                { "Pasaport numarası", (person?.PassportNumber ?? string.Empty).Trim() },
-                                { "Ödeme Tarihi", string.Join(Environment.NewLine, paymentDates) },
-                                { "Ödeme Tutarı", string.Join(Environment.NewLine, paymentAmounts) },
-                                { "Para Birimi", string.Join(Environment.NewLine, paymentCurrencies) },
-                                { "Ödeme Yöntemi", string.Join(Environment.NewLine, paymentMethods) },
-                                { "Açıklama", string.Join(Environment.NewLine, paymentNotes) }
+                                { "sequence", idx.ToString() },
+                                { "firstName", (person?.FirstName ?? string.Empty).Trim() },
+                                { "lastName", (person?.LastName ?? string.Empty).Trim() },
+                                { "tcKimlik", (person?.TcKimlikNo ?? string.Empty).Trim() },
+                                { "passportNumber", (person?.PassportNumber ?? string.Empty).Trim() },
+                                { "paymentDate", string.Join(Environment.NewLine, paymentDates) },
+                                { "paymentAmount", string.Join(Environment.NewLine, paymentAmounts) },
+                                { "currency", string.Join(Environment.NewLine, paymentCurrencies) },
+                                { "paymentMethod", string.Join(Environment.NewLine, paymentMethods) },
+                                { "note", string.Join(Environment.NewLine, paymentNotes) }
                             };
 
-                            rows.Add(row);
+                            rows.Add(selectedPaymentColumns.ToDictionary(
+                                column => column.Header,
+                                column => paymentRowValues[column.Key]));
                             idx++;
                         }
                     }
@@ -984,40 +1343,5 @@ namespace TurizmOperasyonSistemi.Views
             return rows;
         }
 
-        private List<Dictionary<string, string>> GetExportRowsForPdf(List<string> headers)
-        {
-            // PDF için Türkçe karakterleri transliterate et
-            var rows = GetExportRows(headers);
-
-            var transliteratedRows = new List<Dictionary<string, string>>();
-            foreach (var row in rows)
-            {
-                var transliteratedRow = new Dictionary<string, string>();
-                foreach (var kvp in row)
-                {
-                    // Key ve value ikisini de transliterate et
-                    var transliteratedKey = TransliterateTurkish(kvp.Key);
-                    var transliteratedValue = TransliterateTurkish(kvp.Value);
-                    transliteratedRow[transliteratedKey] = transliteratedValue;
-                }
-                transliteratedRows.Add(transliteratedRow);
-            }
-
-            return transliteratedRows;
-        }
-
-        private string TransliterateTurkish(string value)
-        {
-            if (string.IsNullOrEmpty(value)) return value;
-
-            return value
-                .Replace("İ", "I").Replace("ı", "i")
-                .Replace("Ş", "S").Replace("ş", "s")
-                .Replace("Ğ", "G").Replace("ğ", "g")
-                .Replace("Ü", "U").Replace("ü", "u")
-                .Replace("Ö", "O").Replace("ö", "o")
-                .Replace("Ç", "C").Replace("ç", "c")
-                .Replace("â", "a").Replace("Â", "A");
-        }
     }
 }

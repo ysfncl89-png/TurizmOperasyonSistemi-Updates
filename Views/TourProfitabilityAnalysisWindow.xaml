@@ -97,7 +97,10 @@
                 <!-- SOL: GİDERLER -->
                 <Border Grid.Column="0" Background="#111827" BorderBrush="#334155" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,10,0">
                     <StackPanel>
-                        <TextBlock Text="GİDERLER" Foreground="#CBD5E1" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
+                        <DockPanel Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="+" Width="28" Height="26" Padding="0" FontSize="18" FontWeight="SemiBold" Background="#1F2937" Foreground="#C4B5FD" BorderBrush="#8B5CF6" BorderThickness="1" ToolTip="Yeni gider ekle" Click="AddExpenseButton_Click"/>
+                            <TextBlock Text="GİDERLER" Foreground="#CBD5E1" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                        </DockPanel>
 
                         <StackPanel Margin="0,0,0,8">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
@@ -108,11 +111,15 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="HotelExpenseTextBox" Height="28" FontSize="11" Padding="6,3" TextChanged="ExpenseTextBox_TextChanged" Grid.Column="0"
                                          Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}, Converter={StaticResource HalfConverter}}"
                                          HorizontalAlignment="Left" />
-                                <TextBlock Grid.Column="1" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
+                                <TextBlock Grid.Column="1" Text="Açıklama" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="6,0,4,0"/>
+                                <TextBox x:Name="HotelExpenseDescriptionTextBox" Grid.Column="2" Height="28" FontSize="11" Padding="6,3" ToolTip="Gider açıklaması" />
+                                <TextBlock Grid.Column="3" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
                                     <TextBlock.Effect>
                                         <DropShadowEffect Color="#10B981" BlurRadius="10" ShadowDepth="0" Opacity="0.95" />
                                     </TextBlock.Effect>
@@ -129,11 +136,15 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="HotelMedineExpenseTextBox" Height="28" FontSize="11" Padding="6,3" TextChanged="ExpenseTextBox_TextChanged" Grid.Column="0"
                                          Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}, Converter={StaticResource HalfConverter}}"
                                          HorizontalAlignment="Left" />
-                                <TextBlock Grid.Column="1" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
+                                <TextBlock Grid.Column="1" Text="Açıklama" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="6,0,4,0"/>
+                                <TextBox x:Name="HotelMedineExpenseDescriptionTextBox" Grid.Column="2" Height="28" FontSize="11" Padding="6,3" ToolTip="Gider açıklaması" />
+                                <TextBlock Grid.Column="3" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
                                     <TextBlock.Effect>
                                         <DropShadowEffect Color="#10B981" BlurRadius="10" ShadowDepth="0" Opacity="0.95" />
                                     </TextBlock.Effect>
@@ -150,11 +161,15 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="TicketExpenseTextBox" Height="28" FontSize="11" Padding="6,3" TextChanged="ExpenseTextBox_TextChanged" Grid.Column="0"
                                          Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}, Converter={StaticResource HalfConverter}}"
                                          HorizontalAlignment="Left" />
-                                <TextBlock Grid.Column="1" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
+                                <TextBlock Grid.Column="1" Text="Açıklama" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="6,0,4,0"/>
+                                <TextBox x:Name="TicketExpenseDescriptionTextBox" Grid.Column="2" Height="28" FontSize="11" Padding="6,3" ToolTip="Gider açıklaması" />
+                                <TextBlock Grid.Column="3" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
                                     <TextBlock.Effect>
                                         <DropShadowEffect Color="#10B981" BlurRadius="10" ShadowDepth="0" Opacity="0.95" />
                                     </TextBlock.Effect>
@@ -171,11 +186,15 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="VisaExpenseTextBox" Height="28" FontSize="11" Padding="6,3" TextChanged="ExpenseTextBox_TextChanged" Grid.Column="0"
                                          Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}, Converter={StaticResource HalfConverter}}"
                                          HorizontalAlignment="Left" />
-                                <TextBlock Grid.Column="1" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
+                                <TextBlock Grid.Column="1" Text="Açıklama" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="6,0,4,0"/>
+                                <TextBox x:Name="VisaExpenseDescriptionTextBox" Grid.Column="2" Height="28" FontSize="11" Padding="6,3" ToolTip="Gider açıklaması" />
+                                <TextBlock Grid.Column="3" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
                                     <TextBlock.Effect>
                                         <DropShadowEffect Color="#10B981" BlurRadius="10" ShadowDepth="0" Opacity="0.95" />
                                     </TextBlock.Effect>
@@ -192,11 +211,15 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="BagExpenseTextBox" Height="28" FontSize="11" Padding="6,3" TextChanged="ExpenseTextBox_TextChanged" Grid.Column="0"
                                          Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}, Converter={StaticResource HalfConverter}}"
                                          HorizontalAlignment="Left" />
-                                <TextBlock Grid.Column="1" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
+                                <TextBlock Grid.Column="1" Text="Açıklama" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="6,0,4,0"/>
+                                <TextBox x:Name="BagExpenseDescriptionTextBox" Grid.Column="2" Height="28" FontSize="11" Padding="6,3" ToolTip="Gider açıklaması" />
+                                <TextBlock Grid.Column="3" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
                                     <TextBlock.Effect>
                                         <DropShadowEffect Color="#10B981" BlurRadius="10" ShadowDepth="0" Opacity="0.95" />
                                     </TextBlock.Effect>
@@ -213,11 +236,15 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="StaffExpenseTextBox" Height="28" FontSize="11" Padding="6,3" TextChanged="ExpenseTextBox_TextChanged" Grid.Column="0"
                                          Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}, Converter={StaticResource HalfConverter}}"
                                          HorizontalAlignment="Left" />
-                                <TextBlock Grid.Column="1" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
+                                <TextBlock Grid.Column="1" Text="Açıklama" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="6,0,4,0"/>
+                                <TextBox x:Name="StaffExpenseDescriptionTextBox" Grid.Column="2" Height="28" FontSize="11" Padding="6,3" ToolTip="Gider açıklaması" />
+                                <TextBlock Grid.Column="3" Text="$" Foreground="#10B981" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0">
                                     <TextBlock.Effect>
                                         <DropShadowEffect Color="#10B981" BlurRadius="10" ShadowDepth="0" Opacity="0.95" />
                                     </TextBlock.Effect>
@@ -225,26 +252,7 @@
                             </Grid>
                         </StackPanel>
 
-                        <StackPanel Margin="0,0,0,0">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                                <TextBlock Text="📝" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Diğer Gider" Foreground="#CBD5E1" FontSize="11" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox x:Name="OtherExpenseTextBox" Height="28" FontSize="11" Padding="6,3" TextChanged="ExpenseTextBox_TextChanged" Grid.Column="0"
-                                         Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}, Converter={StaticResource HalfConverter}}"
-                                         HorizontalAlignment="Left" />
-                                <TextBlock Grid.Column="1" Text="$" Foreground="#10B981" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0">
-                                    <TextBlock.Effect>
-                                        <DropShadowEffect Color="#10B981" BlurRadius="8" ShadowDepth="0" Opacity="0.9" />
-                                    </TextBlock.Effect>
-                                </TextBlock>
-                            </Grid>
-                        </StackPanel>
+                        <StackPanel x:Name="CustomExpensesPanel" />
                     </StackPanel>
                 </Border>
 
@@ -264,6 +272,18 @@
                                       Margin="0,0,0,8"
                                       Checked="CustomRatesCheckBox_Checked"
                                       Unchecked="CustomRatesCheckBox_Unchecked"/>
+
+                            <Button Content="☷  Listeyi Tasarla"
+                                    Height="30"
+                                    Background="#1F2937"
+                                    Foreground="#C4B5FD"
+                                    BorderBrush="#8B5CF6"
+                                    BorderThickness="1"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Margin="0,0,0,8"
+                                    ToolTip="Ödeme yapan kişiler tablosunda gösterilecek sütunları seçin"
+                                    Click="DesignPaymentExportColumnsButton_Click"/>
 
                             <!-- Çıktı Al Butonu -->
                             <Button x:Name="ExportButton" Height="36" Background="#1F2937" Foreground="#E2E8F0" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12" Click="ExportButton_Click" BorderBrush="#8B5CF6" BorderThickness="1">
